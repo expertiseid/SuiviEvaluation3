@@ -5,7 +5,16 @@ import { notifications } from "@mantine/notifications";
 import { useImporterBeneficiaires, telechargerModeleImportBeneficiaires } from "../../api/beneficiaries";
 import type { ImportBeneficiairesResultat } from "../../types";
 
-export function ImportBeneficiairesModal({ opened, onClose }: { opened: boolean; onClose: () => void }) {
+export function ImportBeneficiairesModal({
+  opened,
+  onClose,
+  projet,
+}: {
+  opened: boolean;
+  onClose: () => void;
+  // Import depuis la fiche projet : chaque bénéficiaire importé est inscrit à ce projet.
+  projet?: { id: number; nom: string };
+}) {
   const importer = useImporterBeneficiaires();
   const [fichier, setFichier] = useState<File | null>(null);
   const [resultat, setResultat] = useState<ImportBeneficiairesResultat | null>(null);
@@ -23,6 +32,7 @@ export function ImportBeneficiairesModal({ opened, onClose }: { opened: boolean;
     }
     const formData = new FormData();
     formData.append("fichier", fichier);
+    if (projet) formData.append("projet", String(projet.id));
     try {
       const res = await importer.mutateAsync(formData);
       setResultat(res);
@@ -41,6 +51,12 @@ export function ImportBeneficiairesModal({ opened, onClose }: { opened: boolean;
           Utilise le modèle ci-dessous pour être sûr que les colonnes sont dans le bon format, puis
           remplis-le et importe-le. Les régions/provinces doivent correspondre à des zones existantes ;
           les communes/villages sont créés automatiquement s'ils n'existent pas encore.
+          {projet && (
+            <>
+              {" "}Chaque bénéficiaire importé sera automatiquement associé au projet <strong>{projet.nom}</strong>
+              {" "}(sauf si sa ligne indique un autre Code projet).
+            </>
+          )}
         </Alert>
 
         <Button

@@ -1,3 +1,4 @@
+from django.db.models import F, Min
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import viewsets
@@ -43,7 +44,34 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
     serializer_class = BeneficiaireSerializer
     permission_classes = (HasGlobalVisibilityOrAssigned,)
     filterset_fields = ("sexe", "zone", "statuts_particuliers")
-    search_fields = ("nom", "prenom", "telephone", "numero_piece_identite")
+    # Code et nom du projet inclus : taper « PRAN » ou « eau potable » retrouve
+    # les bénéficiaires inscrits à ce projet.
+    search_fields = (
+        "nom",
+        "prenom",
+        "telephone",
+        "numero_piece_identite",
+        "participations__projet__code",
+        "participations__projet__nom",
+    )
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        # Affichage groupé projet par projet (écran Bénéficiaires) : une
+        # requête par groupe, filtrée sur un projet ou sur « sans projet ».
+        projet = self.request.query_params.get("projet")
+        if projet:
+            return queryset.filter(participations__projet=projet).distinct()
+        if self.request.query_params.get("sans_projet") in ("1", "true"):
+            return queryset.filter(participations__isnull=True)
+
+        # Sans filtre : classement par projet d'abord (code du premier projet
+        # par ordre alphabétique pour un bénéficiaire inscrit à plusieurs
+        # projets ; sans projet en fin de liste), puis par nom/prénom.
+        return queryset.annotate(premier_projet=Min("participations__projet__code")).order_by(
+            F("premier_projet").asc(nulls_last=True), "nom", "prenom"
+        )
 
     def perform_destroy(self, instance):
         supprimer_beneficiaire_cascade(instance)
@@ -67,8 +95,21 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
         fichier = request.data.get("fichier")
         if not fichier:
             raise ValidationError({"fichier": "Un fichier Excel (.xlsx) est requis."})
+
+        # Projet facultatif (import depuis la fiche projet) : chaque bénéficiaire
+        # importé y est alors inscrit, sauf si sa ligne indique un autre Code projet.
+        projet = None
+        projet_id = request.data.get("projet")
+        if projet_id:
+            from apps.projects.models import Projet
+            from apps.projects.queryset_filters import visible_projets_ids
+
+            projet = Projet.objects.filter(id=projet_id, id__in=visible_projets_ids(request.user)).first()
+            if projet is None:
+                raise ValidationError({"projet": "Projet introuvable ou non accessible."})
+
         try:
-            resultat = importer_beneficiaires(fichier, request.user)
+            resultat = importer_beneficiaires(fichier, request.user, projet=projet)
         except Exception as exc:  # fichier corrompu, mauvais format, etc.
             raise ValidationError({"fichier": f"Impossible de lire ce fichier : {exc}"})
         return Response(resultat)

@@ -18,6 +18,7 @@ import {
   type ZoneCascadeValue,
 } from "../../components/common/ZoneCascadeFields";
 import { SelectOrCreate } from "../../components/common/SelectOrCreate";
+import { BeneficiairesProjetSection } from "./BeneficiairesProjetSection";
 import { PROJET_STATUT_LABEL } from "../../utils/statusTones";
 import { PAYS_MONDE } from "../../utils/pays";
 import type { Projet, StatutProjet } from "../../types";
@@ -559,6 +560,14 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
                 )}
               />
             </Group>
+            {projet ? (
+              <BeneficiairesProjetSection projet={projet} />
+            ) : (
+              <Alert color="blue" variant="light" py={6}>
+                Enregistre d'abord le projet pour pouvoir y associer des bénéficiaires (import Excel ou recherche
+                dans la base).
+              </Alert>
+            )}
           </Stack>
         </Tabs.Panel>
 

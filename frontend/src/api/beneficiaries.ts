@@ -10,13 +10,25 @@ import type {
 
 const TAILLE_PAGE_BENEFICIAIRES = 25;
 
-export function useBeneficiaires(search?: string, page = 1) {
+// `filtres` : restreint la liste à un projet, ou aux bénéficiaires sans aucun
+// projet (affichage groupé projet par projet de l'écran Bénéficiaires).
+export function useBeneficiaires(
+  search?: string,
+  page = 1,
+  filtres?: { projet?: number; sans_projet?: boolean },
+) {
   return useQuery({
-    queryKey: ["beneficiaires", search, page],
+    queryKey: ["beneficiaires", search, page, filtres],
     queryFn: async () =>
       (
         await apiClient.get<Paginated<Beneficiaire>>("/beneficiaires/", {
-          params: { search, page, page_size: TAILLE_PAGE_BENEFICIAIRES },
+          params: {
+            search,
+            page,
+            page_size: TAILLE_PAGE_BENEFICIAIRES,
+            projet: filtres?.projet,
+            sans_projet: filtres?.sans_projet ? 1 : undefined,
+          },
         })
       ).data,
   });
@@ -113,7 +125,10 @@ export function useImporterBeneficiaires() {
           headers: { "Content-Type": "multipart/form-data" },
         })
       ).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["beneficiaires"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["beneficiaires"] });
+      queryClient.invalidateQueries({ queryKey: ["participations-projet"] });
+    },
   });
 }
 
