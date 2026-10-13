@@ -1,10 +1,18 @@
-export type Role =
-  | "ADMIN"
-  | "COORDO_GENERAL"
-  | "CHARGE_SE"
-  | "CHEF_PROJET"
-  | "CHEF_SERVICE"
-  | "ANIMATEUR_TERRAIN";
+// Code d'un rôle : les rôles système (ADMIN, COORDO_GENERAL, CHARGE_SE,
+// CHEF_PROJET, CHEF_SERVICE, ANIMATEUR_TERRAIN) plus ceux ajoutés par
+// l'Administrateur (référentiel RoleUtilisateur).
+export type Role = string;
+
+export interface RoleUtilisateur {
+  id: number;
+  code: string;
+  libelle: string;
+  visibilite_globale: boolean;
+  /** Peut choisir les blocs et graphiques du tableau de bord pour tous les utilisateurs. */
+  peut_personnaliser_tableau_de_bord: boolean;
+  systeme: boolean;
+  nb_utilisateurs: number;
+}
 
 export type NiveauAcces = "LECTURE_SEULE" | "LECTURE_ECRITURE";
 
@@ -15,6 +23,9 @@ export interface User {
   first_name: string;
   last_name: string;
   role: Role;
+  role_libelle: string;
+  /** Calculé côté serveur (Administrateur, ou rôle ayant ce droit) — lecture seule. */
+  peut_personnaliser_tableau_de_bord?: boolean;
   niveau_acces: NiveauAcces;
   telephone: string;
   zones_affectees: number[];
@@ -110,6 +121,31 @@ export interface RecapCadreStrategique {
       budget_realise: string | null;
     }[];
     indicateurs: { id: number; libelle: string; valeur_realisee: string; valeur_cible: string; unite: string }[];
+  }[];
+}
+
+/** Données de l'onglet « Axes & budgets » d'un cadre stratégique. */
+export interface RecapAxesCadreStrategique {
+  elements: {
+    id: number;
+    code: string;
+    nom: string;
+    type_niveau: number;
+    ordre_niveau: number;
+    element_parent: number | null;
+  }[];
+  activites: {
+    id: number;
+    code: string;
+    libelle: string;
+    projet_id: number;
+    projet_code: string;
+    /** Élément stratégique rattaché (null : activité non rattachée). */
+    axe: number | null;
+    budget_alloue: string | null;
+    budget_realise: string | null;
+    taux_physique: number | null;
+    taux_financier: number | null;
   }[];
 }
 
@@ -322,17 +358,101 @@ export interface ValeurIndicateur {
 
 export interface TranchePlanifiee {
   id: number;
+  /** Période de planification (onglet « Planification par période »), ou null pour une tranche libre. */
+  periode: number | null;
   activite: number | null;
   activite_libelle: string | null;
+  sous_activite: number | null;
+  sous_activite_libelle: string | null;
   indicateur: number | null;
   indicateur_libelle: string | null;
   libelle: string;
   periode_debut: string;
   periode_fin: string;
-  cible: string;
+  cible: string | null;
+  budget: string | null;
+  date_debut_prevue: string | null;
+  date_fin_prevue: string | null;
+  commentaire: string;
   realise: string | null;
   taux: number | null;
+  budget_realise: string | null;
+  taux_financier: number | null;
   statut: "ATTEINTE" | "EN_RETARD" | "EN_COURS";
+}
+
+/** Objectifs d'un élément sur une période : définis par l'utilisateur (« saisi ») ou pas encore (« a_definir »). */
+export type SourceValeurPeriode = "saisi" | "a_definir";
+
+/** Valeurs d'un élément sur une période, telles que calculées par /periodes-planification/{id}/valeurs/. */
+export interface ValeurElementPeriode {
+  type: "activite" | "sous_activite" | "indicateur";
+  id: number;
+  source: SourceValeurPeriode;
+  tranche_id: number | null;
+  /** Les dates globales de l'élément recoupent-elles la période ? (null : élément sans dates) */
+  dans_dates_globales: boolean | null;
+  prevu_quantite: number | null;
+  prevu_budget: number | null;
+  debut_prevu: string | null;
+  fin_prevue: string | null;
+  realise_quantite: number;
+  taux: number | null;
+  budget_realise: number | null;
+  taux_financier: number | null;
+  statut: string;
+  commentaire: string;
+  /** Saisies comptées dans le réalisé de la période (ordre chronologique). */
+  saisies: SaisiePeriode[];
+}
+
+export interface SaisiePeriode {
+  id: number;
+  periode_debut: string;
+  periode_fin: string;
+  quantite: string | null;
+  budget: string | null;
+  statut: string;
+  commentaire: string;
+}
+
+/** Ligne de l'arborescence (activité/sous-activité) avec ses valeurs sur la période. */
+export interface LignePeriode extends ValeurElementPeriode {
+  niveau: string;
+  profondeur: number;
+  code: string;
+  libelle: string;
+  unite: string;
+  global_quantite: string | null;
+  global_budget: string | null;
+}
+
+export interface IndicateurPeriode extends ValeurElementPeriode {
+  libelle: string;
+  unite: string;
+  valeur_cible: string;
+}
+
+export interface ValeursPeriode {
+  lignes: (LignePeriode | { type: "objectif"; libelle: string })[];
+  indicateurs: IndicateurPeriode[];
+  totaux: {
+    budget_prevu: number;
+    budget_realise: number;
+    nb_definis: number;
+    nb_elements: number;
+    /** Moyenne des taux des activités dont l'objectif de la période est défini. */
+    taux_physique: number | null;
+    taux_financier: number | null;
+  };
+}
+
+export interface PeriodePlanification {
+  id: number;
+  projet: number;
+  libelle: string;
+  date_debut: string;
+  date_fin: string;
 }
 
 export interface Indicateur {
@@ -542,7 +662,64 @@ export interface DashboardConsolide {
   nombre_beneficiaires: number;
   indicateurs_par_statut: RepartitionPalier[];
   zones_couvertes: { niveau: string; count: number }[];
+  projets_par_statut: Partial<Record<StatutProjet, number>>;
+  activites_par_statut: Partial<Record<StatutActivite, number>>;
+  beneficiaires_par_sexe: Partial<Record<"F" | "M", number>>;
+  /** Clé : code du projet. */
+  beneficiaires_par_projet: Record<string, number>;
+  execution_par_projet: { code: string; physique: number | null; financier: number | null }[];
+  activites_par_projet: ({ code: string } & Partial<Record<StatutActivite, number>>)[];
+  beneficiaires_par_projet_sexe: { code: string; F?: number; M?: number }[];
+  /** Dépenses cumulées par mois ; une clé par code de projet. */
+  depenses_par_mois: ({ mois: string } & Record<string, number | string>)[];
+  /** Nouveaux bénéficiaires inscrits par mois (non cumulé) ; une clé par code de projet. */
+  inscriptions_par_mois: ({ mois: string } & Record<string, number | string>)[];
   projets: { id: number; code: string; nom: string; statut: StatutProjet; budget_total: string }[];
+  projets_par_pays: LigneRepartitionProjets[];
+  projets_par_zone: { niveau: string; zones: LigneRepartitionProjets[] }[];
+  budget_detail: {
+    total: number;
+    fonds_propres: number;
+    financements_bailleurs: number;
+    alloue_activites: number;
+    depense_activites: number;
+    par_projet: { code: string; nom: string; total: number; fonds_propres: number; financements_bailleurs: number }[];
+  };
+  projets_par_bailleur: LigneRepartitionProjets[];
+  projets_par_consortium: LigneRepartitionProjets[];
+  projets_par_mise_en_oeuvre: LigneRepartitionProjets[];
+  cibles: {
+    totale: number;
+    femmes: number;
+    hommes: number;
+    jeunes: number;
+    pdi: number;
+    par_projet: { code: string; totale: number; femmes: number; hommes: number; jeunes: number; pdi: number }[];
+  };
+}
+
+/** Configuration du tableau de bord commune à tous les utilisateurs. */
+export interface ConfigurationTableauDeBord {
+  blocs_masques: string[];
+  types_graphiques: Record<string, string>;
+  peut_modifier: boolean;
+}
+
+/** Une ligne de répartition du tableau de bord : nombre de projets et montant (FCFA). */
+export interface LigneRepartitionProjets {
+  libelle: string;
+  nombre: number;
+  montant: number;
+  projets: string[];
+}
+
+/** Filtres du tableau de bord consolidé (voir backend apps/dashboard/filtres.py). */
+export interface FiltresDashboard {
+  annee?: number;
+  date_debut?: string;
+  date_fin?: string;
+  periode?: "actifs" | "demarres" | "demarres_fin_prevue" | "demarres_termines";
+  statuts?: StatutProjet[];
 }
 
 export interface DashboardProjet {

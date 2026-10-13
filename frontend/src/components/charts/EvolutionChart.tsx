@@ -18,7 +18,7 @@ export function EvolutionChart({
   data,
   cible,
   unite,
-  height = 140,
+  height = 160,
 }: {
   data: PointReel[];
   cible?: number | null;
@@ -42,10 +42,10 @@ export function EvolutionChart({
           type="number"
           domain={domaine}
           tickFormatter={formatTick}
-          tick={{ fontSize: 11, fill: "var(--mantine-color-dimmed)" }}
+          tick={{ fontSize: 13, fill: "var(--mantine-color-dimmed)" }}
           allowDuplicatedCategory={false}
         />
-        <YAxis tick={{ fontSize: 11, fill: "var(--mantine-color-dimmed)" }} width={44} />
+        <YAxis tick={{ fontSize: 13, fill: "var(--mantine-color-dimmed)" }} width={56} />
         <Tooltip
           labelFormatter={(ts) => formatTick(Number(ts))}
           formatter={(value) => [`${value}${unite ? " " + unite : ""}`, "Cumul réalisé"]}
@@ -55,7 +55,7 @@ export function EvolutionChart({
             y={cible}
             stroke="var(--mantine-color-teal-6)"
             strokeDasharray="4 4"
-            label={{ value: "Cible", position: "insideTopRight", fontSize: 10, fill: "var(--mantine-color-teal-7)" }}
+            label={{ value: "Cible", position: "insideTopRight", fontSize: 12, fill: "var(--mantine-color-teal-7)" }}
           />
         )}
         <Line

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { type MouseEvent, useEffect, useState } from "react";
+import { Check, Pencil, Trash2 } from "lucide-react";
 import {
   ActionIcon,
   Badge,
@@ -11,6 +11,7 @@ import {
   Stack,
   Switch,
   Table,
+  Tabs,
   Text,
   TextInput,
   Title,
@@ -18,19 +19,151 @@ import {
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useAuth } from "../../auth/useAuth";
-import { useCreateUtilisateur, useDeleteUtilisateur, useUpdateUtilisateur, useUtilisateurs } from "../../api/accounts";
+import {
+  useCreateRole,
+  useCreateUtilisateur,
+  useDeleteRole,
+  useDeleteUtilisateur,
+  useRoles,
+  useUpdateUtilisateur,
+  useUtilisateurs,
+} from "../../api/accounts";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
 import { messageErreurApi } from "../../utils/erreurs";
-import type { User } from "../../types";
+import type { RoleUtilisateur, User } from "../../types";
+import { ModifierRoleModal, RolesTab } from "./RolesTab";
 
-const ROLES = [
-  { value: "ADMIN", label: "Administrateur" },
-  { value: "COORDO_GENERAL", label: "Coordonnateur général" },
-  { value: "CHARGE_SE", label: "Chargé de Suivi-Évaluation" },
-  { value: "CHEF_PROJET", label: "Chef de projet" },
-  { value: "CHEF_SERVICE", label: "Chef de service" },
-  { value: "ANIMATEUR_TERRAIN", label: "Animateur de terrain" },
-];
+const PREFIXE_CREATION = "__creer__";
+
+/**
+ * Liste « Rôle » (référentiel géré dans l'onglet « Rôles ») : taper un
+ * libellé absent de la liste propose de le créer sur place (ex :
+ * « Chauffeur »), avec la visibilité par défaut « projets affectés » —
+ * modifiable ensuite dans l'onglet « Rôles ». Chaque rôle de la liste peut
+ * aussi être modifié ou supprimé directement (mêmes règles que l'onglet
+ * « Rôles » : un rôle système ou attribué à des utilisateurs reste).
+ */
+function RoleSelect({ value, onChange }: { value: string | null; onChange: (code: string | null) => void }) {
+  const { data: roles } = useRoles();
+  const createRole = useCreateRole();
+  const deleteRole = useDeleteRole();
+  const [recherche, setRecherche] = useState("");
+  const [roleEnEdition, setRoleEnEdition] = useState<RoleUtilisateur | null>(null);
+  const roleParCode = new Map(roles?.map((r) => [r.code, r]));
+
+  const data = roles?.map((r) => ({ value: r.code, label: r.libelle })) ?? [];
+  const texte = recherche.trim();
+  const dejaExistant = data.some((o) => o.label.toLowerCase() === texte.toLowerCase());
+  if (texte && !dejaExistant) {
+    data.push({ value: `${PREFIXE_CREATION}${texte}`, label: `+ Créer le rôle « ${texte} »` });
+  }
+
+  async function handleChange(v: string | null) {
+    if (!v?.startsWith(PREFIXE_CREATION)) {
+      onChange(v);
+      return;
+    }
+    const libelle = v.slice(PREFIXE_CREATION.length);
+    try {
+      const cree = await createRole.mutateAsync({ libelle, visibilite_globale: false });
+      onChange(cree.code);
+      setRecherche(cree.libelle);
+      notifications.show({ message: `Rôle « ${cree.libelle} » créé`, color: "green" });
+    } catch (error) {
+      notifications.show({ message: messageErreurApi(error, "Erreur lors de la création du rôle"), color: "red" });
+    }
+  }
+
+  function handleSupprimer(role: RoleUtilisateur) {
+    confirmerSuppression({
+      message: `Supprimer le rôle "${role.libelle}" ?`,
+      onConfirm: async () => {
+        try {
+          await deleteRole.mutateAsync(role.id);
+          if (value === role.code) onChange(null);
+          notifications.show({ message: "Rôle supprimé", color: "green" });
+        } catch (error) {
+          notifications.show({ message: messageErreurApi(error, "Erreur lors de la suppression du rôle"), color: "red" });
+        }
+      },
+    });
+  }
+
+  // Les icônes sont dans l'option : on bloque le clic pour qu'il ne
+  // sélectionne pas le rôle en même temps.
+  function actionOption(e: MouseEvent, action: () => void) {
+    e.preventDefault();
+    e.stopPropagation();
+    action();
+  }
+
+  return (
+    <>
+      <Select
+        label="Rôle"
+        placeholder="Choisir ou taper un nouveau rôle…"
+        data={data}
+        value={value}
+        onChange={handleChange}
+        searchable
+        searchValue={recherche}
+        onSearchChange={setRecherche}
+        nothingFoundMessage="Tape le nom du rôle à créer"
+        disabled={createRole.isPending || deleteRole.isPending}
+        renderOption={({ option, checked }) => {
+          const role = roleParCode.get(option.value);
+          if (!role) return <Text size="sm">{option.label}</Text>;
+          const supprimable = !role.systeme && role.nb_utilisateurs === 0;
+          return (
+            <Group justify="space-between" wrap="nowrap" w="100%" gap="xs">
+              <Group gap={6} wrap="nowrap">
+                {checked && <Check size={14} />}
+                <Text size="sm">{option.label}</Text>
+              </Group>
+              <Group gap={2} wrap="nowrap">
+                <Tooltip label="Modifier le rôle">
+                  <ActionIcon
+                    size="sm"
+                    variant="subtle"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={(e) => actionOption(e, () => setRoleEnEdition(role))}
+                  >
+                    <Pencil size={13} />
+                  </ActionIcon>
+                </Tooltip>
+                <Tooltip
+                  label={
+                    role.systeme
+                      ? "Rôle système : non supprimable"
+                      : role.nb_utilisateurs > 0
+                        ? "Des utilisateurs ont ce rôle"
+                        : "Supprimer le rôle"
+                  }
+                >
+                  <ActionIcon
+                    size="sm"
+                    variant="subtle"
+                    color="red"
+                    data-disabled={!supprimable || undefined}
+                    style={supprimable ? undefined : { opacity: 0.35, cursor: "not-allowed" }}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={(e) => actionOption(e, () => supprimable && handleSupprimer(role))}
+                  >
+                    <Trash2 size={13} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
+            </Group>
+          );
+        }}
+      />
+      <ModifierRoleModal
+        role={roleEnEdition}
+        onClose={() => setRoleEnEdition(null)}
+      />
+    </>
+  );
+}
 
 const NIVEAUX_ACCES = [
   { value: "LECTURE_SEULE", label: "Voir seulement" },
@@ -99,7 +232,7 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
           <TextInput label="Nom" value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
         </Group>
         <TextInput label="Email" value={email} onChange={(e) => setEmail(e.currentTarget.value)} />
-        <Select label="Rôle" data={ROLES} value={role} onChange={setRole} />
+        <RoleSelect value={role} onChange={setRole} />
         <Select
           label="Niveau d'accès"
           data={NIVEAUX_ACCES}
@@ -193,82 +326,97 @@ export function UtilisateursPage() {
         </Text>
       </div>
 
-      <Stack gap="xs">
-        <Group align="flex-end">
-          <TextInput label="Identifiant" value={username} onChange={(e) => setUsername(e.currentTarget.value)} />
-          <TextInput label="Prénom" value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} />
-          <TextInput label="Nom" value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
-          <TextInput label="Email" value={email} onChange={(e) => setEmail(e.currentTarget.value)} />
-        </Group>
-        <Group align="flex-end">
-          <Select label="Rôle" data={ROLES} value={role} onChange={setRole} />
-          <Select
-            label="Niveau d'accès"
-            data={NIVEAUX_ACCES}
-            value={estAdmin ? "LECTURE_ECRITURE" : niveauAcces}
-            onChange={setNiveauAcces}
-            disabled={estAdmin}
-            description={estAdmin ? "Toujours complet pour un Administrateur" : undefined}
-          />
-          <PasswordInput label="Mot de passe" value={password} onChange={(e) => setPassword(e.currentTarget.value)} />
-          <Button onClick={handleCreate} loading={createUtilisateur.isPending}>Créer</Button>
-        </Group>
-      </Stack>
+      <Tabs defaultValue="utilisateurs" keepMounted={false}>
+        <Tabs.List>
+          <Tabs.Tab value="utilisateurs">Utilisateurs</Tabs.Tab>
+          <Tabs.Tab value="roles">Rôles</Tabs.Tab>
+        </Tabs.List>
 
-      {isLoading ? (
-        <div>Chargement…</div>
-      ) : (
-        <Table striped highlightOnHover>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Identifiant</Table.Th>
-              <Table.Th>Nom</Table.Th>
-              <Table.Th>Email</Table.Th>
-              <Table.Th>Rôle</Table.Th>
-              <Table.Th>Accès</Table.Th>
-              <Table.Th>Actif</Table.Th>
-              <Table.Th w={40} />
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {utilisateurs?.map((u) => (
-              <Table.Tr key={u.id}>
-                <Table.Td>{u.username}</Table.Td>
-                <Table.Td>{u.first_name} {u.last_name}</Table.Td>
-                <Table.Td>{u.email}</Table.Td>
-                <Table.Td><Badge variant="light">{u.role}</Badge></Table.Td>
-                <Table.Td>
-                  <Badge variant="light" color={u.role === "ADMIN" || u.niveau_acces === "LECTURE_ECRITURE" ? "teal" : "gray"}>
-                    {u.role === "ADMIN" ? "Complet" : LIBELLES_NIVEAU_ACCES[u.niveau_acces] ?? u.niveau_acces}
-                  </Badge>
-                </Table.Td>
-                <Table.Td>{u.is_active ? "Oui" : "Non"}</Table.Td>
-                <Table.Td>
-                  <Group gap={4} wrap="nowrap">
-                    <Tooltip label="Modifier">
-                      <ActionIcon size="sm" variant="subtle" onClick={() => setUtilisateurEnEdition(u)}>
-                        <Pencil size={13} />
-                      </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label={u.id === utilisateurConnecte?.id ? "Impossible de supprimer ton propre compte" : "Supprimer"}>
-                      <ActionIcon
-                        size="sm"
-                        variant="subtle"
-                        color="red"
-                        disabled={u.id === utilisateurConnecte?.id}
-                        loading={deleteUtilisateur.isPending && deleteUtilisateur.variables === u.id}
-                        onClick={() => handleSupprimer(u)}
-                      >
-                        <Trash2 size={13} />
-                      </ActionIcon>
-                    </Tooltip>
-                  </Group>
-                </Table.Td>
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
-      )}
+        <Tabs.Panel value="roles" pt="md">
+          <RolesTab />
+        </Tabs.Panel>
+
+        <Tabs.Panel value="utilisateurs" pt="md">
+          <Stack gap="md">
+            <Stack gap="xs">
+              <Group align="flex-end">
+                <TextInput label="Identifiant" value={username} onChange={(e) => setUsername(e.currentTarget.value)} />
+                <TextInput label="Prénom" value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} />
+                <TextInput label="Nom" value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
+                <TextInput label="Email" value={email} onChange={(e) => setEmail(e.currentTarget.value)} />
+              </Group>
+              <Group align="flex-end">
+                <RoleSelect value={role} onChange={setRole} />
+                <Select
+                  label="Niveau d'accès"
+                  data={NIVEAUX_ACCES}
+                  value={estAdmin ? "LECTURE_ECRITURE" : niveauAcces}
+                  onChange={setNiveauAcces}
+                  disabled={estAdmin}
+                  description={estAdmin ? "Toujours complet pour un Administrateur" : undefined}
+                />
+                <PasswordInput label="Mot de passe" value={password} onChange={(e) => setPassword(e.currentTarget.value)} />
+                <Button onClick={handleCreate} loading={createUtilisateur.isPending}>Créer</Button>
+              </Group>
+            </Stack>
+
+            {isLoading ? (
+              <div>Chargement…</div>
+            ) : (
+              <Table striped highlightOnHover>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Identifiant</Table.Th>
+                    <Table.Th>Nom</Table.Th>
+                    <Table.Th>Email</Table.Th>
+                    <Table.Th>Rôle</Table.Th>
+                    <Table.Th>Accès</Table.Th>
+                    <Table.Th>Actif</Table.Th>
+                    <Table.Th w={40} />
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {utilisateurs?.map((u) => (
+                    <Table.Tr key={u.id}>
+                      <Table.Td>{u.username}</Table.Td>
+                      <Table.Td>{u.first_name} {u.last_name}</Table.Td>
+                      <Table.Td>{u.email}</Table.Td>
+                      <Table.Td><Badge variant="light">{u.role_libelle || u.role}</Badge></Table.Td>
+                      <Table.Td>
+                        <Badge variant="light" color={u.role === "ADMIN" || u.niveau_acces === "LECTURE_ECRITURE" ? "teal" : "gray"}>
+                          {u.role === "ADMIN" ? "Complet" : LIBELLES_NIVEAU_ACCES[u.niveau_acces] ?? u.niveau_acces}
+                        </Badge>
+                      </Table.Td>
+                      <Table.Td>{u.is_active ? "Oui" : "Non"}</Table.Td>
+                      <Table.Td>
+                        <Group gap={4} wrap="nowrap">
+                          <Tooltip label="Modifier">
+                            <ActionIcon size="sm" variant="subtle" onClick={() => setUtilisateurEnEdition(u)}>
+                              <Pencil size={13} />
+                            </ActionIcon>
+                          </Tooltip>
+                          <Tooltip label={u.id === utilisateurConnecte?.id ? "Impossible de supprimer ton propre compte" : "Supprimer"}>
+                            <ActionIcon
+                              size="sm"
+                              variant="subtle"
+                              color="red"
+                              disabled={u.id === utilisateurConnecte?.id}
+                              loading={deleteUtilisateur.isPending && deleteUtilisateur.variables === u.id}
+                              onClick={() => handleSupprimer(u)}
+                            >
+                              <Trash2 size={13} />
+                            </ActionIcon>
+                          </Tooltip>
+                        </Group>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            )}
+          </Stack>
+        </Tabs.Panel>
+      </Tabs>
 
       <ModifierUtilisateurModal utilisateur={utilisateurEnEdition} onClose={() => setUtilisateurEnEdition(null)} />
     </Stack>

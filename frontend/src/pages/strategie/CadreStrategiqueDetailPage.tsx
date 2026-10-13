@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowDown, ArrowLeft, ArrowUp, ChevronDown, ChevronRight, Download, FileSpreadsheet, Gauge, ListTree, Pencil, Plus, Search, Settings2, Trash2, Wallet } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, ChevronDown, ChevronRight, Download, FileSpreadsheet, Gauge, Layers, ListTree, Pencil, Plus, Search, Settings2, Trash2, Wallet } from "lucide-react";
 import {
   ActionIcon,
   Badge,
@@ -44,6 +44,7 @@ import { STATUS_HEX } from "../../components/common/statusPalette";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
 import { toneDeTaux } from "../../components/suivi/BarreProgression";
 import { correspond } from "../../utils/recherche";
+import { AxesBudgetsTab } from "./AxesBudgetsTab";
 import { ImportStructurationModal } from "./ImportStructurationModal";
 import type { ElementStrategique, RecapCadreStrategique, TypeNiveau } from "../../types";
 
@@ -695,89 +696,135 @@ function TauxCell({ taux }: { taux: number | null }) {
   );
 }
 
+function tauxSur(realise: number, cible: number | null): number | null {
+  if (cible === null || cible === 0) return null;
+  return Math.round((realise / cible) * 1000) / 10;
+}
+
+function moyenne(valeurs: (number | null)[]): number | null {
+  const definies = valeurs.filter((v): v is number => v !== null);
+  return definies.length ? Math.round((definies.reduce((s, v) => s + v, 0) / definies.length) * 10) / 10 : null;
+}
+
+const ENTETE = { tt: "uppercase", fz: "xs", c: "dimmed" } as const;
+const CHIFFRE = { ta: "right", style: { whiteSpace: "nowrap" } } as const;
+
+/**
+ * Tableau des activités d'un projet : cible, réalisé et taux, en physique
+ * puis en financier, avec les totaux en bas (budget additionné ; les
+ * quantités ayant des unités différentes, le taux physique total est la
+ * moyenne des taux, comme l'exécution physique du projet).
+ */
 function TableauActivites({
   activites,
-  budgetProjet,
 }: {
   activites: RecapCadreStrategique["projets"][number]["activites"];
-  budgetProjet: number;
 }) {
   if (activites.length === 0) return <Text size="sm" c="dimmed">Aucune activité.</Text>;
 
-  const totalRealise = activites.reduce((s, a) => s + Number(a.budget_realise ?? 0), 0);
+  const lignes = activites.map((a) => {
+    const budgetAlloue = a.budget_alloue !== null ? Number(a.budget_alloue) : null;
+    const budgetRealise = Number(a.budget_realise ?? 0);
+    return { ...a, budgetAlloue, budgetRealise, tauxFinancier: tauxSur(budgetRealise, budgetAlloue) };
+  });
+  const totalAlloue = lignes.reduce((s, l) => s + (l.budgetAlloue ?? 0), 0);
+  const totalRealise = lignes.reduce((s, l) => s + l.budgetRealise, 0);
 
   return (
-    <>
-      <Table.ScrollContainer minWidth={520}>
-        <Table verticalSpacing={4} fz="sm">
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th tt="uppercase" fz="xs" c="dimmed">Activité</Table.Th>
-              <Table.Th tt="uppercase" fz="xs" c="dimmed" ta="right">Quantité</Table.Th>
-              <Table.Th tt="uppercase" fz="xs" c="dimmed" ta="right">Budget dépensé sur alloué</Table.Th>
-              <Table.Th tt="uppercase" fz="xs" c="dimmed" ta="right">Taux</Table.Th>
+    <Table.ScrollContainer minWidth={900}>
+      <Table verticalSpacing={6} fz="sm" withTableBorder withColumnBorders striped>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th rowSpan={2} {...ENTETE}>Activité</Table.Th>
+            <Table.Th colSpan={3} {...ENTETE} ta="center">Physique</Table.Th>
+            <Table.Th colSpan={3} {...ENTETE} ta="center">Financier (FCFA)</Table.Th>
+          </Table.Tr>
+          <Table.Tr>
+            <Table.Th {...ENTETE} ta="right">Cible</Table.Th>
+            <Table.Th {...ENTETE} ta="right">Réalisé</Table.Th>
+            <Table.Th {...ENTETE} ta="right">Taux</Table.Th>
+            <Table.Th {...ENTETE} ta="right">Budget alloué</Table.Th>
+            <Table.Th {...ENTETE} ta="right">Dépensé</Table.Th>
+            <Table.Th {...ENTETE} ta="right">Taux</Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {lignes.map((a) => (
+            <Table.Tr key={a.id}>
+              <Table.Td>
+                {a.code && <Text span c="dimmed">{a.code} — </Text>}
+                {a.libelle}
+              </Table.Td>
+              <Table.Td {...CHIFFRE}>
+                {a.quantite_prevue !== null ? `${formatNombre(a.quantite_prevue)} ${a.unite_quantite}` : "—"}
+              </Table.Td>
+              <Table.Td {...CHIFFRE}>
+                {a.quantite_prevue !== null ? `${formatNombre(a.quantite_realisee ?? 0)} ${a.unite_quantite}` : "—"}
+              </Table.Td>
+              <Table.Td><TauxCell taux={a.taux_realisation} /></Table.Td>
+              <Table.Td {...CHIFFRE}>{a.budgetAlloue !== null ? formatNombre(a.budgetAlloue) : "—"}</Table.Td>
+              <Table.Td {...CHIFFRE}>{formatNombre(a.budgetRealise)}</Table.Td>
+              <Table.Td><TauxCell taux={a.tauxFinancier} /></Table.Td>
             </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {activites.map((a) => (
-              <Table.Tr key={a.id}>
-                <Table.Td>
-                  {a.code && <Text span c="dimmed">{a.code} — </Text>}
-                  {a.libelle}
-                </Table.Td>
-                <Table.Td ta="right" style={{ whiteSpace: "nowrap" }}>
-                  {a.quantite_prevue !== null
-                    ? `${formatNombre(a.quantite_realisee ?? 0)} sur ${formatNombre(a.quantite_prevue)}${a.unite_quantite ? ` ${a.unite_quantite}` : ""}`
-                    : "—"}
-                </Table.Td>
-                <Table.Td ta="right" style={{ whiteSpace: "nowrap" }}>
-                  {a.budget_alloue !== null
-                    ? `${formatNombre(a.budget_realise ?? 0)} sur ${formatNombre(a.budget_alloue)} FCFA`
-                    : "—"}
-                </Table.Td>
-                <Table.Td ta="right">{a.taux_realisation !== null ? `${a.taux_realisation}%` : "—"}</Table.Td>
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-          <Table.Tfoot>
-            <Table.Tr>
-              <Table.Th>Total</Table.Th>
-              <Table.Th />
-              <Table.Th ta="right" style={{ whiteSpace: "nowrap" }}>
-                {formatNombre(totalRealise)} sur {formatNombre(budgetProjet)} FCFA
-              </Table.Th>
-              <Table.Th />
-            </Table.Tr>
-          </Table.Tfoot>
-        </Table>
-      </Table.ScrollContainer>
-    </>
+          ))}
+        </Table.Tbody>
+        <Table.Tfoot bg="gray.1">
+          <Table.Tr>
+            <Table.Th>Total ({lignes.length} activité{lignes.length > 1 ? "s" : ""})</Table.Th>
+            <Table.Th {...CHIFFRE} c="dimmed" fw={400}>—</Table.Th>
+            <Table.Th {...CHIFFRE} c="dimmed" fw={400}>—</Table.Th>
+            <Table.Th><TauxCell taux={moyenne(lignes.map((l) => l.taux_realisation))} /></Table.Th>
+            <Table.Th {...CHIFFRE}>{formatNombre(totalAlloue)}</Table.Th>
+            <Table.Th {...CHIFFRE}>{formatNombre(totalRealise)}</Table.Th>
+            <Table.Th><TauxCell taux={tauxSur(totalRealise, totalAlloue)} /></Table.Th>
+          </Table.Tr>
+        </Table.Tfoot>
+      </Table>
+      <Text size="xs" c="dimmed" mt={4}>
+        Taux physique total : moyenne des taux des activités (les quantités ont des unités différentes et ne
+        s'additionnent pas).
+      </Text>
+    </Table.ScrollContainer>
   );
 }
 
 function TableauIndicateurs({ indicateurs }: { indicateurs: RecapCadreStrategique["projets"][number]["indicateurs"] }) {
   if (indicateurs.length === 0) return <Text size="sm" c="dimmed">Aucun indicateur.</Text>;
 
+  const lignes = indicateurs.map((i) => ({
+    ...i,
+    taux: tauxSur(Number(i.valeur_realisee), Number(i.valeur_cible)),
+  }));
+
   return (
-    <Table.ScrollContainer minWidth={420}>
-      <Table verticalSpacing={4} fz="sm">
+    <Table.ScrollContainer minWidth={700}>
+      <Table verticalSpacing={6} fz="sm" withTableBorder withColumnBorders striped>
         <Table.Thead>
           <Table.Tr>
-            <Table.Th tt="uppercase" fz="xs" c="dimmed">Indicateur</Table.Th>
-            <Table.Th tt="uppercase" fz="xs" c="dimmed" ta="right">Valeur réalisée sur cible</Table.Th>
+            <Table.Th {...ENTETE}>Indicateur</Table.Th>
+            <Table.Th {...ENTETE} ta="right">Cible</Table.Th>
+            <Table.Th {...ENTETE} ta="right">Réalisé</Table.Th>
+            <Table.Th {...ENTETE} ta="right">Taux</Table.Th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
-          {indicateurs.map((i) => (
+          {lignes.map((i) => (
             <Table.Tr key={i.id}>
               <Table.Td>{i.libelle}</Table.Td>
-              <Table.Td ta="right" style={{ whiteSpace: "nowrap" }}>
-                {formatNombre(i.valeur_realisee)} sur {formatNombre(i.valeur_cible)}
-                {i.unite ? ` ${i.unite}` : ""}
-              </Table.Td>
+              <Table.Td {...CHIFFRE}>{formatNombre(i.valeur_cible)} {i.unite}</Table.Td>
+              <Table.Td {...CHIFFRE}>{formatNombre(i.valeur_realisee)} {i.unite}</Table.Td>
+              <Table.Td><TauxCell taux={i.taux} /></Table.Td>
             </Table.Tr>
           ))}
         </Table.Tbody>
+        <Table.Tfoot bg="gray.1">
+          <Table.Tr>
+            <Table.Th>Total ({lignes.length} indicateur{lignes.length > 1 ? "s" : ""}) — taux moyen</Table.Th>
+            <Table.Th {...CHIFFRE} c="dimmed" fw={400}>—</Table.Th>
+            <Table.Th {...CHIFFRE} c="dimmed" fw={400}>—</Table.Th>
+            <Table.Th><TauxCell taux={moyenne(lignes.map((l) => l.taux))} /></Table.Th>
+          </Table.Tr>
+        </Table.Tfoot>
       </Table>
     </Table.ScrollContainer>
   );
@@ -817,7 +864,7 @@ function CarteProjetRecap({ p }: { p: RecapCadreStrategique["projets"][number] }
       <Stack gap="md" mt="sm">
         <Box>
           <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb={4}>Activités ({p.nombre_activites})</Text>
-          <TableauActivites activites={p.activites} budgetProjet={Number(p.budget_total)} />
+          <TableauActivites activites={p.activites} />
         </Box>
         <Box>
           <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb={4}>Indicateurs ({p.nombre_indicateurs})</Text>
@@ -927,6 +974,9 @@ export function CadreStrategiqueDetailPage() {
             <Tabs.Tab value="arborescence" leftSection={<ListTree size={15} />}>
               Arborescence &amp; saisie
             </Tabs.Tab>
+            <Tabs.Tab value="axes" leftSection={<Layers size={15} />}>
+              Axes &amp; budgets
+            </Tabs.Tab>
             <Tabs.Tab value="recap" leftSection={<Wallet size={15} />}>
               Projets &amp; budgets
             </Tabs.Tab>
@@ -938,6 +988,10 @@ export function CadreStrategiqueDetailPage() {
 
           <Tabs.Panel value="arborescence" pt="md">
             <Arborescence niveaux={niveaux ?? []} elements={elements ?? []} editionActive={editionActive} />
+          </Tabs.Panel>
+
+          <Tabs.Panel value="axes" pt="md">
+            <AxesBudgetsTab cadreId={cadreId} niveaux={niveaux ?? []} />
           </Tabs.Panel>
 
           <Tabs.Panel value="recap" pt="md">

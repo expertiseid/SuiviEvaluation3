@@ -308,6 +308,12 @@ def exporter_suivi_excel(projet) -> bytes:
                 )
     _largeurs(ws_sa_hist, [26, 26, 13, 13, 14, 12, 10, 12, 34, 14, 30])
 
+    # Activités avant les indicateurs dans l'ordre des onglets (Résumé en tête).
+    ordre = ["Résumé", "Activités", "Activités — historique", "Sous-activités", "Sous-activités — historique",
+             "Indicateurs", "Indicateurs — historique"]
+    wb._sheets.sort(key=lambda feuille: ordre.index(feuille.title))
+    wb.active = 0
+
     buffer = io.BytesIO()
     wb.save(buffer)
     return buffer.getvalue()

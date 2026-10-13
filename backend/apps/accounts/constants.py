@@ -11,6 +11,9 @@ ROLE_CHEF_PROJET = "CHEF_PROJET"
 ROLE_CHEF_SERVICE = "CHEF_SERVICE"
 ROLE_ANIMATEUR_TERRAIN = "ANIMATEUR_TERRAIN"
 
+# Rôles « système » : créés par la migration accounts.0004 et utilisés tels
+# quels par le code. Les autres rôles sont gérés en base (modèle Role, écran
+# Utilisateurs > Rôles), comme la visibilité de chaque rôle.
 ROLE_CHOICES = [
     (ROLE_ADMIN, "Administrateur"),
     (ROLE_COORDO_GENERAL, "Coordonnateur général"),
@@ -19,9 +22,6 @@ ROLE_CHOICES = [
     (ROLE_CHEF_SERVICE, "Chef de service"),
     (ROLE_ANIMATEUR_TERRAIN, "Animateur de terrain"),
 ]
-
-# Rôles ayant une visibilité globale en lecture (tous les projets/zones)
-ROLES_VISIBILITE_GLOBALE = {ROLE_ADMIN, ROLE_COORDO_GENERAL, ROLE_CHARGE_SE}
 
 # Rôles notifiés lors de la modification d'une activité déjà planifiée
 ROLES_NOTIFIEES_MODIFICATION_ACTIVITE = {ROLE_COORDO_GENERAL, ROLE_CHARGE_SE}

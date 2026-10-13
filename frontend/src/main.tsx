@@ -29,7 +29,10 @@ const theme = createTheme({
   fontFamily: "Inter, system-ui, sans-serif",
   fontFamilyMonospace: "ui-monospace, Consolas, monospace",
   headings: { fontFamily: "Inter, system-ui, sans-serif", fontWeight: "600" },
-  fontSizes: { xs: "0.75rem", sm: "0.85rem", md: "0.9rem", lg: "1rem", xl: "1.15rem" },
+  // Légèrement agrandies (ancien barème : 0.75 / 0.85 / 0.9 / 1 / 1.15) ; le
+  // suivi d'un projet, déjà agrandi au cas par cas, garde l'ancien barème
+  // (classe .bareme-police-suivi, index.css).
+  fontSizes: { xs: "0.8rem", sm: "0.9rem", md: "0.97rem", lg: "1.07rem", xl: "1.22rem" },
   spacing: { xs: "0.5rem", sm: "0.75rem", md: "1rem", lg: "1.5rem", xl: "2rem" },
   shadows: { sm: "0 2px 8px rgba(16, 24, 32, 0.06)", md: "0 8px 20px rgba(16, 24, 32, 0.1)" },
   components: {

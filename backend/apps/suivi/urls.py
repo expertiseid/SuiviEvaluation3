@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 from django.urls import path
 
 from .views import (
+    PeriodePlanificationViewSet,
     PointSuiviViewSet,
     TranchePlanifieeViewSet,
     suivi_dashboard_projet,
@@ -13,6 +14,7 @@ from .views import (
 router = DefaultRouter()
 router.register("points-suivi", PointSuiviViewSet, basename="point-suivi")
 router.register("tranches-planifiees", TranchePlanifieeViewSet, basename="tranche-planifiee")
+router.register("periodes-planification", PeriodePlanificationViewSet, basename="periode-planification")
 
 urlpatterns = router.urls + [
     path("suivi/projets/<int:projet_id>/dashboard/", suivi_dashboard_projet, name="suivi-dashboard-projet"),

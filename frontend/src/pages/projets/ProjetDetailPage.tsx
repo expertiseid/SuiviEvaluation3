@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { CalendarRange, Check, Download, FolderTree, MapPin, Paperclip, Pencil, Plus, Search, Trash2, Users, X } from "lucide-react";
+import { Check, Download, FolderTree, MapPin, Paperclip, Pencil, Plus, Search, Trash2, Users, X } from "lucide-react";
 import {
   ActionIcon,
   Badge,
@@ -39,7 +39,7 @@ import { confirmerSuppression } from "../../components/common/confirmerSuppressi
 import { HistoriqueModification } from "../../components/audit/HistoriqueModification";
 import { DocumentsTab } from "../../components/documents/DocumentsTab";
 import { BeneficiairesTab } from "../../components/beneficiaires/BeneficiairesTab";
-import { TranchesPlanifieesTab } from "../../components/suivi/TranchesPlanifieesTab";
+import { PlanificationPeriodeTab } from "./PlanificationPeriodeTab";
 import { BoutonModeEdition } from "../../components/common/BoutonModeEdition";
 import { ActiviteForm } from "./ActiviteForm";
 import { NiveauxActiviteTab } from "./NiveauxActiviteTab";
@@ -163,7 +163,6 @@ function CarteActivite({
   utiliseNiveauxPersonnalises,
   onDocuments,
   onBeneficiaires,
-  onTranche,
   onEditer,
   onAjouterEnfant,
   onAjouterSousActivite,
@@ -180,7 +179,6 @@ function CarteActivite({
   utiliseNiveauxPersonnalises: boolean;
   onDocuments: (id: number) => void;
   onBeneficiaires: (id: number) => void;
-  onTranche: (act: Activite) => void;
   onEditer: (act: Activite) => void;
   onAjouterEnfant: (act: Activite) => void;
   onAjouterSousActivite: (id: number) => void;
@@ -227,11 +225,6 @@ function CarteActivite({
           <Tooltip label="Bénéficiaires liés">
             <ActionIcon size="sm" variant="subtle" onClick={() => onBeneficiaires(act.id)}>
               <Users size={12} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label="Suivi détaillé par période">
-            <ActionIcon size="sm" variant="subtle" onClick={() => onTranche(act)}>
-              <CalendarRange size={12} />
             </ActionIcon>
           </Tooltip>
           {editionActive && (
@@ -287,7 +280,6 @@ function CarteActivite({
               utiliseNiveauxPersonnalises={utiliseNiveauxPersonnalises}
               onDocuments={onDocuments}
               onBeneficiaires={onBeneficiaires}
-              onTranche={onTranche}
               onEditer={onEditer}
               onAjouterEnfant={onAjouterEnfant}
               onAjouterSousActivite={onAjouterSousActivite}
@@ -374,7 +366,6 @@ export function ProjetDetailPage() {
   const [documentsSousActiviteId, setDocumentsSousActiviteId] = useState<number | null>(null);
   const [beneficiairesActiviteId, setBeneficiairesActiviteId] = useState<number | null>(null);
   const [beneficiairesSousActiviteId, setBeneficiairesSousActiviteId] = useState<number | null>(null);
-  const [trancheActiviteId, setTrancheActiviteId] = useState<Activite | null>(null);
   const [modalEditionOuvert, setModalEditionOuvert] = useState(false);
   const [recherchePlan, setRecherchePlan] = useState("");
   const [editionActive, setEditionActive] = useState(false);
@@ -518,6 +509,7 @@ export function ProjetDetailPage() {
         <Tabs.List>
           <Tabs.Tab value="niveaux">Configuration des niveaux</Tabs.Tab>
           <Tabs.Tab value="hierarchie">Planification</Tabs.Tab>
+          <Tabs.Tab value="periode">Planification par période</Tabs.Tab>
           <Tabs.Tab value="equipe">Équipe de projet</Tabs.Tab>
           <Tabs.Tab value="indicateurs">Indicateurs</Tabs.Tab>
           <Tabs.Tab value="financement">Financement</Tabs.Tab>
@@ -611,7 +603,6 @@ export function ProjetDetailPage() {
                               utiliseNiveauxPersonnalises={(niveauxActivite?.length ?? 0) > 0}
                               onDocuments={setDocumentsActiviteId}
                               onBeneficiaires={setBeneficiairesActiviteId}
-                              onTranche={setTrancheActiviteId}
                               onEditer={setModalActiviteEdition}
                               onAjouterEnfant={setModalActiviteEnfantFor}
                               onAjouterSousActivite={setModalSousActiviteFor}
@@ -641,6 +632,10 @@ export function ProjetDetailPage() {
               </>
             )}
           </Card>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="periode" pt="md">
+          <PlanificationPeriodeTab projet={projet} niveauxNoms={niveauxNoms} editionActive={editionActive} />
         </Tabs.Panel>
 
         <Tabs.Panel value="niveaux" pt="md">
@@ -793,16 +788,6 @@ export function ProjetDetailPage() {
         )}
       </Modal>
 
-      <Modal
-        opened={trancheActiviteId !== null}
-        onClose={() => setTrancheActiviteId(null)}
-        title={`Suivi détaillé par période — ${trancheActiviteId?.libelle ?? ""}`}
-        size="xl"
-      >
-        {trancheActiviteId !== null && (
-          <TranchesPlanifieesTab activiteId={trancheActiviteId.id} unite={trancheActiviteId.unite_quantite} />
-        )}
-      </Modal>
     </Stack>
   );
 }

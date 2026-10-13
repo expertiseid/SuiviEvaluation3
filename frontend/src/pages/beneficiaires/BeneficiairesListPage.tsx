@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Pencil, Trash2, Upload } from "lucide-react";
+import { Download, Pencil, Trash2, Upload } from "lucide-react";
 import { Accordion, ActionIcon, Badge, Button, Group, Modal, Pagination, Stack, Table, Text, TextInput, Title, Tooltip } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
@@ -10,6 +10,7 @@ import { useStatutsParticuliers } from "../../api/referentiels";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
 import { messageErreurApi } from "../../utils/erreurs";
 import { BeneficiaireForm } from "./BeneficiaireForm";
+import { ExportBeneficiairesModal } from "./ExportBeneficiairesModal";
 import { ImportBeneficiairesModal } from "./ImportBeneficiairesModal";
 import type { Beneficiaire, StatutParticulier } from "../../types";
 
@@ -191,6 +192,8 @@ export function BeneficiairesListPage() {
     });
   }
 
+  const [modalExportOpen, setModalExportOpen] = useState(false);
+
   const actions: ActionsLigne = {
     statuts,
     onModifier: setBeneficiaireEnEdition,
@@ -203,6 +206,9 @@ export function BeneficiairesListPage() {
       <Group justify="space-between">
         <Title order={2}>Bénéficiaires</Title>
         <Group gap="xs">
+          <Button variant="light" leftSection={<Download size={16} />} onClick={() => setModalExportOpen(true)}>
+            Exporter
+          </Button>
           <Button variant="light" leftSection={<Upload size={16} />} onClick={() => setModalImportOpen(true)}>
             Importer depuis Excel
           </Button>
@@ -238,6 +244,12 @@ export function BeneficiairesListPage() {
         ))}
         <GroupeBeneficiaires valeur={CLE_SANS_PROJET} titre="Sans projet" search={searchDebounce} actions={actions} />
       </Accordion>
+
+      <ExportBeneficiairesModal
+        opened={modalExportOpen}
+        onClose={() => setModalExportOpen(false)}
+        projets={projetsTries}
+      />
 
       <Modal opened={modalOpen} onClose={() => setModalOpen(false)} title="Nouveau bénéficiaire" size="lg">
         <BeneficiaireForm onDone={() => setModalOpen(false)} />

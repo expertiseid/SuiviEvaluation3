@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from .constants import NIVEAU_ACCES_CHOICES, NIVEAU_ACCES_LECTURE_ECRITURE, ROLE_CHOICES
+from .constants import NIVEAU_ACCES_CHOICES, NIVEAU_ACCES_LECTURE_ECRITURE
 
 
 class User(AbstractUser):
@@ -12,7 +12,10 @@ class User(AbstractUser):
     toute dépendance circulaire de migration entre accounts et projects.
     """
 
-    role = models.CharField(max_length=32, choices=ROLE_CHOICES)
+    # Code d'un Role (référentiel modifiable par l'Administrateur) — gardé en
+    # simple texte plutôt qu'en clé étrangère : le code est comparé tel quel
+    # partout (permissions, notifications, frontend), voir constants.py.
+    role = models.CharField(max_length=32)
     niveau_acces = models.CharField(
         max_length=20,
         choices=NIVEAU_ACCES_CHOICES,
@@ -30,3 +33,36 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.get_full_name() or self.username
+
+
+class Role(models.Model):
+    """
+    Référentiel des rôles, géré par l'Administrateur (écran Utilisateurs >
+    Rôles). Les rôles « système » (constants.ROLE_CHOICES, créés par
+    migration) sont utilisés tels quels par le code (Administrateur,
+    destinataires de notifications...) : renommables, mais ni supprimables
+    ni recodables. Un rôle ajouté ne se distingue des autres que par sa
+    visibilité — les droits d'écriture dépendent du niveau d'accès de
+    chaque utilisateur, pas de son rôle.
+    """
+
+    code = models.CharField(max_length=32, unique=True)
+    libelle = models.CharField(max_length=100)
+    visibilite_globale = models.BooleanField(
+        default=False,
+        help_text="Voit tous les projets (sinon uniquement les projets/zones auxquels l'utilisateur est affecté).",
+    )
+    peut_personnaliser_tableau_de_bord = models.BooleanField(
+        default=False,
+        help_text="Peut choisir les blocs et types de graphiques du tableau de bord, pour tous les utilisateurs "
+        "(toujours vrai pour l'Administrateur).",
+    )
+    systeme = models.BooleanField(default=False, editable=False)
+
+    class Meta:
+        ordering = ("-systeme", "libelle")
+        verbose_name = "Rôle"
+        verbose_name_plural = "Rôles"
+
+    def __str__(self):
+        return self.libelle

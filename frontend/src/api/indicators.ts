@@ -142,6 +142,7 @@ export function useCreateValeurIndicateur() {
       queryClient.invalidateQueries({ queryKey: ["indicateurs", variables.indicateur] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["suivi-dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["tranches-planifiees"] });
     },
   });
 }
@@ -155,6 +156,7 @@ export function useUpdateValeurIndicateur() {
       queryClient.invalidateQueries({ queryKey: ["indicateurs"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["suivi-dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["tranches-planifiees"] });
     },
   });
 }
@@ -167,6 +169,7 @@ export function useDeleteValeurIndicateur() {
       queryClient.invalidateQueries({ queryKey: ["indicateurs"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["suivi-dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["tranches-planifiees"] });
     },
   });
 }

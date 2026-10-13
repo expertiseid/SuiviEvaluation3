@@ -7,11 +7,7 @@ standard add/change/delete/view.
 """
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 
-from apps.accounts.constants import (
-    NIVEAU_ACCES_LECTURE_ECRITURE,
-    ROLE_ADMIN,
-    ROLES_VISIBILITE_GLOBALE,
-)
+from apps.accounts.constants import NIVEAU_ACCES_LECTURE_ECRITURE, ROLE_ADMIN
 
 
 def peut_modifier(user) -> bool:
@@ -22,6 +18,17 @@ def peut_modifier(user) -> bool:
     visibilité (tous les projets ou seulement ceux affectés).
     """
     return user.role == ROLE_ADMIN or user.niveau_acces == NIVEAU_ACCES_LECTURE_ECRITURE
+
+
+def peut_personnaliser_tableau_de_bord(user) -> bool:
+    """Droit de configurer le tableau de bord pour tous : Administrateur, ou rôle ayant ce droit."""
+    from apps.accounts.models import Role
+
+    if not (user and user.is_authenticated):
+        return False
+    if user.role == ROLE_ADMIN:
+        return True
+    return Role.objects.filter(code=user.role, peut_personnaliser_tableau_de_bord=True).exists()
 
 
 class IsAdmin(BasePermission):
@@ -79,4 +86,9 @@ class HasGlobalVisibilityOrAssigned(BasePermission):
 
 
 def has_global_visibility(user) -> bool:
-    return user.role in ROLES_VISIBILITE_GLOBALE
+    """Visibilité définie par le rôle (référentiel Role, modifiable par l'Administrateur)."""
+    from apps.accounts.models import Role
+
+    if user.role == ROLE_ADMIN:
+        return True
+    return Role.objects.filter(code=user.role, visibilite_globale=True).exists()

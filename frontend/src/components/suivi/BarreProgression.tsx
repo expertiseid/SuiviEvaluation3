@@ -57,20 +57,20 @@ export function BarreProgression({
   });
 
   return (
-    <div>
+    <div style={{ marginBottom: 8 }}>
       {label && (
-        <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: 0.3 }}>
+        <Text size="sm" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: 0.3 }}>
           {label}
         </Text>
       )}
       <div
         style={{
           position: "relative",
-          height: 14,
-          marginTop: 4,
+          height: 18,
+          marginTop: 6,
           marginBottom: 2,
           background: "var(--mantine-color-gray-2)",
-          borderRadius: 7,
+          borderRadius: 9,
         }}
       >
         {segmentsPositionnes.map((s, i) => (
@@ -84,10 +84,10 @@ export function BarreProgression({
                 width: `${s.largeur}%`,
                 background: couleurBarre,
                 borderRight: i < segmentsPositionnes.length - 1 ? "2px solid var(--mantine-color-gray-2)" : "none",
-                borderTopLeftRadius: i === 0 ? 7 : 0,
-                borderBottomLeftRadius: i === 0 ? 7 : 0,
-                borderTopRightRadius: i === segmentsPositionnes.length - 1 ? 7 : 0,
-                borderBottomRightRadius: i === segmentsPositionnes.length - 1 ? 7 : 0,
+                borderTopLeftRadius: i === 0 ? 9 : 0,
+                borderBottomLeftRadius: i === 0 ? 9 : 0,
+                borderTopRightRadius: i === segmentsPositionnes.length - 1 ? 9 : 0,
+                borderBottomRightRadius: i === segmentsPositionnes.length - 1 ? 9 : 0,
               }}
             />
           </Tooltip>
@@ -118,11 +118,11 @@ export function BarreProgression({
         />
       </div>
       <Group justify="space-between" gap="xs">
-        <Text size="xs" fw={600}>
+        <Text size="md" fw={600}>
           {total} / {cible}{unite ? ` ${unite}` : ""}{tauxReel !== null ? ` · ${tauxReel}%` : ""}
         </Text>
         {attendu != null && (
-          <Text size="xs" c="dimmed">
+          <Text size="sm" c="dimmed">
             Attendu aujourd'hui : {Math.round(attendu)}{unite ? ` ${unite}` : ""}
           </Text>
         )}

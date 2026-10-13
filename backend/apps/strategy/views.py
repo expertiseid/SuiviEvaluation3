@@ -135,6 +135,62 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
         )
 
 
+    @action(detail=True, methods=["get"], url_path="recap-axes")
+    def recap_axes(self, request, pk=None):
+        """
+        Données de l'onglet « Axes & budgets » : les éléments du cadre et les
+        activités qui y sont rattachées (Activite.axe_strategique) — plus
+        celles des projets du cadre non encore rattachées à un élément. Le
+        regroupement par niveau (orientation, axe…) se fait à l'écran, un
+        élément cumulant les activités de ses sous-éléments. Limité aux
+        projets visibles par l'utilisateur.
+        """
+        from django.db.models import Q
+
+        cadre = self.get_object()
+        ids = visible_projets_ids(request.user)
+        elements = ElementStrategique.objects.filter(type_niveau__cadre_strategique=cadre).select_related("type_niveau")
+        activites = (
+            Activite.objects.filter(objectif_specifique__objectif_general__projet__id__in=ids)
+            .filter(
+                Q(axe_strategique__type_niveau__cadre_strategique=cadre)
+                | Q(objectif_specifique__objectif_general__projet__cadre_strategique=cadre, axe_strategique__isnull=True)
+            )
+            .select_related("objectif_specifique__objectif_general__projet")
+            .order_by("objectif_specifique__objectif_general__projet__code", "code_activite", "libelle")
+        )
+        return Response(
+            {
+                "elements": [
+                    {
+                        "id": e.id,
+                        "code": e.code,
+                        "nom": e.nom,
+                        "type_niveau": e.type_niveau_id,
+                        "ordre_niveau": e.type_niveau.ordre,
+                        "element_parent": e.element_parent_id,
+                    }
+                    for e in elements
+                ],
+                "activites": [
+                    {
+                        "id": a.id,
+                        "code": a.code_activite,
+                        "libelle": a.libelle,
+                        "projet_id": a.objectif_specifique.objectif_general.projet.id,
+                        "projet_code": a.objectif_specifique.objectif_general.projet.code,
+                        "axe": a.axe_strategique_id,
+                        "budget_alloue": a.budget_alloue,
+                        "budget_realise": a.budget_realise,
+                        "taux_physique": a.taux_realisation,
+                        "taux_financier": a.taux_execution_financiere,
+                    }
+                    for a in activites
+                ],
+            }
+        )
+
+
 class TypeNiveauViewSet(viewsets.ModelViewSet):
     queryset = TypeNiveau.objects.select_related("niveau_parent", "cadre_strategique")
     serializer_class = TypeNiveauSerializer

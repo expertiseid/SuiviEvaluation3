@@ -11,11 +11,14 @@ export function SaisieValeurIndicateurForm({
   indicateurId,
   valeurExistante,
   historiqueExistant,
+  bornes,
   onDone,
 }: {
   indicateurId: number;
   valeurExistante?: SuiviHistoriqueValeurIndicateur;
   historiqueExistant?: { id: number; valeur_realisee: string }[];
+  /** Saisie depuis le suivi par période : dates pré-remplies et limitées à la période. */
+  bornes?: { debut: string; fin: string };
   onDone: () => void;
 }) {
   const enEdition = !!valeurExistante;
@@ -23,8 +26,8 @@ export function SaisieValeurIndicateurForm({
   const updateValeur = useUpdateValeurIndicateur();
   const uploadPiece = useUploadPieceJustificative();
 
-  const [periodeDebut, setPeriodeDebut] = useState<string | null>(valeurExistante?.periode_debut ?? null);
-  const [periodeFin, setPeriodeFin] = useState<string | null>(valeurExistante?.periode_fin ?? null);
+  const [periodeDebut, setPeriodeDebut] = useState<string | null>(valeurExistante?.periode_debut ?? bornes?.debut ?? null);
+  const [periodeFin, setPeriodeFin] = useState<string | null>(valeurExistante?.periode_fin ?? bornes?.fin ?? null);
   const [valeur, setValeur] = useState<number | string>(valeurExistante?.valeur_realisee ?? "");
   const [commentaire, setCommentaire] = useState(valeurExistante?.commentaire ?? "");
   const [fichier, setFichier] = useState<File | null>(null);
@@ -73,8 +76,22 @@ export function SaisieValeurIndicateurForm({
   return (
     <Stack gap="sm">
       <Group grow>
-        <DateInput label="Début de période" value={periodeDebut} onChange={setPeriodeDebut} required />
-        <DateInput label="Fin de période" value={periodeFin} onChange={setPeriodeFin} required />
+        <DateInput
+          label="Début de période"
+          value={periodeDebut}
+          onChange={setPeriodeDebut}
+          minDate={bornes?.debut}
+          maxDate={bornes?.fin}
+          required
+        />
+        <DateInput
+          label="Fin de période"
+          value={periodeFin}
+          onChange={setPeriodeFin}
+          minDate={bornes?.debut}
+          maxDate={bornes?.fin}
+          required
+        />
       </Group>
       <NumberInput
         label="Valeur réalisée pendant cette période"

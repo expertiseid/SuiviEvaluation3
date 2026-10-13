@@ -16,16 +16,21 @@ export function HistoriqueSuiviTable({
   onEdit,
   onDelete,
   editable,
+  libelleStatut = "Statut",
+  messageVide = "Aucune saisie pour le moment.",
 }: {
   lignes: LigneHistoriqueSuivi[];
   onEdit?: (id: number) => void;
   onDelete?: (id: number) => void;
   editable: boolean;
+  /** En-tête de la dernière colonne (ex : « Commentaire » dans le suivi par période). */
+  libelleStatut?: string;
+  messageVide?: string;
 }) {
   if (lignes.length === 0) {
     return (
-      <Text size="xs" c="dimmed" mt={4}>
-        Aucune saisie pour le moment.
+      <Text size="sm" c="dimmed" mt={6}>
+        {messageVide}
       </Text>
     );
   }
@@ -36,7 +41,7 @@ export function HistoriqueSuiviTable({
   const aStatut = lignes.some((l) => l.statut);
 
   return (
-    <Table fz="xs" verticalSpacing={2} withRowBorders={false} mt={4}>
+    <Table fz="sm" verticalSpacing={4} withRowBorders={false} mt={6}>
       <Table.Thead>
         <Table.Tr>
           <Table.Th fw={600} c="dimmed" tt="none">Période</Table.Th>
@@ -44,7 +49,7 @@ export function HistoriqueSuiviTable({
           {aCumule && <Table.Th fw={600} c="dimmed" tt="none">Cumul</Table.Th>}
           {aDetail && <Table.Th fw={600} c="dimmed" tt="none">Budget</Table.Th>}
           {aAttendu && <Table.Th fw={600} c="dimmed" tt="none">Attendu</Table.Th>}
-          {aStatut && <Table.Th fw={600} c="dimmed" tt="none">Statut</Table.Th>}
+          {aStatut && <Table.Th fw={600} c="dimmed" tt="none">{libelleStatut}</Table.Th>}
           <Table.Th />
         </Table.Tr>
       </Table.Thead>
@@ -62,15 +67,15 @@ export function HistoriqueSuiviTable({
                 <Group gap={2} wrap="nowrap" justify="flex-end">
                   {onEdit && (
                     <Tooltip label="Modifier cette saisie">
-                      <ActionIcon size="xs" variant="subtle" onClick={() => onEdit(ligne.id)}>
-                        <Pencil size={11} />
+                      <ActionIcon size="sm" variant="subtle" onClick={() => onEdit(ligne.id)}>
+                        <Pencil size={14} />
                       </ActionIcon>
                     </Tooltip>
                   )}
                   {onDelete && (
                     <Tooltip label="Supprimer cette saisie">
-                      <ActionIcon size="xs" variant="subtle" color="red" onClick={() => onDelete(ligne.id)}>
-                        <Trash2 size={11} />
+                      <ActionIcon size="sm" variant="subtle" color="red" onClick={() => onDelete(ligne.id)}>
+                        <Trash2 size={14} />
                       </ActionIcon>
                     </Tooltip>
                   )}

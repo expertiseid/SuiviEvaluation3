@@ -5,6 +5,7 @@ import type {
   ElementStrategique,
   ImportStructurationResultat,
   Paginated,
+  RecapAxesCadreStrategique,
   RecapCadreStrategique,
   TypeNiveau,
 } from "../types";
@@ -133,6 +134,15 @@ export function useRecapCadreStrategique(id: number | undefined) {
   return useQuery({
     queryKey: ["cadres-strategiques", id, "recap"],
     queryFn: async () => (await apiClient.get<RecapCadreStrategique>(`/cadres-strategiques/${id}/recap/`)).data,
+    enabled: !!id,
+  });
+}
+
+export function useRecapAxesCadreStrategique(id: number | undefined) {
+  return useQuery({
+    queryKey: ["cadres-strategiques", id, "recap-axes"],
+    queryFn: async () =>
+      (await apiClient.get<RecapAxesCadreStrategique>(`/cadres-strategiques/${id}/recap-axes/`)).data,
     enabled: !!id,
   });
 }

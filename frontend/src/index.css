@@ -28,3 +28,13 @@ body {
   transform: translateY(-2px);
 }
 
+
+/* Écran de suivi d'un projet : tailles déjà agrandies composant par
+   composant, on y garde donc l'ancien barème de polices du thème. */
+.bareme-police-suivi {
+  --mantine-font-size-xs: 0.75rem;
+  --mantine-font-size-sm: 0.85rem;
+  --mantine-font-size-md: 0.9rem;
+  --mantine-font-size-lg: 1rem;
+  --mantine-font-size-xl: 1.15rem;
+}

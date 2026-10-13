@@ -14,6 +14,7 @@ export function SaisiePointSuiviForm({
   avecBudget,
   pointExistant,
   historiqueExistant,
+  bornes,
   onDone,
 }: {
   activiteId?: number;
@@ -22,13 +23,15 @@ export function SaisiePointSuiviForm({
   avecBudget: boolean;
   pointExistant?: SuiviHistoriquePoint;
   historiqueExistant?: { id: number; quantite_realisee: string | null }[];
+  /** Saisie depuis le suivi par période : dates pré-remplies et limitées à la période. */
+  bornes?: { debut: string; fin: string };
   onDone: () => void;
 }) {
   const enEdition = !!pointExistant;
   const createPoint = useCreatePointSuivi();
   const updatePoint = useUpdatePointSuivi();
-  const [periodeDebut, setPeriodeDebut] = useState<string | null>(pointExistant?.periode_debut ?? null);
-  const [periodeFin, setPeriodeFin] = useState<string | null>(pointExistant?.periode_fin ?? null);
+  const [periodeDebut, setPeriodeDebut] = useState<string | null>(pointExistant?.periode_debut ?? bornes?.debut ?? null);
+  const [periodeFin, setPeriodeFin] = useState<string | null>(pointExistant?.periode_fin ?? bornes?.fin ?? null);
   const [quantiteRealisee, setQuantiteRealisee] = useState<number | string>(pointExistant?.quantite_realisee ?? "");
   const [budgetRealise, setBudgetRealise] = useState<number | string>(pointExistant?.budget_realise ?? "");
   const [statut, setStatut] = useState<string | null>(pointExistant?.statut || null);
@@ -75,8 +78,22 @@ export function SaisiePointSuiviForm({
   return (
     <Stack gap="sm">
       <Group grow>
-        <DateInput label="Début de période" value={periodeDebut} onChange={setPeriodeDebut} required />
-        <DateInput label="Fin de période" value={periodeFin} onChange={setPeriodeFin} required />
+        <DateInput
+          label="Début de période"
+          value={periodeDebut}
+          onChange={setPeriodeDebut}
+          minDate={bornes?.debut}
+          maxDate={bornes?.fin}
+          required
+        />
+        <DateInput
+          label="Fin de période"
+          value={periodeFin}
+          onChange={setPeriodeFin}
+          minDate={bornes?.debut}
+          maxDate={bornes?.fin}
+          required
+        />
       </Group>
       <Group grow>
         <NumberInput

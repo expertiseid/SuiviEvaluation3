@@ -5,10 +5,10 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from apps.core.permissions import IsAdmin
+from apps.core.permissions import IsAdmin, IsAdminOrReadOnly
 
-from .models import User
-from .serializers import UserSerializer, UserWriteSerializer
+from .models import Role, User
+from .serializers import RoleSerializer, UserSerializer, UserWriteSerializer
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -45,3 +45,21 @@ class UserViewSet(viewsets.ModelViewSet):
                     "(valeurs saisies, documents, points de suivi...). Désactive-le plutôt (Actif = Non)."
                 }
             )
+
+
+class RoleViewSet(viewsets.ModelViewSet):
+    """Référentiel des rôles — lecture pour tous, gestion réservée à l'Administrateur."""
+
+    queryset = Role.objects.all()
+    serializer_class = RoleSerializer
+    permission_classes = (IsAdminOrReadOnly,)
+    pagination_class = None
+
+    def perform_destroy(self, instance):
+        if instance.systeme:
+            raise ValidationError({"detail": "Rôle système : il peut être renommé, mais pas supprimé."})
+        if User.objects.filter(role=instance.code).exists():
+            raise ValidationError(
+                {"detail": "Impossible de supprimer ce rôle : des utilisateurs l'ont encore. Change d'abord leur rôle."}
+            )
+        instance.delete()

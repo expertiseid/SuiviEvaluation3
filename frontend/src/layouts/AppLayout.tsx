@@ -93,7 +93,7 @@ export function AppLayout() {
                   {initiales(user.first_name || user.username)}
                 </Avatar>
                 <Text size="xs" c="teal.1">
-                  {user.first_name || user.username} · {user.role}
+                  {user.first_name || user.username} · {user.role_libelle || user.role}
                 </Text>
               </Group>
             )}

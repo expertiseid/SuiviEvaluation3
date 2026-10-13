@@ -116,6 +116,29 @@ export async function telechargerModeleImportBeneficiaires() {
   link.remove();
 }
 
+/**
+ * Export des bénéficiaires en Excel ou PDF : des projets choisis (codes
+ * passés pour nommer le fichier), ou de tous si la liste est vide.
+ */
+export async function telechargerExportBeneficiaires(
+  projets: { id: number; code: string }[],
+  fichier: "excel" | "pdf",
+) {
+  const response = await apiClient.get("/beneficiaires/exporter/", {
+    params: { fichier, ...(projets.length > 0 ? { projets: projets.map((p) => p.id).join(",") } : {}) },
+    responseType: "blob",
+  });
+  const nom = projets.length > 0 ? `beneficiaires_${projets.map((p) => p.code).join("_")}` : "beneficiaires_tous_projets";
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", `${nom}.${fichier === "pdf" ? "pdf" : "xlsx"}`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 export function useImporterBeneficiaires() {
   const queryClient = useQueryClient();
   return useMutation({

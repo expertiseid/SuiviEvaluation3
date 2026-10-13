@@ -46,7 +46,7 @@ export function TranchesPlanifieesTab({
   const [fin, setFin] = useState<string | null>(null);
   const [cible, setCible] = useState<number | string>("");
 
-  const sommeCibles = (tranches ?? []).reduce((total, t) => total + Number(t.cible), 0);
+  const sommeCibles = (tranches ?? []).reduce((total, t) => total + Number(t.cible ?? 0), 0);
 
   async function ajouter() {
     if (!libelle.trim() || !debut || !fin || cible === "") {
@@ -126,7 +126,7 @@ export function TranchesPlanifieesTab({
                     </Table.Td>
                     <Table.Td style={{ minWidth: 160 }}>
                       <Text size="xs" mb={2}>
-                        {t.realise ?? 0} / {t.cible}{unite ? ` ${unite}` : ""}{t.taux !== null ? ` · ${t.taux}%` : ""}
+                        {t.realise ?? 0} / {t.cible ?? "—"}{unite ? ` ${unite}` : ""}{t.taux !== null ? ` · ${t.taux}%` : ""}
                       </Text>
                       <Progress value={t.taux ?? 0} color={TONE_STATUT[t.statut] === "danger" ? "red" : TONE_STATUT[t.statut] === "success" ? "green" : "blue"} size="sm" />
                     </Table.Td>

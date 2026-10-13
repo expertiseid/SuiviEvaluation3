@@ -22,6 +22,7 @@ from .serializers import (
 )
 from .services.deletion import supprimer_beneficiaire_cascade
 from .services.duplicate_detection import rechercher_doublons
+from .services.export_excel import exporter_beneficiaires, exporter_beneficiaires_pdf
 from .services.import_excel import generer_modele_import, importer_beneficiaires
 
 
@@ -83,6 +84,41 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
             contenu, content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
         response["Content-Disposition"] = "attachment; filename=modele_import_beneficiaires.xlsx"
+        return response
+
+    @action(detail=False, methods=["get"], url_path="exporter")
+    def exporter(self, request):
+        """
+        Export Excel ou PDF (?fichier=excel|pdf — « format » est réservé par DRF) : ?projets=1,3 pour un ou
+        plusieurs projets, sinon tous les bénéficiaires (une feuille/section
+        par projet, plus « Sans projet »).
+        """
+        from apps.projects.models import Projet
+        from apps.projects.queryset_filters import visible_projets_ids
+
+        projets_visibles = Projet.objects.filter(id__in=visible_projets_ids(request.user)).order_by("code")
+        ids = [i for i in request.query_params.get("projets", "").split(",") if i.strip().isdigit()]
+        queryset = self.filter_queryset(self.get_queryset())
+        if ids:
+            projets = list(projets_visibles.filter(id__in=ids))
+            if len(projets) != len(set(ids)):
+                raise ValidationError({"projets": "Projet introuvable ou non accessible."})
+            queryset = queryset.filter(participations__projet__in=projets).distinct()
+            nom = "beneficiaires_" + "_".join(p.code for p in projets)
+            tous = False
+        else:
+            projets, nom, tous = list(projets_visibles), "beneficiaires_tous_projets", True
+
+        if request.query_params.get("fichier") == "pdf":
+            contenu = exporter_beneficiaires_pdf(queryset, projets, inclure_sans_projet=tous)
+            response = HttpResponse(contenu, content_type="application/pdf")
+            response["Content-Disposition"] = f"attachment; filename={nom}.pdf"
+            return response
+        response = HttpResponse(
+            exporter_beneficiaires(queryset, projets, inclure_sans_projet=tous),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = f"attachment; filename={nom}.xlsx"
         return response
 
     @action(
