@@ -14,6 +14,7 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 from apps.core.vocabulaire import v
+from apps.projects.taux import libelle_methode
 
 from .services import construire_dashboard_suivi, ecart_texte, taux_de, valeur_attendue_a
 
@@ -155,6 +156,7 @@ def exporter_suivi_excel(projet) -> bytes:
         "Code",
         "Libellé",
         "Statut",
+        "Méthode de calcul",
         "Début",
         "Fin",
         "Valeur de référence",
@@ -170,12 +172,15 @@ def exporter_suivi_excel(projet) -> bytes:
     ]
     _entete(ws_act, colonnes)
     for activite in data["activites"]:
-        cible = activite["quantite_prevue"]
+        # Taux hors quantités (tâches, jalons, livrables, binaire, manuel, agrégé) : pas de
+        # quantités ni d'attendu en quantité, le taux vient de la méthode.
+        par_quantite = activite["methode_calcul_effective"] == "QUANTITE"
+        cible = activite["quantite_prevue"] if par_quantite else None
         depart = activite["valeur_reference"] or 0
         debut = activite["date_debut"]
         fin = activite["date_fin"]
         budget = activite["budget_alloue"]
-        realise = activite["historique"][-1]["quantite_cumulee"] if activite["historique"] else None
+        realise = activite["historique"][-1]["quantite_cumulee"] if activite["historique"] and par_quantite else None
         budget_realise = activite["historique"][-1]["budget_cumule"] if activite["historique"] else None
         attendu_phys = valeur_attendue_a(aujourdhui, debut, fin, depart, cible) if debut and fin and cible else None
         attendu_fin = valeur_attendue_a(aujourdhui, debut, fin, 0, budget) if debut and fin and budget else None
@@ -184,11 +189,12 @@ def exporter_suivi_excel(projet) -> bytes:
                 activite["code_activite"],
                 activite["libelle"],
                 STATUT_ACTIVITE_LABEL.get(activite["statut"], activite["statut"]),
+                libelle_methode(activite["methode_calcul_effective"]),
                 debut,
                 fin,
                 float(depart),
                 float(cible) if cible is not None else None,
-                activite["unite_quantite"],
+                activite["unite_quantite"] if par_quantite else "%",
                 float(realise) if realise is not None else None,
                 activite["taux_realisation"],
                 round(attendu_phys, 1) if attendu_phys is not None else None,
@@ -198,7 +204,7 @@ def exporter_suivi_excel(projet) -> bytes:
                 round(attendu_fin, 1) if attendu_fin is not None else None,
             ]
         )
-    _largeurs(ws_act, [12, 38, 14, 12, 12, 14, 14, 10, 14, 14, 18, 16, 18, 14, 18])
+    _largeurs(ws_act, [12, 38, 14, 24, 12, 12, 14, 14, 10, 14, 14, 18, 16, 18, 14, 18])
 
     # ---------- Activités — historique ----------
     ws_act_hist = wb.create_sheet("Activités — historique")
@@ -221,13 +227,14 @@ def exporter_suivi_excel(projet) -> bytes:
     ]
     _entete(ws_act_hist, colonnes)
     for activite in data["activites"]:
-        cible = activite["quantite_prevue"]
+        par_quantite = activite["methode_calcul_effective"] == "QUANTITE"
+        cible = activite["quantite_prevue"] if par_quantite else None
         depart = activite["valeur_reference"] or 0
         debut = activite["date_debut"]
         fin = activite["date_fin"]
         budget = activite["budget_alloue"]
         for h in activite["historique"]:
-            cumule = h["quantite_cumulee"]
+            cumule = h["quantite_cumulee"] if par_quantite else None
             attendu = valeur_attendue_a(h["periode_fin"], debut, fin, depart, cible) if debut and fin and cible else None
             budget_cumule = h["budget_cumule"]
             attendu_budget = (
@@ -238,7 +245,7 @@ def exporter_suivi_excel(projet) -> bytes:
                     activite["libelle"],
                     h["periode_debut"],
                     h["periode_fin"],
-                    float(h["quantite_realisee"]) if h["quantite_realisee"] is not None else None,
+                    float(h["quantite_realisee"]) if h["quantite_realisee"] is not None and par_quantite else None,
                     float(cumule) if cumule is not None else None,
                     taux_de(cumule, cible),
                     round(attendu, 1) if attendu is not None else None,

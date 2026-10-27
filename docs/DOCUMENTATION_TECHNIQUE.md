@@ -308,6 +308,32 @@ dans `apps/projects/test_taux.py`. Rien n'est stocké : tout est recalculé à l
   Excel prérempli à compléter hors ligne ; import en deux temps (aperçu sans enregistrement,
   puis import des lignes valides), erreurs par cellule, rapport d'erreurs Excel, mode
   « ajouter » (aucun écrasement) ou « mettre à jour » (ancienne → nouvelle valeur, historique).
+- **Taux à une date** (`ArbreTaux(projet, a_la_date=…)`) : où en était chaque élément à une
+  date passée — saisies de suivi datées, historique des modifications (avancement des tâches,
+  achèvement des jalons), date de validation des livrables, taux manuels datés. Méthodes,
+  poids et quantités prévues : ceux d'aujourd'hui.
+- **Suivi et planification par période** (`construire_planification_periode`) : élément
+  « Par quantité » → objectif et réalisé en quantité sur la période ; toute autre méthode et
+  niveaux agrégés (mode `avancement`) → objectif = avancement visé à la fin de la période
+  (%), réalisé = taux atteint à cette date (ou aujourd'hui si la période est en cours).
+- **Pages et exports** : page Suivi (barre, méthode expliquée et modifiable, saisie adaptée),
+  exports PDF/Excel du suivi global et de la période affichent la méthode et un avancement
+  en % pour les éléments hors quantité.
+
+### 5.8 bis Budgets sans double compte
+
+Module : `apps/projects/budgets.py` (tests : `apps/projects/test_budgets.py`). Un budget peut
+être saisi à n'importe quel niveau ; dans chaque branche, **seul compte le budget du niveau
+le plus bas où il est saisi** (règle appliquée séparément au budget alloué et au dépensé).
+Le budget d'un niveau dont le détail est saisi en dessous sert de contrôle : avertissement
+(`budget_avertissements` de l'API des activités, affiché dans l'arbre de planification) si
+la somme d'en dessous le dépasse, ou si une partie n'est répartie nulle part (non comptée).
+
+Appliqué à : taux d'exécution financière du projet (`reports.services`), tableau de bord
+consolidé (budgets et dépenses par mois), récapitulatif du cadre stratégique, onglet
+« Axes & budgets » (`budget_alloue_compte` / `budget_realise_compte` ; moyennes de taux sur
+les éléments les plus bas de chaque groupe, via `ancetres`) et totaux d'une période
+(budgets et taux physique de la période).
 
 ### 5.9 Menu et vocabulaire personnalisables
 

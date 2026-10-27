@@ -12,12 +12,26 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font
 
 from apps.core.vocabulaire import v
+from apps.projects.taux import libelle_methode
 
 from .export_excel import _entete, _largeurs
 from .export_pdf import _badge, _barre_progression, _fmt, _fmt_date, _fmt_pct
 from .services import SOURCE_SAISIE, construire_planification_periode, ecart_texte, taux_de, valeur_attendue_a
 
 STATUT_COULEUR = {"Atteinte": "#0ca30c", "En retard": "#d03b3b", "En cours": "#1c7ed6"}
+
+NOTE_AVANCEMENT = (
+    "Éléments calculés autrement que par quantité (tâches, jalons, livrables, binaire, saisie manuelle, "
+    "niveaux agrégés) : objectif et réalisé sont l'avancement en % à la fin de la période."
+)
+
+
+def _methode(ligne):
+    return libelle_methode(ligne["methode"]) if ligne.get("methode") else ""
+
+
+def _avancement(ligne):
+    return ligne.get("mode") == "avancement"
 
 
 def _titre(data):
@@ -45,12 +59,13 @@ def exporter_periode_excel(periode) -> bytes:
         ]
     )
     feuille.cell(row=2, column=1).font = Font(italic=True, color="666666")
-    feuille.append([])
+    feuille.append([NOTE_AVANCEMENT])
+    feuille.cell(row=3, column=1).font = Font(italic=True, color="666666")
     colonnes = [
-        "Niveau", "Code", "Libellé", "Unité",
-        "Quantité globale", "Budget global (FCFA)", "Dates globales",
-        "Quantité prévue période", "Budget prévu période (FCFA)", "Dates prévues période",
-        "Quantité réalisée période", "Taux physique (%)", "Budget réalisé période (FCFA)", "Taux financier (%)",
+        "Niveau", "Code", "Libellé", "Méthode de calcul", "Unité",
+        "Objectif global", "Budget global (FCFA)", "Dates globales",
+        "Objectif période", "Budget prévu période (FCFA)", "Dates prévues période",
+        "Réalisé période", "Taux physique (%)", "Budget réalisé période (FCFA)", "Taux financier (%)",
         "Statut", "Commentaire",
     ]
     _entete(feuille, colonnes, ligne=4)
@@ -65,6 +80,7 @@ def exporter_periode_excel(periode) -> bytes:
                 ligne["niveau"],
                 ligne["code"],
                 ligne["libelle"],
+                _methode(ligne),
                 ligne["unite"],
                 ligne["global_quantite"],
                 ligne["global_budget"],
@@ -84,7 +100,7 @@ def exporter_periode_excel(periode) -> bytes:
         if not planifie:
             for cellule in feuille[feuille.max_row]:
                 cellule.font = Font(color="888888")
-    _largeurs(feuille, [16, 10, 50, 12, 12, 16, 24, 14, 18, 24, 14, 10, 18, 10, 16, 40])
+    _largeurs(feuille, [16, 10, 50, 22, 12, 12, 16, 24, 14, 18, 24, 14, 10, 18, 10, 16, 40])
 
     feuille_indic = wb.create_sheet(v('Indicateurs'))
     _entete(
@@ -153,7 +169,8 @@ def exporter_periode_pdf(periode) -> bytes:
             "<tr>"
             f'<td {cellule}><div style="padding-left:{ligne["profondeur"] * 12}px;">'
             f'<span style="color:#7048e8;font-size:8px;text-transform:uppercase;">{escape(ligne["niveau"])}</span><br>'
-            f"{code}{escape(ligne['libelle'])}</div></td>"
+            f"{code}{escape(ligne['libelle'])}"
+            f'<br><span style="color:#666;font-size:8px;">{escape(_methode(ligne))}</span></div></td>'
             f"<td {cellule}>{globale}</td>"
             f"{valeurs(ligne, ligne['unite'], ligne['type'] == 'activite')}"
             "</tr>"
@@ -192,6 +209,7 @@ def exporter_periode_pdf(periode) -> bytes:
         Généré le {aujourdhui.strftime('%d/%m/%Y')} · budget prévu : <b>{_fmt(totaux['budget_prevu'], 0)} FCFA</b>
         · réalisé : <b>{_fmt(totaux['budget_realise'], 0)} FCFA</b>
         · objectifs définis pour {totaux['nb_definis']} élément(s) sur {totaux['nb_elements']}
+        <br>{NOTE_AVANCEMENT}
       </div>
       <h3>{v('Planification')}</h3>
       <table>{entete_tableau.format("Élément")}{"".join(lignes_html)}</table>
@@ -237,9 +255,13 @@ def _fenetre(element, data):
 
 
 def _historique_periode(element, data):
-    """Saisies de la période avec cumul (dans la période), taux, attendu et écart — comme l'historique du suivi global."""
+    """
+    Saisies de la période avec cumul (dans la période), taux, attendu et écart — comme l'historique
+    du suivi global. Élément suivi en avancement (%) : les quantités ne font pas le taux, pas de
+    cumul ni d'attendu en quantité.
+    """
     debut, fin = _fenetre(element, data)
-    cible = element["prevu_quantite"]
+    cible = None if _avancement(element) else element["prevu_quantite"]
     budget = element.get("prevu_budget")
     cumul = 0.0
     cumul_budget = 0.0
@@ -251,13 +273,13 @@ def _historique_periode(element, data):
         lignes.append(
             {
                 **s,
-                "cumul": cumul,
+                "cumul": None if _avancement(element) else cumul,
                 "taux_cumul": taux_de(cumul, cible),
                 "cumul_budget": cumul_budget,
                 "taux_budget": taux_de(cumul_budget, budget),
                 "attendu": attendu,
                 "taux_attendu": taux_de(attendu, cible) if attendu is not None else None,
-                "ecart": ecart_texte(cumul, attendu, element["unite"]),
+                "ecart": ecart_texte(cumul, attendu, element["unite"]) if attendu is not None else "",
             }
         )
     return lignes
@@ -275,7 +297,8 @@ def exporter_suivi_periode_excel(periode) -> bytes:
     resume.cell(row=1, column=1).font = Font(bold=True, size=14)
     resume.append([f"Généré le {aujourdhui.strftime('%d/%m/%Y')}"])
     resume.cell(row=2, column=1).font = Font(italic=True, color="666666")
-    resume.append([])
+    resume.append([NOTE_AVANCEMENT])
+    resume.cell(row=3, column=1).font = Font(italic=True, color="666666")
     _entete(resume, [v('Indicateur de la période'), "Valeur"], ligne=4)
     resume.append(["Exécution physique de la période (%)", totaux["taux_physique"] if totaux["taux_physique"] is not None else "—"])
     resume.append(["Exécution financière de la période (%)", totaux["taux_financier"] if totaux["taux_financier"] is not None else "—"])
@@ -292,7 +315,7 @@ def exporter_suivi_periode_excel(periode) -> bytes:
     _entete(
         feuille,
         [
-            "Niveau", "Code", "Libellé", "Unité", "Objectif période", "Réalisé période", "Taux physique (%)",
+            "Niveau", "Code", "Libellé", "Méthode de calcul", "Unité", "Objectif période", "Réalisé période", "Taux physique (%)",
             "Attendu aujourd'hui", "Budget prévu période (FCFA)", "Budget réalisé période (FCFA)",
             "Taux financier (%)", "Statut", "Nombre de saisies",
         ],
@@ -300,11 +323,13 @@ def exporter_suivi_periode_excel(periode) -> bytes:
     for l in elements:
         debut, fin = _fenetre(l, data)
         attendu = (
-            valeur_attendue_a(aujourdhui, debut, fin, 0, l["prevu_quantite"]) if l["prevu_quantite"] is not None else None
+            valeur_attendue_a(aujourdhui, debut, fin, 0, l["prevu_quantite"])
+            if l["prevu_quantite"] is not None and not _avancement(l)
+            else None
         )
         feuille.append(
             [
-                l["niveau"], l["code"], l["libelle"], l["unite"],
+                l["niveau"], l["code"], l["libelle"], _methode(l), l["unite"],
                 nombre(l["prevu_quantite"]), nombre(l["realise_quantite"]), l["taux"],
                 round(attendu, 1) if attendu is not None else None,
                 nombre(l.get("prevu_budget")), nombre(l.get("budget_realise")), l.get("taux_financier"),
@@ -312,7 +337,7 @@ def exporter_suivi_periode_excel(periode) -> bytes:
             ]
         )
         feuille.cell(row=feuille.max_row, column=3).alignment = Alignment(indent=l["profondeur"], wrap_text=True)
-    _largeurs(feuille, [16, 10, 46, 12, 14, 14, 12, 14, 18, 18, 12, 14, 12])
+    _largeurs(feuille, [16, 10, 46, 22, 12, 14, 14, 12, 14, 18, 18, 12, 14, 12])
 
     hist = wb.create_sheet("Activités — saisies")
     _entete(
@@ -385,6 +410,8 @@ def _bloc_suivi_periode(element, data, aujourdhui):
             f'{code}<strong style="font-size:{14 if est_sous else 15}px;">{escape(element["libelle"])}</strong>'
         )
         globale = f"Global : {_fmt(element['global_quantite'])} {unite}"
+        if element.get("methode"):
+            globale = f"Méthode : {escape(_methode(element))} · " + globale
         if avec_budget:
             globale += f" · {_fmt(element['global_budget'], 0)} FCFA"
 
@@ -395,6 +422,15 @@ def _bloc_suivi_periode(element, data, aujourdhui):
             f"<strong>{_fmt(element['realise_quantite'])} {unite}</strong>"
             + (f" · {_fmt(element['budget_realise'], 0)} FCFA" if avec_budget else "")
             + "</div>"
+        )
+    elif _avancement(element):
+        badge = _badge(element["statut"], couleur)
+        avancement = (
+            f'<div style="font-size:12px;color:#666;margin-top:4px;">Prévu sur la période : {_fmt_date(debut)} → {_fmt_date(fin)}</div>'
+            f'<div style="font-size:13px;margin-top:6px;">Avancement à la fin de la période : '
+            f"<strong>{_fmt(element['realise_quantite'])} % atteint pour {_fmt(cible)} % visé</strong> "
+            f"({_fmt_pct(element['taux'])} de l'objectif)</div>"
+            + _barre_progression(element["taux"], couleur)
         )
     else:
         badge = _badge(element["statut"], couleur)
@@ -417,23 +453,34 @@ def _bloc_suivi_periode(element, data, aujourdhui):
             )
 
     lignes = []
+    par_quantite = not _avancement(element)
     for h in reversed(_historique_periode(element, data)):
-        cellules = [
-            f"{_fmt_date(h['periode_debut'])} → {_fmt_date(h['periode_fin'])}",
-            f"{_fmt(h['quantite'])} {unite}",
-            f"{_fmt(h['cumul'])} {unite}" + (f" ({h['taux_cumul']}%)" if h["taux_cumul"] is not None else ""),
-        ]
+        cellules = [f"{_fmt_date(h['periode_debut'])} → {_fmt_date(h['periode_fin'])}"]
+        if par_quantite:
+            cellules += [
+                f"{_fmt(h['quantite'])} {unite}",
+                f"{_fmt(h['cumul'])} {unite}" + (f" ({h['taux_cumul']}%)" if h["taux_cumul"] is not None else ""),
+            ]
+        else:
+            cellules.append(STATUT_SAISIE_LABEL.get(h["statut"], h["statut"]) or "—")
         if avec_budget:
             cellules.append(f"{_fmt(h['budget'], 0)} FCFA" if h["budget"] else "—")
-        cellules.append(
-            f"{_fmt(h['attendu'], 0)} {unite} ({h['taux_attendu']}%)" + (f" · {escape(h['ecart'])}" if h["ecart"] else "")
-            if h["attendu"] is not None
-            else "—"
-        )
+        if par_quantite:
+            cellules.append(
+                f"{_fmt(h['attendu'], 0)} {unite} ({h['taux_attendu']}%)" + (f" · {escape(h['ecart'])}" if h["ecart"] else "")
+                if h["attendu"] is not None
+                else "—"
+            )
         cellules.append(escape(h["commentaire"]) if h["commentaire"] else "")
         tds = "".join(f'<td style="padding:4px 6px;border-bottom:1px solid #e5e5e5;">{c}</td>' for c in cellules)
         lignes.append(f"<tr>{tds}</tr>")
-    entetes = ["Saisie", "Quantité", "Cumul période"] + (["Budget"] if avec_budget else []) + ["Attendu", "Commentaire"]
+    entetes = (
+        ["Saisie"]
+        + (["Quantité", "Cumul période"] if par_quantite else ["Statut"])
+        + (["Budget"] if avec_budget else [])
+        + (["Attendu"] if par_quantite else [])
+        + ["Commentaire"]
+    )
     if lignes:
         ths = "".join(
             f'<th style="text-align:left;padding:4px 6px;border-bottom:2px solid #ccc;color:#666;font-size:11px;'

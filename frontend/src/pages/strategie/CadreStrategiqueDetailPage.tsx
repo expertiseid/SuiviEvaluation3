@@ -976,7 +976,7 @@ export function CadreStrategiqueDetailPage() {
               Axes &amp; budgets
             </Tabs.Tab>
             <Tabs.Tab value="recap" leftSection={<Wallet size={15} />}>
-              {voc("Projets &amp; budgets")}</Tabs.Tab>
+              {voc("Projets & budgets")}</Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="configuration" pt="md">

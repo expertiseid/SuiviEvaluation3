@@ -4,6 +4,7 @@ import { Alert, Badge, Button, Card, Group, Menu, Modal, Select, SimpleGrid, Sta
 import { notifications } from "@mantine/notifications";
 import { Link } from "react-router-dom";
 import { useDeleteValeurIndicateur } from "../../api/indicators";
+import { useAuth } from "../../auth/useAuth";
 import {
   telechargerExportSuiviPeriode,
   useDeletePointSuivi,
@@ -18,6 +19,9 @@ import { BarreProgression, toneDeTaux } from "../../components/suivi/BarreProgre
 import { EnTetePeriode } from "../../components/suivi/EnTetePeriode";
 import { HistoriqueSuiviTable } from "../../components/suivi/HistoriqueSuiviTable";
 import { SaisiePointSuiviForm } from "../../components/suivi/SaisiePointSuiviForm";
+import { SaisieSuiviMethode } from "../../components/suivi/SaisieSuiviMethode";
+import { libelleMethodeEffective } from "../../utils/methodesCalcul";
+import { ACTIVITE_STATUT_LABEL } from "../../utils/statusTones";
 import { messageErreurApi } from "../../utils/erreurs";
 import { fmt, fmtDate, nombre } from "../../utils/periode";
 import { correspond } from "../../utils/recherche";
@@ -77,6 +81,7 @@ function CarteSuiviPeriode({
   onSupprimer,
   retrait = 0,
   secondaire = false,
+  avancement = false,
 }: {
   v: ValeurElementPeriode;
   periode: PeriodePlanification;
@@ -91,6 +96,11 @@ function CarteSuiviPeriode({
   onSupprimer: (id: number) => void;
   retrait?: number;
   secondaire?: boolean;
+  /**
+   * Élément dont le taux ne vient pas des quantités : objectif = avancement visé à la fin de la
+   * période (%), réalisé = avancement atteint ; pas de cumul ni de courbe de quantités.
+   */
+  avancement?: boolean;
 }) {
   const cible = nombre(v.prevu_quantite);
   const budgetPrevu = avecBudget ? nombre(v.prevu_budget) : null;
@@ -139,7 +149,23 @@ function CarteSuiviPeriode({
         </Button>
       </Group>
 
-      {cible !== null ? (
+      {avancement ? (
+        cible !== null ? (
+          <BarreProgression
+            label={`Avancement atteint à la fin de la période (visé : ${fmt(cible)} %)`}
+            segments={[{ key: 0, valeur: nombre(v.realise_quantite) ?? 0, titre: `Atteint : ${fmt(v.realise_quantite)} %` }]}
+            cible={cible}
+            attendu={null}
+            unite="%"
+            tone={toneDeTaux(v.taux)}
+          />
+        ) : (
+          <Text size="md">
+            Avancement atteint à la fin de la période : <Text span fw={700}>{fmt(v.realise_quantite)} %</Text>
+            {avecBudget && ` · ${fmt(v.budget_realise)} FCFA`}
+          </Text>
+        )
+      ) : cible !== null ? (
         <BarreProgression
           label="Avancement physique sur la période"
           segments={historique.map((h) => ({
@@ -172,24 +198,26 @@ function CarteSuiviPeriode({
           tone={toneDeTaux(v.taux_financier)}
         />
       )}
-      <EvolutionChart
-        data={historique.map((h) => ({ date: h.periode_fin, valeur: h.cumul }))}
-        cible={cible}
-        unite={unite}
-        height={secondaire ? 120 : 160}
-      />
+      {!avancement && (
+        <EvolutionChart
+          data={historique.map((h) => ({ date: h.periode_fin, valeur: h.cumul }))}
+          cible={cible}
+          unite={unite}
+          height={secondaire ? 120 : 160}
+        />
+      )}
       <HistoriqueSuiviTable
         editable={editionActive}
         lignes={historique
           .map((h) => {
-            const attendu = fenetre ? valeurAttendueA(h.periode_fin, fenetre) : null;
+            const attendu = fenetre && !avancement ? valeurAttendueA(h.periode_fin, fenetre) : null;
             const tauxCumul = tauxDe(h.cumul, cible);
             const ecart = ecartTexte(h.cumul, attendu, unite);
             return {
               id: h.id,
               periode: `${fmtDate(h.periode_debut)} → ${fmtDate(h.periode_fin)}`,
-              valeur: `${fmt(h.quantite)} ${unite}`,
-              cumule: `${fmt(h.cumul)} ${unite}${tauxCumul !== null ? ` (${tauxCumul}%)` : ""}`,
+              valeur: avancement ? undefined : `${fmt(h.quantite)} ${unite}`,
+              cumule: avancement ? undefined : `${fmt(h.cumul)} ${unite}${tauxCumul !== null ? ` (${tauxCumul}%)` : ""}`,
               detail:
                 avecBudget && h.budget
                   ? `${fmt(h.budget)} FCFA — cumul ${fmt(h.cumulBudget)}` +
@@ -199,11 +227,15 @@ function CarteSuiviPeriode({
                 attendu !== null
                   ? `${Math.round(attendu)} ${unite} (${tauxDe(attendu, cible)}%)${ecart ? " · " + ecart : ""}`
                   : undefined,
-              statut: h.commentaire || undefined,
+              statut: avancement
+                ? [ACTIVITE_STATUT_LABEL[h.statut as keyof typeof ACTIVITE_STATUT_LABEL] ?? h.statut, h.commentaire]
+                    .filter(Boolean)
+                    .join(" — ") || undefined
+                : h.commentaire || undefined,
             };
           })
           .reverse()}
-        libelleStatut="Commentaire"
+        libelleStatut={avancement ? "Statut / commentaire" : "Commentaire"}
         messageVide="Aucune saisie sur cette période."
         onEdit={onModifier}
         onDelete={onSupprimer}
@@ -240,6 +272,8 @@ export function SuiviPeriodeTab({
   const deleteValeur = useDeleteValeurIndicateur();
   const [saisie, setSaisie] = useState<Saisie | null>(null);
   const [recherche, setRecherche] = useState("");
+  const { user } = useAuth();
+  const peutSaisir = !!user && (user.role === "ADMIN" || user.niveau_acces === "LECTURE_ECRITURE");
 
   useEffect(() => {
     if (!periodes || periodes.length === 0) {
@@ -412,10 +446,13 @@ export function SuiviPeriodeTab({
                     </>
                   }
                   globale={
-                    `Global : ${fmt(ligne.global_quantite)} ${ligne.unite}` +
+                    (ligne.mode === "avancement"
+                      ? `Méthode : ${libelleMethodeEffective(ligne.methode)} · objectif en avancement (%)`
+                      : `Global : ${fmt(ligne.global_quantite)} ${ligne.unite}`) +
                     (estActivite ? ` · ${fmt(ligne.global_budget)} FCFA` : "")
                   }
                   unite={ligne.unite}
+                  avancement={ligne.mode === "avancement"}
                   avecBudget={estActivite}
                   editionActive={editionActive}
                   libelleBouton={voc("Saisir un suivi")}
@@ -478,6 +515,8 @@ export function SuiviPeriodeTab({
             bornes={bornes}
             onDone={() => setSaisie(null)}
           />
+        ) : saisie?.type === "activite" && !saisie.point && lignes.find((l) => l.type === "activite" && l.id === saisie.id)?.mode === "avancement" ? (
+          <SaisieSuiviMethode activiteId={saisie.id} modifiable={peutSaisir} bornes={bornes} onDone={() => setSaisie(null)} />
         ) : saisie ? (
           <SaisiePointSuiviForm
             activiteId={saisie.type === "activite" ? saisie.id : undefined}
@@ -486,6 +525,10 @@ export function SuiviPeriodeTab({
             avecBudget={saisie.type === "activite"}
             historiqueExistant={historiques.get(`${saisie.type}-${saisie.id}`)}
             pointExistant={saisie.point}
+            avecQuantite={
+              saisie.type !== "activite" ||
+              lignes.find((l) => l.type === "activite" && l.id === saisie.id)?.mode !== "avancement"
+            }
             bornes={bornes}
             onDone={() => setSaisie(null)}
           />

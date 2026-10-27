@@ -9,6 +9,7 @@ import datetime
 from django.utils.html import escape
 
 from apps.core.vocabulaire import v
+from apps.projects.taux import libelle_methode
 
 from .services import construire_dashboard_suivi, ecart_texte, taux_de, valeur_attendue_a
 
@@ -183,7 +184,10 @@ def _bloc_sous_activite(sa, aujourdhui):
 
 
 def _bloc_activite(activite, aujourdhui):
-    cible = activite["quantite_prevue"]
+    # Taux hors quantités (tâches, jalons, livrables, binaire, manuel, agrégé) : la barre
+    # suit la méthode, l'historique montre statut et budget sans quantités.
+    par_quantite = activite["methode_calcul_effective"] == "QUANTITE"
+    cible = activite["quantite_prevue"] if par_quantite else None
     depart = activite["valeur_reference"] or 0
     debut = activite["date_debut"]
     fin = activite["date_fin"]
@@ -197,7 +201,16 @@ def _bloc_activite(activite, aujourdhui):
     palier_activite = activite.get("palier_actuel")
     couleur_activite = palier_activite["couleur"] if palier_activite else "#1c7ed6"
 
-    avancement = ""
+    avancement = (
+        f'<div style="font-size:12px;color:#666;margin-top:2px;">Méthode de calcul : '
+        f"{escape(libelle_methode(activite['methode_calcul_effective']))}</div>"
+    )
+    if not par_quantite:
+        avancement += (
+            f'<div style="font-size:13px;margin-top:4px;">Avancement physique : '
+            f"<strong>{_fmt_pct(activite['taux_realisation'])}</strong></div>"
+            + _barre_progression(activite["taux_realisation"], couleur_activite)
+        )
     if cible is not None:
         avancement += (
             f'<div style="font-size:13px;margin-top:4px;">Avancement physique : '
@@ -221,6 +234,18 @@ def _bloc_activite(activite, aujourdhui):
 
     lignes = []
     for h in reversed(activite["historique"]):
+        if not par_quantite:
+            lignes.append(
+                _ligne_historique(
+                    [
+                        f"{_fmt_date(h['periode_debut'])} → {_fmt_date(h['periode_fin'])}",
+                        f"{_fmt(h['budget_realise'], 0)} FCFA" if h["budget_realise"] else "—",
+                        escape(STATUT_ACTIVITE_LABEL.get(h["statut"], h["statut"] or "")),
+                        escape(h["commentaire"] or ""),
+                    ]
+                )
+            )
+            continue
         cumule = h["quantite_cumulee"]
         attendu_ligne = valeur_attendue_a(h["periode_fin"], debut, fin, depart, cible) if debut and fin and cible else None
         ecart = ecart_texte(cumule, attendu_ligne, activite["unite_quantite"])
@@ -257,7 +282,7 @@ def _bloc_activite(activite, aujourdhui):
       </div>
       <div style="font-size:12px;color:#666;margin-top:2px;">{planifie}</div>
       {avancement}
-      {_table_historique(["Période", "Quantité", "Cumul", "Budget", "Attendu", "Statut"], lignes)}
+      {_table_historique(["Période", "Quantité", "Cumul", "Budget", "Attendu", "Statut"] if par_quantite else ["Période", "Budget", "Statut", "Commentaire"], lignes)}
       {sous_activites_html}
     </div>
     """

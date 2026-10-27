@@ -6,7 +6,6 @@ partenaires de consortium et de mise en œuvre, cibles.
 from collections import defaultdict
 from decimal import Decimal
 
-from django.db.models import Sum
 
 from apps.partners.models import Financement
 
@@ -70,17 +69,18 @@ def repartitions_projets(projets):
             par_bailleur[p.partenaire_bailleur.nom]["montant"] += part
             finance_par_projet[p.id] += part
 
+    from apps.projects.budgets import total_budget
     from apps.projects.models import Activite
 
-    budget_activites = Activite.objects.filter(projet__id__in=ids).aggregate(
-        alloue=Sum("budget_alloue"), depense=Sum("budget_realise")
+    activites_budget = list(
+        Activite.objects.filter(projet__id__in=ids).only("id", "activite_parent_id", "budget_alloue", "budget_realise")
     )
     budget = {
         "total": sum((p.budget_total for p in projets), Decimal("0")),
         "fonds_propres": sum((p.fonds_propres for p in projets), Decimal("0")),
         "financements_bailleurs": sum(finance_par_projet.values(), Decimal("0")),
-        "alloue_activites": budget_activites["alloue"] or Decimal("0"),
-        "depense_activites": budget_activites["depense"] or Decimal("0"),
+        "alloue_activites": total_budget(activites_budget, "budget_alloue"),
+        "depense_activites": total_budget(activites_budget, "budget_realise"),
         "par_projet": [
             {
                 "code": p.code,

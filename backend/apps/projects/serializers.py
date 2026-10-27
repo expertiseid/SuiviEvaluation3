@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.core.vocabulaire import v
 
+from .budgets import avertissements_budget
 from .models import Activite, Equipe, JalonLivrable, NiveauActivite, ParametresCalcul, Projet, SousActivite, TauxManuel
 from .taux import ArbreTaux
 
@@ -85,6 +86,7 @@ class ActiviteSerializer(serializers.ModelSerializer):
     taux_realisation = serializers.SerializerMethodField()
     methode_calcul_effective = serializers.SerializerMethodField()
     taux_avertissements = serializers.SerializerMethodField()
+    budget_avertissements = serializers.SerializerMethodField()
     taux_execution_financiere = serializers.ReadOnlyField()
     alerte_retard = serializers.ReadOnlyField()
 
@@ -127,6 +129,7 @@ class ActiviteSerializer(serializers.ModelSerializer):
             "poids",
             "methode_calcul_effective",
             "taux_avertissements",
+            "budget_avertissements",
             "jalons_livrables",
             "taux_execution_financiere",
             "alerte_retard",
@@ -152,6 +155,15 @@ class ActiviteSerializer(serializers.ModelSerializer):
 
     def get_taux_avertissements(self, obj):
         return self._resultat_taux(obj).avertissements
+
+    def get_budget_avertissements(self, obj):
+        """Contrôle du budget d'un niveau dont le détail est saisi en dessous (apps.projects.budgets)."""
+        controles = self.context.setdefault("controles_budget", {})
+        if obj.projet_id not in controles:
+            controles[obj.projet_id] = avertissements_budget(
+                Activite.objects.filter(projet_id=obj.projet_id).only("id", "activite_parent_id", "budget_alloue")
+            )
+        return controles[obj.projet_id].get(obj.id, [])
 
     def get_jalons_livrables(self, obj):
         return JalonLivrableSerializer(obj.jalons_livrables.all(), many=True).data

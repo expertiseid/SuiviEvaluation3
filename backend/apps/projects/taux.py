@@ -42,8 +42,24 @@ Agrégation (élément avec des éléments en dessous, et projet)
 
 Les éléments non calculables sont ignorés. Avec « plafonner » (réglage de l'organisation,
 activé par défaut), un taux supérieur à 100 % compte pour 100 % dans une agrégation.
+
+Taux à une date (ArbreTaux(projet, a_la_date=...))
+--------------------------------------------------
+Sert au suivi par période : où en était chaque élément à la fin de la période. Méthodes,
+poids et quantités prévues sont ceux d'aujourd'hui ; seules les réalisations sont datées :
+- quantités réalisées et statut : saisies de suivi dont la période se termine au plus tard
+  à cette date (statut de la dernière saisie qui en indique un, sinon celui enregistré à
+  cette date dans l'historique) ;
+- avancement des tâches, achèvement des jalons : valeur enregistrée à cette date
+  (historique des modifications) ; une tâche ou un jalon enregistré après cette date compte
+  avec un avancement nul (les poids restent ceux d'aujourd'hui) ;
+- livrables : validés à cette date (date de validation) ;
+- saisie manuelle : dernier taux daté au plus tard de ce jour.
 """
+import datetime
+from collections import defaultdict
 from dataclasses import dataclass, field
+from decimal import Decimal
 
 from .models import JalonLivrable, MethodeAgregation, MethodeCalcul, ParametresCalcul, SousActivite
 
@@ -53,6 +69,15 @@ class ResultatTaux:
     taux: float | None  # taux affiché (réel, peut dépasser 100), arrondi à 0,1
     methode: str  # méthode appliquée, ou "AGREGATION"
     avertissements: list[str] = field(default_factory=list)
+
+
+def libelle_methode(methode) -> str:
+    """Libellé d'une méthode appliquée (ResultatTaux.methode), pour les exports."""
+    from apps.core.vocabulaire import v
+
+    if methode == "AGREGATION":
+        return v("Agrégé des éléments en dessous")
+    return MethodeCalcul(methode).label
 
 
 def _arrondi(valeur):
@@ -79,12 +104,102 @@ def _avertissement_poids(total, quoi):
     return []
 
 
-def avancement_sous_activite(sa) -> float:
+def avancement_sous_activite(sa, quantite_realisee=None, statut=None) -> float:
+    quantite_realisee = sa.quantite_realisee if quantite_realisee is None else quantite_realisee
+    statut = sa.statut if statut is None else statut
     if sa.avancement is not None:
         return float(sa.avancement)
     if sa.quantite_prevue:
-        return min(100.0, float(sa.quantite_realisee or 0) / float(sa.quantite_prevue) * 100)
-    return 100.0 if sa.statut == SousActivite.Statut.TERMINEE else 0.0
+        return min(100.0, float(quantite_realisee or 0) / float(sa.quantite_prevue) * 100)
+    return 100.0 if statut == SousActivite.Statut.TERMINEE else 0.0
+
+
+def _etat_historique(modele, ids, instant):
+    """
+    {id: enregistrement historique à cet instant} pour les objets qui existaient alors.
+    Les objets sans aucun historique (créés hors de l'application) gardent leur état actuel :
+    ils sont absents du résultat et de `ids_avec_historique`.
+    """
+    etats, avec_historique = {}, set()
+    for h in modele.history.filter(id__in=ids).order_by("id", "-history_date", "-history_id"):
+        avec_historique.add(h.id)
+        if h.id not in etats and h.history_date <= instant:
+            etats[h.id] = h
+    return {i: h for i, h in etats.items() if h.history_type != "-"}, avec_historique
+
+
+class _EtatALaDate:
+    """Réalisations des éléments d'un projet telles qu'elles étaient à une date (voir en tête)."""
+
+    def __init__(self, projet, elements, date):
+        from django.db.models import Q
+        from django.utils import timezone
+
+        from apps.suivi.models import PointSuivi
+
+        from .models import Activite
+
+        self.date = date
+        instant = timezone.make_aware(datetime.datetime.combine(date, datetime.time.max))
+        self.quantites = defaultdict(lambda: Decimal("0"))
+        self.statuts = {}
+        points = PointSuivi.objects.filter(
+            Q(activite__projet=projet) | Q(sous_activite__activite__projet=projet), periode_fin__lte=date
+        ).order_by("periode_fin", "id")
+        for p in points:
+            cle = ("A", p.activite_id) if p.activite_id else ("S", p.sous_activite_id)
+            self.quantites[cle] += p.quantite_realisee or Decimal("0")
+            if p.statut:
+                self.statuts[cle] = p.statut
+
+        taches = [t for e in elements for t in e.sous_activites.all()]
+        jalons = [j for e in elements for j in e.jalons_livrables.all()]
+        self.activites_hist, self.activites_suivies = _etat_historique(Activite, [e.id for e in elements], instant)
+        self.taches_hist, self.taches_suivies = _etat_historique(SousActivite, [t.id for t in taches], instant)
+        self.jalons_hist, self.jalons_suivis = _etat_historique(JalonLivrable, [j.id for j in jalons], instant)
+
+    def _statut(self, cle, objet, historique, suivis):
+        if cle in self.statuts:
+            return self.statuts[cle]
+        if objet.id in historique:
+            return historique[objet.id].statut
+        return objet.statut if objet.id not in suivis else None
+
+    def statut_element(self, e):
+        return self._statut(("A", e.id), e, self.activites_hist, self.activites_suivies)
+
+    def quantite_element(self, e):
+        return self.quantites[("A", e.id)]
+
+    def taches(self, e):
+        """[(tâche, avancement à la date)]."""
+        resultat = []
+        for t in e.sous_activites.all():
+            quantite = self.quantites[("S", t.id)]
+            if t.id in self.taches_suivies and t.id not in self.taches_hist:
+                # Enregistrée après la date : seules ses saisies datées comptent.
+                avancement = min(100.0, float(quantite) / float(t.quantite_prevue) * 100) if t.quantite_prevue else 0.0
+                resultat.append((t, avancement))
+                continue
+            etat = self.taches_hist.get(t.id, t)
+            statut = self._statut(("S", t.id), t, self.taches_hist, self.taches_suivies)
+            resultat.append((t, avancement_sous_activite(etat, quantite, statut)))
+        return resultat
+
+    def jalons(self, e):
+        """[(jalon ou livrable, achèvement à la date, validé à la date)]."""
+        resultat = []
+        for j in e.jalons_livrables.all():
+            if j.id in self.jalons_suivis and j.id not in self.jalons_hist:
+                achevement = 0.0  # enregistré après la date
+            else:
+                achevement = float(self.jalons_hist.get(j.id, j).achevement)
+            valide = bool(j.valide and j.date_validation and j.date_validation <= self.date)
+            resultat.append((j, achevement, valide))
+        return resultat
+
+    def taux_manuels(self, e):
+        return [t for t in e.taux_manuels.all() if t.date <= self.date]
 
 
 class ArbreTaux:
@@ -94,7 +209,7 @@ class ArbreTaux:
     arbre.taux_projet().
     """
 
-    def __init__(self, projet, parametres=None):
+    def __init__(self, projet, parametres=None, a_la_date=None):
         from .models import Activite
 
         self.projet = projet
@@ -108,6 +223,27 @@ class ArbreTaux:
         for e in elements:
             (self.enfants[e.activite_parent_id] if e.activite_parent_id in self.enfants else self.racines).append(e)
         self._resultats = {}
+        self._etat = _EtatALaDate(projet, elements, a_la_date) if a_la_date else None
+
+    # -- réalisations (actuelles, ou à la date demandée) ---------------------------------
+    def _statut(self, element):
+        return self._etat.statut_element(element) if self._etat else element.statut
+
+    def _quantite_realisee(self, element):
+        return self._etat.quantite_element(element) if self._etat else element.quantite_realisee
+
+    def _taches(self, element):
+        if self._etat:
+            return self._etat.taches(element)
+        return [(t, avancement_sous_activite(t)) for t in element.sous_activites.all()]
+
+    def _jalons(self, element):
+        if self._etat:
+            return self._etat.jalons(element)
+        return [(j, float(j.achevement), j.valide) for j in element.jalons_livrables.all()]
+
+    def _taux_manuels(self, element):
+        return self._etat.taux_manuels(element) if self._etat else list(element.taux_manuels.all())
 
     # -- héritage --------------------------------------------------------------------
     def _herite(self, element, champ):
@@ -177,32 +313,32 @@ class ArbreTaux:
         methode = element.methode_calcul if a_des_enfants else self.methode_calcul(element)
 
         if methode == MethodeCalcul.MANUELLE:
-            saisies = sorted(element.taux_manuels.all(), key=lambda t: (t.date, t.id), reverse=True)
+            saisies = sorted(self._taux_manuels(element), key=lambda t: (t.date, t.id), reverse=True)
             return ResultatTaux(_arrondi(float(saisies[0].taux)) if saisies else None, methode)
 
         if methode == MethodeCalcul.BINAIRE:
-            return ResultatTaux(100.0 if element.statut == element.Statut.REALISEE else 0.0, methode)
+            return ResultatTaux(100.0 if self._statut(element) == element.Statut.REALISEE else 0.0, methode)
 
         if methode == MethodeCalcul.TACHES:
-            taches = list(element.sous_activites.all())
-            valeur, total = _moyenne_ponderee([(avancement_sous_activite(t), t.poids) for t in taches])
+            valeur, total = _moyenne_ponderee([(avancement, t.poids) for t, avancement in self._taches(element)])
             return ResultatTaux(_arrondi(valeur), methode, _avertissement_poids(total, "tâches"))
 
         if methode == MethodeCalcul.JALONS:
-            jalons = [j for j in element.jalons_livrables.all() if j.type == JalonLivrable.Type.JALON]
-            valeur, total = _moyenne_ponderee([(float(j.achevement), j.poids) for j in jalons])
+            jalons = [(j, achevement) for j, achevement, _ in self._jalons(element) if j.type == JalonLivrable.Type.JALON]
+            valeur, total = _moyenne_ponderee([(achevement, j.poids) for j, achevement in jalons])
             return ResultatTaux(_arrondi(valeur), methode, _avertissement_poids(total, "jalons"))
 
         if methode == MethodeCalcul.LIVRABLES:
-            livrables = [j for j in element.jalons_livrables.all() if j.type == JalonLivrable.Type.LIVRABLE]
-            valeur, total = _moyenne_ponderee([(100.0 if j.valide else 0.0, j.poids) for j in livrables])
+            livrables = [(j, valide) for j, _, valide in self._jalons(element) if j.type == JalonLivrable.Type.LIVRABLE]
+            valeur, total = _moyenne_ponderee([(100.0 if valide else 0.0, j.poids) for j, valide in livrables])
             return ResultatTaux(_arrondi(valeur), methode, _avertissement_poids(total, "livrables"))
 
         # QUANTITE (défaut)
         if not element.quantite_prevue:
             return ResultatTaux(None, MethodeCalcul.QUANTITE)
         return ResultatTaux(
-            _arrondi(float(element.quantite_realisee or 0) / float(element.quantite_prevue) * 100), MethodeCalcul.QUANTITE
+            _arrondi(float(self._quantite_realisee(element) or 0) / float(element.quantite_prevue) * 100),
+            MethodeCalcul.QUANTITE,
         )
 
     def taux_projet(self) -> ResultatTaux:

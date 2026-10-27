@@ -278,6 +278,11 @@ function CarteActivite({
               {act.commentaire}
             </Text>
           )}
+          {act.budget_avertissements.map((message) => (
+            <Text key={message} size="xs" c="orange.8" mt={2}>
+              {message}
+            </Text>
+          ))}
         </div>
         <Group gap={4} wrap="nowrap">
           <Tooltip

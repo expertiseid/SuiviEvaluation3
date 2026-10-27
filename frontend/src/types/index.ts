@@ -144,6 +144,11 @@ export interface RecapAxesCadreStrategique {
     axe: number | null;
     budget_alloue: string | null;
     budget_realise: string | null;
+    /** Part comptée dans les totaux (0 quand le détail est saisi en dessous). */
+    budget_alloue_compte: string | number | null;
+    budget_realise_compte: string | number | null;
+    /** Éléments au-dessus de cette activité dans la planification de son projet. */
+    ancetres: number[];
     taux_physique: number | null;
     taux_financier: number | null;
   }[];
@@ -291,6 +296,8 @@ export interface Activite {
   /** Méthode réellement appliquée, ou « AGREGATION » pour un élément qui a des éléments en dessous. */
   methode_calcul_effective: MethodeCalcul | "AGREGATION";
   taux_avertissements: string[];
+  /** Contrôle d'un budget dont le détail est saisi en dessous (règle sans double compte). */
+  budget_avertissements: string[];
   jalons_livrables: JalonLivrable[];
   taux_execution_financiere: number | null;
   alerte_retard: boolean;
@@ -438,7 +445,8 @@ export interface ValeurElementPeriode {
   prevu_budget: number | null;
   debut_prevu: string | null;
   fin_prevue: string | null;
-  realise_quantite: number;
+  /** Quantité réalisée sur la période ; en mode « avancement » : avancement atteint en fin de période (%). */
+  realise_quantite: number | null;
   taux: number | null;
   budget_realise: number | null;
   taux_financier: number | null;
@@ -460,6 +468,10 @@ export interface SaisiePeriode {
 
 /** Ligne de l'arborescence (activité/sous-activité) avec ses valeurs sur la période. */
 export interface LignePeriode extends ValeurElementPeriode {
+  parent_id: number | null;
+  /** Méthode appliquée ; « avancement » : objectif et réalisé en % d'avancement en fin de période. */
+  methode: MethodeCalcul | "AGREGATION";
+  mode: "quantite" | "avancement";
   niveau: string;
   profondeur: number;
   code: string;

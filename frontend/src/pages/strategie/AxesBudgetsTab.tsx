@@ -1,7 +1,7 @@
 import { type ReactNode, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, ChevronRight, Layers } from "lucide-react";
-import { ActionIcon, Badge, Card, Group, Progress, SegmentedControl, Select, Stack, Table, Text } from "@mantine/core";
+import { ActionIcon, Badge, Card, Group, Progress, SegmentedControl, Select, Stack, Table, Text, Tooltip } from "@mantine/core";
 import { useRecapAxesCadreStrategique } from "../../api/strategy";
 import { EmptyState } from "../../components/common/EmptyState";
 import { STATUS_HEX } from "../../components/common/statusPalette";
@@ -13,7 +13,7 @@ type Activite = RecapAxesCadreStrategique["activites"][number];
 
 const CLE_NON_RATTACHEES = -1;
 
-function nombre(v: string | null): number {
+function nombre(v: string | number | null): number {
   return v === null ? 0 : Number(v);
 }
 
@@ -36,14 +36,21 @@ function Taux({ taux }: { taux: number | null }) {
   );
 }
 
-/** Ligne de totaux d'un groupe d'activités : nombre, budgets additionnés, taux = moyenne par activité. */
+/**
+ * Ligne de totaux d'un groupe d'activités : nombre, budgets additionnés sans double compte
+ * (budget d'un niveau ignoré quand le détail est saisi en dessous), taux = moyenne des
+ * éléments les plus bas du groupe (un niveau dont un élément en dessous est aussi dans le
+ * groupe est déjà compté à travers lui).
+ */
 function totaux(activites: Activite[]) {
+  const auDessus = new Set(activites.flatMap((a) => a.ancetres));
+  const derniers = activites.filter((a) => !auDessus.has(a.id));
   return {
     nombre: activites.length,
-    alloue: activites.reduce((s, a) => s + nombre(a.budget_alloue), 0),
-    depense: activites.reduce((s, a) => s + nombre(a.budget_realise), 0),
-    tauxPhysique: moyenne(activites.map((a) => a.taux_physique)),
-    tauxFinancier: moyenne(activites.map((a) => a.taux_financier)),
+    alloue: activites.reduce((s, a) => s + nombre(a.budget_alloue_compte), 0),
+    depense: activites.reduce((s, a) => s + nombre(a.budget_realise_compte), 0),
+    tauxPhysique: moyenne(derniers.map((a) => a.taux_physique)),
+    tauxFinancier: moyenne(derniers.map((a) => a.taux_financier)),
   };
 }
 
@@ -119,7 +126,14 @@ function LigneActivite({ a, profondeur }: { a: Activite; profondeur: number }) {
         </Text>
       </Table.Td>
       <Table.Td />
-      <Table.Td {...CHIFFRE}>{a.budget_alloue !== null ? fcfa(nombre(a.budget_alloue)) : "—"}</Table.Td>
+      <Table.Td {...CHIFFRE}>
+        {a.budget_alloue !== null ? fcfa(nombre(a.budget_alloue)) : "—"}
+        {nombre(a.budget_alloue) !== 0 && nombre(a.budget_alloue_compte) === 0 && (
+          <Tooltip label="Le détail de ce budget est saisi sur les éléments en dessous : il n'est pas compté une seconde fois dans les totaux.">
+            <Text size="xs" c="dimmed">non additionné</Text>
+          </Tooltip>
+        )}
+      </Table.Td>
       <Table.Td {...CHIFFRE}>{fcfa(nombre(a.budget_realise))}</Table.Td>
       <Table.Td><Taux taux={a.taux_physique} /></Table.Td>
       <Table.Td><Taux taux={a.taux_financier} /></Table.Td>

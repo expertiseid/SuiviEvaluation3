@@ -13,18 +13,15 @@ def taux_execution_physique_global(projet):
 
 
 def taux_execution_financiere_global(projet):
-    """Σ budget_realise / Σ budget_planifie sur toutes les activités du projet."""
-    from django.db.models import Sum
-
+    """Σ budget_realise / Σ budget_alloue des activités du projet, sans double compte (apps.projects.budgets)."""
+    from apps.projects.budgets import total_budget
     from apps.projects.models import Activite
 
-    totaux = Activite.objects.filter(projet=projet).aggregate(
-        realise=Sum("budget_realise"), planifie=Sum("budget_alloue")
-    )
-    planifie = totaux["planifie"] or 0
+    activites = list(Activite.objects.filter(projet=projet).only("id", "activite_parent_id", "budget_alloue", "budget_realise"))
+    planifie = total_budget(activites, "budget_alloue")
     if not planifie:
         return None
-    return round(float(totaux["realise"] or 0) / float(planifie) * 100, 1)
+    return round(float(total_budget(activites, "budget_realise")) / float(planifie) * 100, 1)
 
 
 def statut_global(projet):

@@ -70,6 +70,7 @@ import type {
 import { ActiviteForm } from "./ActiviteForm";
 import { SousActiviteForm } from "./SousActiviteForm";
 import { voc } from "../../utils/vocabulaire";
+import { libelleMethodeEffective } from "../../utils/methodesCalcul";
 
 // ---------------------------------------------------------------- utilitaires
 
@@ -95,6 +96,19 @@ function libelleSuggere(debut: string, fin: string): string {
 type Element =
   | { type: "activite"; objet: Activite }
   | { type: "sous_activite"; objet: SousActivite; unite: string };
+
+/**
+ * Élément suivi en avancement (%) plutôt qu'en quantité : toute méthode autre que « Par
+ * quantité », et les niveaux agrégés. Objectif de la période = avancement visé à sa fin.
+ */
+function suiviEnAvancement(element: Element): boolean {
+  return element.type === "activite" && element.objet.methode_calcul_effective !== "QUANTITE";
+}
+
+function uniteElement(element: Element): string {
+  if (suiviEnAvancement(element)) return "%";
+  return element.type === "activite" ? element.objet.unite_quantite : element.unite;
+}
 
 function cleElement(e: Element) {
   return `${e.type}-${e.objet.id}`;
@@ -245,8 +259,9 @@ function ValeursPeriodeModal({
   if (!element) return <Modal opened={false} onClose={onClose}>{null}</Modal>;
 
   const objet = element.objet;
-  const unite = element.type === "activite" ? element.objet.unite_quantite : element.unite;
-  const quantiteGlobale = nombre(objet.quantite_prevue);
+  const avancement = suiviEnAvancement(element);
+  const unite = uniteElement(element);
+  const quantiteGlobale = avancement ? 100 : nombre(objet.quantite_prevue);
   const budgetGlobal = element.type === "activite" ? nombre(element.objet.budget_alloue) : null;
   const autres = (toutesTranches ?? []).filter((t) => t.periode !== null && t.id !== tranche?.id);
   const quantiteAilleurs = autres.reduce((s, t) => s + (nombre(t.cible) ?? 0), 0);
@@ -286,7 +301,13 @@ function ValeursPeriodeModal({
             {fmt(quantiteGlobale)} {unite}
             {estActivite && ` · ${fmt(budgetGlobal)} FCFA`} · {fmtDate(objet.date_debut)} → {fmtDate(objet.date_fin)}
           </Text>
-          {autres.length > 0 && (
+          {avancement && element.type === "activite" && (
+            <Text size="xs" c="dimmed" mt={2}>
+              Méthode : {libelleMethodeEffective(element.objet.methode_calcul_effective)} — l'objectif de la période est
+              l'avancement visé à sa fin (en %), le réalisé est l'avancement atteint à cette date.
+            </Text>
+          )}
+          {autres.length > 0 && !avancement && (
             <Text size="xs" c="dimmed" mt={2}>
               Déjà réparti sur les autres périodes : {fmt(quantiteAilleurs)} {unite}
               {estActivite && ` · ${fmt(budgetAilleurs)} FCFA`}
@@ -296,13 +317,14 @@ function ValeursPeriodeModal({
 
         <Group grow align="flex-start">
           <NumberInput
-            label={`Quantité prévue sur la période${unite ? ` (${unite})` : ""}`}
+            label={avancement ? "Avancement visé à la fin de la période (%)" : `Quantité prévue sur la période${unite ? ` (${unite})` : ""}`}
             value={cible}
             onChange={setCible}
             min={0}
+            max={avancement ? 100 : undefined}
             thousandSeparator=" "
             description={
-              quantiteGlobale !== null && nombre(cible) !== null && quantiteAilleurs + (nombre(cible) ?? 0) > quantiteGlobale
+              !avancement && quantiteGlobale !== null && nombre(cible) !== null && quantiteAilleurs + (nombre(cible) ?? 0) > quantiteGlobale
                 ? `Attention : dépasse le global (${fmt(quantiteAilleurs + (nombre(cible) ?? 0))} > ${fmt(quantiteGlobale)})`
                 : undefined
             }
@@ -424,6 +446,7 @@ function ObjectifsPeriode({
   v,
   cible,
   unite,
+  avancement = false,
   avecBudget,
   periode,
   modifiable,
@@ -431,6 +454,8 @@ function ObjectifsPeriode({
   v: ValeurElementPeriode | undefined;
   cible: { activite?: number; sous_activite?: number; indicateur?: number };
   unite: string;
+  /** Objectif = avancement visé en fin de période (%), réalisé = avancement atteint (voir suiviEnAvancement). */
+  avancement?: boolean;
   avecBudget: boolean;
   periode: PeriodePlanification;
   /** Mode « Éditer » actif et droit d'écriture : champs de saisie, sinon simple affichage. */
@@ -473,13 +498,14 @@ function ObjectifsPeriode({
           <>
             <NumberInput
               size="xs"
-              label={`Objectif${unite ? ` (${unite})` : ""}`}
+              label={avancement ? "Avancement visé fin de période (%)" : `Objectif${unite ? ` (${unite})` : ""}`}
               placeholder="À définir"
               value={quantite}
               onChange={setQuantite}
               onBlur={enregistrer}
               onKeyDown={surEntree}
               min={0}
+              max={avancement ? 100 : undefined}
               thousandSeparator=" "
               disabled={enregistrement}
               w={170}
@@ -503,7 +529,7 @@ function ObjectifsPeriode({
         ) : (
           v.source === "saisi" && (
             <Text size="xs">
-              <Text span fw={600}>Objectif : </Text>
+              <Text span fw={600}>{avancement ? "Avancement visé : " : "Objectif : "}</Text>
               {fmt(v.prevu_quantite)} {unite}
               {avecBudget && ` · ${fmt(v.prevu_budget)} FCFA`}
             </Text>
@@ -511,9 +537,9 @@ function ObjectifsPeriode({
         )}
         <Stack gap={2} style={{ minWidth: 200 }}>
           <Text size="xs">
-            <Text span fw={600}>Réalisé : </Text>
+            <Text span fw={600}>{avancement ? "Avancement atteint : " : "Réalisé : "}</Text>
             {fmt(v.realise_quantite)} {unite}
-            {v.taux !== null && ` (${v.taux} %)`}
+            {v.taux !== null && (avancement ? ` (${v.taux} % de l'objectif)` : ` (${v.taux} %)`)}
             {avecBudget && ` · ${fmt(v.budget_realise)} FCFA`}
             {avecBudget && v.taux_financier !== null && ` (${v.taux_financier} %)`}
           </Text>
@@ -557,7 +583,8 @@ function LigneElement({
 }) {
   const objet = element.objet;
   const estActivite = element.type === "activite";
-  const unite = element.type === "activite" ? element.objet.unite_quantite : element.unite;
+  const avancement = suiviEnAvancement(element);
+  const unite = uniteElement(element);
   const trancheId = valeur?.source === "saisi" ? valeur.tranche_id : null;
 
   return (
@@ -580,13 +607,16 @@ function LigneElement({
             <Text size="sm" fw={estActivite ? 500 : 400}>{objet.libelle}</Text>
           </Group>
           <Text size="xs" c="dimmed">
-            Global : {fmt(objet.quantite_prevue)} {unite}
+            {element.type === "activite" && avancement
+              ? `Méthode : ${libelleMethodeEffective(element.objet.methode_calcul_effective)} · objectif en avancement (%)`
+              : `Global : ${fmt(objet.quantite_prevue)} ${unite}`}
             {element.type === "activite" && ` · ${fmt(element.objet.budget_alloue)} FCFA`}
           </Text>
           <ObjectifsPeriode
             v={valeur}
             cible={estActivite ? { activite: objet.id } : { sous_activite: objet.id }}
             unite={unite}
+            avancement={avancement}
             avecBudget={estActivite}
             periode={periode}
             modifiable={editionActive && peutModifier}

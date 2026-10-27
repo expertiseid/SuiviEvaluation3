@@ -18,10 +18,13 @@ const STATUTS_ACTIVITE = [
 export function SaisieSuiviMethode({
   activiteId,
   modifiable,
+  bornes,
   onDone,
 }: {
   activiteId: number;
   modifiable: boolean;
+  /** Dates proposées par défaut (suivi par période : celles de la période). */
+  bornes?: { debut: string; fin: string };
   onDone: () => void;
 }) {
   const { data: activite, isLoading } = useActivite(activiteId);
@@ -45,6 +48,7 @@ export function SaisieSuiviMethode({
         statutsDisponibles={STATUTS_ACTIVITE}
         avecBudget
         avecQuantite={false}
+        bornes={bornes}
         onDone={onDone}
       />
     </>

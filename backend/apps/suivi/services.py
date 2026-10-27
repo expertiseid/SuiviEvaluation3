@@ -359,12 +359,24 @@ def construire_planification_periode(periode) -> dict:
     Pour chaque élément : ses valeurs globales, ses objectifs sur la période
     (définis par l'utilisateur, sinon « à définir ») et le réalisé sur la
     période, toujours calculé.
+
+    Selon la méthode de calcul de l'élément (apps.projects.taux) :
+    - « Par quantité » (mode "quantite") : objectif = quantité à réaliser pendant
+      la période, réalisé = quantités saisies sur la période ;
+    - autres méthodes et niveaux agrégés (mode "avancement") : objectif =
+      avancement visé à la fin de la période (en %), réalisé = taux atteint à la
+      fin de la période (ou aujourd'hui si elle n'est pas terminée).
+
+    Totaux sans double compte (apps.projects.budgets) : dans chaque branche, seul
+    compte le niveau le plus bas qui a une valeur (budget ou objectif défini).
     Source unique de l'écran et des exports Excel/PDF de la période.
     """
     import datetime
 
     from apps.indicators.services import indicateurs_pour_projet
-    from apps.projects.models import Activite, NiveauActivite
+    from apps.projects.budgets import ids_comptes
+    from apps.projects.models import Activite, MethodeCalcul, NiveauActivite
+    from apps.projects.taux import ArbreTaux
 
     from .models import TranchePlanifiee
 
@@ -372,8 +384,19 @@ def construire_planification_periode(periode) -> dict:
     aujourdhui = datetime.date.today()
     tranches = {(t.activite_id, t.sous_activite_id, t.indicateur_id): t for t in periode.tranches.all()}
     noms_niveaux = dict(NiveauActivite.objects.filter(projet=projet).values_list("profondeur", "nom_niveau"))
+    arbre = ArbreTaux(projet)
+    date_mesure = min(periode.date_fin, aujourdhui)
+    arbre_fin_periode = None
 
-    def valeurs_periode(cle, debut, fin, avec_budget):
+    def taux_fin_periode(activite_id):
+        nonlocal arbre_fin_periode
+        if date_mesure < periode.date_debut:
+            return None  # période pas encore commencée
+        if arbre_fin_periode is None:
+            arbre_fin_periode = ArbreTaux(projet, a_la_date=date_mesure)
+        return arbre_fin_periode.resultat(activite_id).taux
+
+    def valeurs_periode(cle, debut, fin, avec_budget, avancement=False):
         tranche = tranches.get(cle)
         source = SOURCE_SAISIE if tranche is not None else SOURCE_A_DEFINIR
         if tranche is None:
@@ -383,7 +406,11 @@ def construire_planification_periode(periode) -> dict:
                 periode_debut=periode.date_debut, periode_fin=periode.date_fin,
             )
         saisies = saisies_tranche(tranche)
-        realise = sum((x["quantite"] or Decimal("0") for x in saisies), Decimal("0"))
+        if avancement:
+            taux_atteint = taux_fin_periode(cle[0])
+            realise = None if taux_atteint is None else Decimal(str(taux_atteint))
+        else:
+            realise = sum((x["quantite"] or Decimal("0") for x in saisies), Decimal("0"))
         budget_realise = sum((x["budget"] or Decimal("0") for x in saisies), Decimal("0")) if avec_budget else None
         return {
             "source": source,
@@ -407,20 +434,27 @@ def construire_planification_periode(periode) -> dict:
     lignes = []
 
     def ajouter_activite(activite, profondeur):
+        methode = arbre.resultat(activite.id).methode
+        avancement = methode != MethodeCalcul.QUANTITE
         lignes.append(
             {
                 "type": "activite",
                 "id": activite.id,
+                "parent_id": activite.activite_parent_id,
                 "niveau": noms_niveaux.get(profondeur, "Activité"),
                 "profondeur": profondeur,
                 "code": activite.code_activite,
                 "libelle": activite.libelle,
-                "unite": activite.unite_quantite,
-                "global_quantite": activite.quantite_prevue,
+                "methode": methode,
+                "mode": "avancement" if avancement else "quantite",
+                "unite": "%" if avancement else activite.unite_quantite,
+                "global_quantite": Decimal("100") if avancement else activite.quantite_prevue,
                 "global_budget": activite.budget_alloue,
                 "global_debut": activite.date_debut,
                 "global_fin": activite.date_fin,
-                **valeurs_periode((activite.id, None, None), activite.date_debut, activite.date_fin, avec_budget=True),
+                **valeurs_periode(
+                    (activite.id, None, None), activite.date_debut, activite.date_fin, avec_budget=True, avancement=avancement
+                ),
             }
         )
         for enfant in activite.enfants.all():
@@ -430,7 +464,10 @@ def construire_planification_periode(periode) -> dict:
                 {
                     "type": "sous_activite",
                     "id": sous_activite.id,
+                    "parent_id": None,
                     "niveau": "Sous-activité",
+                    "methode": MethodeCalcul.QUANTITE,
+                    "mode": "quantite",
                     "profondeur": profondeur + 1,
                     "code": "",
                     "libelle": sous_activite.libelle,
@@ -473,19 +510,28 @@ def construire_planification_periode(periode) -> dict:
 
     elements = lignes
     # Mêmes règles que l'exécution globale (reports.services), restreintes
-    # aux activités dont l'objectif de la période a été défini.
-    activites_definies = [l for l in elements if l["type"] == "activite" and l["source"] == SOURCE_SAISIE]
-    taux_activites = [l["taux"] for l in activites_definies if l["taux"] is not None]
-    budget_prevu_defini = sum((l["prevu_budget"] or 0) for l in activites_definies)
-    budget_realise_defini = sum((l["budget_realise"] or 0) for l in activites_definies)
+    # aux activités dont l'objectif de la période a été défini, sans double compte.
+    activites = [l for l in elements if l["type"] == "activite"]
+
+    def comptees(champ, lignes_retenues):
+        ids = ids_comptes((l["id"], l["parent_id"], l[champ]) for l in lignes_retenues)
+        return [l for l in lignes_retenues if l["id"] in ids]
+
+    activites_definies = [l for l in activites if l["source"] == SOURCE_SAISIE]
+    # Un taux de 0 % est une valeur : on ne garde que le niveau le plus bas qui a un taux calculable.
+    avec_taux = [l for l in activites_definies if l["taux"] is not None]
+    ids_taux = ids_comptes((l["id"], l["parent_id"], True) for l in avec_taux)
+    taux_activites = [l["taux"] for l in avec_taux if l["id"] in ids_taux]
+    budget_prevu_defini = sum(l["prevu_budget"] for l in comptees("prevu_budget", activites_definies))
+    budget_realise_defini = sum(l["budget_realise"] for l in comptees("budget_realise", activites_definies))
     return {
         "projet": {"code": projet.code, "nom": projet.nom},
         "periode": {"libelle": periode.libelle, "date_debut": periode.date_debut, "date_fin": periode.date_fin},
         "lignes": lignes,
         "indicateurs": indicateurs,
         "totaux": {
-            "budget_prevu": sum((l.get("prevu_budget") or 0) for l in elements),
-            "budget_realise": sum((l.get("budget_realise") or 0) for l in elements),
+            "budget_prevu": sum(l["prevu_budget"] for l in comptees("prevu_budget", activites)),
+            "budget_realise": sum(l["budget_realise"] for l in comptees("budget_realise", activites)),
             "nb_definis": sum(1 for l in elements if l["source"] == SOURCE_SAISIE),
             "nb_elements": len(elements),
             "taux_physique": round(sum(taux_activites) / len(taux_activites), 1) if taux_activites else None,

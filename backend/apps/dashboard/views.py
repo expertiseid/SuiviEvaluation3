@@ -79,12 +79,16 @@ def _evolutions(projets, ids):
     from django.db.models import Count, Sum
     from django.db.models.functions import TruncMonth
 
+    from apps.projects.budgets import activites_comptees
+    from apps.projects.models import Activite
     from apps.suivi.models import PointSuivi
 
+    # Sans double compte : seules les dépenses des activités comptées (apps.projects.budgets).
+    comptees = activites_comptees(
+        Activite.objects.filter(projet__id__in=ids).only("id", "activite_parent_id", "budget_realise"), "budget_realise"
+    )
     depenses = (
-        PointSuivi.objects.filter(
-            activite__projet__id__in=ids, budget_realise__isnull=False
-        )
+        PointSuivi.objects.filter(activite_id__in=comptees, budget_realise__isnull=False)
         .annotate(mois=TruncMonth("periode_fin"))
         .values("mois", "activite__projet__code")
         .annotate(total=Sum("budget_realise"))

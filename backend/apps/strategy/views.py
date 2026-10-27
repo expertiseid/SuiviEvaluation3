@@ -1,4 +1,3 @@
-from decimal import Decimal
 
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -10,6 +9,7 @@ from rest_framework.response import Response
 
 from apps.core.permissions import IsAdminOrReadOnly, has_global_visibility
 from apps.indicators.services import indicateurs_pour_projet, valeur_realisee_totale
+from apps.projects.budgets import activites_comptees, total_budget
 from apps.projects.models import Activite, Projet
 from apps.projects.queryset_filters import visible_projets_ids
 from apps.projects.taux import ArbreTaux
@@ -74,8 +74,8 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
                 projet=projet
             ).order_by("code_activite", "libelle")
             indicateurs = indicateurs_pour_projet(projet.id).order_by("libelle")
-            budget_activites_alloue_total = sum((a.budget_alloue or 0 for a in activites), Decimal("0"))
-            budget_activites_realise_total = sum((a.budget_realise or 0 for a in activites), Decimal("0"))
+            budget_activites_alloue_total = total_budget(activites, "budget_alloue")
+            budget_activites_realise_total = total_budget(activites, "budget_realise")
             lignes.append(
                 {
                     "id": projet.id,
@@ -166,6 +166,24 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
             .order_by("projet__code", "code_activite", "libelle")
         )
         arbres_taux = _ArbresTaux()
+        # Budgets sans double compte : calculés sur toutes les activités des projets concernés
+        # (un niveau parent peut être rattaché à un autre élément du cadre que ses activités).
+        activites = list(activites)
+        toutes = list(
+            Activite.objects.filter(projet__id__in={a.projet_id for a in activites}).only(
+                "id", "activite_parent_id", "budget_alloue", "budget_realise"
+            )
+        )
+        alloue_compte = activites_comptees(toutes, "budget_alloue")
+        realise_compte = activites_comptees(toutes, "budget_realise")
+        parent_de = {a.id: a.activite_parent_id for a in toutes}
+
+        def ancetres(activite_id):
+            resultat, courant = [], parent_de.get(activite_id)
+            while courant is not None:
+                resultat.append(courant)
+                courant = parent_de.get(courant)
+            return resultat
         return Response(
             {
                 "elements": [
@@ -189,6 +207,12 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
                         "axe": a.axe_strategique_id or _element_du_projet_dans_cadre(a.projet, cadre),
                         "budget_alloue": a.budget_alloue,
                         "budget_realise": a.budget_realise,
+                        # Part comptée dans les totaux (0 si le détail est saisi en dessous).
+                        "budget_alloue_compte": a.budget_alloue if a.id in alloue_compte else 0,
+                        "budget_realise_compte": a.budget_realise if a.id in realise_compte else 0,
+                        # Éléments au-dessus : dans un groupe, un élément dont un élément en dessous
+                        # figure aussi n'entre pas dans la moyenne des taux (déjà compté via lui).
+                        "ancetres": ancetres(a.id),
                         "taux_physique": arbres_taux.taux(a),
                         "taux_financier": a.taux_execution_financiere,
                     }
