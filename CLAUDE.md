@@ -11,7 +11,7 @@ bénéficiaires, documents, alertes.
 - **Tout tourne en Docker Compose** — aucune installation locale de Python/Node
   n'est nécessaire, seul Docker est requis.
 
-Dépôt GitHub : [expertiseid/SuiviEvaluation](https://github.com/expertiseid/SuiviEvaluation) (branche `main`)
+Dépôt GitHub : [expertiseid/SuiviEvaluation2](https://github.com/expertiseid/SuiviEvaluation2) (branche `main`)
 
 ## Installation sur une machine neuve
 
@@ -20,8 +20,8 @@ Dépôt GitHub : [expertiseid/SuiviEvaluation](https://github.com/expertiseid/Su
 2. **Cloner le dépôt** :
 
    ```bash
-   git clone https://github.com/expertiseid/SuiviEvaluation.git
-   cd SuiviEvaluation
+   git clone https://github.com/expertiseid/SuiviEvaluation2.git
+   cd SuiviEvaluation2
    ```
 
 3. **Créer le fichier `.env`** à partir du modèle (les valeurs par défaut suffisent pour du développement local) :
@@ -61,9 +61,9 @@ Dépôt GitHub : [expertiseid/SuiviEvaluation](https://github.com/expertiseid/Su
    `COORDO_GENERAL`, `CHARGE_SE`, `CHEF_PROJET`...)
 
 7. **Accéder à l'application** :
-   - Interface web : <http://localhost:5190>
-   - API : <http://localhost:8090/api/v1>
-   - Admin Django : <http://localhost:8090/admin>
+   - Interface web : <http://localhost:5191>
+   - API : <http://localhost:8092/api/v1>
+   - Admin Django : <http://localhost:8092/admin>
 
 ## Commandes courantes
 
@@ -125,9 +125,9 @@ docker compose up -d
 
 | Service     | Rôle                                   | Port local |
 |-------------|-----------------------------------------|------------|
-| `db`        | PostgreSQL 16                           | 5442       |
-| `backend`   | Django (API DRF, `manage.py runserver`) | 8090       |
-| `frontend`  | Vite dev server (React)                 | 5190       |
+| `db`        | PostgreSQL 16                           | 5443       |
+| `backend`   | Django (API DRF, `manage.py runserver`) | 8092       |
+| `frontend`  | Vite dev server (React)                 | 5191       |
 | `scheduler` | Boucle `check_deadlines` toutes les heures | —       |
 
 ## Déploiement existant
