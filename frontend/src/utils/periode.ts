@@ -18,6 +18,19 @@ export function fmtDate(iso: string | null | undefined): string {
   return `${j}/${m}/${a}`;
 }
 
+/** Durée en jours, bornes comprises (même jour = 1 jour) ; null si une date manque ou fin < début. */
+export function dureeJours(debut: string | null | undefined, fin: string | null | undefined): number | null {
+  if (!debut || !fin) return null;
+  const jours = Math.round((Date.parse(fin.slice(0, 10)) - Date.parse(debut.slice(0, 10))) / 86_400_000) + 1;
+  return jours > 0 ? jours : null;
+}
+
+/** « 1 jour », « 12 jours » */
+export function libelleDuree(debut: string | null | undefined, fin: string | null | undefined): string {
+  const jours = dureeJours(debut, fin);
+  return jours === null ? "" : `${jours.toLocaleString("fr-FR")} jour${jours > 1 ? "s" : ""}`;
+}
+
 /** « 1er janvier 2026 » */
 export function fmtDateLongue(iso: string): string {
   const [a, m, j] = iso.slice(0, 10).split("-").map(Number);

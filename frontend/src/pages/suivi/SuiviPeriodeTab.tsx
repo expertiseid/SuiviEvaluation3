@@ -91,7 +91,8 @@ function CarteSuiviPeriode({
   avecBudget: boolean;
   editionActive: boolean;
   libelleBouton: string;
-  onSaisir: () => void;
+  /** Absent : projet en lecture seule (clôturé), pas de bouton de saisie. */
+  onSaisir?: () => void;
   onModifier: (id: number) => void;
   onSupprimer: (id: number) => void;
   retrait?: number;
@@ -144,9 +145,11 @@ function CarteSuiviPeriode({
             </Text>
           )}
         </div>
-        <Button size="sm" variant="light" leftSection={<Plus size={15} />} onClick={onSaisir}>
-          {libelleBouton}
-        </Button>
+        {onSaisir && (
+          <Button size="sm" variant="light" leftSection={<Plus size={15} />} onClick={onSaisir}>
+            {libelleBouton}
+          </Button>
+        )}
       </Group>
 
       {avancement ? (
@@ -273,7 +276,8 @@ export function SuiviPeriodeTab({
   const [saisie, setSaisie] = useState<Saisie | null>(null);
   const [recherche, setRecherche] = useState("");
   const { user } = useAuth();
-  const peutSaisir = !!user && (user.role === "ADMIN" || user.niveau_acces === "LECTURE_ECRITURE");
+  const cloture = data.projet.statut === "CLOTURE";
+  const peutSaisir = !!user && (user.role === "ADMIN" || user.niveau_acces === "LECTURE_ECRITURE") && !cloture;
 
   useEffect(() => {
     if (!periodes || periodes.length === 0) {
@@ -456,7 +460,7 @@ export function SuiviPeriodeTab({
                   avecBudget={estActivite}
                   editionActive={editionActive}
                   libelleBouton={voc("Saisir un suivi")}
-                  onSaisir={() => setSaisie({ type, id: ligne.id })}
+                  onSaisir={cloture ? undefined : () => setSaisie({ type, id: ligne.id })}
                   onModifier={(id) =>
                     setSaisie({ type, id: ligne.id, point: historiques.get(`${type}-${ligne.id}`)?.find((p) => p.id === id) })
                   }
@@ -485,7 +489,7 @@ export function SuiviPeriodeTab({
                   avecBudget={false}
                   editionActive={editionActive}
                   libelleBouton="Saisir une valeur"
-                  onSaisir={() => setSaisie({ type: "indicateur", id: i.id })}
+                  onSaisir={cloture ? undefined : () => setSaisie({ type: "indicateur", id: i.id })}
                   onModifier={(id) =>
                     setSaisie({
                       type: "indicateur",

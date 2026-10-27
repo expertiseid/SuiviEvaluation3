@@ -220,6 +220,15 @@ export function useDeleteActivite() {
   });
 }
 
+/** Copie un élément avec tout ce qui est en dessous, sans les réalisations. */
+export function useDupliquerActivite() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => (await apiClient.post<Activite>(`/activites/${id}/dupliquer/`)).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projets"] }),
+  });
+}
+
 export async function telechargerExportProjet(id: number, format: "xlsform") {
   const response = await apiClient.get(`/projets/${id}/export/${format}/`, { responseType: "blob" });
   const url = window.URL.createObjectURL(new Blob([response.data]));

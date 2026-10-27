@@ -2,11 +2,11 @@ from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
-from apps.accounts.constants import ROLES_NOTIFIEES_MODIFICATION_ACTIVITE
+from apps.accounts.constants import ROLE_ADMIN, ROLES_NOTIFIEES_MODIFICATION_ACTIVITE
 from apps.core.permissions import HasGlobalVisibilityOrAssigned, IsAdminOrCreateForAuthenticated, IsAdminOrReadOnly
 from apps.indicators.exports import generer_xlsform
 from apps.notifications.models import Notification
@@ -27,6 +27,7 @@ from .serializers import (
     TauxManuelSerializer,
 )
 from .services import (
+    dupliquer_activite,
     supprimer_activite_cascade,
     supprimer_projet_cascade,
     supprimer_sous_activite_cascade,
@@ -63,6 +64,12 @@ class ProjetViewSet(viewsets.ModelViewSet):
         if self.action in ("create", "update", "partial_update"):
             return ProjetWriteSerializer
         return ProjetSerializer
+
+    def perform_update(self, serializer):
+        # Rouvrir un projet clôturé (lecture seule, voir verrou.py) est réservé à l'administrateur.
+        if serializer.instance.statut == Projet.Statut.CLOTURE and self.request.user.role != ROLE_ADMIN:
+            raise PermissionDenied("Seul un administrateur peut rouvrir un projet clôturé.")
+        super().perform_update(serializer)
 
     def perform_destroy(self, instance):
         supprimer_projet_cascade(instance)
@@ -124,6 +131,12 @@ class ActiviteViewSet(viewsets.ModelViewSet):
             return Response([])
         activites = self.get_queryset().filter(projet__id=projet_id).order_by("libelle")
         return Response([{"id": a.id, "libelle": a.libelle} for a in activites])
+
+    @action(detail=True, methods=["post"])
+    def dupliquer(self, request, pk=None):
+        """Copie l'élément et tout ce qui est en dessous, sans les réalisations (voir services)."""
+        copie = dupliquer_activite(self.get_object())
+        return Response(self.get_serializer(copie).data, status=201)
 
     def perform_create(self, serializer):
         super().perform_create(serializer)

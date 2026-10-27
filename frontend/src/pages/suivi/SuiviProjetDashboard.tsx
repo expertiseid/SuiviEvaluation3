@@ -15,6 +15,7 @@ import { SaisiePointSuiviForm } from "../../components/suivi/SaisiePointSuiviFor
 import { SuiviPeriodeTab } from "./SuiviPeriodeTab";
 import { HistoriqueSuiviTable } from "../../components/suivi/HistoriqueSuiviTable";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
+import { BandeauProjetCloture } from "../../components/common/BandeauProjetCloture";
 import { BoutonModeEdition } from "../../components/common/BoutonModeEdition";
 import { correspond } from "../../utils/recherche";
 import {
@@ -125,8 +126,11 @@ export function SuiviProjetDashboard() {
   const [recherche, setRecherche] = useState("");
   const [canevasOuvert, setCanevasOuvert] = useState(false);
   const { user } = useAuth();
-  const peutSaisir = !!user && (user.role === "ADMIN" || user.niveau_acces === "LECTURE_ECRITURE");
-  const [editionActive, setEditionActive] = useState(false);
+  // Projet clôturé : lecture seule (voir BandeauProjetCloture).
+  const cloture = data?.projet.statut === "CLOTURE";
+  const peutSaisir = !!user && (user.role === "ADMIN" || user.niveau_acces === "LECTURE_ECRITURE") && !cloture;
+  const [editionDemandee, setEditionActive] = useState(false);
+  const editionActive = editionDemandee && !cloture;
   const { data: parametresAlerte } = useParametresAlerte();
   const seuilEcheanceJours = parametresAlerte?.seuil_echeance_jours ?? 7;
 
@@ -254,9 +258,10 @@ export function SuiviProjetDashboard() {
               Saisie par Excel
             </Button>
           )}
-          <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />
+          {!cloture && <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />}
         </Group>
       </Group>
+      {cloture && <BandeauProjetCloture projetId={projetId} />}
       <ImportCanevasSuiviModal
         projetId={projetId}
         codeProjet={data.projet.code}
@@ -388,8 +393,11 @@ export function SuiviProjetDashboard() {
                           dateFin={activite.date_fin}
                         />
                       </Group>
-                      <Button size="sm" variant="light" onClick={() => setModalActivite(activite.id)}>
-                        {voc("Saisir un suivi")}</Button>
+                      {!cloture && (
+                        <Button size="sm" variant="light" onClick={() => setModalActivite(activite.id)}>
+                          {voc("Saisir un suivi")}
+                        </Button>
+                      )}
                     </Group>
                     {fenetreAttendue && (
                       <Text size="sm" c="dimmed" mb="xs">
@@ -537,8 +545,11 @@ export function SuiviProjetDashboard() {
                                     dateFin={sousActivite.date_fin}
                                   />
                                 </Group>
-                                <Button size="sm" variant="subtle" onClick={() => setModalSousActivite(sousActivite.id)}>
-                                  {voc("Saisir un suivi")}</Button>
+                                {!cloture && (
+                                  <Button size="sm" variant="subtle" onClick={() => setModalSousActivite(sousActivite.id)}>
+                                    {voc("Saisir un suivi")}
+                                  </Button>
+                                )}
                               </Group>
                               {cible !== null && (
                                 <BarreProgression
@@ -636,9 +647,11 @@ export function SuiviProjetDashboard() {
                         <Text size="lg" fw={700}>{indicateur.libelle}</Text>
                         <Group gap="xs" wrap="nowrap">
                           <AlerteBadge palier={indicateur.palier_actuel} taux={indicateur.taux_actuel} />
-                          <Button size="sm" variant="light" onClick={() => setModalIndicateur(indicateur.id)}>
-                            Saisir une valeur
-                          </Button>
+                          {!cloture && (
+                            <Button size="sm" variant="light" onClick={() => setModalIndicateur(indicateur.id)}>
+                              Saisir une valeur
+                            </Button>
+                          )}
                         </Group>
                       </Group>
                       <BarreProgression

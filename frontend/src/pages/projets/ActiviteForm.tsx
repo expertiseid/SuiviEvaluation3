@@ -11,6 +11,7 @@ import { messageErreurApi } from "../../utils/erreurs";
 import type { Activite, Intervenant } from "../../types";
 import { AIDES_AGREGATION, AIDES_METHODE, optionsAgregation, optionsMethode } from "../../utils/methodesCalcul";
 import { voc } from "../../utils/vocabulaire";
+import { libelleDuree } from "../../utils/periode";
 
 /**
  * Création / modification d'un élément de la planification, à n'importe quel
@@ -214,7 +215,13 @@ export function ActiviteForm({
       />
       <Group grow>
         <DateInput label="Date de début prévue" value={dateDebut} onChange={setDateDebut} />
-        <DateInput label="Date de fin prévue" value={dateFin} onChange={setDateFin} />
+        <DateInput
+          label="Date de fin prévue"
+          value={dateFin}
+          onChange={setDateFin}
+          minDate={dateDebut ?? undefined}
+          description={libelleDuree(dateDebut, dateFin) ? `Durée : ${libelleDuree(dateDebut, dateFin)}` : undefined}
+        />
       </Group>
       <DateInput
         label="Date de rappel (optionnel)"

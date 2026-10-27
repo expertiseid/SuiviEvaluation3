@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
-import { Alert, Autocomplete, Button, Group, MultiSelect, NumberInput, Pill, PillGroup, Select, Stack, Tabs, Text, Textarea, TextInput } from "@mantine/core";
+import { Alert, Autocomplete, Button, Checkbox, Group, MultiSelect, NumberInput, Pill, PillGroup, Select, Stack, Tabs, Text, Textarea, TextInput } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import { modals } from "@mantine/modals";
@@ -107,6 +107,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
   const [zoneCascade, setZoneCascade] = useState<ZoneCascadeValue>(ZONE_CASCADE_VIDE);
   const [zonesAjoutees, setZonesAjoutees] = useState<{ id: number; label: string }[]>([]);
   const [zonesInitialisees, setZonesInitialisees] = useState(false);
+  const [toutLePays, setToutLePays] = useState(projet?.tout_le_pays ?? false);
   const [partenairesConsortium, setPartenairesConsortium] = useState<{ id: number; label: string }[]>([]);
   const [partenaireConsortiumChoisi, setPartenaireConsortiumChoisi] = useState<string | null>(null);
   const [consortiumInitialise, setConsortiumInitialise] = useState(false);
@@ -225,7 +226,8 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
       partenaires_consortium: partenairesConsortium.map((p) => p.id),
       chef_de_projet_nom: values.chef_de_projet_nom ?? "",
       utilisateurs_affectes: (values.utilisateurs_affectes ?? []).map(Number),
-      zones: zonesAjoutees.map((z) => z.id),
+      zones: toutLePays ? [] : zonesAjoutees.map((z) => z.id),
+      tout_le_pays: toutLePays,
       cadre_strategique: values.cadre_strategique ? Number(values.cadre_strategique) : null,
       element_strategique: values.element_strategique ? Number(values.element_strategique) : null,
       methode_calcul: values.methode_calcul ?? "",
@@ -519,37 +521,47 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
 
             <div>
               <Text size="sm" fw={500} mb={4}>Zones d'intervention</Text>
-              {(watch("pays")?.length ?? 0) > 1 && (
-                <Select
-                  size="xs"
-                  label="Pays de la zone à ajouter"
-                  data={(watch("pays") ?? []).map((code) => ({
-                    value: code,
-                    label: PAYS_MONDE.find((p) => p.code === code)?.nom ?? code,
-                  }))}
-                  value={paysZoneActif}
-                  onChange={(v) => {
-                    setPaysZoneActif(v);
-                    setZoneCascade(ZONE_CASCADE_VIDE);
-                  }}
-                  mb={4}
-                  maw={250}
-                />
-              )}
-              <ZoneCascadeFields pays={paysZoneActif} value={zoneCascade} onChange={setZoneCascade} />
-              <Group justify="flex-end" mt={4}>
-                <Button size="xs" variant="light" onClick={handleAjouterZone}>
-                  Ajouter cette zone
-                </Button>
-              </Group>
-              {zonesAjoutees.length > 0 && (
-                <PillGroup mt="xs">
-                  {zonesAjoutees.map((z) => (
-                    <Pill key={z.id} withRemoveButton onRemove={() => setZonesAjoutees((prev) => prev.filter((x) => x.id !== z.id))}>
-                      {z.label}
-                    </Pill>
-                  ))}
-                </PillGroup>
+              <Checkbox
+                label="Tout le pays (ensemble du territoire des pays d'intervention)"
+                checked={toutLePays}
+                onChange={(e) => setToutLePays(e.currentTarget.checked)}
+                mb="xs"
+              />
+              {!toutLePays && (
+                <>
+                  {(watch("pays")?.length ?? 0) > 1 && (
+                    <Select
+                      size="xs"
+                      label="Pays de la zone à ajouter"
+                      data={(watch("pays") ?? []).map((code) => ({
+                        value: code,
+                        label: PAYS_MONDE.find((p) => p.code === code)?.nom ?? code,
+                      }))}
+                      value={paysZoneActif}
+                      onChange={(v) => {
+                        setPaysZoneActif(v);
+                        setZoneCascade(ZONE_CASCADE_VIDE);
+                      }}
+                      mb={4}
+                      maw={250}
+                    />
+                  )}
+                  <ZoneCascadeFields pays={paysZoneActif} value={zoneCascade} onChange={setZoneCascade} />
+                  <Group justify="flex-end" mt={4}>
+                    <Button size="xs" variant="light" onClick={handleAjouterZone}>
+                      Ajouter cette zone
+                    </Button>
+                  </Group>
+                  {zonesAjoutees.length > 0 && (
+                    <PillGroup mt="xs">
+                      {zonesAjoutees.map((z) => (
+                        <Pill key={z.id} withRemoveButton onRemove={() => setZonesAjoutees((prev) => prev.filter((x) => x.id !== z.id))}>
+                          {z.label}
+                        </Pill>
+                      ))}
+                    </PillGroup>
+                  )}
+                </>
               )}
             </div>
           </Stack>

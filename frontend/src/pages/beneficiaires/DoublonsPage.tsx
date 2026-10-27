@@ -1,4 +1,4 @@
-import { Badge, Button, Group, Stack, Table } from "@mantine/core";
+import { Badge, Button, Group, Stack, Table, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useSignalementsDoublons, useTraiterSignalement } from "../../api/beneficiaries";
 import { TitreRubrique } from "../../components/common/TitreRubrique";
@@ -19,7 +19,12 @@ export function DoublonsPage() {
 
   return (
     <Stack gap="md">
-      <TitreRubrique route="/doublons" defaut="Doublons signalés" />
+      <TitreRubrique route="/doublons" defaut="Doublons d'enregistrement" />
+      <Text size="sm" c="dimmed">
+        {voc(
+          "Bénéficiaires enregistrés plusieurs fois sur la plateforme, repérés en comparant les fiches saisies (nom, téléphone, pièce d'identité…). Ce repérage ne porte que sur les enregistrements : à confirmer avant de fusionner ou d'écarter.",
+        )}
+      </Text>
       {isLoading ? (
         <div>Chargement…</div>
       ) : signalements && signalements.length > 0 ? (

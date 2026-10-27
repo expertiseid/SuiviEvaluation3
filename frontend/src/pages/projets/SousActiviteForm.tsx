@@ -5,6 +5,7 @@ import { notifications } from "@mantine/notifications";
 import { useCreateSousActivite } from "../../api/projects";
 import { useElementsStrategiques, useTypesNiveaux } from "../../api/strategy";
 import { voc } from "../../utils/vocabulaire";
+import { libelleDuree } from "../../utils/periode";
 
 export function SousActiviteForm({
   activiteId,
@@ -77,7 +78,13 @@ export function SousActiviteForm({
       )}
       <Group grow>
         <DateInput label="Date de début prévue" value={dateDebut} onChange={setDateDebut} />
-        <DateInput label="Date de fin prévue" value={dateFin} onChange={setDateFin} />
+        <DateInput
+          label="Date de fin prévue"
+          value={dateFin}
+          onChange={setDateFin}
+          minDate={dateDebut ?? undefined}
+          description={libelleDuree(dateDebut, dateFin) ? `Durée : ${libelleDuree(dateDebut, dateFin)}` : undefined}
+        />
       </Group>
       <Group grow>
         <NumberInput label="Quantité prévue" value={quantitePrevue} onChange={setQuantitePrevue} min={0} />

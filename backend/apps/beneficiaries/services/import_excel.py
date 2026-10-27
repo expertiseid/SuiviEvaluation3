@@ -12,7 +12,13 @@ from openpyxl.styles import Font
 from apps.core.excel_utils import figer_entete, quadriller
 from apps.core.vocabulaire import adapter_classeur, ramener_classeur, v
 
+# Localisation d'abord, puis identité (ordre de collecte sur le terrain). L'import lit les
+# colonnes par leur nom : un fichier à l'ancien ordre reste accepté.
 COLONNES = [
+    "Pays (code ISO, ex : BF)",
+    "Région",
+    "Province",
+    "Commune / Village",
     "Nom",
     "Prénom",
     "Sexe (F/M)",
@@ -20,10 +26,6 @@ COLONNES = [
     "Téléphone",
     "N° pièce d'identité",
     "Type de pièce",
-    "Pays (code ISO, ex : BF)",
-    "Région",
-    "Province",
-    "Commune / Village",
     "Statuts particuliers (séparés par ;)",
     "Types d'activité menée (séparés par ;)",
     "Code projet",
@@ -39,6 +41,10 @@ def generer_modele_import() -> bytes:
         cellule.font = Font(bold=True)
     feuille.append(
         [
+            "BF",
+            "Kadiogo",
+            "Kadiogo",
+            "Koubri",
             "Traoré",
             "Awa",
             "F",
@@ -46,10 +52,6 @@ def generer_modele_import() -> bytes:
             "70000001",
             "CNIB123456",
             "CNIB",
-            "BF",
-            "Kadiogo",
-            "Kadiogo",
-            "Koubri",
             "Femme;Jeune",
             "Maraîchage",
             "",

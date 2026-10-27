@@ -15,8 +15,10 @@ def supprimer_projet_cascade(projet):
     from apps.suivi.models import PointSuivi
 
     from .models import Activite, JalonLivrable, SousActivite, TauxManuel
+    from .verrou import verrou_desactive
 
-    with transaction.atomic():
+    # Suppression complète : permise même pour un projet clôturé (voir verrou.py).
+    with transaction.atomic(), verrou_desactive():
         activites = Activite.objects.filter(projet=projet)
         sous_activites = SousActivite.objects.filter(activite__in=activites)
         JalonLivrable.objects.filter(activite__in=activites).delete()
@@ -85,6 +87,48 @@ def supprimer_activite_cascade(activite):
         PointSuivi.objects.filter(Q(activite=activite) | Q(sous_activite__in=sous_activites)).delete()
         sous_activites.delete()
         activite.delete()
+
+
+# Champs de planification recopiés lors d'une duplication ; les réalisations (quantités et
+# budgets réalisés, dates réelles, statut, suivis, taux manuels, validations) repartent de zéro.
+CHAMPS_DUPLIQUES_ACTIVITE = (
+    "projet_id", "description", "code_activite", "commentaire", "axe_strategique_id", "budget_alloue",
+    "valeur_reference", "quantite_prevue", "unite_quantite", "date_debut", "date_fin", "date_rappel",
+    "responsable_id", "equipe_responsable_id", "methode_calcul", "methode_agregation", "poids",
+)
+CHAMPS_DUPLIQUES_SOUS_ACTIVITE = (
+    "libelle", "axe_strategique_id", "quantite_prevue", "unite_quantite", "date_debut", "date_fin", "poids",
+)
+
+
+def dupliquer_activite(activite, parent_id=..., suffixe=" (copie)"):
+    """
+    Copie un élément de la planification avec tout ce qui est en dessous (éléments imbriqués,
+    sous-activités, jalons et livrables), à la même place (même parent) par défaut. Seule la
+    planification est copiée : la copie démarre sans aucune réalisation.
+    """
+    from .models import Activite, JalonLivrable, SousActivite
+
+    with transaction.atomic():
+        copie = Activite(
+            libelle=f"{activite.libelle}{suffixe}"[:300],
+            activite_parent_id=activite.activite_parent_id if parent_id is ... else parent_id,
+            **{champ: getattr(activite, champ) for champ in CHAMPS_DUPLIQUES_ACTIVITE},
+        )
+        copie.save()
+        copie.responsables.set(activite.responsables.all())
+        for sous_activite in activite.sous_activites.all():
+            SousActivite.objects.create(
+                activite=copie, **{champ: getattr(sous_activite, champ) for champ in CHAMPS_DUPLIQUES_SOUS_ACTIVITE}
+            )
+        for jalon in activite.jalons_livrables.all():
+            JalonLivrable.objects.create(
+                activite=copie, type=jalon.type, libelle=jalon.libelle, poids=jalon.poids, date_prevue=jalon.date_prevue
+            )
+        for enfant in activite.enfants.all():
+            dupliquer_activite(enfant, parent_id=copie.id, suffixe="")
+        synchroniser_projets_associes_activite(copie)
+    return copie
 
 
 def supprimer_sous_activite_cascade(sous_activite):

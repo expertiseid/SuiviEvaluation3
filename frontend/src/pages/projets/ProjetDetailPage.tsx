@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Download, ListPlus, MapPin, Paperclip, Pencil, Plus, Search, Trash2, Users } from "lucide-react";
+import { Copy, Download, ListPlus, MapPin, Paperclip, Pencil, Plus, Search, Trash2, Users } from "lucide-react";
 import {
   ActionIcon,
   Badge,
@@ -19,10 +19,12 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
+import { messageErreurApi } from "../../utils/erreurs";
 import {
   useProjet,
   useCreateActivite,
   useDeleteActivite,
+  useDupliquerActivite,
   useDeleteSousActivite,
   useDeleteProjet,
   useNiveauxActivite,
@@ -37,6 +39,7 @@ import { HistoriqueModification } from "../../components/audit/HistoriqueModific
 import { DocumentsTab } from "../../components/documents/DocumentsTab";
 import { BeneficiairesTab } from "../../components/beneficiaires/BeneficiairesTab";
 import { PlanificationPeriodeTab } from "./PlanificationPeriodeTab";
+import { BandeauProjetCloture } from "../../components/common/BandeauProjetCloture";
 import { BoutonModeEdition } from "../../components/common/BoutonModeEdition";
 import { ActiviteForm } from "./ActiviteForm";
 import { AvancementModal } from "./AvancementModal";
@@ -52,6 +55,7 @@ import { PAYS_MONDE } from "../../utils/pays";
 import { correspond } from "../../utils/recherche";
 import type { Activite, SousActivite } from "../../types";
 import { voc } from "../../utils/vocabulaire";
+import { libelleDuree } from "../../utils/periode";
 
 function AjoutInline({
   placeholder,
@@ -222,6 +226,7 @@ function CarteActivite({
   onDocumentsSousActivite,
   onBeneficiairesSousActivite,
   onSupprimerSousActivite,
+  onDupliquer,
 }: {
   act: Activite;
   profondeur: number;
@@ -231,10 +236,13 @@ function CarteActivite({
   onDocuments: (id: number) => void;
   onBeneficiaires: (id: number) => void;
   onEditer: (act: Activite) => void;
-  onAjouterEnfant: (act: Activite, profondeurEnfant: number) => void;
-  onAjouterSousActivite: (id: number) => void;
+  /** Absents : projet en lecture seule (clôturé), pas d'ajout possible. */
+  onAjouterEnfant?: (act: Activite, profondeurEnfant: number) => void;
+  onAjouterSousActivite?: (id: number) => void;
   onAvancement: (act: Activite) => void;
   onSupprimer: (act: Activite, profondeur: number) => void;
+  /** Absent : projet en lecture seule (clôturé) ou utilisateur sans droit d'écriture. */
+  onDupliquer?: (act: Activite) => void;
   onDocumentsSousActivite: (id: number) => void;
   onBeneficiairesSousActivite: (id: number) => void;
   onSupprimerSousActivite: (sa: SousActivite) => void;
@@ -271,6 +279,7 @@ function CarteActivite({
           {(act.date_debut || act.date_fin) && (
             <Text size="xs" c="dimmed" mt={2}>
               {act.date_debut ?? "?"} → {act.date_fin ?? "?"}
+              {libelleDuree(act.date_debut, act.date_fin) && ` · ${libelleDuree(act.date_debut, act.date_fin)}`}
             </Text>
           )}
           {act.commentaire && (
@@ -317,16 +326,27 @@ function CarteActivite({
               </ActionIcon>
             </Tooltip>
           )}
-          <Tooltip label={nomNiveauSuivant ? `Ajouter un « ${nomNiveauSuivant} » en dessous` : "Ajouter un niveau en dessous"}>
-            <ActionIcon size="sm" variant="subtle" onClick={() => onAjouterEnfant(act, profondeur + 1)}>
-              <Plus size={14} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label="Ajouter une sous-activité">
-            <ActionIcon size="sm" variant="subtle" onClick={() => onAjouterSousActivite(act.id)}>
-              <ListPlus size={14} />
-            </ActionIcon>
-          </Tooltip>
+          {onAjouterEnfant && (
+            <Tooltip label={nomNiveauSuivant ? `Ajouter un « ${nomNiveauSuivant} » en dessous` : "Ajouter un niveau en dessous"}>
+              <ActionIcon size="sm" variant="subtle" onClick={() => onAjouterEnfant(act, profondeur + 1)}>
+                <Plus size={14} />
+              </ActionIcon>
+            </Tooltip>
+          )}
+          {onAjouterSousActivite && (
+            <Tooltip label="Ajouter une sous-activité">
+              <ActionIcon size="sm" variant="subtle" onClick={() => onAjouterSousActivite(act.id)}>
+                <ListPlus size={14} />
+              </ActionIcon>
+            </Tooltip>
+          )}
+          {onDupliquer && (
+            <Tooltip label={`Dupliquer ce « ${nomNiveau} » avec tout ce qui est en dessous (sans les réalisations)`}>
+              <ActionIcon size="sm" variant="subtle" onClick={() => onDupliquer(act)}>
+                <Copy size={14} />
+              </ActionIcon>
+            </Tooltip>
+          )}
           {editionActive && (
             <Tooltip label={`Supprimer ce « ${nomNiveau} »`}>
               <ActionIcon size="sm" variant="subtle" color="red" onClick={() => onSupprimer(act, profondeur)}>
@@ -354,6 +374,7 @@ function CarteActivite({
               onAjouterSousActivite={onAjouterSousActivite}
               onAvancement={onAvancement}
               onSupprimer={onSupprimer}
+              onDupliquer={onDupliquer}
               onDocumentsSousActivite={onDocumentsSousActivite}
               onBeneficiairesSousActivite={onBeneficiairesSousActivite}
               onSupprimerSousActivite={onSupprimerSousActivite}
@@ -375,6 +396,7 @@ function CarteActivite({
                   {(sa.date_debut || sa.date_fin) && (
                     <Text size="xs" c="dimmed" mt={2}>
                       {sa.date_debut ?? "?"} → {sa.date_fin ?? "?"}
+              {libelleDuree(sa.date_debut, sa.date_fin) && ` · ${libelleDuree(sa.date_debut, sa.date_fin)}`}
                     </Text>
                   )}
                 </div>
@@ -421,6 +443,7 @@ export function ProjetDetailPage() {
   const createActivite = useCreateActivite();
   const nommerNiveau = useNommerNiveau(projetId);
   const deleteActivite = useDeleteActivite();
+  const dupliquerActivite = useDupliquerActivite();
   const deleteSousActivite = useDeleteSousActivite();
   const deleteProjet = useDeleteProjet();
 
@@ -433,13 +456,16 @@ export function ProjetDetailPage() {
   const setAvancementFor = (act: Activite) => setAvancementForId(act.id);
   const { user } = useAuth();
   const peutModifier = !!user && (user.role === "ADMIN" || user.niveau_acces === "LECTURE_ECRITURE");
+  // Projet clôturé : lecture seule (voir BandeauProjetCloture), mode édition indisponible.
+  const cloture = projet?.statut === "CLOTURE";
   const [documentsActiviteId, setDocumentsActiviteId] = useState<number | null>(null);
   const [documentsSousActiviteId, setDocumentsSousActiviteId] = useState<number | null>(null);
   const [beneficiairesActiviteId, setBeneficiairesActiviteId] = useState<number | null>(null);
   const [beneficiairesSousActiviteId, setBeneficiairesSousActiviteId] = useState<number | null>(null);
   const [modalEditionOuvert, setModalEditionOuvert] = useState(false);
   const [recherchePlan, setRecherchePlan] = useState("");
-  const [editionActive, setEditionActive] = useState(false);
+  const [editionDemandee, setEditionActive] = useState(false);
+  const editionActive = editionDemandee && !cloture;
 
   const elementsFiltres = useMemo(() => {
     const racines = projet?.activites ?? [];
@@ -505,7 +531,12 @@ export function ProjetDetailPage() {
               </>
             )}
           </Text>
-          {dashboard && dashboard.zones_couvertes.length > 0 && (
+          {projet.tout_le_pays && (
+            <Badge mt={4} variant="light" color="cyan" leftSection={<MapPin size={12} />}>
+              Tout le pays
+            </Badge>
+          )}
+          {!projet.tout_le_pays && dashboard && dashboard.zones_couvertes.length > 0 && (
             <Group gap={6} mt={4}>
               {dashboard.zones_couvertes.map((z) => (
                 <Badge key={z.niveau} variant="light" color="cyan" leftSection={<MapPin size={12} />}>
@@ -544,7 +575,7 @@ export function ProjetDetailPage() {
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
-          <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />
+          {!cloture && <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />}
           {editionActive && (
           <Group gap="lg">
             <Tooltip label={voc("Modifier le projet")}>
@@ -562,6 +593,8 @@ export function ProjetDetailPage() {
         </Group>
       </Group>
 
+      {cloture && <BandeauProjetCloture projetId={projetId} />}
+
       <Tabs defaultValue="hierarchie">
         <Tabs.List>
           <Tabs.Tab value="niveaux">Configuration des niveaux</Tabs.Tab>
@@ -578,14 +611,16 @@ export function ProjetDetailPage() {
           <Card withBorder padding="md">
             <Text size="sm" c="dimmed">
               {voc("Les niveaux sont libres : leur nom et leur nombre sont propres à ce projet. Clique sur l'étiquette d'un élément pour nommer ou renommer son niveau ; le bouton + ajoute un élément au niveau en dessous.")}</Text>
-            <AjoutInline
-              placeholder={0 in niveauxNoms ? `Nouveau « ${nomPremierNiveau} »…` : "Libellé du premier élément…"}
-              demanderNomNiveau={!(0 in niveauxNoms)}
-              onAdd={async (libelle, nomNiveau) => {
-                if (nomNiveau) await nommerNiveau(0, nomNiveau);
-                createActivite.mutate({ projet: projetId, libelle });
-              }}
-            />
+            {!cloture && (
+              <AjoutInline
+                placeholder={0 in niveauxNoms ? `Nouveau « ${nomPremierNiveau} »…` : "Libellé du premier élément…"}
+                demanderNomNiveau={!(0 in niveauxNoms)}
+                onAdd={async (libelle, nomNiveau) => {
+                  if (nomNiveau) await nommerNiveau(0, nomNiveau);
+                  createActivite.mutate({ projet: projetId, libelle });
+                }}
+              />
+            )}
             {projet.activites.length > 0 && (
               <TextInput
                 placeholder={voc("Rechercher dans la planification…")}
@@ -611,8 +646,8 @@ export function ProjetDetailPage() {
                   onDocuments={setDocumentsActiviteId}
                   onBeneficiaires={setBeneficiairesActiviteId}
                   onEditer={setModalActiviteEdition}
-                  onAjouterEnfant={(parent, profondeur) => setModalActiviteEnfantFor({ parent, profondeur })}
-                  onAjouterSousActivite={setModalSousActiviteFor}
+                  onAjouterEnfant={cloture ? undefined : (parent, profondeur) => setModalActiviteEnfantFor({ parent, profondeur })}
+                  onAjouterSousActivite={cloture ? undefined : setModalSousActiviteFor}
                   onAvancement={setAvancementFor}
                   onSupprimer={(a, profondeur) =>
                     supprimerAvecConfirmation(
@@ -620,6 +655,13 @@ export function ProjetDetailPage() {
                       () => deleteActivite.mutateAsync(a.id),
                       "Élément supprimé",
                     )
+                  }
+                  onDupliquer={cloture || !peutModifier ? undefined : (a) =>
+                    dupliquerActivite.mutate(a.id, {
+                      onSuccess: (copie) => notifications.show({ message: `« ${copie.libelle} » créé`, color: "green" }),
+                      onError: (error) =>
+                        notifications.show({ message: messageErreurApi(error, "Erreur lors de la duplication"), color: "red" }),
+                    })
                   }
                   onDocumentsSousActivite={setDocumentsSousActiviteId}
                   onBeneficiairesSousActivite={setBeneficiairesSousActiviteId}

@@ -86,7 +86,7 @@ export function ImportBeneficiairesModal({
             <Alert color={resultat.crees > 0 ? "green" : "orange"} title="Résultat de l'import">
               <Text size="sm">
                 <strong>{resultat.crees}</strong> {voc(" bénéficiaire(s) créé(s)")}{resultat.doublons_detectes > 0 && (
-                  <>, dont <strong>{resultat.doublons_detectes}</strong> {voc(" doublon(s) potentiel(s) détecté(s) — à traiter dans \"Doublons signalés\"")}</>
+                  <>, dont <strong>{resultat.doublons_detectes}</strong> {voc(" doublon(s) potentiel(s) détecté(s) — à traiter dans « Doublons d'enregistrement »")}</>
                 )}
                 .
               </Text>

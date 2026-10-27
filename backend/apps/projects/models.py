@@ -1,3 +1,5 @@
+import datetime
+
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
@@ -5,6 +7,13 @@ from django.db import models
 from simple_history.models import HistoricalRecords
 
 from apps.core.models import TimestampedModel
+
+
+def duree_en_jours(debut, fin):
+    """Nombre de jours de début à fin, bornes comprises (même jour = 1 jour) ; None si fin < début."""
+    debut, fin = (datetime.date.fromisoformat(d) if isinstance(d, str) else d for d in (debut, fin))
+    jours = (fin - debut).days + 1
+    return jours if jours > 0 else None
 
 
 class MethodeCalcul(models.TextChoices):
@@ -124,6 +133,11 @@ class Projet(TimestampedModel):
         max_length=20, choices=TypeMiseEnOeuvre.choices, default=TypeMiseEnOeuvre.DIRECT
     )
     zones = models.ManyToManyField("geo.Zone", blank=True, related_name="projets")
+    tout_le_pays = models.BooleanField(
+        default=False,
+        help_text="Intervention sur l'ensemble du territoire du ou des pays d'intervention : aucune zone à "
+        "détailler.",
+    )
     chef_de_projet_nom = models.CharField(
         max_length=200,
         blank=True,
@@ -248,7 +262,12 @@ class Activite(TimestampedModel):
     date_fin = models.DateField(null=True, blank=True)
     date_debut_reelle = models.DateField(null=True, blank=True)
     date_fin_reelle = models.DateField(null=True, blank=True)
-    nb_jours_planifies = models.PositiveIntegerField(null=True, blank=True)
+    nb_jours_planifies = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Durée prévue en jours, calculée à l'enregistrement à partir des dates (bornes comprises : "
+        "une activité qui commence et se termine le même jour dure 1 jour).",
+    )
     date_rappel = models.DateField(
         null=True,
         blank=True,
@@ -300,6 +319,11 @@ class Activite(TimestampedModel):
 
     def __str__(self):
         return self.libelle
+
+    def save(self, *args, **kwargs):
+        if self.date_debut and self.date_fin:
+            self.nb_jours_planifies = duree_en_jours(self.date_debut, self.date_fin)
+        super().save(*args, **kwargs)
 
     def clean(self):
         if self.activite_parent_id:

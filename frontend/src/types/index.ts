@@ -330,6 +330,8 @@ export interface Projet {
   statut: StatutProjet;
   type_mise_en_oeuvre: TypeMiseEnOeuvre;
   zones: number[];
+  /** Intervention sur tout le territoire du ou des pays : pas de zones détaillées. */
+  tout_le_pays: boolean;
   cadre_strategique: number | null;
   cadre_strategique_nom: string | null;
   /** Élément du cadre dont relève le projet (programme, axe, pilier...), à n'importe quel niveau. */

@@ -59,7 +59,7 @@ const ITEMS_PRINCIPAUX: NavItem[] = [
   { to: "/indicateurs", label: "Indicateurs", icon: Gauge },
   { to: "/suivi", label: "Suivi", icon: Activity },
   { to: "/beneficiaires", label: "Bénéficiaires", icon: Users },
-  { to: "/doublons", label: "Doublons signalés", icon: Copy },
+  { to: "/doublons", label: "Doublons d'enregistrement", icon: Copy },
   { to: "/zones-administratives", label: "Zones administratives", icon: MapPin },
   { to: "/documents", label: "Documents", icon: FileText },
 ];

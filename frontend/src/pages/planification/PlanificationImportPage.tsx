@@ -119,7 +119,7 @@ export function PlanificationImportPage() {
                 <br />
                 · <strong>{resultat.indicateurs_crees}</strong> {voc(" indicateur(s) créé(s)")}<br />
                 · <strong>{resultat.beneficiaires_crees}</strong> {voc(" bénéficiaire(s) créé(s) et inscrit(s) au projet")}{resultat.doublons_detectes > 0 && (
-                  <> (dont <strong>{resultat.doublons_detectes}</strong> {voc(" doublon(s) potentiel(s) — à traiter dans \"Doublons signalés\")")}</>
+                  <> (dont <strong>{resultat.doublons_detectes}</strong> {voc(" doublon(s) potentiel(s) — à traiter dans « Doublons d'enregistrement »)")}</>
                 )}
               </Text>
             </Alert>

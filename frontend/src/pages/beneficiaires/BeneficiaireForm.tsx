@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Alert, Badge, Button, Card, Group, Select, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Alert, Badge, Button, Card, Divider, Group, Select, Stack, Text, TextInput, Title } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import { useCreateBeneficiaire, useUpdateBeneficiaire, useVerifierDoublons } from "../../api/beneficiaries";
@@ -149,7 +149,7 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
       if (doublons.length > 0) {
         setDoublonsDetectes(doublons);
         notifications.show({
-          message: voc`${doublons.length} doublon(s) potentiel(s) détecté(s) — à traiter dans l'écran "Doublons signalés".`,
+          message: voc`${doublons.length} doublon(s) potentiel(s) détecté(s) — à traiter dans l'écran « Doublons d'enregistrement ».`,
           color: "orange",
         });
       } else {
@@ -212,18 +212,7 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
 
   return (
     <Stack gap="sm">
-      <Group grow>
-        <TextInput label="Nom" value={nom} onChange={(e) => setNom(e.currentTarget.value)} required />
-        <TextInput label="Prénom" value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} required />
-      </Group>
-      <Group grow>
-        <Select label="Sexe" data={[{ value: "F", label: "Féminin" }, { value: "M", label: "Masculin" }]} value={sexe} onChange={setSexe} />
-        <DateInput label="Date de naissance" value={dateNaissance} onChange={setDateNaissance} />
-      </Group>
-      <Group grow>
-        <TextInput label="Téléphone" value={telephone} onChange={(e) => setTelephone(e.currentTarget.value)} />
-        <TextInput label="N° pièce d'identité" value={numeroPiece} onChange={(e) => setNumeroPiece(e.currentTarget.value)} />
-      </Group>
+      <Divider label="Localisation" labelPosition="left" />
       <Select
         label="Pays"
         data={PAYS_MONDE.map((p) => ({ value: p.code, label: p.nom }))}
@@ -236,6 +225,19 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
         maw={300}
       />
       <ZoneCascadeFields pays={pays} value={zoneCascade} onChange={setZoneCascade} />
+      <Divider label="Identité" labelPosition="left" />
+      <Group grow>
+        <TextInput label="Nom" value={nom} onChange={(e) => setNom(e.currentTarget.value)} required />
+        <TextInput label="Prénom" value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} required />
+      </Group>
+      <Group grow>
+        <Select label="Sexe" data={[{ value: "F", label: "Féminin" }, { value: "M", label: "Masculin" }]} value={sexe} onChange={setSexe} />
+        <DateInput label="Date de naissance" value={dateNaissance} onChange={setDateNaissance} />
+      </Group>
+      <Group grow>
+        <TextInput label="Téléphone" value={telephone} onChange={(e) => setTelephone(e.currentTarget.value)} />
+        <TextInput label="N° pièce d'identité" value={numeroPiece} onChange={(e) => setNumeroPiece(e.currentTarget.value)} />
+      </Group>
       <MultiSelectOrCreate
         label="Statuts particuliers"
         description="PDI, jeune, femme cheffe de ménage, personne handicapée... — tape un nouveau statut s'il manque à la liste."
