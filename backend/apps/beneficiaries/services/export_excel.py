@@ -11,6 +11,7 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 from apps.core.excel_utils import figer_entete, quadriller
+from apps.core.vocabulaire import v
 
 from .import_excel import COLONNES as COLONNES_IMPORT
 
@@ -56,7 +57,8 @@ def _feuille(wb, titre, colonnes, lignes, premiere=False):
     feuille = wb.active if premiere else wb.create_sheet()
     # Titre d'onglet Excel : 31 caractères max, sans []:*?/\
     feuille.title = "".join(c for c in titre if c not in "[]:*?/\\")[:31]
-    feuille.append(colonnes)
+    # En-têtes au vocabulaire de l'organisation (réimportables : l'import les ramène aux noms par défaut).
+    feuille.append([v(c) for c in colonnes])
     for cellule in feuille[1]:
         cellule.font = Font(bold=True, color="FFFFFF")
         cellule.fill = PatternFill("solid", fgColor=COULEUR_ENTETE)
@@ -123,7 +125,7 @@ def exporter_beneficiaires(queryset, projets, inclure_sans_projet=False) -> byte
         projet = projets[0]
         _feuille(wb, projet.code, colonnes_projet, _lignes_projet(beneficiaires, projet), premiere=True)
     else:
-        colonnes_global = COLONNES_IMPORT[:-1] + ["Projets (codes)", "Projets (noms)"]
+        colonnes_global = COLONNES_IMPORT[:-1] + [v('Projets (codes)'), v('Projets (noms)')]
         lignes = []
         for b in beneficiaires:
             projets_b = sorted({p.projet for p in b.participations.all()}, key=lambda p: p.code)
@@ -131,7 +133,7 @@ def exporter_beneficiaires(queryset, projets, inclure_sans_projet=False) -> byte
                 _colonnes_beneficiaire(b, "")[:-1]
                 + ["; ".join(p.code for p in projets_b), "; ".join(p.nom for p in projets_b)]
             )
-        _feuille(wb, "Tous les bénéficiaires", colonnes_global, lignes, premiere=True)
+        _feuille(wb, v('Tous les bénéficiaires'), colonnes_global, lignes, premiere=True)
         for projet in projets:
             inscrits = _inscrits(beneficiaires, projet)
             if inscrits:
@@ -139,7 +141,7 @@ def exporter_beneficiaires(queryset, projets, inclure_sans_projet=False) -> byte
         sans_projet = [b for b in beneficiaires if not b.participations.all()] if inclure_sans_projet else []
         if sans_projet:
             _feuille(
-                wb, "Sans projet", COLONNES_IMPORT, [_colonnes_beneficiaire(b, "") for b in sans_projet]
+                wb, v('Sans projet'), COLONNES_IMPORT, [_colonnes_beneficiaire(b, "") for b in sans_projet]
             )
 
     buffer = io.BytesIO()
@@ -160,7 +162,7 @@ def exporter_beneficiaires_pdf(queryset, projets, inclure_sans_projet=False) -> 
                "Statuts particuliers", "Activité / sous-activité", "Inscription"]
 
     def tableau(lignes):
-        ths = "".join(f'<th style="padding:5px 6px;text-align:left;">{e}</th>' for e in entetes)
+        ths = "".join(f'<th style="padding:5px 6px;text-align:left;">{v(e)}</th>' for e in entetes)
         return (
             '<table style="width:100%;border-collapse:collapse;">'
             f'<thead><tr style="background:#1F4E78;color:white;font-size:10px;text-transform:uppercase;">{ths}</tr></thead>'
@@ -214,9 +216,9 @@ def exporter_beneficiaires_pdf(queryset, projets, inclure_sans_projet=False) -> 
             )
 
     titre = (
-        "Bénéficiaires — tous les projets"
+        v('Bénéficiaires — tous les projets')
         if inclure_sans_projet
-        else "Bénéficiaires — " + ", ".join(p.code for p in projets)
+        else v('Bénéficiaires — ') + ", ".join(p.code for p in projets)
     )
     html_content = f"""
     <html><head><style>
@@ -229,7 +231,7 @@ def exporter_beneficiaires_pdf(queryset, projets, inclure_sans_projet=False) -> 
     </style></head><body>
       <h2>{escape(titre)}</h2>
       <div class="resume">Généré le {datetime.date.today().strftime('%d/%m/%Y')} · {len(beneficiaires)} bénéficiaire(s) au total</div>
-      {"".join(sections) or '<p style="color:#888;">Aucun bénéficiaire.</p>'}
+      {"".join(sections) or v('<p style="color:#888;">Aucun bénéficiaire.</p>')}
     </body></html>
     """
     return HTML(string=html_content).write_pdf()

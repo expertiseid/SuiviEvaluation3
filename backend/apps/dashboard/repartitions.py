@@ -72,7 +72,7 @@ def repartitions_projets(projets):
 
     from apps.projects.models import Activite
 
-    budget_activites = Activite.objects.filter(objectif_specifique__objectif_general__projet__id__in=ids).aggregate(
+    budget_activites = Activite.objects.filter(projet__id__in=ids).aggregate(
         alloue=Sum("budget_alloue"), depense=Sum("budget_realise")
     )
     budget = {

@@ -24,7 +24,8 @@ from django.db import transaction
 
 from apps.geo.models import Zone
 from apps.partners.models import Bailleur, Financement, Partenaire
-from apps.projects.models import Activite, ObjectifGeneral, ObjectifSpecifique, Projet
+from apps.projects.models import Activite, Projet
+from apps.projects.services import nommer_niveaux, supprimer_projet_cascade
 from apps.strategy.models import CadreStrategique, ElementStrategique, TypeNiveau
 from apps.suivi.models import PointSuivi
 from apps.suivi.services import synchroniser_activite_depuis_suivi
@@ -115,12 +116,7 @@ class Command(BaseCommand):
 
     def supprimer_projets(self, projets):
         for projet in projets:
-            activites = Activite.objects.filter(objectif_specifique__objectif_general__projet=projet)
-            PointSuivi.objects.filter(activite__in=activites).delete()
-            activites.delete()
-            ObjectifSpecifique.objects.filter(objectif_general__projet=projet).delete()
-            ObjectifGeneral.objects.filter(projet=projet).delete()
-            projet.delete()  # financements supprimés en cascade
+            supprimer_projet_cascade(projet)
         return len(projets)
 
     def creer(self):
@@ -179,6 +175,7 @@ class Command(BaseCommand):
                 cible_jeunes=int(cible * hasard.uniform(0.2, 0.5)),
                 cible_pdi=int(cible * hasard.uniform(0, 0.25)),
             )
+            nommer_niveaux(projet, ["Objectif général", "Objectif spécifique", "Activité"])
             if consortium:
                 projet.partenaires_consortium.set([meo[noms_meo[1]], meo[noms_meo[2]]])
             if "BF" in pays and regions:
@@ -199,8 +196,8 @@ class Command(BaseCommand):
             self.creer_cadre_logique(projet, theme, unite, activites, axes, hasard, aujourdhui, admin)
 
     def creer_cadre_logique(self, projet, theme, unite, activites, axes, hasard, aujourdhui, admin):
-        og = ObjectifGeneral.objects.create(projet=projet, libelle=f"Contribuer à : {theme.lower()}")
-        os_ = ObjectifSpecifique.objects.create(objectif_general=og, libelle=f"Améliorer durablement : {theme.lower()}")
+        og = Activite.objects.create(projet=projet, libelle=f"Contribuer à : {theme.lower()}")
+        os_ = Activite.objects.create(projet=og.projet, activite_parent=og, libelle=f"Améliorer durablement : {theme.lower()}")
         budget_activites = projet.budget_total * Decimal("0.85")
         duree = (projet.date_fin - projet.date_debut).days
         # Avancement attendu du projet à aujourd'hui (0 avant le début, 1 après la fin).
@@ -210,7 +207,7 @@ class Command(BaseCommand):
             quantite = Decimal(hasard.randrange(10, 500))
             budget = (budget_activites / len(activites)).quantize(Decimal("1"))
             activite = Activite.objects.create(
-                objectif_specifique=os_,
+                projet=os_.projet, activite_parent=os_,
                 code_activite=f"{n}.1",
                 libelle=libelle,
                 axe_strategique=axe,

@@ -10,7 +10,8 @@ import { EmptyState } from "../../components/common/EmptyState";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
 import { IntervenantsMultiples } from "../../components/common/IntervenantsMultiples";
 import { messageErreurApi } from "../../utils/erreurs";
-import type { Equipe, Intervenant } from "../../types";
+import type { Activite, Equipe, Intervenant } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 function LigneEquipe({
   equipe,
@@ -186,7 +187,7 @@ function LigneMembre({
         id: membre.id,
         payload: { projets_associes: membre.projets_associes.filter((id) => id !== projetId) },
       });
-      notifications.show({ message: "Retiré de l'équipe du projet", color: "green" });
+      notifications.show({ message: voc("Retiré de l'équipe du projet"), color: "green" });
     } catch {
       notifications.show({ message: "Erreur lors du retrait", color: "red" });
     }
@@ -194,7 +195,7 @@ function LigneMembre({
 
   function supprimerDefinitivement() {
     confirmerSuppression({
-      message: `Supprimer définitivement "${membre.nom} ${membre.prenom}" de l'équipe (tous projets confondus) ? Cette action est irréversible.`,
+      message: voc`Supprimer définitivement "${membre.nom} ${membre.prenom}" de l'équipe (tous projets confondus) ? Cette action est irréversible.`,
       onConfirm: async () => {
         try {
           await deleteIntervenant.mutateAsync(membre.id);
@@ -238,7 +239,7 @@ function LigneMembre({
               </ActionIcon>
             </Tooltip>
           )}
-          <Tooltip label="Retirer de ce projet (reste dans les autres)">
+          <Tooltip label={voc("Retirer de ce projet (reste dans les autres)")}>
             <ActionIcon variant="subtle" color="orange" loading={updateIntervenant.isPending} onClick={retirerDuProjet}>
               <UserX size={15} />
             </ActionIcon>
@@ -275,11 +276,14 @@ export function EquipeTab({ projetId }: { projetId: number }) {
 
   const equipesDuProjet = useMemo(() => {
     const idsUtilises = new Set<number>();
-    for (const os of projet?.objectif_general?.objectifs_specifiques ?? []) {
-      for (const act of os.activites) {
+    // Tous les éléments de la planification, à n'importe quel niveau.
+    const parcourir = (elements: Activite[]) => {
+      for (const act of elements) {
         if (act.equipe_responsable) idsUtilises.add(act.equipe_responsable);
+        parcourir(act.enfants);
       }
-    }
+    };
+    parcourir(projet?.activites ?? []);
     return (toutesEquipes ?? []).filter((e) => idsUtilises.has(e.id));
   }, [projet, toutesEquipes]);
 
@@ -314,7 +318,7 @@ export function EquipeTab({ projetId }: { projetId: number }) {
     try {
       await updateEquipe.mutateAsync({ id: equipeCibleObj.id, payload: { membres: [...equipeCibleObj.membres, intervenantId] } });
     } catch {
-      notifications.show({ message: "Ajouté au projet, mais erreur lors du rattachement à l'équipe.", color: "orange" });
+      notifications.show({ message: voc("Ajouté au projet, mais erreur lors du rattachement à l'équipe."), color: "orange" });
     }
   }
 
@@ -332,7 +336,7 @@ export function EquipeTab({ projetId }: { projetId: number }) {
         payload: { projets_associes: [...intervenant.projets_associes, projetId] },
       });
       await rattacherAEquipeCible(intervenant.id);
-      notifications.show({ message: "Ajouté à l'équipe du projet", color: "green" });
+      notifications.show({ message: voc("Ajouté à l'équipe du projet"), color: "green" });
       setSelection(null);
     } catch {
       notifications.show({ message: "Erreur lors de l'ajout", color: "red" });
@@ -373,7 +377,7 @@ export function EquipeTab({ projetId }: { projetId: number }) {
         <Card withBorder padding="md" radius="md">
           <Group gap={6} mb="xs">
             <Users size={16} />
-            <Text size="sm" fw={600}>Équipes rattachées aux activités de ce projet</Text>
+            <Text size="sm" fw={600}>{voc("Équipes rattachées aux activités de ce projet")}</Text>
           </Group>
           <Stack gap="sm">
             {equipesDuProjet.map((e) => (
@@ -426,7 +430,7 @@ export function EquipeTab({ projetId }: { projetId: number }) {
         {isLoading ? (
           <Text c="dimmed">Chargement…</Text>
         ) : !equipe || equipe.length === 0 ? (
-          <EmptyState icon={<UserRound size={32} strokeWidth={1.5} />} message="Aucun membre affecté à ce projet pour le moment." />
+          <EmptyState icon={<UserRound size={32} strokeWidth={1.5} />} message={voc("Aucun membre affecté à ce projet pour le moment.")} />
         ) : (
           <Table striped highlightOnHover>
             <Table.Thead>

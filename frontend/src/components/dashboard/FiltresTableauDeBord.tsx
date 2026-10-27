@@ -4,6 +4,7 @@ import { RotateCcw } from "lucide-react";
 import { PROJET_STATUT_LABEL } from "../../utils/statusTones";
 import { FILTRES_PAR_DEFAUT, type EtatFiltres, type ModeDates } from "../../utils/filtresTableauDeBord";
 import type { StatutProjet } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 const PERIODES: { value: EtatFiltres["periode"]; label: string }[] = [
   { value: "actifs", label: "En cours pendant la période" },
@@ -67,7 +68,7 @@ export function FiltresTableauDeBord({
         )}
         {avecDates && (
           <Select
-            label="Projets retenus"
+            label={voc("Projets retenus")}
             data={PERIODES}
             value={valeur.periode}
             onChange={(v) => v && maj({ periode: v as EtatFiltres["periode"] })}
@@ -76,7 +77,7 @@ export function FiltresTableauDeBord({
           />
         )}
         <MultiSelect
-          label="Statut des projets"
+          label={voc("Statut des projets")}
           placeholder={valeur.statuts.length ? undefined : "Tous les statuts"}
           data={(Object.keys(PROJET_STATUT_LABEL) as StatutProjet[]).map((s) => ({ value: s, label: PROJET_STATUT_LABEL[s] }))}
           value={valeur.statuts}
@@ -90,10 +91,8 @@ export function FiltresTableauDeBord({
       </Group>
       {nombreProjets !== undefined && (
         <Text size="sm" c="dimmed" mt="sm">
-          {nombreProjets} projet{nombreProjets > 1 ? "s" : ""} retenu{nombreProjets > 1 ? "s" : ""} — tous les
-          chiffres et graphiques ci-dessous portent sur ces projets.
-          {valeur.periode === "demarres_termines" && avecDates &&
-            " « Terminé » = projet au statut Clôturé dont la date de fin tombe dans la période."}
+          {nombreProjets} {voc(" projet")}{nombreProjets > 1 ? "s" : ""} retenu{nombreProjets > 1 ? "s" : ""} {voc(" — tous les chiffres et graphiques ci-dessous portent sur ces projets.")}{valeur.periode === "demarres_termines" && avecDates &&
+            voc(" « Terminé » = projet au statut Clôturé dont la date de fin tombe dans la période.")}
         </Text>
       )}
     </Paper>

@@ -199,6 +199,43 @@ export interface SousActivite {
   date_debut: string | null;
   date_fin: string | null;
   statut: "PLANIFIEE" | "EN_COURS" | "TERMINEE";
+  /** Méthode « tâches pondérées » : poids de la tâche et niveau d'achèvement saisi (0 à 100). */
+  poids: string | null;
+  avancement: string | null;
+}
+
+export type MethodeCalcul = "QUANTITE" | "TACHES" | "JALONS" | "LIVRABLES" | "BINAIRE" | "MANUELLE";
+export type MethodeAgregation = "MOYENNE" | "PONDEREE_BUDGET" | "PONDEREE_POIDS";
+
+export interface JalonLivrable {
+  id: number;
+  activite: number;
+  type: "JALON" | "LIVRABLE";
+  libelle: string;
+  poids: string | null;
+  date_prevue: string | null;
+  achevement: string;
+  valide: boolean;
+  valide_par: number | null;
+  valide_par_nom: string | null;
+  date_validation: string | null;
+}
+
+export interface TauxManuel {
+  id: number;
+  activite: number;
+  taux: string;
+  date: string;
+  saisi_par: number | null;
+  saisi_par_nom: string | null;
+  commentaire: string;
+}
+
+/** Réglage de l'organisation, hérité par les projets qui ne fixent pas le leur. */
+export interface ParametresCalcul {
+  methode_calcul: MethodeCalcul;
+  methode_agregation: MethodeAgregation;
+  plafonner_agregation: boolean;
 }
 
 export interface Equipe {
@@ -210,12 +247,18 @@ export interface Equipe {
   date_fin_contrat: string | null;
 }
 
+/**
+ * Élément de la planification d'un projet, à n'importe quel niveau : les niveaux
+ * sont libres (« Objectif général », « Résultat », « Pilier », « Activité »...) et
+ * nommés par projet (NiveauActivite) ; `enfants` porte le niveau suivant.
+ */
 export interface Activite {
   id: number;
-  objectif_specifique: number;
+  projet: number;
   activite_parent: number | null;
   code_activite: string;
   libelle: string;
+  description: string;
   statut: StatutActivite;
   commentaire: string;
   axe_strategique: number | null;
@@ -241,6 +284,14 @@ export interface Activite {
   sous_activites: SousActivite[];
   enfants: Activite[];
   taux_realisation: number | null;
+  /** Vides = hérités de l'élément parent, du projet, puis de l'organisation. */
+  methode_calcul: MethodeCalcul | "";
+  methode_agregation: MethodeAgregation | "";
+  poids: string | null;
+  /** Méthode réellement appliquée, ou « AGREGATION » pour un élément qui a des éléments en dessous. */
+  methode_calcul_effective: MethodeCalcul | "AGREGATION";
+  taux_avertissements: string[];
+  jalons_livrables: JalonLivrable[];
   taux_execution_financiere: number | null;
   alerte_retard: boolean;
 }
@@ -250,22 +301,6 @@ export interface NiveauActivite {
   projet: number;
   profondeur: number;
   nom_niveau: string;
-}
-
-export interface ObjectifSpecifique {
-  id: number;
-  objectif_general: number;
-  libelle: string;
-  description: string;
-  activites: Activite[];
-}
-
-export interface ObjectifGeneral {
-  id: number;
-  projet: number;
-  libelle: string;
-  description: string;
-  objectifs_specifiques: ObjectifSpecifique[];
 }
 
 export interface Projet {
@@ -290,6 +325,9 @@ export interface Projet {
   zones: number[];
   cadre_strategique: number | null;
   cadre_strategique_nom: string | null;
+  /** Élément du cadre dont relève le projet (programme, axe, pilier...), à n'importe quel niveau. */
+  element_strategique: number | null;
+  element_strategique_libelle: string | null;
   chef_de_projet_nom: string;
   utilisateurs_affectes: number[];
   cible_totale: number | null;
@@ -298,7 +336,10 @@ export interface Projet {
   cible_jeunes: number | null;
   cible_pdi: number | null;
   elements_capitalisation: string;
-  objectif_general: ObjectifGeneral | null;
+  methode_calcul: MethodeCalcul | "";
+  methode_agregation: MethodeAgregation | "";
+  /** Éléments de premier niveau de la planification, chacun avec ses `enfants`. */
+  activites: Activite[];
 }
 
 export type ProjetInput = Omit<
@@ -307,9 +348,10 @@ export type ProjetInput = Omit<
   | "partenaire_bailleur_nom"
   | "partenaire_mise_en_oeuvre_nom"
   | "partenaires_consortium_noms"
-  | "objectif_general"
+  | "activites"
   | "financement_bailleurs_total"
   | "cadre_strategique_nom"
+  | "element_strategique_libelle"
 >;
 
 export interface ParametresAlerte {
@@ -434,7 +476,7 @@ export interface IndicateurPeriode extends ValeurElementPeriode {
 }
 
 export interface ValeursPeriode {
-  lignes: (LignePeriode | { type: "objectif"; libelle: string })[];
+  lignes: LignePeriode[];
   indicateurs: IndicateurPeriode[];
   totaux: {
     budget_prevu: number;
@@ -466,9 +508,8 @@ export interface Indicateur {
   projet: number | null;
   projet_nom: string | null;
   projet_rattache_nom: string | null;
-  objectif_general: number | null;
-  objectif_specifique: number | null;
   activite: number | null;
+  activite_libelle: string | null;
   elements_strategiques: number[];
   elements_strategiques_libelles: string[];
   valeurs: ValeurIndicateur[];
@@ -533,14 +574,17 @@ export interface ImportStructurationResultat {
   elements_crees: number;
   elements_mis_a_jour: number;
   erreurs: { ligne: number; message: string }[];
+  /** Ex : niveau inséré au-dessus d'un niveau existant (anciens éléments gardant leur rattachement). */
+  avertissements: { ligne: number; message: string }[];
 }
 
 export interface ImportProjetResultat {
   projet_id: number | null;
   projet_code: string | null;
-  objectifs_generaux: number;
-  objectifs_specifiques_crees: number;
-  activites_creees: number;
+  /** Éléments de planification créés, tous niveaux confondus. */
+  elements_crees: number;
+  /** Noms des niveaux lus dans le fichier, du plus haut au plus bas. */
+  niveaux: string[];
   sous_activites_creees: number;
   erreurs: { ligne: number; message: string }[];
   avertissements: { ligne: number; message: string }[];
@@ -558,9 +602,8 @@ export interface ImportPlanificationCompleteResultat {
   elements_strategiques_crees: number;
   projet_id: number | null;
   projet_code: string | null;
-  objectifs_generaux: number;
-  objectifs_specifiques_crees: number;
-  activites_creees: number;
+  elements_crees: number;
+  niveaux: string[];
   sous_activites_creees: number;
   indicateurs_crees: number;
   beneficiaires_crees: number;
@@ -724,7 +767,7 @@ export interface FiltresDashboard {
 
 export interface DashboardProjet {
   projet: { id: number; code: string; nom: string; statut: StatutProjet };
-  nombre_objectifs_generaux: number;
+  nombre_elements_planification: number;
   nombre_beneficiaires: number;
   indicateurs: {
     id: number;
@@ -823,6 +866,10 @@ export interface SuiviDashboardActivite {
   date_debut: string | null;
   date_fin: string | null;
   taux_realisation: number | null;
+  /** Méthode réglée sur l'activité (vide = héritée) et méthode réellement appliquée. */
+  methode_calcul: MethodeCalcul | "";
+  methode_calcul_effective: MethodeCalcul | "AGREGATION";
+  taux_avertissements: string[];
   taux_execution_financiere: number | null;
   palier_actuel: { id: number; libelle: string; couleur: string; borne_min: number } | null;
   sous_activites: SuiviDashboardSousActivite[];

@@ -1,6 +1,9 @@
 from rest_framework import serializers
 
-from .models import Activite, Equipe, NiveauActivite, ObjectifGeneral, ObjectifSpecifique, Projet, SousActivite
+from apps.core.vocabulaire import v
+
+from .models import Activite, Equipe, JalonLivrable, NiveauActivite, ParametresCalcul, Projet, SousActivite, TauxManuel
+from .taux import ArbreTaux
 
 
 class NiveauActiviteSerializer(serializers.ModelSerializer):
@@ -41,18 +44,21 @@ class SousActiviteSerializer(serializers.ModelSerializer):
             "date_debut",
             "date_fin",
             "statut",
+            "poids",
+            "avancement",
         )
         read_only_fields = ("quantite_realisee", "statut")
+        extra_kwargs = {"avancement": {"min_value": 0, "max_value": 100}, "poids": {"min_value": 0}}
 
     def validate(self, attrs):
         if "axe_strategique" in attrs and attrs["axe_strategique"] is not None:
             axe = attrs["axe_strategique"]
             activite = attrs.get("activite") or getattr(self.instance, "activite", None)
-            cadre_projet = activite.objectif_specifique.objectif_general.projet.cadre_strategique_id
+            cadre_projet = activite.projet.cadre_strategique_id
             # Projet sans cadre stratégique choisi : rien à quoi comparer, pas de restriction.
             if cadre_projet is not None and axe.type_niveau.cadre_strategique_id != cadre_projet:
                 raise serializers.ValidationError(
-                    {"axe_strategique": "Cet élément stratégique n'appartient pas au cadre stratégique du projet."}
+                    {"axe_strategique": v("Cet élément stratégique n'appartient pas au cadre stratégique du projet.")}
                 )
         return attrs
 
@@ -74,8 +80,11 @@ class ActiviteSerializer(serializers.ModelSerializer):
     equipe_responsable_nom = serializers.StringRelatedField(source="equipe_responsable", read_only=True)
     axe_strategique_libelle = serializers.StringRelatedField(source="axe_strategique", read_only=True)
     sous_activites = SousActiviteSerializer(many=True, read_only=True)
+    jalons_livrables = serializers.SerializerMethodField()
     enfants = serializers.SerializerMethodField()
-    taux_realisation = serializers.ReadOnlyField()
+    taux_realisation = serializers.SerializerMethodField()
+    methode_calcul_effective = serializers.SerializerMethodField()
+    taux_avertissements = serializers.SerializerMethodField()
     taux_execution_financiere = serializers.ReadOnlyField()
     alerte_retard = serializers.ReadOnlyField()
 
@@ -83,10 +92,11 @@ class ActiviteSerializer(serializers.ModelSerializer):
         model = Activite
         fields = (
             "id",
-            "objectif_specifique",
+            "projet",
             "activite_parent",
             "code_activite",
             "libelle",
+            "description",
             "statut",
             "commentaire",
             "axe_strategique",
@@ -112,10 +122,39 @@ class ActiviteSerializer(serializers.ModelSerializer):
             "sous_activites",
             "enfants",
             "taux_realisation",
+            "methode_calcul",
+            "methode_agregation",
+            "poids",
+            "methode_calcul_effective",
+            "taux_avertissements",
+            "jalons_livrables",
             "taux_execution_financiere",
             "alerte_retard",
         )
         read_only_fields = ("statut", "quantite_realisee", "budget_realise")
+        # Le projet peut être omis à la création d'un élément enfant : il est
+        # alors repris de l'élément parent (voir validate()).
+        extra_kwargs = {"projet": {"required": False}}
+
+    def _resultat_taux(self, obj):
+        # Un seul calcul pour tout l'arbre du projet, partagé par tous ses éléments.
+        arbres = self.context.setdefault("arbres_taux", {})
+        if obj.projet_id not in arbres:
+            arbres[obj.projet_id] = ArbreTaux(obj.projet)
+        return arbres[obj.projet_id].resultat(obj.id)
+
+    def get_taux_realisation(self, obj):
+        return self._resultat_taux(obj).taux
+
+    def get_methode_calcul_effective(self, obj):
+        """Méthode réellement appliquée (héritée si l'élément n'en fixe pas), ou AGREGATION."""
+        return self._resultat_taux(obj).methode
+
+    def get_taux_avertissements(self, obj):
+        return self._resultat_taux(obj).avertissements
+
+    def get_jalons_livrables(self, obj):
+        return JalonLivrableSerializer(obj.jalons_livrables.all(), many=True).data
 
     def get_enfants(self, obj):
         # Activités imbriquées sous celle-ci (voir Activite.activite_parent) —
@@ -124,22 +163,25 @@ class ActiviteSerializer(serializers.ModelSerializer):
         return ActiviteSerializer(obj.enfants.all(), many=True, context=self.context).data
 
     def validate(self, attrs):
+        activite_parent = attrs.get("activite_parent") or getattr(self.instance, "activite_parent", None)
+        projet = attrs.get("projet") or getattr(self.instance, "projet", None)
+        if projet is None and activite_parent is not None:
+            projet = attrs["projet"] = activite_parent.projet
+        if projet is None:
+            raise serializers.ValidationError({"projet": v("Indique le projet ou l'élément parent.")})
+        if activite_parent and activite_parent.projet_id != projet.id:
+            raise serializers.ValidationError(
+                {"activite_parent": v("L'élément parent doit appartenir au même projet.")}
+            )
+
         if "axe_strategique" in attrs and attrs["axe_strategique"] is not None:
             axe = attrs["axe_strategique"]
-            objectif_specifique = attrs.get("objectif_specifique") or getattr(self.instance, "objectif_specifique", None)
-            cadre_projet = objectif_specifique.objectif_general.projet.cadre_strategique_id
+            cadre_projet = projet.cadre_strategique_id
             # Projet sans cadre stratégique choisi : rien à quoi comparer, pas de restriction.
             if cadre_projet is not None and axe.type_niveau.cadre_strategique_id != cadre_projet:
                 raise serializers.ValidationError(
-                    {"axe_strategique": "Cet élément stratégique n'appartient pas au cadre stratégique du projet."}
+                    {"axe_strategique": v("Cet élément stratégique n'appartient pas au cadre stratégique du projet.")}
                 )
-
-        activite_parent = attrs.get("activite_parent") or getattr(self.instance, "activite_parent", None)
-        objectif_specifique = attrs.get("objectif_specifique") or getattr(self.instance, "objectif_specifique", None)
-        if activite_parent and objectif_specifique and activite_parent.objectif_specifique_id != objectif_specifique.id:
-            raise serializers.ValidationError(
-                {"activite_parent": "L'activité parente doit être rattachée au même objectif spécifique."}
-            )
         return attrs
 
     def create(self, validated_data):
@@ -166,43 +208,48 @@ class ActiviteSerializer(serializers.ModelSerializer):
         return instance
 
 
-class ObjectifSpecifiqueSerializer(serializers.ModelSerializer):
-    # Seulement les activités racines (sans activite_parent) : les activités
-    # imbriquées apparaissent via ActiviteSerializer.enfants, pas ici — sinon
-    # elles seraient dupliquées (une fois à plat, une fois nichées).
-    activites = serializers.SerializerMethodField()
+class JalonLivrableSerializer(serializers.ModelSerializer):
+    valide_par_nom = serializers.StringRelatedField(source="valide_par", read_only=True)
 
     class Meta:
-        model = ObjectifSpecifique
-        fields = ("id", "objectif_general", "libelle", "description", "activites")
+        model = JalonLivrable
+        fields = (
+            "id", "activite", "type", "libelle", "poids", "date_prevue", "achevement",
+            "valide", "valide_par", "valide_par_nom", "date_validation",
+        )
+        read_only_fields = ("valide_par", "date_validation")
+        extra_kwargs = {"achevement": {"min_value": 0, "max_value": 100}, "poids": {"min_value": 0}}
 
-    def get_activites(self, obj):
-        racines = obj.activites.filter(activite_parent__isnull=True)
-        return ActiviteSerializer(racines, many=True, context=self.context).data
 
-
-class ObjectifGeneralSerializer(serializers.ModelSerializer):
-    objectifs_specifiques = ObjectifSpecifiqueSerializer(many=True, read_only=True)
+class TauxManuelSerializer(serializers.ModelSerializer):
+    saisi_par_nom = serializers.StringRelatedField(source="saisi_par", read_only=True)
 
     class Meta:
-        model = ObjectifGeneral
-        fields = ("id", "projet", "libelle", "description", "objectifs_specifiques")
+        model = TauxManuel
+        fields = ("id", "activite", "taux", "date", "saisi_par", "saisi_par_nom", "commentaire")
+        read_only_fields = ("saisi_par",)
+        extra_kwargs = {"taux": {"min_value": 0, "max_value": 100}}
 
-    def validate(self, attrs):
-        projet = attrs.get("projet") or getattr(self.instance, "projet", None)
-        if projet and not self.instance and ObjectifGeneral.objects.filter(projet=projet).exists():
-            raise serializers.ValidationError("Ce projet a déjà un objectif général.")
-        return attrs
+
+class ParametresCalculSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ParametresCalcul
+        fields = ("methode_calcul", "methode_agregation", "plafonner_agregation")
 
 
 class ProjetSerializer(serializers.ModelSerializer):
-    """Lecture : FK affichées en clair + hiérarchie imbriquée."""
+    """
+    Lecture : FK affichées en clair + planification imbriquée (`activites` :
+    les éléments de premier niveau, chacun avec ses `enfants`, sur autant de
+    niveaux que le projet en définit).
+    """
 
     partenaire_bailleur_nom = serializers.StringRelatedField(source="partenaire_bailleur", read_only=True)
     partenaire_mise_en_oeuvre_nom = serializers.StringRelatedField(source="partenaire_mise_en_oeuvre", read_only=True)
     partenaires_consortium_noms = serializers.StringRelatedField(source="partenaires_consortium", many=True, read_only=True)
     cadre_strategique_nom = serializers.StringRelatedField(source="cadre_strategique", read_only=True)
-    objectif_general = serializers.SerializerMethodField()
+    element_strategique_libelle = serializers.SerializerMethodField()
+    activites = serializers.SerializerMethodField()
     financement_bailleurs_total = serializers.ReadOnlyField()
 
     class Meta:
@@ -229,6 +276,8 @@ class ProjetSerializer(serializers.ModelSerializer):
             "zones",
             "cadre_strategique",
             "cadre_strategique_nom",
+            "element_strategique",
+            "element_strategique_libelle",
             "chef_de_projet_nom",
             "utilisateurs_affectes",
             "cible_totale",
@@ -237,12 +286,20 @@ class ProjetSerializer(serializers.ModelSerializer):
             "cible_jeunes",
             "cible_pdi",
             "elements_capitalisation",
-            "objectif_general",
+            "methode_calcul",
+            "methode_agregation",
+            "activites",
         )
 
-    def get_objectif_general(self, obj):
-        og = getattr(obj, "objectif_general", None)
-        return ObjectifGeneralSerializer(og).data if og else None
+    def get_element_strategique_libelle(self, obj):
+        element = obj.element_strategique
+        if element is None:
+            return None
+        return f"{element.type_niveau.nom_niveau} : {element}"
+
+    def get_activites(self, obj):
+        racines = obj.activites.filter(activite_parent__isnull=True)
+        return ActiviteSerializer(racines, many=True, context=self.context).data
 
 
 class ProjetWriteSerializer(serializers.ModelSerializer):
@@ -267,6 +324,7 @@ class ProjetWriteSerializer(serializers.ModelSerializer):
             "type_mise_en_oeuvre",
             "zones",
             "cadre_strategique",
+            "element_strategique",
             "chef_de_projet_nom",
             "utilisateurs_affectes",
             "cible_totale",
@@ -275,4 +333,19 @@ class ProjetWriteSerializer(serializers.ModelSerializer):
             "cible_jeunes",
             "cible_pdi",
             "elements_capitalisation",
+            "methode_calcul",
+            "methode_agregation",
         )
+
+    def validate(self, attrs):
+        element = attrs.get("element_strategique", getattr(self.instance, "element_strategique", None))
+        cadre = attrs.get("cadre_strategique", getattr(self.instance, "cadre_strategique", None))
+        if element is not None:
+            if cadre is None:
+                # Choisir un élément suffit : le cadre est celui de l'élément.
+                attrs["cadre_strategique"] = element.type_niveau.cadre_strategique
+            elif element.type_niveau.cadre_strategique_id != cadre.id:
+                raise serializers.ValidationError(
+                    {"element_strategique": v("Cet élément n'appartient pas au cadre stratégique du projet.")}
+                )
+        return attrs

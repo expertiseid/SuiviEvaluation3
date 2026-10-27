@@ -4,6 +4,7 @@ import { Alert, Button, FileInput, Group, List, Modal, Stack, Text } from "@mant
 import { notifications } from "@mantine/notifications";
 import { useImporterProjet, telechargerModeleImportProjet } from "../../api/projects";
 import type { ImportProjetResultat } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 export function ImportProjetModal({ opened, onClose }: { opened: boolean; onClose: () => void }) {
   const importer = useImporterProjet();
@@ -27,7 +28,7 @@ export function ImportProjetModal({ opened, onClose }: { opened: boolean; onClos
       const res = await importer.mutateAsync(formData);
       setResultat(res);
       if (res.projet_id) {
-        notifications.show({ message: `Projet « ${res.projet_code} » créé`, color: "green" });
+        notifications.show({ message: voc`Projet « ${res.projet_code} » créé`, color: "green" });
       }
     } catch {
       notifications.show({ message: "Erreur lors de l'import — vérifie le format du fichier.", color: "red" });
@@ -35,14 +36,10 @@ export function ImportProjetModal({ opened, onClose }: { opened: boolean; onClos
   }
 
   return (
-    <Modal opened={opened} onClose={fermer} title="Importer un projet depuis Excel" size="lg">
+    <Modal opened={opened} onClose={fermer} title={voc("Importer un projet depuis Excel")} size="lg">
       <Stack gap="md">
         <Alert color="blue" variant="light">
-          La feuille « Projet » du modèle porte sa fiche (nom, code, dates, modalités, bailleur…) en une
-          ligne par champ. La feuille « Planification » porte sa hiérarchie Objectif général → Objectif
-          spécifique → Activité → Sous-activité, dans le même style que l'import du plan stratégique — une
-          colonne par niveau, une seule colonne remplie par ligne.
-        </Alert>
+          {voc("La feuille « Projet » du modèle porte sa fiche (nom, code, dates, modalités, bailleur…) en une ligne par champ. La feuille « Planification » porte sa planification : une colonne par niveau (en jaune dans le modèle, avec les noms et le nombre que tu veux, ex : Résultat → Pilier → Activité), puis Sous-activité — une seule colonne de niveau remplie par ligne.")}</Alert>
 
         <Button variant="light" leftSection={<Download size={16} />} onClick={() => telechargerModeleImportProjet()}>
           Télécharger le modèle Excel
@@ -67,12 +64,12 @@ export function ImportProjetModal({ opened, onClose }: { opened: boolean; onClos
             <Alert color={resultat.projet_id ? "green" : "orange"} title="Résultat de l'import">
               {resultat.projet_id ? (
                 <Text size="sm">
-                  Projet <strong>{resultat.projet_code}</strong> créé — <strong>{resultat.objectifs_specifiques_crees}</strong>{" "}
-                  objectif(s) spécifique(s), <strong>{resultat.activites_creees}</strong> activité(s),{" "}
+                  {voc("Projet ")}<strong>{resultat.projet_code}</strong> créé — <strong>{resultat.elements_crees}</strong>{" "}
+                  {voc("élément(s) de planification")}{resultat.niveaux.length > 0 && <> (niveaux : {resultat.niveaux.join(" › ")})</>},{" "}
                   <strong>{resultat.sous_activites_creees}</strong> sous-activité(s).
                 </Text>
               ) : (
-                <Text size="sm">Aucun projet créé — voir les erreurs ci-dessous.</Text>
+                <Text size="sm">{voc("Aucun projet créé — voir les erreurs ci-dessous.")}</Text>
               )}
             </Alert>
 

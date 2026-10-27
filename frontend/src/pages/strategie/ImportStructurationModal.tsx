@@ -100,6 +100,16 @@ export function ImportStructurationModal({
                 </List>
               </Alert>
             )}
+
+            {(resultat.avertissements ?? []).length > 0 && (
+              <Alert color="yellow" title="À vérifier">
+                <List size="sm">
+                  {resultat.avertissements.map((e, i) => (
+                    <List.Item key={i}>{e.message}</List.Item>
+                  ))}
+                </List>
+              </Alert>
+            )}
           </Stack>
         )}
 

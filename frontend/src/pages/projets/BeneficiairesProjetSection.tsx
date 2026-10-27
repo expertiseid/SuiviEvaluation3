@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useBeneficiaires, useCreateParticipation } from "../../api/beneficiaries";
 import { ImportBeneficiairesModal } from "../beneficiaires/ImportBeneficiairesModal";
 import type { Beneficiaire, Projet } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 const TAILLE_PAGE = 25;
 
@@ -75,7 +76,7 @@ export function BeneficiairesProjetSection({ projet }: { projet: Projet }) {
     setSelection(new Map());
     queryClient.invalidateQueries({ queryKey: ["beneficiaires"] });
     if (ajoutes > 0) {
-      notifications.show({ message: `${ajoutes} bénéficiaire(s) associé(s) au projet`, color: "green" });
+      notifications.show({ message: voc`${ajoutes} bénéficiaire(s) associé(s) au projet`, color: "green" });
     }
     if (echecs.length > 0) {
       notifications.show({ message: `Échec de l'association pour : ${echecs.join(", ")}`, color: "red", autoClose: 8000 });
@@ -86,7 +87,7 @@ export function BeneficiairesProjetSection({ projet }: { projet: Projet }) {
     <Stack gap="sm">
       <Divider mt="xs" />
       <Group justify="space-between" align="center">
-        <Title order={5}>Bénéficiaires associés au projet</Title>
+        <Title order={5}>{voc("Bénéficiaires associés au projet")}</Title>
         <Button variant="light" size="xs" leftSection={<Upload size={14} />} onClick={() => setModalImportOpen(true)}>
           Importer une liste (Excel)
         </Button>
@@ -94,7 +95,7 @@ export function BeneficiairesProjetSection({ projet }: { projet: Projet }) {
 
       <TextInput
         leftSection={<Search size={14} />}
-        placeholder="Rechercher un bénéficiaire par nom, téléphone, pièce d'identité…"
+        placeholder={voc("Rechercher un bénéficiaire par nom, téléphone, pièce d'identité…")}
         value={search}
         onChange={(e) => setSearch(e.currentTarget.value)}
         // Entrée ne doit pas soumettre le formulaire du projet qui englobe cet onglet.
@@ -106,7 +107,7 @@ export function BeneficiairesProjetSection({ projet }: { projet: Projet }) {
       {isLoading ? (
         <Text size="sm" c="dimmed">Chargement…</Text>
       ) : data && data.results.length === 0 ? (
-        <Text size="sm" c="dimmed">Aucun bénéficiaire trouvé.</Text>
+        <Text size="sm" c="dimmed">{voc("Aucun bénéficiaire trouvé.")}</Text>
       ) : (
         <Table highlightOnHover verticalSpacing={4} fz="sm">
           <Table.Thead>

@@ -1,7 +1,7 @@
 import pytest
 from rest_framework.test import APIClient
 
-from apps.accounts.constants import ROLE_ADMIN
+from apps.accounts.constants import ROLE_ADMIN, ROLE_CHARGE_SE
 from apps.accounts.models import User
 from apps.partners.models import Partenaire
 from apps.projects.models import Projet
@@ -74,3 +74,36 @@ def test_configuration_reservee_aux_roles_autorises(client):
     Role.objects.filter(code="CHARGE_SE").update(peut_personnaliser_tableau_de_bord=True)
     assert autre.put(url, {"blocs_masques": []}, format="json").status_code == 200
     assert client.put(url, {"types_graphiques": {"x": "inconnu"}}, format="json").status_code == 400
+
+
+
+@pytest.mark.django_db
+def test_seul_l_administrateur_renomme_les_rubriques_du_menu():
+    admin = APIClient()
+    admin.force_authenticate(User.objects.create_user(username="adm_menu", password="x", role=ROLE_ADMIN))
+    charge = APIClient()
+    charge.force_authenticate(User.objects.create_user(username="se_menu", password="x", role=ROLE_CHARGE_SE))
+
+    r = admin.put("/api/v1/interface/menu/", {"libelles": {"/projets": " Programmes ", "/suivi": ""}}, format="json")
+    assert r.status_code == 200
+    # Libellé nettoyé ; un libellé vide est retiré (retour au nom par défaut).
+    assert r.data["libelles"] == {"/projets": "Programmes"}
+    assert charge.get("/api/v1/interface/menu/").data == {
+        "libelles": {"/projets": "Programmes"}, "icones": {}, "vocabulaire": {}, "peut_modifier": False,
+    }
+    # Les icônes s'enregistrent sans toucher aux libellés déjà choisis.
+    r = admin.put("/api/v1/interface/menu/", {"icones": {"/projets": "Briefcase", "/suivi": ""}}, format="json")
+    assert r.data["icones"] == {"/projets": "Briefcase"} and r.data["libelles"] == {"/projets": "Programmes"}
+    assert admin.put("/api/v1/interface/menu/", {"icones": {"/projets": "<script>"}}, format="json").status_code == 400
+
+    # Vocabulaire : un terme vide est retiré, un terme inconnu est refusé.
+    r = admin.put(
+        "/api/v1/interface/menu/",
+        {"vocabulaire": {"projet": {"singulier": " action ", "pluriel": "actions", "feminin": True},
+                         "indicateur": {"singulier": "", "pluriel": ""}}},
+        format="json",
+    )
+    assert r.data["vocabulaire"] == {"projet": {"singulier": "action", "pluriel": "actions", "feminin": True}}
+    assert admin.put("/api/v1/interface/menu/", {"vocabulaire": {"inconnu": {"singulier": "x"}}}, format="json").status_code == 400
+    assert charge.put("/api/v1/interface/menu/", {"libelles": {"/projets": "X"}}, format="json").status_code == 403
+    assert admin.put("/api/v1/interface/menu/", {"libelles": ["pas un dict"]}, format="json").status_code == 400

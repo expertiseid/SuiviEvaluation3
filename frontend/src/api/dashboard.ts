@@ -1,5 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
+import type { Vocabulaire } from "../utils/vocabulaire";
 import type {
   ConfigurationTableauDeBord,
   DashboardConsolide,
@@ -52,5 +53,35 @@ export function useEnregistrerConfigurationTableauDeBord() {
       (await apiClient.put<ConfigurationTableauDeBord>("/dashboard/configuration/", payload)).data,
     // Mise à jour immédiate de l'écran, sans attendre un rechargement.
     onSuccess: (configuration) => queryClient.setQueryData(["dashboard", "configuration"], configuration),
+  });
+}
+
+/** Noms et icônes des rubriques du menu latéral choisis par l'Administrateur, par route. */
+export interface ConfigurationMenu {
+  libelles: Record<string, string>;
+  /** Nom d'une icône de ICONES_MENU (utils/iconesMenu). */
+  icones: Record<string, string>;
+  vocabulaire: Vocabulaire;
+  peut_modifier: boolean;
+}
+
+export function useConfigurationMenu() {
+  return useQuery({
+    queryKey: ["configuration-menu"],
+    queryFn: async () => (await apiClient.get<ConfigurationMenu>("/interface/menu/")).data,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useUpdateConfigurationMenu() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: {
+      libelles: Record<string, string>;
+      icones: Record<string, string>;
+      vocabulaire: Vocabulaire;
+    }) =>
+      (await apiClient.put<ConfigurationMenu>("/interface/menu/", payload)).data,
+    onSuccess: (data) => queryClient.setQueryData(["configuration-menu"], data),
   });
 }

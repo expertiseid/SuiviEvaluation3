@@ -2,17 +2,24 @@ import { useMemo, useState } from "react";
 import { Alert, Autocomplete, Button, Divider, Group, NumberInput, Select, Stack, Text, Textarea, TextInput } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
-import { useCreateActivite, useCreateEquipe, useEquipes, useUpdateActivite } from "../../api/projects";
+import { useCreateActivite, useCreateEquipe, useEquipes, useNommerNiveau, useUpdateActivite } from "../../api/projects";
 import { useCreateIntervenant, useIntervenants } from "../../api/intervenants";
 import { useElementsStrategiques, useTypesNiveaux } from "../../api/strategy";
 import { IntervenantsMultiples } from "../../components/common/IntervenantsMultiples";
 import { DocumentsTab } from "../../components/documents/DocumentsTab";
 import { messageErreurApi } from "../../utils/erreurs";
 import type { Activite, Intervenant } from "../../types";
+import { AIDES_AGREGATION, AIDES_METHODE, optionsAgregation, optionsMethode } from "../../utils/methodesCalcul";
+import { voc } from "../../utils/vocabulaire";
 
+/**
+ * Création / modification d'un élément de la planification, à n'importe quel
+ * niveau (objectif, résultat, pilier, activité... selon les niveaux du projet).
+ */
 export function ActiviteForm({
-  objectifSpecifiqueId,
   activiteParentId,
+  profondeur,
+  nomNiveau,
   cadreStrategiqueId,
   projetId,
   budgetProjetTotal,
@@ -20,9 +27,12 @@ export function ActiviteForm({
   activite,
   onDone,
 }: {
-  objectifSpecifiqueId: number;
-  /** Si fourni, l'activité créée est imbriquée sous celle-ci (voir Activite.activite_parent). */
+  /** Si fourni, l'élément créé est placé sous celui-ci (sinon : premier niveau du projet). */
   activiteParentId?: number;
+  /** Niveau de l'élément créé (0 = premier niveau) — sert à nommer ce niveau s'il ne l'est pas encore. */
+  profondeur?: number;
+  /** Nom actuel de ce niveau, s'il en a un. */
+  nomNiveau?: string | null;
   cadreStrategiqueId: number | null;
   projetId: number;
   budgetProjetTotal: number;
@@ -36,6 +46,11 @@ export function ActiviteForm({
   const { data: equipes } = useEquipes();
   const { data: intervenants } = useIntervenants();
   const createActivite = useCreateActivite();
+  const nommerNiveau = useNommerNiveau(projetId);
+  // À la création d'un élément sur un niveau encore sans nom, on demande ce nom
+  // (ex : « Résultat », « Pilier ») : chaque niveau porte ainsi son propre nom.
+  const demanderNomNiveau = !activite && profondeur !== undefined && !nomNiveau;
+  const [nouveauNomNiveau, setNouveauNomNiveau] = useState("");
   const updateActivite = useUpdateActivite();
   const createEquipe = useCreateEquipe();
   const createIntervenant = useCreateIntervenant();
@@ -71,6 +86,10 @@ export function ActiviteForm({
   const [dateFin, setDateFin] = useState<string | null>(activite?.date_fin ?? null);
   const [dateRappel, setDateRappel] = useState<string | null>(activite?.date_rappel ?? null);
   const [commentaire, setCommentaire] = useState(activite?.commentaire ?? "");
+  const [description, setDescription] = useState(activite?.description ?? "");
+  const [methodeCalcul, setMethodeCalcul] = useState<string>(activite?.methode_calcul ?? "");
+  const [methodeAgregation, setMethodeAgregation] = useState<string>(activite?.methode_agregation ?? "");
+  const [poids, setPoids] = useState<number | string>(activite?.poids ?? "");
 
   const budgetRestant = budgetProjetTotal - budgetDejaAlloue;
   const budgetAllouNumber = budgetAlloue === "" ? 0 : Number(budgetAlloue);
@@ -113,9 +132,13 @@ export function ActiviteForm({
       notifications.show({ message: "Le libellé est requis.", color: "orange" });
       return;
     }
+    if (demanderNomNiveau && !nouveauNomNiveau.trim()) {
+      notifications.show({ message: "Donne un nom à ce niveau (ex : Résultat, Pilier, Activité).", color: "orange" });
+      return;
+    }
     const payload = {
-      objectif_specifique: objectifSpecifiqueId,
-      activite_parent: activiteParentId ?? null,
+      projet: projetId,
+      ...(enEdition ? {} : { activite_parent: activiteParentId ?? null }),
       code_activite: codeActivite,
       libelle: libelle.trim(),
       axe_strategique: axeStrategique ? Number(axeStrategique) : null,
@@ -129,19 +152,24 @@ export function ActiviteForm({
       date_fin: dateFin,
       date_rappel: dateRappel,
       commentaire,
+      description,
+      methode_calcul: methodeCalcul,
+      methode_agregation: methodeAgregation,
+      poids: poids === "" ? null : Number(poids),
     };
     try {
       if (enEdition) {
         await updateActivite.mutateAsync({ id: activite!.id, payload });
-        notifications.show({ message: "Activité modifiée", color: "green" });
+        notifications.show({ message: "Élément modifié", color: "green" });
       } else {
+        if (demanderNomNiveau) await nommerNiveau(profondeur!, nouveauNomNiveau.trim());
         await createActivite.mutateAsync(payload as never);
-        notifications.show({ message: "Activité créée", color: "green" });
+        notifications.show({ message: "Élément créé", color: "green" });
       }
       onDone();
     } catch (error) {
       notifications.show({
-        message: messageErreurApi(error, enEdition ? "Erreur lors de la modification de l'activité" : "Erreur lors de la création de l'activité"),
+        message: messageErreurApi(error, enEdition ? "Erreur lors de la modification de l'élément" : "Erreur lors de la création de l'élément"),
         color: "red",
       });
     }
@@ -149,11 +177,22 @@ export function ActiviteForm({
 
   return (
     <Stack gap="sm">
-      <TextInput label="Code activité" placeholder="Ex : AI1.1" value={codeActivite} onChange={(e) => setCodeActivite(e.currentTarget.value)} />
+      {demanderNomNiveau && (
+        <TextInput
+          label="Nom de ce niveau"
+          description={voc("Ce niveau n'a pas encore de nom : il s'appliquera à tous les éléments de ce niveau dans le projet.")}
+          placeholder="Ex : Résultat, Pilier, Activité…"
+          value={nouveauNomNiveau}
+          onChange={(e) => setNouveauNomNiveau(e.currentTarget.value)}
+          required
+          data-autofocus
+        />
+      )}
+      <TextInput label="Code" placeholder="Ex : R1, P1.2, A1.1" value={codeActivite} onChange={(e) => setCodeActivite(e.currentTarget.value)} />
       {activitesDuCadre.length > 0 ? (
         <Autocomplete
           label="Libellé"
-          description={`Suggestions issues du niveau « ${niveauFeuille!.nom_niveau} » du cadre stratégique — vous pouvez aussi taper un nouveau libellé.`}
+          description={voc`Suggestions issues du niveau « ${niveauFeuille!.nom_niveau} » du cadre stratégique — vous pouvez aussi taper un nouveau libellé.`}
           data={activitesDuCadre.map((a) => a.nom)}
           value={libelle}
           onChange={(v) => {
@@ -166,46 +205,86 @@ export function ActiviteForm({
       ) : (
         <TextInput label="Libellé" value={libelle} onChange={(e) => setLibelle(e.currentTarget.value)} required />
       )}
+      <Textarea
+        label="Description"
+        autosize
+        minRows={1}
+        value={description}
+        onChange={(e) => setDescription(e.currentTarget.value)}
+      />
       <Group grow>
         <DateInput label="Date de début prévue" value={dateDebut} onChange={setDateDebut} />
         <DateInput label="Date de fin prévue" value={dateFin} onChange={setDateFin} />
       </Group>
       <DateInput
         label="Date de rappel (optionnel)"
-        description="Déclenche une alerte à cette date précise, indépendamment du seuil de jours avant l'échéance."
+        description={voc("Déclenche une alerte à cette date précise, indépendamment du seuil de jours avant l'échéance.")}
         value={dateRappel}
         onChange={setDateRappel}
         clearable
       />
       <NumberInput
         label="Budget alloué (FCFA)"
-        description={`Budget restant du projet : ${budgetRestant.toLocaleString("fr-FR")} FCFA`}
+        description={voc`Budget restant du projet : ${budgetRestant.toLocaleString("fr-FR")} FCFA`}
         value={budgetAlloue}
         onChange={setBudgetAlloue}
         min={0}
-        error={budgetDepasseLeRestant ? "Ce montant dépasse le budget restant du projet." : undefined}
+        error={budgetDepasseLeRestant ? voc("Ce montant dépasse le budget restant du projet.") : undefined}
       />
       {budgetDepasseLeRestant && (
         <Alert color="orange" variant="light">
-          Ce budget alloué ({budgetAllouNumber.toLocaleString("fr-FR")} FCFA) dépasse le budget restant du projet
-          ({budgetRestant.toLocaleString("fr-FR")} FCFA sur {budgetProjetTotal.toLocaleString("fr-FR")} FCFA au total).
-          Vérifie le montant avant de créer l'activité.
+          Ce budget alloué ({budgetAllouNumber.toLocaleString("fr-FR")} {voc(" FCFA) dépasse le budget restant du projet (")}{budgetRestant.toLocaleString("fr-FR")} FCFA sur {budgetProjetTotal.toLocaleString("fr-FR")} FCFA au total).
+          Vérifie le montant avant d'enregistrer.
         </Alert>
       )}
       <Group grow>
         <TextInput label="Unité" placeholder="Ex : producteurs" value={uniteQuantite} onChange={(e) => setUniteQuantite(e.currentTarget.value)} />
         <NumberInput
           label="Valeur de base"
-          description="Avant le démarrage — l'activité se suit alors comme un indicateur."
+          description={voc("Avant le démarrage — l'activité se suit alors comme un indicateur.")}
           value={valeurReference}
           onChange={setValeurReference}
           min={0}
         />
         <NumberInput label="Quantité prévue (cible)" value={quantitePrevue} onChange={setQuantitePrevue} min={0} />
       </Group>
+      <Divider label={voc("Calcul du taux d'exécution")} labelPosition="left" />
+      <Group grow align="flex-start">
+        <Select
+          label="Méthode de calcul"
+          description={
+            methodeCalcul
+              ? AIDES_METHODE[methodeCalcul as keyof typeof AIDES_METHODE]
+              : "Vide : celle du niveau au-dessus, sinon du projet, sinon de l'organisation."
+          }
+          data={optionsMethode("Hériter (niveau au-dessus / projet)")}
+          value={methodeCalcul}
+          onChange={(v) => setMethodeCalcul(v ?? "")}
+          allowDeselect={false}
+        />
+        <Select
+          label="Agrégation des éléments en dessous"
+          description={
+            methodeAgregation
+              ? AIDES_AGREGATION[methodeAgregation as keyof typeof AIDES_AGREGATION]
+              : "Utilisée si cet élément a des éléments en dessous."
+          }
+          data={optionsAgregation("Hériter (niveau au-dessus / projet)")}
+          value={methodeAgregation}
+          onChange={(v) => setMethodeAgregation(v ?? "")}
+          allowDeselect={false}
+        />
+        <NumberInput
+          label="Poids"
+          description="Pour une agrégation « pondérée par les poids » du niveau au-dessus."
+          min={0}
+          value={poids}
+          onChange={setPoids}
+        />
+      </Group>
       <Textarea
         label="Commentaire"
-        description="Note libre (ex : validation, remarque) — n'affecte ni le suivi ni les calculs."
+        description={voc("Note libre (ex : validation, remarque) — n'affecte ni le suivi ni les calculs.")}
         minRows={2}
         value={commentaire}
         onChange={(e) => setCommentaire(e.currentTarget.value)}
@@ -214,8 +293,8 @@ export function ActiviteForm({
         label="Élément stratégique"
         description={
           cadreStrategiqueId
-            ? "Peut être rattaché à n'importe quelle ligne du cadre stratégique (orientation, axe, activité, sous-activité…), limité au cadre de ce projet."
-            : "Ce projet n'a pas de cadre stratégique associé — tous les éléments existants sont proposés."
+            ? voc("Peut être rattaché à n'importe quelle ligne du cadre stratégique (orientation, axe, activité, sous-activité…), limité au cadre de ce projet.")
+            : voc("Ce projet n'a pas de cadre stratégique associé — tous les éléments existants sont proposés.")
         }
         data={axes?.map((a) => ({ value: String(a.id), label: `${a.type_niveau_nom} · ${a.code ? a.code + " — " : ""}${a.nom}` })) ?? []}
         value={axeStrategique}
@@ -314,7 +393,7 @@ export function ActiviteForm({
 
       {enEdition && (
         <>
-          <Divider label="Documents liés" labelPosition="left" mt="sm" />
+          <Divider label={voc("Documents liés")} labelPosition="left" mt="sm" />
           <DocumentsTab activiteId={activite!.id} />
         </>
       )}

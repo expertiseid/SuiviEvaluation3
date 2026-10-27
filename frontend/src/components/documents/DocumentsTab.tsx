@@ -31,6 +31,7 @@ import { confirmerSuppression } from "../common/confirmerSuppression";
 import { messageErreurApi } from "../../utils/erreurs";
 import { EmptyState } from "../common/EmptyState";
 import type { GedDocument } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 function NouveauDossierModal({
   projetId,
@@ -109,20 +110,20 @@ function NouveauDocumentModal({
 
     try {
       await createDocument.mutateAsync(formData);
-      notifications.show({ message: "Document ajouté", color: "green" });
+      notifications.show({ message: voc("Document ajouté"), color: "green" });
       setNom("");
       setTypeDocument("");
       setFichier(null);
       onClose();
     } catch {
-      notifications.show({ message: "Erreur lors de l'ajout du document", color: "red" });
+      notifications.show({ message: voc("Erreur lors de l'ajout du document"), color: "red" });
     }
   }
 
   return (
-    <Modal opened={opened} onClose={onClose} title="Nouveau document">
+    <Modal opened={opened} onClose={onClose} title={voc("Nouveau document")}>
       <Stack gap="sm">
-        <TextInput label="Nom du document" value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
+        <TextInput label={voc("Nom du document")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
         <TextInput label="Type" placeholder="Ex : Note, Contrat, Rapport bailleur…" value={typeDocument} onChange={(e) => setTypeDocument(e.currentTarget.value)} />
         <FileInput label="Fichier" value={fichier} onChange={setFichier} required />
         <Group justify="flex-end">
@@ -232,19 +233,19 @@ export function DocumentsTab({
   function rattachementDe(doc: GedDocument) {
     if (doc.activite_nom) return `Activité — ${doc.activite_nom}`;
     if (doc.sous_activite_nom) return `Sous-activité — ${doc.sous_activite_nom}`;
-    return "Projet";
+    return voc("Projet");
   }
 
   function handleSupprimer(doc: { id: number; nom: string }) {
     confirmerSuppression({
-      message: `Supprimer le document "${doc.nom}" ainsi que toutes ses versions ? Cette action est irréversible.`,
+      message: voc`Supprimer le document "${doc.nom}" ainsi que toutes ses versions ? Cette action est irréversible.`,
       onConfirm: async () => {
         try {
           await deleteDocument.mutateAsync(doc.id);
-          notifications.show({ message: "Document supprimé", color: "green" });
+          notifications.show({ message: voc("Document supprimé"), color: "green" });
         } catch (error) {
           notifications.show({
-            message: messageErreurApi(error, "Erreur lors de la suppression du document"),
+            message: messageErreurApi(error, voc("Erreur lors de la suppression du document")),
             color: "red",
           });
         }
@@ -256,7 +257,7 @@ export function DocumentsTab({
     if (!dossierActif) return;
     const dossier = dossiers?.find((d) => String(d.id) === dossierActif);
     confirmerSuppression({
-      message: `Supprimer le dossier "${dossier?.nom ?? ""}" ainsi que tous les documents qu'il contient ? Cette action est irréversible.`,
+      message: voc`Supprimer le dossier "${dossier?.nom ?? ""}" ainsi que tous les documents qu'il contient ? Cette action est irréversible.`,
       onConfirm: async () => {
         try {
           await deleteDossier.mutateAsync(Number(dossierActif));
@@ -303,8 +304,7 @@ export function DocumentsTab({
             </Button>
           )}
           <Button leftSection={<Upload size={16} />} onClick={() => setModalDocument(true)}>
-            Ajouter un document
-          </Button>
+            {voc("Ajouter un document")}</Button>
         </Group>
       </Group>
 
@@ -316,12 +316,12 @@ export function DocumentsTab({
             icon={<FileText size={32} strokeWidth={1.5} />}
             message={
               projetId
-                ? "Aucun document dans ce dossier."
+                ? voc("Aucun document dans ce dossier.")
                 : sousActiviteId
-                  ? "Aucun document lié à cette sous-activité."
+                  ? voc("Aucun document lié à cette sous-activité.")
                   : activiteId
-                    ? "Aucun document lié à cette activité."
-                    : "Aucun document pour l'instant."
+                    ? voc("Aucun document lié à cette activité.")
+                    : voc("Aucun document pour l'instant.")
             }
           />
         ) : (

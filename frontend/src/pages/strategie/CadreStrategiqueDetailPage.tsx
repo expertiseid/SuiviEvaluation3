@@ -47,6 +47,7 @@ import { correspond } from "../../utils/recherche";
 import { AxesBudgetsTab } from "./AxesBudgetsTab";
 import { ImportStructurationModal } from "./ImportStructurationModal";
 import type { ElementStrategique, RecapCadreStrategique, TypeNiveau } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 // Une couleur par rang de niveau (pas par nom) — fixe et cohérente sur tout
 // l'écran, pour distinguer visuellement "à quel niveau appartient ce nœud"
@@ -236,10 +237,7 @@ function ConfigurationNiveaux({
     <Card withBorder padding="lg" radius="md">
       <Text fw={600} mb="xs">Configuration de la structuration</Text>
       <Text size="sm" c="dimmed" mb="sm">
-        Nous définissons ici les niveaux propres à ce cadre stratégique (nombre, noms, ordre) — par exemple
-        « Plan » → « Orientation » → « Axe » → « Activité », ou « Priorité » → « Sous-priorité ». Cette
-        structuration reste propre à ce cadre, sans effet sur les autres.
-      </Text>
+        {voc("Nous définissons ici les niveaux propres à ce cadre stratégique (nombre, noms, ordre) — par exemple « Plan » → « Orientation » → « Axe » → « Activité », ou « Priorité » → « Sous-priorité ». Cette structuration reste propre à ce cadre, sans effet sur les autres.")}</Text>
 
       {tries.length === 0 ? (
         <EmptyState icon={<ListTree size={32} strokeWidth={1.5} />} message="Aucun niveau défini pour l'instant — commence par en ajouter un ci-dessous." />
@@ -789,7 +787,7 @@ function TableauActivites({
 }
 
 function TableauIndicateurs({ indicateurs }: { indicateurs: RecapCadreStrategique["projets"][number]["indicateurs"] }) {
-  if (indicateurs.length === 0) return <Text size="sm" c="dimmed">Aucun indicateur.</Text>;
+  if (indicateurs.length === 0) return <Text size="sm" c="dimmed">{voc("Aucun indicateur.")}</Text>;
 
   const lignes = indicateurs.map((i) => ({
     ...i,
@@ -801,7 +799,7 @@ function TableauIndicateurs({ indicateurs }: { indicateurs: RecapCadreStrategiqu
       <Table verticalSpacing={6} fz="sm" withTableBorder withColumnBorders striped>
         <Table.Thead>
           <Table.Tr>
-            <Table.Th {...ENTETE}>Indicateur</Table.Th>
+            <Table.Th {...ENTETE}>{voc("Indicateur")}</Table.Th>
             <Table.Th {...ENTETE} ta="right">Cible</Table.Th>
             <Table.Th {...ENTETE} ta="right">Réalisé</Table.Th>
             <Table.Th {...ENTETE} ta="right">Taux</Table.Th>
@@ -819,7 +817,7 @@ function TableauIndicateurs({ indicateurs }: { indicateurs: RecapCadreStrategiqu
         </Table.Tbody>
         <Table.Tfoot bg="gray.1">
           <Table.Tr>
-            <Table.Th>Total ({lignes.length} indicateur{lignes.length > 1 ? "s" : ""}) — taux moyen</Table.Th>
+            <Table.Th>Total ({lignes.length} {voc(" indicateur")}{lignes.length > 1 ? "s" : ""}) — taux moyen</Table.Th>
             <Table.Th {...CHIFFRE} c="dimmed" fw={400}>—</Table.Th>
             <Table.Th {...CHIFFRE} c="dimmed" fw={400}>—</Table.Th>
             <Table.Th><TauxCell taux={moyenne(lignes.map((l) => l.taux))} /></Table.Th>
@@ -841,7 +839,7 @@ function CarteProjetRecap({ p }: { p: RecapCadreStrategique["projets"][number] }
             <Badge variant="light" size="sm">{p.statut}</Badge>
           </Group>
           <Text size="xs" c="dimmed" mt={2}>
-            {p.chef_de_projet_nom || "Chef de projet non renseigné"} · {p.bailleur_nom || "Bailleur non renseigné"} ·{" "}
+            {p.chef_de_projet_nom || voc("Chef de projet non renseigné")} · {p.bailleur_nom || "Bailleur non renseigné"} ·{" "}
             {p.date_debut} → {p.date_fin}
           </Text>
         </div>
@@ -867,7 +865,7 @@ function CarteProjetRecap({ p }: { p: RecapCadreStrategique["projets"][number] }
           <TableauActivites activites={p.activites} />
         </Box>
         <Box>
-          <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb={4}>Indicateurs ({p.nombre_indicateurs})</Text>
+          <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb={4}>{voc("Indicateurs (")}{p.nombre_indicateurs})</Text>
           <TableauIndicateurs indicateurs={p.indicateurs} />
         </Box>
       </Stack>
@@ -891,7 +889,7 @@ function RecapProjetsBudgets({ cadreId }: { cadreId: number }) {
         />
         <StatCard label="Activités" value={recap.nombre_activites_total} icon={<ListTree size={20} />} color="teal" />
         <StatCard
-          label="Indicateurs"
+          label={voc("Indicateurs")}
           value={recap.nombre_indicateurs_total}
           icon={<Settings2 size={20} />}
           color="orange"
@@ -911,10 +909,10 @@ function RecapProjetsBudgets({ cadreId }: { cadreId: number }) {
       </SimpleGrid>
 
       <div>
-        <Title order={4} mb="xs">Projets contribuant à ce cadre stratégique</Title>
+        <Title order={4} mb="xs">{voc("Projets contribuant à ce cadre stratégique")}</Title>
         {recap.projets.length === 0 ? (
           <Card withBorder padding="md" radius="md">
-            <EmptyState icon={<Wallet size={32} strokeWidth={1.5} />} message="Aucun projet rattaché à ce cadre stratégique." />
+            <EmptyState icon={<Wallet size={32} strokeWidth={1.5} />} message={voc("Aucun projet rattaché à ce cadre stratégique.")} />
           </Card>
         ) : (
           <Stack gap="md">
@@ -946,7 +944,7 @@ export function CadreStrategiqueDetailPage() {
           <ActionIcon component={Link} to="/strategie" variant="subtle" color="gray">
             <ArrowLeft size={18} />
           </ActionIcon>
-          <Title order={2}>{cadre?.nom ?? "Cadre stratégique"}</Title>
+          <Title order={2}>{cadre?.nom ?? voc("Cadre stratégique")}</Title>
         </Group>
         <Group gap="xs">
           <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />
@@ -978,8 +976,7 @@ export function CadreStrategiqueDetailPage() {
               Axes &amp; budgets
             </Tabs.Tab>
             <Tabs.Tab value="recap" leftSection={<Wallet size={15} />}>
-              Projets &amp; budgets
-            </Tabs.Tab>
+              {voc("Projets &amp; budgets")}</Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="configuration" pt="md">

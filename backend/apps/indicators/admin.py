@@ -11,7 +11,7 @@ class ValeurIndicateurInline(admin.TabularInline):
 
 @admin.register(Indicateur)
 class IndicateurAdmin(admin.ModelAdmin):
-    list_display = ("libelle", "unite", "valeur_cible", "projet", "objectif_specifique", "activite", "frequence_collecte")
+    list_display = ("libelle", "unite", "valeur_cible", "projet", "activite", "frequence_collecte")
     list_filter = ("frequence_collecte",)
     search_fields = ("libelle",)
     inlines = [ValeurIndicateurInline]

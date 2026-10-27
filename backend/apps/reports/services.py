@@ -6,14 +6,10 @@ SEUIL_STATUT_ATTEINT = 80
 
 
 def taux_execution_physique_global(projet):
-    """Moyenne des taux de réalisation des activités du projet (ignore celles sans quantité prévue)."""
-    from apps.projects.models import Activite
+    """Taux du projet, agrégé selon sa méthode d'agrégation (voir apps.projects.taux)."""
+    from apps.projects.taux import ArbreTaux
 
-    activites = Activite.objects.filter(
-        objectif_specifique__objectif_general__projet=projet, quantite_prevue__isnull=False
-    )
-    taux = [a.taux_realisation for a in activites if a.taux_realisation is not None]
-    return round(sum(taux) / len(taux), 1) if taux else None
+    return ArbreTaux(projet).taux_projet().taux
 
 
 def taux_execution_financiere_global(projet):
@@ -22,7 +18,7 @@ def taux_execution_financiere_global(projet):
 
     from apps.projects.models import Activite
 
-    totaux = Activite.objects.filter(objectif_specifique__objectif_general__projet=projet).aggregate(
+    totaux = Activite.objects.filter(projet=projet).aggregate(
         realise=Sum("budget_realise"), planifie=Sum("budget_alloue")
     )
     planifie = totaux["planifie"] or 0
@@ -38,7 +34,7 @@ def statut_global(projet):
     taux_fin = taux_execution_financiere_global(projet)
 
     en_retard = Activite.objects.filter(
-        objectif_specifique__objectif_general__projet=projet
+        projet=projet
     ).exclude(statut=Activite.Statut.REALISEE).filter(date_fin__isnull=False)
     if any(a.alerte_retard for a in en_retard):
         return "EN_RETARD"

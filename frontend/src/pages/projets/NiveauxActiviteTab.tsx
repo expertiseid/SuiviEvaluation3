@@ -12,6 +12,7 @@ import { EmptyState } from "../../components/common/EmptyState";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
 import { messageErreurApi } from "../../utils/erreurs";
 import type { NiveauActivite } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 function ModalRenommer({
   opened,
@@ -52,11 +53,11 @@ function ModalRenommer({
 }
 
 /**
- * Noms affichés pour chaque profondeur d'imbrication d'Activité dans ce
- * projet (ex : profondeur 0 = « Résultat », profondeur 1 = « Activité »...) —
- * créés automatiquement au premier import Excel (une colonne entre
- * « Objectif spécifique » et « Sous-activité » = un niveau), modifiables ici
- * sans devoir réimporter. Purement cosmétique : renommer ou supprimer un
+ * Noms des niveaux de la planification de ce projet, du plus haut au plus bas
+ * (ex : « Objectif général » → « Objectif spécifique » → « Activité », ou
+ * « Résultat » → « Pilier » → « Activité ») — aucun niveau n'est imposé.
+ * Créés automatiquement à l'import Excel (une colonne avant « Sous-activité »
+ * = un niveau), modifiables ici sans devoir réimporter. Purement cosmétique : renommer ou supprimer un
  * niveau ne change rien aux activités déjà créées à cette profondeur.
  */
 export function NiveauxActiviteTab({ projetId }: { projetId: number }) {
@@ -89,7 +90,7 @@ export function NiveauxActiviteTab({ projetId }: { projetId: number }) {
 
   function supprimer(niveau: NiveauActivite) {
     confirmerSuppression({
-      message: `Supprimer le niveau « ${niveau.nom_niveau} » ? Les activités déjà créées à cette profondeur ne sont pas affectées — elles s'afficheront simplement avec le nom par défaut « Activité ».`,
+      message: `Supprimer le niveau « ${niveau.nom_niveau} » ? Les éléments déjà créés à ce niveau ne sont pas affectés — ils s'afficheront simplement avec le nom par défaut « Activité ».`,
       onConfirm: async () => {
         try {
           await deleteNiveau.mutateAsync(niveau.id);
@@ -105,24 +106,21 @@ export function NiveauxActiviteTab({ projetId }: { projetId: number }) {
     <Card withBorder padding="lg" radius="md">
       <Text fw={600} mb="xs">Configuration des niveaux</Text>
       <Text size="sm" c="dimmed" mb="sm">
-        Chaque profondeur d'imbrication d'Activité dans ce projet (créée automatiquement à l'import Excel — une
-        colonne entre « Objectif spécifique » et « Sous-activité » = un niveau) peut être renommée ici, sans
-        réimporter. Ex : « Résultat » → « Activité » → « OK ».
-      </Text>
+        {voc("Les niveaux de la planification de ce projet, du plus haut au plus bas. Leur nom et leur nombre sont libres : par exemple « Objectif général » → « Objectif spécifique » → « Activité », ou « Résultat » → « Pilier » → « Activité ». Renommer un niveau change seulement son nom affiché, jamais les éléments déjà saisis.")}</Text>
 
       {isLoading ? (
         <Text c="dimmed">Chargement…</Text>
       ) : tries.length === 0 ? (
         <EmptyState
           icon={<ListTree size={32} strokeWidth={1.5} />}
-          message="Aucun niveau personnalisé pour l'instant — ce projet utilise la hiérarchie classique (Activité / Sous-activité)."
+          message={voc("Aucun niveau nommé pour l'instant — les éléments s'affichent sous le nom « Activité ». Ajoute ci-dessous les niveaux de ta planification, du plus haut au plus bas.")}
         />
       ) : (
         <Stack gap={6} mb="sm">
           {tries.map((niveau) => (
             <Group key={niveau.id} gap={6} wrap="nowrap" justify="space-between">
               <Group gap={6} wrap="nowrap">
-                <Text size="sm" c="dimmed" w={20}>{niveau.profondeur}.</Text>
+                <Text size="sm" c="dimmed" w={20}>{niveau.profondeur + 1}.</Text>
                 <Text size="sm" fw={500}>{niveau.nom_niveau}</Text>
               </Group>
               <Group gap={2} wrap="nowrap">

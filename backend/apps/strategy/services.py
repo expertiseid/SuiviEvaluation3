@@ -25,9 +25,11 @@ import re
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from openpyxl import Workbook, load_workbook
-from openpyxl.styles import Font
+from openpyxl.comments import Comment
+from openpyxl.styles import Alignment, Font, PatternFill
 
 from apps.core.excel_utils import figer_entete, quadriller
+from apps.core.vocabulaire import adapter_classeur
 
 # Reconnaît le format "CODE — Nom" tel que généré par exporter_structuration
 # (code = un seul mot sans espace, ex : "AXE1", "OR1.1") — permet de
@@ -45,6 +47,47 @@ def _decouper_code_nom(texte: str) -> tuple[str, str]:
 
 NOMS_NIVEAUX_EXEMPLE = ["Orientation stratégique", "Axe d'intervention"]
 
+# Repère visuel des colonnes de niveau (noms libres), comme la feuille « Planification ».
+COULEUR_NIVEAU = "FFF2CC"
+DEBUT_LEGENDE = "En jaune :"
+LEGENDE_STRUCTURATION = (
+    f"{DEBUT_LEGENDE} les niveaux de votre structuration, de gauche à droite. Leurs noms et leur nombre sont "
+    "libres (ex : Plan → Programme → Résultat → Pilier) — renommez, ajoutez ou supprimez des colonnes."
+)
+COMMENTAIRE_NIVEAU = (
+    "Nom libre : renommez cette colonne, ou ajoutez des colonnes de niveau (à droite, ou entre deux "
+    "colonnes : le niveau sera créé à cette position)."
+)
+
+
+def remplir_feuille_structuration(feuille, noms_colonnes, lignes_exemple=(), lignes_vides=20):
+    """
+    Feuille « Structuration » d'un modèle : ligne 1 = légende, ligne 2 = une
+    colonne par niveau (en jaune, commentée), puis les éléments.
+    """
+    nb = max(len(noms_colonnes), 1)
+    feuille.append([LEGENDE_STRUCTURATION])
+    feuille.merge_cells(start_row=1, start_column=1, end_row=1, end_column=max(nb, 2))
+    legende = feuille.cell(row=1, column=1)
+    legende.font = Font(italic=True, color="7F6000")
+    legende.fill = PatternFill("solid", fgColor=COULEUR_NIVEAU)
+    legende.alignment = Alignment(wrap_text=True, vertical="center")
+    feuille.row_dimensions[1].height = 32
+
+    feuille.append(list(noms_colonnes))
+    for cellule in feuille[2]:
+        cellule.font = Font(bold=True)
+        cellule.fill = PatternFill("solid", fgColor=COULEUR_NIVEAU)
+        cellule.comment = Comment(COMMENTAIRE_NIVEAU, "Plateforme S&E")
+    for ligne in lignes_exemple:
+        feuille.append(ligne)
+    for _ in range(lignes_vides):
+        feuille.append([""] * nb)
+    quadriller(feuille, min_row=2, max_col=nb)
+    figer_entete(feuille, ligne_entete=2)
+    for i in range(nb):
+        feuille.column_dimensions[chr(ord("A") + i)].width = 42
+
 LIGNES_EXEMPLE = [
     ["Amplifier la diffusion des pratiques agroécologiques et de protection de l'environnement", ""],
     ["", "Le renforcement des capacités des producteurs et productrices"],
@@ -61,25 +104,14 @@ def generer_modele_import(cadre_strategique) -> bytes:
     wb = Workbook()
     feuille = wb.active
     feuille.title = "Structuration"
-    feuille.append(noms_colonnes)
-    for cellule in feuille[1]:
-        cellule.font = Font(bold=True)
-
-    if not niveaux:
-        for ligne in LIGNES_EXEMPLE:
-            feuille.append(ligne)
-
-    for _ in range(20):
-        feuille.append([""] * len(noms_colonnes))
-    quadriller(feuille, max_col=len(noms_colonnes))
-    figer_entete(feuille)
-    for i in range(len(noms_colonnes)):
-        feuille.column_dimensions[chr(ord("A") + i)].width = 42
+    remplir_feuille_structuration(feuille, noms_colonnes, [] if niveaux else LIGNES_EXEMPLE)
 
     instructions = wb.create_sheet("Instructions")
     instructions.append([f"Cadre stratégique : {cadre_strategique.nom}"])
     instructions.append(["Consignes"])
-    instructions.append(["- Une colonne = un niveau de la hiérarchie (dans l'ordre, de gauche à droite)."])
+    instructions.append(["- Une colonne = un niveau de la hiérarchie (dans l'ordre, de gauche à droite), en jaune."])
+    instructions.append(["- Le nombre de colonnes est libre : ajoute une colonne à droite pour un niveau plus fin, ou"])
+    instructions.append(["  entre deux colonnes : le nouveau niveau est créé à cette position dans le cadre."])
     instructions.append(["- Sur chaque ligne, écris le nom de l'élément dans UNE SEULE colonne : celle de son niveau."])
     instructions.append(["- Son \"parent\" est déduit automatiquement : c'est le dernier élément écrit dans la"])
     instructions.append(["  colonne juste à gauche, au-dessus de cette ligne."])
@@ -91,6 +123,7 @@ def generer_modele_import(cadre_strategique) -> bytes:
     instructions.append(["  position) au lieu de les dupliquer."])
 
     buffer = io.BytesIO()
+    adapter_classeur(wb, feuilles={"Instructions"})
     wb.save(buffer)
     return buffer.getvalue()
 
@@ -149,32 +182,55 @@ def exporter_structuration(cadre_strategique) -> bytes:
     return buffer.getvalue()
 
 
-def _resoudre_type_niveau(nom_niveau, cache, cadre_strategique):
-    """Réutilise un TypeNiveau existant de ce cadre (par nom, insensible à la
-    casse) ou en crée un nouveau en fin de chaîne — même comportement que le
-    bouton "Ajouter un niveau" de l'écran de configuration."""
+def _niveaux_des_colonnes(noms_colonnes, cadre_strategique):
+    """
+    Niveau (TypeNiveau) de chaque colonne : un niveau existant de ce cadre (même
+    nom, sans tenir compte de la casse), ou un nouveau niveau créé à la position
+    de sa colonne — juste sous le niveau de la colonne de gauche (tout en haut
+    pour la première colonne). La chaîne des niveaux est ensuite renumérotée
+    (ordre et niveau_parent), comme le fait l'écran de configuration. Les
+    niveaux existants ne changent jamais d'ordre entre eux.
+    """
     from .models import TypeNiveau
 
-    cle = nom_niveau.strip().lower()
-    if cle in cache:
-        return cache[cle]
+    chaine = list(TypeNiveau.objects.filter(cadre_strategique=cadre_strategique).order_by("ordre"))
+    par_nom = {n.nom_niveau.strip().lower(): n for n in chaine}
+    avant_insertion = list(chaine)
+    types_par_colonne = []
+    for i, nom in enumerate(noms_colonnes):
+        cle = nom.strip().lower()
+        if cle not in par_nom:
+            nouveau = TypeNiveau.objects.create(cadre_strategique=cadre_strategique, nom_niveau=nom.strip(), ordre=0)
+            position = chaine.index(types_par_colonne[i - 1]) + 1 if i > 0 else 0
+            chaine.insert(position, nouveau)
+            par_nom[cle] = nouveau
+        types_par_colonne.append(par_nom[cle])
 
-    existant = TypeNiveau.objects.filter(
-        cadre_strategique=cadre_strategique, nom_niveau__iexact=nom_niveau.strip()
-    ).first()
-    if existant:
-        cache[cle] = existant
-        return existant
+    for rang, niveau in enumerate(chaine, start=1):
+        parent = chaine[rang - 2] if rang > 1 else None
+        if niveau.ordre != rang or niveau.niveau_parent_id != (parent.id if parent else None):
+            niveau.ordre = rang
+            niveau.niveau_parent = parent
+            niveau.save(update_fields=["ordre", "niveau_parent"])
 
-    dernier = TypeNiveau.objects.filter(cadre_strategique=cadre_strategique).order_by("-ordre").first()
-    niveau = TypeNiveau.objects.create(
-        cadre_strategique=cadre_strategique,
-        nom_niveau=nom_niveau.strip(),
-        ordre=(dernier.ordre if dernier else 0) + 1,
-        niveau_parent=dernier,
-    )
-    cache[cle] = niveau
-    return niveau
+    # Un niveau inséré au-dessus d'un niveau existant : les éléments déjà saisis de ce
+    # niveau restent rattachés à leur ancien parent, on le signale.
+    avertissements = []
+    for niveau in chaine:
+        if niveau in avant_insertion:
+            continue
+        rang = chaine.index(niveau)
+        if rang + 1 < len(chaine) and chaine[rang + 1] in avant_insertion:
+            dessous = chaine[rang + 1]
+            avertissements.append(
+                {
+                    "ligne": 0,
+                    "message": f"Niveau « {niveau.nom_niveau} » inséré au-dessus de « {dessous.nom_niveau} » : "
+                    f"les éléments « {dessous.nom_niveau} » déjà saisis et absents du fichier gardent leur "
+                    "ancien rattachement.",
+                }
+            )
+    return types_par_colonne, avertissements
 
 
 def importer_structuration(fichier, cadre_strategique) -> dict:
@@ -187,8 +243,12 @@ def importer_structuration_depuis_feuille(feuille, cadre_strategique) -> dict:
     from .models import ElementStrategique, TypeNiveau
 
     lignes = list(feuille.iter_rows(min_row=1, values_only=True))
+    # Ligne de légende du modèle (au-dessus des en-têtes) : ignorée.
+    premiere_ligne = 1
+    if lignes and lignes[0] and str(lignes[0][0] or "").startswith(DEBUT_LEGENDE):
+        lignes, premiere_ligne = lignes[1:], 2
     if not lignes:
-        return {"niveaux_crees": 0, "elements_crees": 0, "elements_mis_a_jour": 0, "erreurs": []}
+        return {"niveaux_crees": 0, "elements_crees": 0, "elements_mis_a_jour": 0, "erreurs": [], "avertissements": []}
 
     noms_colonnes = [str(c).strip() if c else "" for c in lignes[0]]
     while noms_colonnes and not noms_colonnes[-1]:
@@ -199,12 +259,12 @@ def importer_structuration_depuis_feuille(feuille, cadre_strategique) -> dict:
             "niveaux_crees": 0,
             "elements_crees": 0,
             "elements_mis_a_jour": 0,
-            "erreurs": [{"ligne": 1, "message": "Aucune colonne de niveau trouvée sur la première ligne."}],
+            "erreurs": [{"ligne": premiere_ligne, "message": "Aucune colonne de niveau trouvée sur la ligne d'en-têtes."}],
+            "avertissements": [],
         }
 
     niveaux_avant = TypeNiveau.objects.filter(cadre_strategique=cadre_strategique).count()
-    cache_niveaux: dict[str, TypeNiveau] = {}
-    types_par_colonne = [_resoudre_type_niveau(nom, cache_niveaux, cadre_strategique) for nom in noms_colonnes]
+    types_par_colonne, avertissements = _niveaux_des_colonnes(noms_colonnes, cadre_strategique)
 
     elements_existants: dict[tuple[int, str, int | None], ElementStrategique] = {
         (e.type_niveau_id, e.nom.strip().lower(), e.element_parent_id): e
@@ -215,7 +275,7 @@ def importer_structuration_depuis_feuille(feuille, cadre_strategique) -> dict:
     elements_mis_a_jour = 0
     erreurs = []
 
-    for numero, ligne in enumerate(lignes[1:], start=2):
+    for numero, ligne in enumerate(lignes[1:], start=premiere_ligne + 1):
         cellules = list(ligne[: len(noms_colonnes)])
         colonnes_remplies = [i for i, v in enumerate(cellules) if v not in (None, "")]
 
@@ -280,6 +340,7 @@ def importer_structuration_depuis_feuille(feuille, cadre_strategique) -> dict:
         "elements_crees": elements_crees,
         "elements_mis_a_jour": elements_mis_a_jour,
         "erreurs": erreurs,
+        "avertissements": avertissements,
     }
 
 

@@ -4,6 +4,7 @@ import { Alert, Button, FileInput, Group, List, Modal, Stack, Text } from "@mant
 import { notifications } from "@mantine/notifications";
 import { useImporterBeneficiaires, telechargerModeleImportBeneficiaires } from "../../api/beneficiaries";
 import type { ImportBeneficiairesResultat } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 export function ImportBeneficiairesModal({
   opened,
@@ -37,7 +38,7 @@ export function ImportBeneficiairesModal({
       const res = await importer.mutateAsync(formData);
       setResultat(res);
       if (res.crees > 0) {
-        notifications.show({ message: `${res.crees} bénéficiaire(s) importé(s)`, color: "green" });
+        notifications.show({ message: voc`${res.crees} bénéficiaire(s) importé(s)`, color: "green" });
       }
     } catch {
       notifications.show({ message: "Erreur lors de l'import — vérifie le format du fichier.", color: "red" });
@@ -45,7 +46,7 @@ export function ImportBeneficiairesModal({
   }
 
   return (
-    <Modal opened={opened} onClose={fermer} title="Importer des bénéficiaires depuis Excel" size="lg">
+    <Modal opened={opened} onClose={fermer} title={voc("Importer des bénéficiaires depuis Excel")} size="lg">
       <Stack gap="md">
         <Alert color="blue" variant="light">
           Utilise le modèle ci-dessous pour être sûr que les colonnes sont dans le bon format, puis
@@ -53,9 +54,8 @@ export function ImportBeneficiairesModal({
           les communes/villages sont créés automatiquement s'ils n'existent pas encore.
           {projet && (
             <>
-              {" "}Chaque bénéficiaire importé sera automatiquement associé au projet <strong>{projet.nom}</strong>
-              {" "}(sauf si sa ligne indique un autre Code projet).
-            </>
+              {" "}{voc("Chaque bénéficiaire importé sera automatiquement associé au projet ")}<strong>{projet.nom}</strong>
+              {" "}{voc("(sauf si sa ligne indique un autre Code projet).")}</>
           )}
         </Alert>
 
@@ -85,9 +85,8 @@ export function ImportBeneficiairesModal({
           <Stack gap="xs">
             <Alert color={resultat.crees > 0 ? "green" : "orange"} title="Résultat de l'import">
               <Text size="sm">
-                <strong>{resultat.crees}</strong> bénéficiaire(s) créé(s)
-                {resultat.doublons_detectes > 0 && (
-                  <>, dont <strong>{resultat.doublons_detectes}</strong> doublon(s) potentiel(s) détecté(s) — à traiter dans "Doublons signalés"</>
+                <strong>{resultat.crees}</strong> {voc(" bénéficiaire(s) créé(s)")}{resultat.doublons_detectes > 0 && (
+                  <>, dont <strong>{resultat.doublons_detectes}</strong> {voc(" doublon(s) potentiel(s) détecté(s) — à traiter dans \"Doublons signalés\"")}</>
                 )}
                 .
               </Text>

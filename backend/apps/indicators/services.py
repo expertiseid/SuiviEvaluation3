@@ -82,10 +82,7 @@ def indicateurs_pour_projet(projet_id):
     from .models import Indicateur
 
     return Indicateur.objects.filter(
-        Q(projet__id=projet_id)
-        | Q(objectif_general__projet__id=projet_id)
-        | Q(objectif_specifique__objectif_general__projet__id=projet_id)
-        | Q(activite__objectif_specifique__objectif_general__projet__id=projet_id)
+        Q(projet__id=projet_id) | Q(activite__projet__id=projet_id)
     ).distinct()
 
 

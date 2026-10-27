@@ -3,7 +3,7 @@ from rest_framework.test import APIClient
 
 from apps.accounts.constants import ROLE_ADMIN
 from apps.accounts.models import User
-from apps.projects.models import Activite, ObjectifGeneral, ObjectifSpecifique, Projet, SousActivite
+from apps.projects.models import Activite, Projet, SousActivite
 
 from .models import PointSuivi, TranchePlanifiee
 
@@ -12,10 +12,10 @@ from .models import PointSuivi, TranchePlanifiee
 def contexte(db):
     admin = User.objects.create_user(username="admin_periode", password="x", role=ROLE_ADMIN)
     projet = Projet.objects.create(nom="Projet P", code="PP-1", date_debut="2026-01-01", date_fin="2027-12-31")
-    og = ObjectifGeneral.objects.create(projet=projet, libelle="OG")
-    os_ = ObjectifSpecifique.objects.create(objectif_general=og, libelle="OS")
+    og = Activite.objects.create(projet=projet, libelle="OG")
+    os_ = Activite.objects.create(projet=projet, activite_parent=og, libelle="OS")
     activite = Activite.objects.create(
-        objectif_specifique=os_, libelle="Former", quantite_prevue=1200, budget_alloue=38000000
+        projet=projet, activite_parent=os_, libelle="Former", quantite_prevue=1200, budget_alloue=38000000
     )
     sous_activite = SousActivite.objects.create(activite=activite, libelle="Session", quantite_prevue=100)
     client = APIClient()
@@ -172,7 +172,7 @@ def test_objectifs_de_periode_a_definir_par_l_utilisateur(contexte):
         {"periode": periode["id"], "activite": activite.id, "cible": 500, "budget": 2000000},
     )
     data = client.get(f"/api/v1/periodes-planification/{periode['id']}/valeurs/").data
-    ligne_activite = next(l for l in data["lignes"] if l["type"] == "activite")
+    ligne_activite = next(l for l in data["lignes"] if l["type"] == "activite" and l["id"] == activite.id)
     assert ligne_activite["source"] == "saisi"
     assert float(ligne_activite["prevu_quantite"]) == 500
     assert ligne_activite["taux"] == 10.0
@@ -206,7 +206,7 @@ def test_saisie_sur_une_periode_actualise_le_suivi_global(contexte):
 
     # Le réalisé de la période ne compte que la saisie faite dans ses dates.
     data = client.get(f"/api/v1/periodes-planification/{periode['id']}/valeurs/").data
-    ligne = next(l for l in data["lignes"] if l["type"] == "activite")
+    ligne = next(l for l in data["lignes"] if l["type"] == "activite" and l["id"] == activite.id)
     assert float(ligne["realise_quantite"]) == 300
 
 
@@ -221,7 +221,7 @@ def test_suivi_par_periode_saisies_taux_et_exports(contexte):
         )
 
     data = client.get(f"/api/v1/periodes-planification/{periode['id']}/valeurs/").data
-    ligne = next(l for l in data["lignes"] if l["type"] == "activite")
+    ligne = next(l for l in data["lignes"] if l["type"] == "activite" and l["id"] == activite.id)
     assert [str(s["periode_debut"]) for s in ligne["saisies"]] == ["2026-01-01", "2026-02-01"]  # avril hors période
     assert data["totaux"]["taux_physique"] == 50.0
     assert data["totaux"]["taux_financier"] == 25.0

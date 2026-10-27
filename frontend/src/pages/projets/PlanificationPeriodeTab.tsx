@@ -3,7 +3,7 @@ import {
   CalendarPlus,
   CalendarRange,
   Download,
-  FolderTree,
+  ListPlus,
   ListChecks,
   Pencil,
   Plus,
@@ -69,6 +69,7 @@ import type {
 } from "../../types";
 import { ActiviteForm } from "./ActiviteForm";
 import { SousActiviteForm } from "./SousActiviteForm";
+import { voc } from "../../utils/vocabulaire";
 
 // ---------------------------------------------------------------- utilitaires
 
@@ -154,7 +155,7 @@ function PeriodeModal({
   }
 
   return (
-    <Modal opened={opened} onClose={onClose} title={periode ? "Modifier la période" : "Nouvelle période de planification"}>
+    <Modal opened={opened} onClose={onClose} title={periode ? "Modifier la période" : voc("Nouvelle période de planification")}>
       <Stack gap="sm">
         <DatePickerInput
           type="range"
@@ -280,7 +281,7 @@ function ValeursPeriodeModal({
     <Modal opened onClose={onClose} title={`${periode.libelle} — ${objet.libelle}`} size="lg">
       <Stack gap="sm">
         <Card withBorder padding="xs" bg="gray.0">
-          <Text size="xs" fw={600} c="dimmed" tt="uppercase">Planification globale</Text>
+          <Text size="xs" fw={600} c="dimmed" tt="uppercase">{voc("Planification globale")}</Text>
           <Text size="sm">
             {fmt(quantiteGlobale)} {unite}
             {estActivite && ` · ${fmt(budgetGlobal)} FCFA`} · {fmtDate(objet.date_debut)} → {fmtDate(objet.date_fin)}
@@ -524,7 +525,7 @@ function ObjectifsPeriode({
           <Badge size="xs" variant="light" color="orange">Objectif à définir</Badge>
         )}
         {v.dans_dates_globales === false && (
-          <Text size="xs" c="dimmed">Hors de ses dates dans la planification globale</Text>
+          <Text size="xs" c="dimmed">{voc("Hors de ses dates dans la planification globale")}</Text>
         )}
       </Group>
       {v.commentaire && <Text size="xs" c="dimmed" fs="italic">{v.commentaire}</Text>}
@@ -541,7 +542,7 @@ function LigneElement({
   peutModifier,
   onEditer,
   onEffacer,
-  ajout,
+  ajouts,
 }: {
   element: Element;
   nomNiveau: string;
@@ -551,8 +552,8 @@ function LigneElement({
   peutModifier: boolean;
   onEditer: (e: Element) => void;
   onEffacer: (trancheId: number, libelle: string) => void;
-  /** Activités uniquement : ajouter un élément sous celle-ci (même règle que l'onglet Planification). */
-  ajout?: { libelle: string; imbrique: boolean; onClick: () => void };
+  /** Éléments de planification uniquement : ajouter un niveau en dessous, ou une sous-activité. */
+  ajouts?: { libelle: string; sousActivite: boolean; onClick: () => void }[];
 }) {
   const objet = element.objet;
   const estActivite = element.type === "activite";
@@ -598,13 +599,13 @@ function LigneElement({
                 <Pencil size={12} />
               </ActionIcon>
             </Tooltip>
-            {ajout && (
-              <Tooltip label={ajout.libelle}>
+            {ajouts?.map((ajout) => (
+              <Tooltip key={ajout.libelle} label={ajout.libelle}>
                 <ActionIcon size="sm" variant="subtle" onClick={ajout.onClick}>
-                  {ajout.imbrique ? <FolderTree size={13} /> : <Plus size={13} />}
+                  {ajout.sousActivite ? <ListPlus size={13} /> : <Plus size={13} />}
                 </ActionIcon>
               </Tooltip>
-            )}
+            ))}
             {trancheId !== null && (
               <Tooltip label="Effacer les objectifs de la période">
                 <ActionIcon size="sm" variant="subtle" color="red" onClick={() => onEffacer(trancheId, objet.libelle)}>
@@ -649,8 +650,8 @@ export function PlanificationPeriodeTab({
   const [elementEnEdition, setElementEnEdition] = useState<Element | null>(null);
   const [indicateurEnEdition, setIndicateurEnEdition] = useState<SuiviDashboardIndicateur | null>(null);
   const [ajout, setAjout] = useState<
-    | { type: "activite"; objectifSpecifiqueId: number }
-    | { type: "enfant"; parent: Activite }
+    | { type: "racine" }
+    | { type: "enfant"; parent: Activite; profondeur: number }
     | { type: "sous_activite"; activite: Activite }
     | null
   >(null);
@@ -660,7 +661,6 @@ export function PlanificationPeriodeTab({
   const peutModifier = !!user && (user.role === "ADMIN" || user.niveau_acces === "LECTURE_ECRITURE");
   const { data: suivi } = useSuiviDashboard(projet.id);
   const indicateurs = suivi?.indicateurs ?? [];
-  const utiliseNiveauxPersonnalises = Object.keys(niveauxNoms).length > 0;
 
   // Période affichée par défaut : celle qui contient aujourd'hui, sinon la première.
   useEffect(() => {
@@ -687,12 +687,11 @@ export function PlanificationPeriodeTab({
   const valeursParElement = useMemo(() => {
     const map = new Map<string, ValeurElementPeriode>();
     [...(valeurs?.lignes ?? []), ...(valeurs?.indicateurs ?? [])].forEach((v) => {
-      if (v.type !== "objectif") map.set(`${v.type}-${v.id}`, v);
+      map.set(`${v.type}-${v.id}`, v);
     });
     return map;
   }, [valeurs]);
 
-  const objectifs = useMemo(() => projet.objectif_general?.objectifs_specifiques ?? [], [projet]);
 
   // Une activité ajoutée/modifiée (ici ou dans l'onglet Planification) change
   // les valeurs calculées : on les recalcule dès que le projet est rechargé.
@@ -701,9 +700,12 @@ export function PlanificationPeriodeTab({
   }, [projet, periodeId, recalculerValeurs]);
 
   // Même calcul que l'onglet Planification (contrôle du budget restant à la création d'une activité).
-  const budgetDejaAlloue = objectifs
-    .flatMap((os) => os.activites)
-    .reduce((somme, act) => somme + (nombre(act.budget_alloue) ?? 0), 0);
+  const tousLesElements = (elements: Activite[]): Activite[] =>
+    elements.flatMap((e) => [e, ...tousLesElements(e.enfants)]);
+  const budgetDejaAlloue = tousLesElements(projet.activites).reduce(
+    (somme, act) => somme + (nombre(act.budget_alloue) ?? 0),
+    0,
+  );
   const totaux = valeurs?.totaux;
 
   function visible(libelle: string, cle: string) {
@@ -722,7 +724,7 @@ export function PlanificationPeriodeTab({
 
   function effacer(trancheId: number, libelle: string) {
     confirmerSuppression({
-      message: `Effacer les objectifs de « ${libelle} » sur ${periode?.libelle ?? "cette période"} (quantité, budget, dates, commentaire) ? La planification globale et les saisies de suivi ne changent pas.`,
+      message: voc`Effacer les objectifs de « ${libelle} » sur ${periode?.libelle ?? "cette période"} (quantité, budget, dates, commentaire) ? La planification globale et les saisies de suivi ne changent pas.`,
       onConfirm: async () => {
         try {
           await deleteTranche.mutateAsync(trancheId);
@@ -737,7 +739,7 @@ export function PlanificationPeriodeTab({
   function supprimerPeriode() {
     if (!periode) return;
     confirmerSuppression({
-      message: `Supprimer la période « ${periode.libelle} » et toutes ses valeurs ? La planification globale et les saisies de suivi ne changent pas.`,
+      message: voc`Supprimer la période « ${periode.libelle} » et toutes ses valeurs ? La planification globale et les saisies de suivi ne changent pas.`,
       onConfirm: async () => {
         try {
           await deletePeriode.mutateAsync(periode.id);
@@ -763,19 +765,18 @@ export function PlanificationPeriodeTab({
           peutModifier={peutModifier}
           onEditer={setElementEnEdition}
           onEffacer={effacer}
-          ajout={
-            utiliseNiveauxPersonnalises || niveauxNoms[profondeur + 1]
-              ? {
-                  libelle: `Nouveau « ${niveauxNoms[profondeur + 1] ?? "niveau"} » (ajouté aussi à la planification globale)`,
-                  imbrique: true,
-                  onClick: () => setAjout({ type: "enfant", parent: act }),
-                }
-              : {
-                  libelle: "Nouvelle sous-activité (ajoutée aussi à la planification globale)",
-                  imbrique: false,
-                  onClick: () => setAjout({ type: "sous_activite", activite: act }),
-                }
-          }
+          ajouts={[
+            {
+              libelle: voc`Nouveau « ${niveauxNoms[profondeur + 1] ?? "niveau"} » en dessous (ajouté aussi à la planification globale)`,
+              sousActivite: false,
+              onClick: () => setAjout({ type: "enfant", parent: act, profondeur: profondeur + 1 }),
+            },
+            {
+              libelle: voc("Nouvelle sous-activité (ajoutée aussi à la planification globale)"),
+              sousActivite: true,
+              onClick: () => setAjout({ type: "sous_activite", activite: act }),
+            },
+          ]}
         />
         {(act.enfants.length > 0 || act.sous_activites.length > 0) && (
           <Stack gap={6} pl="md">
@@ -860,9 +861,9 @@ export function PlanificationPeriodeTab({
       {isLoading ? (
         <Text c="dimmed">Chargement…</Text>
       ) : !periode ? (
-        <EmptyState message="Crée une période (mois, trimestre, année…) sur le calendrier pour planifier le projet sur cette période précise." />
-      ) : !projet.objectif_general ? (
-        <EmptyState message="Ce projet n'a pas encore de planification : commence par l'onglet « Planification »." />
+        <EmptyState message={voc("Crée une période (mois, trimestre, année…) sur le calendrier pour planifier le projet sur cette période précise.")} />
+      ) : projet.activites.length === 0 ? (
+        <EmptyState message={voc("Ce projet n'a pas encore de planification : commence par l'onglet « Planification ».")} />
       ) : (
         <>
           <EnTetePeriode periode={periode} />
@@ -906,63 +907,42 @@ export function PlanificationPeriodeTab({
                 w={320}
               />
               <Switch
-                label="Seulement les éléments prévus à ces dates dans la planification globale"
+                label={voc("Seulement les éléments prévus à ces dates dans la planification globale")}
                 checked={seulementDansLesDates}
                 onChange={(e) => setSeulementDansLesDates(e.currentTarget.checked)}
               />
             </Group>
 
-            <Badge color="teal" variant="light" size="sm" mb={4}>Objectif général</Badge>
-            <Text fw={700} size="lg" mb="sm">{projet.objectif_general.libelle}</Text>
-
-            <Stack gap="md">
-              {objectifs.map((os) => {
-                const activitesVisibles = os.activites.filter(activiteVisible);
-                if (activitesVisibles.length === 0 && (recherche.trim() || seulementDansLesDates)) return null;
-                return (
-                  <Card key={os.id} withBorder radius="sm" padding="sm" style={{ borderLeft: "3px solid var(--mantine-color-blue-5)" }}>
-                    <Group justify="space-between" mb={6} wrap="nowrap">
-                      <Group gap={6}>
-                        <Badge color="blue" variant="light" size="xs">Objectif spécifique</Badge>
-                        <Text size="sm" fw={600}>{os.libelle}</Text>
-                      </Group>
-                      {editionActive && (
-                        <Tooltip label="Ajoutée aussi à la planification globale">
-                          <Button
-                            size="compact-xs"
-                            variant="light"
-                            leftSection={<Plus size={12} />}
-                            onClick={() => setAjout({ type: "activite", objectifSpecifiqueId: os.id })}
-                          >
-                            {niveauxNoms[0] ?? "Activité"}
-                          </Button>
-                        </Tooltip>
-                      )}
-                    </Group>
-                    {os.activites.length === 0 ? (
-                      <Text size="xs" c="dimmed">Aucune activité.</Text>
-                    ) : (
-                      <Stack gap={6}>{os.activites.map((act) => renduActivite(act, 0))}</Stack>
-                    )}
-                  </Card>
-                );
-              })}
-            </Stack>
+            {editionActive && (
+              <Group justify="flex-end" mb="xs">
+                <Tooltip label={voc("Ajouté aussi à la planification globale")}>
+                  <Button
+                    size="compact-xs"
+                    variant="light"
+                    leftSection={<Plus size={12} />}
+                    onClick={() => setAjout({ type: "racine" })}
+                  >
+                    {niveauxNoms[0] ?? "Activité"}
+                  </Button>
+                </Tooltip>
+              </Group>
+            )}
+            <Stack gap={6}>{projet.activites.map((act) => renduActivite(act, 0))}</Stack>
           </Card>
 
           <Card withBorder padding="md">
             <Group gap={6} mb="sm">
               <Target size={16} />
-              <Text fw={600}>Indicateurs — {periode.libelle}</Text>
+              <Text fw={600}>{voc("Indicateurs — ")}{periode.libelle}</Text>
             </Group>
             {indicateurs.length === 0 ? (
-              <Text size="sm" c="dimmed">Aucun indicateur rattaché à ce projet.</Text>
+              <Text size="sm" c="dimmed">{voc("Aucun indicateur rattaché à ce projet.")}</Text>
             ) : (
               <Table.ScrollContainer minWidth={700}>
                 <Table verticalSpacing="xs" striped>
                   <Table.Thead>
                     <Table.Tr>
-                      <Table.Th>Indicateur</Table.Th>
+                      <Table.Th>{voc("Indicateur")}</Table.Th>
                       <Table.Th>Cible globale</Table.Th>
                       <Table.Th>Objectif et réalisé sur la période</Table.Th>
                       <Table.Th w={70} />
@@ -1046,7 +1026,7 @@ export function PlanificationPeriodeTab({
           ajout?.type === "sous_activite"
             ? `Nouvelle sous-activité sous « ${ajout.activite.libelle} »`
             : ajout?.type === "enfant"
-              ? `Nouveau niveau imbriqué sous « ${ajout.parent.libelle} »`
+              ? `Nouveau « ${niveauxNoms[ajout.profondeur] ?? "niveau"} » sous « ${ajout.parent.libelle} »`
               : `Nouvelle ${(niveauxNoms[0] ?? "activité").toLowerCase()}`
         }
         size="lg"
@@ -1059,8 +1039,9 @@ export function PlanificationPeriodeTab({
           />
         ) : ajout ? (
           <ActiviteForm
-            objectifSpecifiqueId={ajout.type === "enfant" ? ajout.parent.objectif_specifique : ajout.objectifSpecifiqueId}
             activiteParentId={ajout.type === "enfant" ? ajout.parent.id : undefined}
+            profondeur={ajout.type === "enfant" ? ajout.profondeur : 0}
+            nomNiveau={niveauxNoms[ajout.type === "enfant" ? ajout.profondeur : 0] ?? null}
             cadreStrategiqueId={projet.cadre_strategique}
             projetId={projet.id}
             budgetProjetTotal={Number(projet.budget_total)}

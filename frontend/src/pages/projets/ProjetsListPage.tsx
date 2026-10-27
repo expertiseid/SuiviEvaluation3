@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FileSpreadsheet, FolderKanban, Pencil, Search, Trash2 } from "lucide-react";
-import { ActionIcon, Button, Card, Group, Modal, Stack, Table, Text, TextInput, Title, Tooltip } from "@mantine/core";
+import { ActionIcon, Button, Card, Group, Modal, Stack, Table, Text, TextInput, Tooltip } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useDeleteProjet, useProjets } from "../../api/projects";
 import { ProjetForm } from "./ProjetForm";
@@ -13,6 +13,8 @@ import { PROJET_STATUT_LABEL, PROJET_STATUT_TONE } from "../../utils/statusTones
 import { correspond } from "../../utils/recherche";
 import { BoutonModeEdition } from "../../components/common/BoutonModeEdition";
 import type { Projet } from "../../types";
+import { TitreRubrique } from "../../components/common/TitreRubrique";
+import { voc } from "../../utils/vocabulaire";
 
 export function ProjetsListPage() {
   const { data: projets, isLoading } = useProjets();
@@ -30,13 +32,13 @@ export function ProjetsListPage() {
 
   function handleSupprimer(id: number, nom: string) {
     confirmerSuppression({
-      message: `Supprimer le projet "${nom}" ainsi que toute sa planification et ses indicateurs ? Cette action est irréversible.`,
+      message: voc`Supprimer le projet "${nom}" ainsi que toute sa planification et ses indicateurs ? Cette action est irréversible.`,
       onConfirm: async () => {
         try {
           await deleteProjet.mutateAsync(id);
-          notifications.show({ message: "Projet supprimé", color: "green" });
+          notifications.show({ message: voc("Projet supprimé"), color: "green" });
         } catch {
-          notifications.show({ message: "Erreur lors de la suppression du projet", color: "red" });
+          notifications.show({ message: voc("Erreur lors de la suppression du projet"), color: "red" });
         }
       },
     });
@@ -45,18 +47,18 @@ export function ProjetsListPage() {
   return (
     <Stack gap="md">
       <Group justify="space-between">
-        <Title order={2}>Projets</Title>
+        <TitreRubrique route="/projets" defaut="Projets" />
         <Group gap="xs">
           <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />
           <Button variant="light" leftSection={<FileSpreadsheet size={16} />} onClick={() => setModalImportOuvert(true)}>
             Importer depuis Excel
           </Button>
-          <Button onClick={() => setModalOpen(true)}>Nouveau projet</Button>
+          <Button onClick={() => setModalOpen(true)}>{voc("Nouveau projet")}</Button>
         </Group>
       </Group>
 
       <TextInput
-        placeholder="Rechercher un projet (nom ou code)…"
+        placeholder={voc("Rechercher un projet (nom ou code)…")}
         leftSection={<Search size={15} />}
         value={recherche}
         onChange={(e) => setRecherche(e.currentTarget.value)}
@@ -67,9 +69,9 @@ export function ProjetsListPage() {
         {isLoading ? (
           <Text c="dimmed">Chargement…</Text>
         ) : !projets || projets.length === 0 ? (
-          <EmptyState icon={<FolderKanban size={32} strokeWidth={1.5} />} message="Aucun projet pour le moment." />
+          <EmptyState icon={<FolderKanban size={32} strokeWidth={1.5} />} message={voc("Aucun projet pour le moment.")} />
         ) : projetsFiltres.length === 0 ? (
-          <EmptyState icon={<FolderKanban size={32} strokeWidth={1.5} />} message="Aucun projet ne correspond à la recherche." />
+          <EmptyState icon={<FolderKanban size={32} strokeWidth={1.5} />} message={voc("Aucun projet ne correspond à la recherche.")} />
         ) : (
           <Table.ScrollContainer minWidth={640}>
             <Table striped highlightOnHover verticalSpacing="sm">
@@ -79,7 +81,7 @@ export function ProjetsListPage() {
                   <Table.Th tt="uppercase" fz="xs" c="dimmed">Nom</Table.Th>
                   <Table.Th tt="uppercase" fz="xs" c="dimmed">Statut</Table.Th>
                   <Table.Th tt="uppercase" fz="xs" c="dimmed">Période</Table.Th>
-                  <Table.Th tt="uppercase" fz="xs" c="dimmed">Chef de projet</Table.Th>
+                  <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Chef de projet")}</Table.Th>
                   <Table.Th />
                 </Table.Tr>
               </Table.Thead>
@@ -104,12 +106,12 @@ export function ProjetsListPage() {
                     <Table.Td>
                       {editionActive && (
                       <Group gap={4} wrap="nowrap">
-                        <Tooltip label="Modifier le projet">
+                        <Tooltip label={voc("Modifier le projet")}>
                           <ActionIcon variant="subtle" onClick={() => setProjetEnEdition(p)}>
                             <Pencil size={15} />
                           </ActionIcon>
                         </Tooltip>
-                        <Tooltip label="Supprimer le projet">
+                        <Tooltip label={voc("Supprimer le projet")}>
                           <ActionIcon
                             variant="subtle"
                             color="red"
@@ -130,11 +132,11 @@ export function ProjetsListPage() {
         )}
       </Card>
 
-      <Modal opened={modalOpen} onClose={() => setModalOpen(false)} title="Nouveau projet" size="lg">
+      <Modal opened={modalOpen} onClose={() => setModalOpen(false)} title={voc("Nouveau projet")} size="lg">
         <ProjetForm onDone={() => setModalOpen(false)} />
       </Modal>
 
-      <Modal opened={!!projetEnEdition} onClose={() => setProjetEnEdition(null)} title="Modifier le projet" size="lg">
+      <Modal opened={!!projetEnEdition} onClose={() => setProjetEnEdition(null)} title={voc("Modifier le projet")} size="lg">
         {projetEnEdition && (
           <ProjetForm projet={projetEnEdition} onDone={() => setProjetEnEdition(null)} />
         )}

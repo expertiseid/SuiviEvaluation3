@@ -17,6 +17,8 @@ import {
 import { notifications } from "@mantine/notifications";
 import { useImporterComplet, telechargerModeleImportComplet } from "../../api/planification";
 import type { ImportPlanificationCompleteResultat } from "../../types";
+import { TitreRubrique } from "../../components/common/TitreRubrique";
+import { voc } from "../../utils/vocabulaire";
 
 function CarteImportSepare({
   titre,
@@ -54,7 +56,7 @@ export function PlanificationImportPage() {
       const res = await importer.mutateAsync(formData);
       setResultat(res);
       if (res.projet_id) {
-        notifications.show({ message: `Planification importée — projet « ${res.projet_code} » créé`, color: "green" });
+        notifications.show({ message: voc`Planification importée — projet « ${res.projet_code} » créé`, color: "green" });
       }
     } catch {
       notifications.show({ message: "Erreur lors de l'import — vérifie le format du fichier.", color: "red" });
@@ -64,12 +66,9 @@ export function PlanificationImportPage() {
   return (
     <Stack gap="lg">
       <div>
-        <Title order={2}>Planification complète</Title>
+        <TitreRubrique route="/planification" defaut="Planification complète" />
         <Text c="dimmed" size="sm">
-          Nous chargeons ici, en un seul classeur Excel, un cadre stratégique complet (objectifs, axes...),
-          un projet (modalités, budget, planification), ses indicateurs et ses bénéficiaires. Pour importer
-          chaque élément séparément, utilise plutôt les écrans listés plus bas.
-        </Text>
+          {voc("Nous chargeons ici, en un seul classeur Excel, un cadre stratégique complet (objectifs, axes...), un projet (modalités, budget, planification), ses indicateurs et ses bénéficiaires. Pour importer chaque élément séparément, utilise plutôt les écrans listés plus bas.")}</Text>
       </div>
 
       <Card withBorder padding="lg" radius="md">
@@ -79,11 +78,7 @@ export function PlanificationImportPage() {
         </Group>
 
         <Alert color="blue" variant="light" mb="md">
-          Le fichier est un classeur à plusieurs feuilles (Cadre stratégique, Structuration, Projet,
-          Planification, Indicateurs, Bénéficiaires), avec une colonne par niveau pour les hiérarchies. Seule
-          la feuille « Projet » est obligatoire — les autres sections sont ignorées si elles sont laissées
-          vides. Les bénéficiaires importés sont automatiquement inscrits au projet créé.
-        </Alert>
+          {voc("Le fichier est un classeur à plusieurs feuilles (Cadre stratégique, Structuration, Projet, Planification, Indicateurs, Bénéficiaires), avec une colonne par niveau pour les hiérarchies. Seule la feuille « Projet » est obligatoire — les autres sections sont ignorées si elles sont laissées vides. Les bénéficiaires importés sont automatiquement inscrits au projet créé.")}</Alert>
 
         <Button
           variant="light"
@@ -113,20 +108,18 @@ export function PlanificationImportPage() {
             <Alert color={resultat.projet_id ? "green" : "orange"} title="Résultat de l'import">
               <Group gap="xs" mb={6}>
                 {resultat.cadre_strategique_id && <Badge variant="light">Cadre : {resultat.cadre_strategique_nom}</Badge>}
-                {resultat.projet_id && <Badge variant="light" color="teal">Projet : {resultat.projet_code}</Badge>}
+                {resultat.projet_id && <Badge variant="light" color="teal">{voc("Projet : ")}{resultat.projet_code}</Badge>}
               </Group>
               <Text size="sm">
                 {resultat.elements_strategiques_crees > 0 && (
                   <>· <strong>{resultat.elements_strategiques_crees}</strong> élément(s) stratégique(s) créé(s)<br /></>
                 )}
-                · <strong>{resultat.objectifs_specifiques_crees}</strong> objectif(s) spécifique(s),{" "}
-                <strong>{resultat.activites_creees}</strong> activité(s), <strong>{resultat.sous_activites_creees}</strong> sous-activité(s)
+                · <strong>{resultat.elements_crees}</strong> {voc(" élément(s) de planification")}{resultat.niveaux.length > 0 && <> (niveaux : {resultat.niveaux.join(" › ")})</>},{" "}
+                <strong>{resultat.sous_activites_creees}</strong> sous-activité(s)
                 <br />
-                · <strong>{resultat.indicateurs_crees}</strong> indicateur(s) créé(s)
-                <br />
-                · <strong>{resultat.beneficiaires_crees}</strong> bénéficiaire(s) créé(s) et inscrit(s) au projet
-                {resultat.doublons_detectes > 0 && (
-                  <> (dont <strong>{resultat.doublons_detectes}</strong> doublon(s) potentiel(s) — à traiter dans "Doublons signalés")</>
+                · <strong>{resultat.indicateurs_crees}</strong> {voc(" indicateur(s) créé(s)")}<br />
+                · <strong>{resultat.beneficiaires_crees}</strong> {voc(" bénéficiaire(s) créé(s) et inscrit(s) au projet")}{resultat.doublons_detectes > 0 && (
+                  <> (dont <strong>{resultat.doublons_detectes}</strong> {voc(" doublon(s) potentiel(s) — à traiter dans \"Doublons signalés\")")}</>
                 )}
               </Text>
             </Alert>
@@ -158,23 +151,23 @@ export function PlanificationImportPage() {
         <Title order={4} mb="sm">Ou importer séparément</Title>
         <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }}>
           <CarteImportSepare
-            titre="Cadre stratégique"
-            description="Ouvre ou crée un cadre stratégique, puis importe sa structuration depuis son propre écran."
+            titre={voc("Cadre stratégique")}
+            description={voc("Ouvre ou crée un cadre stratégique, puis importe sa structuration depuis son propre écran.")}
             lien="/strategie"
           />
           <CarteImportSepare
-            titre="Projet"
-            description="Fiche projet + planification (Objectif général → Activité → Sous-activité), sans cadre stratégique ni indicateurs."
+            titre={voc("Projet")}
+            description={voc("Fiche projet + planification (niveaux libres → Sous-activité), sans cadre stratégique ni indicateurs.")}
             lien="/projets"
           />
           <CarteImportSepare
-            titre="Indicateurs"
-            description="Indicateurs seuls, rattachés à un projet déjà existant (par son code) ou stratégiques."
+            titre={voc("Indicateurs")}
+            description={voc("Indicateurs seuls, rattachés à un projet déjà existant (par son code) ou stratégiques.")}
             lien="/indicateurs"
           />
           <CarteImportSepare
-            titre="Bénéficiaires"
-            description="Bénéficiaires seuls, sans inscription automatique à un projet."
+            titre={voc("Bénéficiaires")}
+            description={voc("Bénéficiaires seuls, sans inscription automatique à un projet.")}
             lien="/beneficiaires"
           />
         </SimpleGrid>

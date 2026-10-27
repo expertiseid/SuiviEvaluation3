@@ -8,6 +8,7 @@ from rest_framework.response import Response
 
 from apps.accounts.constants import ROLE_CHARGE_SE
 from apps.core.permissions import HasGlobalVisibilityOrAssigned, IsAdminOrReadOnly
+from apps.core.vocabulaire import v
 from apps.notifications.models import Notification
 from apps.notifications.services import notifier, notifier_par_role
 from apps.projects.models import Activite, Projet
@@ -45,12 +46,12 @@ def _resoudre_portee(params):
     activite_id = params.get("activite")
     projet_id = params.get("projet")
     if len([v for v in (indicateur_id, activite_id, projet_id) if v]) > 1:
-        raise ValidationError({"portee": "Précise au plus un seul parmi projet/indicateur/activité."})
+        raise ValidationError({"portee": v('Précise au plus un seul parmi projet/indicateur/activité.')})
 
     if indicateur_id:
         indicateur = Indicateur.objects.filter(id=indicateur_id).first()
         if indicateur is None:
-            raise ValidationError({"indicateur": "Indicateur introuvable."})
+            raise ValidationError({"indicateur": v('Indicateur introuvable.')})
         return {"indicateur": indicateur}
     if activite_id:
         activite = Activite.objects.filter(id=activite_id).first()
@@ -60,7 +61,7 @@ def _resoudre_portee(params):
     if projet_id:
         projet = Projet.objects.filter(id=projet_id).first()
         if projet is None:
-            raise ValidationError({"projet": "Projet introuvable."})
+            raise ValidationError({"projet": v('Projet introuvable.')})
         return {"projet": projet}
     return {}
 
@@ -70,7 +71,7 @@ def _projet_de_la_portee(portee):
     if "indicateur" in portee:
         return portee["indicateur"].projet_rattache
     if "activite" in portee:
-        return portee["activite"].objectif_specifique.objectif_general.projet
+        return portee["activite"].projet
     if "projet" in portee:
         return portee["projet"]
     return None
@@ -149,30 +150,18 @@ def paliers_alerte(request):
 class IndicateurViewSet(viewsets.ModelViewSet):
     serializer_class = IndicateurSerializer
     permission_classes = (HasGlobalVisibilityOrAssigned,)
-    filterset_fields = ("projet", "objectif_general", "objectif_specifique", "activite", "frequence_collecte", "elements_strategiques")
+    filterset_fields = ("projet", "activite", "frequence_collecte", "elements_strategiques")
     search_fields = ("libelle",)
 
     def get_queryset(self):
         ids = visible_projets_ids(self.request.user)
         return (
             Indicateur.objects.filter(
-                Q(
-                    projet__isnull=True,
-                    objectif_general__isnull=True,
-                    objectif_specifique__isnull=True,
-                    activite__isnull=True,
-                )
+                Q(projet__isnull=True, activite__isnull=True)
                 | Q(projet__id__in=ids)
-                | Q(objectif_general__projet__id__in=ids)
-                | Q(objectif_specifique__objectif_general__projet__id__in=ids)
-                | Q(activite__objectif_specifique__objectif_general__projet__id__in=ids)
+                | Q(activite__projet__id__in=ids)
             )
-            .select_related(
-                "projet",
-                "objectif_general__projet",
-                "objectif_specifique__objectif_general__projet",
-                "activite__objectif_specifique__objectif_general__projet",
-            )
+            .select_related("projet", "activite__projet")
             .distinct()
         )
 
@@ -225,16 +214,9 @@ class ValeurIndicateurViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         ids = visible_projets_ids(self.request.user)
         return ValeurIndicateur.objects.filter(
-            Q(
-                indicateur__projet__isnull=True,
-                indicateur__objectif_general__isnull=True,
-                indicateur__objectif_specifique__isnull=True,
-                indicateur__activite__isnull=True,
-            )
+            Q(indicateur__projet__isnull=True, indicateur__activite__isnull=True)
             | Q(indicateur__projet__id__in=ids)
-            | Q(indicateur__objectif_general__projet__id__in=ids)
-            | Q(indicateur__objectif_specifique__objectif_general__projet__id__in=ids)
-            | Q(indicateur__activite__objectif_specifique__objectif_general__projet__id__in=ids)
+            | Q(indicateur__activite__projet__id__in=ids)
         ).distinct()
 
     def perform_create(self, serializer):

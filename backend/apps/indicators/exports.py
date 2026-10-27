@@ -7,6 +7,8 @@ import re
 
 from openpyxl import Workbook
 
+from apps.core.vocabulaire import v
+
 from .services import indicateurs_pour_projet
 
 
@@ -43,7 +45,7 @@ def generer_xlsform(projet) -> bytes:
 
     settings_sheet = wb.create_sheet("settings")
     settings_sheet.append(["form_title", "form_id"])
-    settings_sheet.append([f"Suivi {projet.nom}", f"suivi_{projet.code.lower()}"])
+    settings_sheet.append([f"{v('Suivi ')}{projet.nom}", f"suivi_{projet.code.lower()}"])
 
     buffer = io.BytesIO()
     wb.save(buffer)

@@ -6,6 +6,7 @@ import { useBailleurs, useCreateBailleur, useCreateFinancement, useFinancements 
 import { StatCard } from "../../components/common/StatCard";
 import { SelectOrCreate } from "../../components/common/SelectOrCreate";
 import { Wallet, Landmark, PiggyBank } from "lucide-react";
+import { voc } from "../../utils/vocabulaire";
 
 export function FinancementsTab({ projetId }: { projetId: number }) {
   const { data: projet } = useProjet(projetId);
@@ -28,7 +29,7 @@ export function FinancementsTab({ projetId }: { projetId: number }) {
       setBailleur(null);
       setMontant("");
     } catch {
-      notifications.show({ message: "Erreur — ce bailleur finance peut-être déjà ce projet.", color: "red" });
+      notifications.show({ message: voc("Erreur — ce bailleur finance peut-être déjà ce projet."), color: "red" });
     }
   }
 

@@ -21,7 +21,8 @@ from apps.indicators.models import Indicateur, ValeurIndicateur
 from apps.intervenants.models import Intervenant
 from apps.notifications.models import Notification
 from apps.partners.models import Bailleur, Financement, Partenaire
-from apps.projects.models import Activite, Equipe, ObjectifGeneral, ObjectifSpecifique, Projet, SousActivite
+from apps.projects.models import Activite, Equipe, Projet, SousActivite
+from apps.projects.services import nommer_niveaux
 from apps.projects.services import supprimer_projet_cascade
 from apps.strategy.models import CadreStrategique, ElementStrategique, TypeNiveau
 from apps.strategy.services import supprimer_cadre_strategique_cascade
@@ -285,6 +286,7 @@ class Command(BaseCommand):
                 "l'adoption durable des pratiques agroécologiques — capitalisé pour réplication sur le projet 2."
             ),
         )
+        nommer_niveaux(projet, ["Objectif général", "Objectif spécifique", "Activité"])
         projet.zones.set(self.zones_par_nom("Nakambe", "Boulgou", "Koulpelogo", "Kourittenga"))
         projet.utilisateurs_affectes.set(
             [u for u in (users["chef_projet"], users["charge_se"], users["animateur"]) if u]
@@ -293,7 +295,7 @@ class Command(BaseCommand):
         Financement.objects.create(projet=projet, bailleur=partenaires["bailleur_ue"], montant_finance=Decimal("500000000"))
         Financement.objects.create(projet=projet, bailleur=partenaires["bailleur_afd"], montant_finance=Decimal("265000000"))
 
-        og = ObjectifGeneral.objects.create(
+        og = Activite.objects.create(
             projet=projet,
             libelle=(
                 "Contribuer à l'amélioration durable de la résilience agroécologique et alimentaire des "
@@ -305,19 +307,19 @@ class Command(BaseCommand):
             ),
         )
 
-        os11 = ObjectifSpecifique.objects.create(
-            objectif_general=og,
+        os11 = Activite.objects.create(
+            projet=og.projet, activite_parent=og,
             libelle="Renforcer l'adoption de pratiques agroécologiques durables par les producteurs et productrices",
             description="Formation, accompagnement technique et aménagements de conservation des eaux et des sols.",
         )
-        os12 = ObjectifSpecifique.objects.create(
-            objectif_general=og,
+        os12 = Activite.objects.create(
+            projet=og.projet, activite_parent=og,
             libelle="Améliorer la structuration et l'autonomisation des organisations paysannes",
             description="Appui institutionnel aux organisations paysannes et facilitation de l'accès aux intrants.",
         )
 
         a111 = Activite.objects.create(
-            objectif_specifique=os11,
+            projet=os11.projet, activite_parent=os11,
             code_activite="A1.1.1",
             libelle="Formation des producteurs et productrices aux techniques agroécologiques (compost, CES/DRS, agroforesterie)",
             statut=Activite.Statut.EN_COURS,
@@ -346,7 +348,7 @@ class Command(BaseCommand):
         )
 
         a112 = Activite.objects.create(
-            objectif_specifique=os11,
+            projet=os11.projet, activite_parent=os11,
             code_activite="A1.1.2",
             libelle="Aménagement de dispositifs de conservation des eaux et des sols (cordons pierreux, zaï, demi-lunes)",
             statut=Activite.Statut.EN_COURS,
@@ -375,7 +377,7 @@ class Command(BaseCommand):
         )
 
         a121 = Activite.objects.create(
-            objectif_specifique=os12,
+            projet=os12.projet, activite_parent=os12,
             code_activite="A1.2.1",
             libelle="Appui à la structuration et à la formalisation des organisations paysannes",
             statut=Activite.Statut.EN_COURS,
@@ -404,7 +406,7 @@ class Command(BaseCommand):
         )
 
         a122 = Activite.objects.create(
-            objectif_specifique=os12,
+            projet=os12.projet, activite_parent=os12,
             code_activite="A1.2.2",
             libelle="Facilitation de l'accès aux intrants et équipements agroécologiques",
             statut=Activite.Statut.NON_REALISEE,
@@ -449,7 +451,7 @@ class Command(BaseCommand):
             valeur_reference=0,
             valeur_cible=75,
             frequence="ANNUELLE",
-            rattachement={"objectif_general": og},
+            rattachement={"activite": og},
             elements=[],
             valeurs=[(date(2024, 1, 1), date(2024, 12, 31), 30), (date(2025, 1, 1), date(2025, 12, 31), 25)],
             saisi_par=users["charge_se"],
@@ -460,7 +462,7 @@ class Command(BaseCommand):
             valeur_reference=0,
             valeur_cible=1200,
             frequence="SEMESTRIELLE",
-            rattachement={"objectif_specifique": os11},
+            rattachement={"activite": os11},
             elements=[el["ra111"]],
             valeurs=[(date(2024, 1, 1), date(2024, 12, 31), 300), (date(2025, 1, 1), date(2025, 12, 31), 450)],
             saisi_par=users["charge_se"],
@@ -471,7 +473,7 @@ class Command(BaseCommand):
             valeur_reference=0,
             valeur_cible=30,
             frequence="ANNUELLE",
-            rattachement={"objectif_specifique": os12},
+            rattachement={"activite": os12},
             elements=[el["ra121"]],
             valeurs=[(date(2024, 1, 1), date(2024, 12, 31), 10), (date(2025, 1, 1), date(2025, 12, 31), 17)],
             saisi_par=users["charge_se"],
@@ -552,6 +554,7 @@ class Command(BaseCommand):
             cible_pdi=900,
             elements_capitalisation="",
         )
+        nommer_niveaux(projet, ["Objectif général", "Objectif spécifique", "Activité"])
         projet.zones.set(self.zones_par_nom("Liptako", "Oudalan", "Seno", "Yagha"))
         projet.utilisateurs_affectes.set(
             [u for u in (users["coordo"], users["charge_se"], users["chef_service"]) if u]
@@ -560,7 +563,7 @@ class Command(BaseCommand):
         Financement.objects.create(projet=projet, bailleur=partenaires["bailleur_afd"], montant_finance=Decimal("400000000"))
         Financement.objects.create(projet=projet, bailleur=partenaires["bailleur_ff"], montant_finance=Decimal("158000000"))
 
-        og = ObjectifGeneral.objects.create(
+        og = Activite.objects.create(
             projet=projet,
             libelle=(
                 "Contribuer à la réduction de l'insécurité alimentaire et au renforcement de la gouvernance "
@@ -573,19 +576,19 @@ class Command(BaseCommand):
             ),
         )
 
-        os21 = ObjectifSpecifique.objects.create(
-            objectif_general=og,
+        os21 = Activite.objects.create(
+            projet=og.projet, activite_parent=og,
             libelle="Diversifier les sources de revenus et intensifier la production maraîchère et vivrière",
             description="Appui aux activités génératrices de revenus et développement de périmètres maraîchers irrigués.",
         )
-        os22 = ObjectifSpecifique.objects.create(
-            objectif_general=og,
+        os22 = Activite.objects.create(
+            projet=og.projet, activite_parent=og,
             libelle="Renforcer la gouvernance locale et la cohésion sociale autour des ressources naturelles",
             description="Appui aux instances locales de gouvernance et mise en place de mécanismes de médiation.",
         )
 
         a211 = Activite.objects.create(
-            objectif_specifique=os21,
+            projet=os21.projet, activite_parent=os21,
             code_activite="A2.1.1",
             libelle="Appui à la diversification des activités génératrices de revenus (AGR) pour les femmes et les jeunes",
             statut=Activite.Statut.EN_COURS,
@@ -614,7 +617,7 @@ class Command(BaseCommand):
         )
 
         a212 = Activite.objects.create(
-            objectif_specifique=os21,
+            projet=os21.projet, activite_parent=os21,
             code_activite="A2.1.2",
             libelle="Développement de périmètres maraîchers communautaires irrigués",
             statut=Activite.Statut.EN_COURS,
@@ -643,7 +646,7 @@ class Command(BaseCommand):
         )
 
         a221 = Activite.objects.create(
-            objectif_specifique=os22,
+            projet=os22.projet, activite_parent=os22,
             code_activite="A2.2.1",
             libelle="Appui au fonctionnement des instances locales de gouvernance (CVD, cadres de concertation)",
             statut=Activite.Statut.EN_COURS,
@@ -672,7 +675,7 @@ class Command(BaseCommand):
         )
 
         a222 = Activite.objects.create(
-            objectif_specifique=os22,
+            projet=os22.projet, activite_parent=os22,
             code_activite="A2.2.2",
             libelle="Mise en place de mécanismes communautaires de prévention et de médiation des conflits fonciers",
             statut=Activite.Statut.NON_REALISEE,
@@ -717,7 +720,7 @@ class Command(BaseCommand):
             valeur_reference=22,
             valeur_cible=70,
             frequence="ANNUELLE",
-            rattachement={"objectif_general": og},
+            rattachement={"activite": og},
             elements=[el["ra221"]],
             valeurs=[(date(2025, 3, 1), date(2025, 12, 31), 38)],
             saisi_par=users["charge_se"],
@@ -728,7 +731,7 @@ class Command(BaseCommand):
             valeur_reference=0,
             valeur_cible=60,
             frequence="SEMESTRIELLE",
-            rattachement={"objectif_specifique": os21},
+            rattachement={"activite": os21},
             elements=[el["ra211"]],
             valeurs=[(date(2025, 3, 1), date(2025, 12, 31), 18)],
             saisi_par=users["charge_se"],
@@ -739,7 +742,7 @@ class Command(BaseCommand):
             valeur_reference=0,
             valeur_cible=25,
             frequence="ANNUELLE",
-            rattachement={"objectif_specifique": os22},
+            rattachement={"activite": os22},
             elements=[el["ra311"], el["ra321"]],
             valeurs=[(date(2025, 3, 1), date(2025, 12, 31), 22)],
             saisi_par=users["charge_se"],

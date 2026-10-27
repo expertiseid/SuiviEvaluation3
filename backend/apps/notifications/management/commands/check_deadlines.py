@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 
+from apps.core.vocabulaire import v
 from apps.notifications.models import Notification
 from apps.notifications.services import lister_echeances, notifier
 from apps.projects.models import Projet
@@ -65,7 +66,7 @@ class Command(BaseCommand):
             a_notifier,
             Notification.Type.ECHEANCE_ACTIVITE,
             titre,
-            message=f"Projet {projet_nom} — échéance prévue le {echeance}.",
+            message=f"{v('Projet ')}{projet_nom} — échéance prévue le {echeance}.",
             lien=lien,
         )
         return len(a_notifier)

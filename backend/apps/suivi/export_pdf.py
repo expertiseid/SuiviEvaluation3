@@ -8,6 +8,8 @@ import datetime
 
 from django.utils.html import escape
 
+from apps.core.vocabulaire import v
+
 from .services import construire_dashboard_suivi, ecart_texte, taux_de, valeur_attendue_a
 
 STATUT_ACTIVITE_LABEL = {"NON_REALISEE": "Non réalisée", "EN_COURS": "En cours", "REALISEE": "Réalisée"}
@@ -268,10 +270,10 @@ def exporter_suivi_pdf(projet) -> bytes:
     aujourdhui = datetime.date.today()
 
     indicateurs_html = "".join(_bloc_indicateur(i, aujourdhui) for i in data["indicateurs"]) or (
-        '<p style="color:#888;">Aucun indicateur rattaché à ce projet.</p>'
+        f'<p style="color:#888;">{v("Aucun indicateur rattaché à ce projet.")}</p>'
     )
     activites_html = "".join(_bloc_activite(a, aujourdhui) for a in data["activites"]) or (
-        '<p style="color:#888;">Aucune activité planifiée pour ce projet.</p>'
+        f'<p style="color:#888;">{v("Aucune activité planifiée pour ce projet.")}</p>'
     )
 
     statut_global = data["statut_global"]
@@ -286,7 +288,7 @@ def exporter_suivi_pdf(projet) -> bytes:
     </style>
     </head>
     <body>
-      <h2>Suivi — {escape(data['projet']['nom'])}</h2>
+      <h2>{v('Suivi')} — {escape(data['projet']['nom'])}</h2>
       <div style="color:#666;font-size:13px;margin-bottom:12px;">
         {escape(data['projet']['code'])} · généré le {aujourdhui.strftime('%d/%m/%Y')}
       </div>
@@ -313,7 +315,7 @@ def exporter_suivi_pdf(projet) -> bytes:
       <h3>Activités</h3>
       {activites_html}
 
-      <h3>Indicateurs</h3>
+      <h3>{v('Indicateurs')}</h3>
       {indicateurs_html}
     </body>
     </html>

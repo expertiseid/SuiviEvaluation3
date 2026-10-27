@@ -23,13 +23,13 @@ import { fmt, fmtDate, nombre } from "../../utils/periode";
 import { correspond } from "../../utils/recherche";
 import { ecartTexte, tauxDe, valeurAttendueA, type FenetreAttendue } from "../../utils/suivi";
 import type {
-  LignePeriode,
   PeriodePlanification,
   SuiviDashboard,
   SuiviHistoriquePoint,
   SuiviHistoriqueValeurIndicateur,
   ValeurElementPeriode,
 } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 type Statuts = { value: string; label: string }[];
 
@@ -264,7 +264,7 @@ export function SuiviPeriodeTab({
 
   function supprimerPoint(id: number) {
     confirmerSuppression({
-      message: "Supprimer cette saisie ? Le suivi global du projet sera recalculé en conséquence.",
+      message: voc("Supprimer cette saisie ? Le suivi global du projet sera recalculé en conséquence."),
       onConfirm: async () => {
         try {
           await deletePoint.mutateAsync(id);
@@ -278,7 +278,7 @@ export function SuiviPeriodeTab({
 
   function supprimerValeur(id: number) {
     confirmerSuppression({
-      message: "Supprimer cette valeur d'indicateur ? Le suivi global de l'indicateur sera recalculé en conséquence.",
+      message: voc("Supprimer cette valeur d'indicateur ? Le suivi global de l'indicateur sera recalculé en conséquence."),
       onConfirm: async () => {
         try {
           await deleteValeur.mutateAsync(id);
@@ -296,14 +296,14 @@ export function SuiviPeriodeTab({
     return (
       <EmptyState
         icon={<CalendarRange size={32} strokeWidth={1.5} />}
-        message="Aucune période de planification pour ce projet. Crée-en une dans la fiche projet, onglet « Planification par période »."
+        message={voc("Aucune période de planification pour ce projet. Crée-en une dans la fiche projet, onglet « Planification par période ».")}
       />
     );
   }
 
-  const lignes = (valeurs?.lignes ?? []) as (LignePeriode | { type: "objectif"; libelle: string })[];
+  const lignes = valeurs?.lignes ?? [];
   const lignesFiltrees = recherche.trim()
-    ? lignes.filter((l) => l.type === "objectif" || correspond(`${(l as LignePeriode).code} ${l.libelle}`, recherche))
+    ? lignes.filter((l) => correspond(`${l.code} ${l.libelle}`, recherche))
     : lignes;
   const indicateurs = (valeurs?.indicateurs ?? []).filter((i) => !recherche.trim() || correspond(i.libelle, recherche));
 
@@ -313,7 +313,7 @@ export function SuiviPeriodeTab({
     <Stack gap="lg">
       <Group justify="space-between" align="flex-end" wrap="wrap">
         <Select
-          label="Période de planification"
+          label={voc("Période de planification")}
           size="md"
           leftSection={<CalendarRange size={18} />}
           data={periodes.map((p) => ({ value: String(p.id), label: p.libelle || "Période sans nom" }))}
@@ -327,8 +327,7 @@ export function SuiviPeriodeTab({
             <Menu position="bottom-end">
               <Menu.Target>
                 <Button variant="light" leftSection={<Download size={16} />}>
-                  Exporter le suivi de la période
-                </Button>
+                  {voc("Exporter le suivi de la période")}</Button>
               </Menu.Target>
               <Menu.Dropdown>
                 <Menu.Item
@@ -376,13 +375,11 @@ export function SuiviPeriodeTab({
 
           <Alert color="blue" variant="light">
             <Text size="sm">
-              Les saisies faites ici (dates comprises dans la période) sont aussi comptées dans le suivi global du
-              projet : quantités, budget, statut et dates réelles s'actualisent automatiquement.
-            </Text>
+              {voc("Les saisies faites ici (dates comprises dans la période) sont aussi comptées dans le suivi global du projet : quantités, budget, statut et dates réelles s'actualisent automatiquement.")}</Text>
           </Alert>
 
           <TextInput
-            placeholder="Rechercher une activité ou un indicateur…"
+            placeholder={voc("Rechercher une activité ou un indicateur…")}
             size="md"
             leftSection={<Search size={16} />}
             value={recherche}
@@ -396,16 +393,8 @@ export function SuiviPeriodeTab({
             aujourd'hui · trait teal = objectif de la période. La courbe trace le cumul sur la période.
           </Text>
           <Stack gap="md">
-            {lignesFiltrees.map((l, index) => {
-              if (l.type === "objectif") {
-                return (
-                  <Group key={`os-${index}`} gap={8} mt="sm">
-                    <Badge color="blue" variant="light" size="lg">Objectif spécifique</Badge>
-                    <Text fw={700} size="lg">{l.libelle}</Text>
-                  </Group>
-                );
-              }
-              const ligne = l as LignePeriode;
+            {lignesFiltrees.map((l) => {
+              const ligne = l;
               const estActivite = ligne.type === "activite";
               const type = ligne.type as "activite" | "sous_activite";
               return (
@@ -413,7 +402,7 @@ export function SuiviPeriodeTab({
                   key={`${ligne.type}-${ligne.id}`}
                   v={ligne}
                   periode={periode}
-                  retrait={(ligne.profondeur - 1) * 24}
+                  retrait={ligne.profondeur * 24}
                   secondaire={!estActivite}
                   entete={
                     <>
@@ -429,7 +418,7 @@ export function SuiviPeriodeTab({
                   unite={ligne.unite}
                   avecBudget={estActivite}
                   editionActive={editionActive}
-                  libelleBouton="Saisir un suivi"
+                  libelleBouton={voc("Saisir un suivi")}
                   onSaisir={() => setSaisie({ type, id: ligne.id })}
                   onModifier={(id) =>
                     setSaisie({ type, id: ligne.id, point: historiques.get(`${type}-${ligne.id}`)?.find((p) => p.id === id) })
@@ -442,10 +431,10 @@ export function SuiviPeriodeTab({
 
           <Group gap={8} mt="md">
             <Target size={20} />
-            <Title order={3}>Indicateurs</Title>
+            <Title order={3}>{voc("Indicateurs")}</Title>
           </Group>
           {indicateurs.length === 0 ? (
-            <Text c="dimmed">Aucun indicateur rattaché à ce projet.</Text>
+            <Text c="dimmed">{voc("Aucun indicateur rattaché à ce projet.")}</Text>
           ) : (
             <Stack gap="md">
               {indicateurs.map((i) => (
@@ -478,7 +467,7 @@ export function SuiviPeriodeTab({
       <Modal
         opened={saisie !== null}
         onClose={() => setSaisie(null)}
-        title={`${periode?.libelle ?? "Période"} — ${saisie?.type === "indicateur" ? "valeur d'indicateur" : "saisir un suivi"}`}
+        title={`${periode?.libelle ?? "Période"} — ${saisie?.type === "indicateur" ? voc("valeur d'indicateur") : voc("saisir un suivi")}`}
         size="lg"
       >
         {saisie?.type === "indicateur" ? (

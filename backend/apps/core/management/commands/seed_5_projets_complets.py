@@ -24,7 +24,8 @@ from apps.indicators.models import Indicateur, PalierAlerte, ValeurIndicateur
 from apps.intervenants.models import Intervenant
 from apps.notifications.models import Notification
 from apps.partners.models import Bailleur, Financement, Partenaire
-from apps.projects.models import Activite, Equipe, ObjectifGeneral, ObjectifSpecifique, Projet, SousActivite
+from apps.projects.models import Activite, Equipe, Projet, SousActivite
+from apps.projects.services import nommer_niveaux
 from apps.projects.services import supprimer_projet_cascade
 from apps.strategy.models import CadreStrategique, ElementStrategique, TypeNiveau
 from apps.strategy.services import supprimer_cadre_strategique_cascade
@@ -699,6 +700,7 @@ class Command(BaseCommand):
             elements_capitalisation=profil["capitalisation"],
             **profil["cibles"],
         )
+        nommer_niveaux(projet, ["Objectif général", "Objectif spécifique", "Activité"])
         if profil["type_mise_en_oeuvre"] == Projet.TypeMiseEnOeuvre.CONSORTIUM:
             projet.partenaires_consortium.set([expertise_id, reseau_ong])
         noms_provinces = [z for z in profil["zones"] if z in COMMUNES_PAR_PROVINCE]
@@ -718,20 +720,20 @@ class Command(BaseCommand):
             for borne_min, libelle, couleur in profil["grille_alerte"]:
                 PalierAlerte.objects.create(projet=projet, borne_min=borne_min, libelle=libelle, couleur=couleur)
 
-        og = ObjectifGeneral.objects.create(projet=projet, libelle=profil["og"], description=profil["og_description"])
+        og = Activite.objects.create(projet=projet, libelle=profil["og"], description=profil["og_description"])
 
         self.creer_indicateur_avec_valeurs(
             *profil["indicateur_projet"], rattachement={"projet": projet}, elements=[axe], saisi_par=users["charge_se"],
         )
 
         for os_data in profil["os"]:
-            os_obj = ObjectifSpecifique.objects.create(
-                objectif_general=og, libelle=os_data["libelle"], description=os_data["description"]
+            os_obj = Activite.objects.create(
+                projet=og.projet, activite_parent=og, libelle=os_data["libelle"], description=os_data["description"]
             )
             resultat = resultats[os_data["resultat_idx"]]
             if os_data["indicateur"]:
                 self.creer_indicateur_avec_valeurs(
-                    *os_data["indicateur"], rattachement={"objectif_specifique": os_obj}, elements=[resultat], saisi_par=users["charge_se"],
+                    *os_data["indicateur"], rattachement={"activite": os_obj}, elements=[resultat], saisi_par=users["charge_se"],
                 )
 
             for i, act_data in enumerate(os_data["activites"]):
@@ -741,7 +743,7 @@ class Command(BaseCommand):
                     else Activite.Statut.EN_COURS
                 )
                 activite = Activite.objects.create(
-                    objectif_specifique=os_obj,
+                    projet=os_obj.projet, activite_parent=os_obj,
                     code_activite=act_data["code"],
                     libelle=act_data["libelle"],
                     statut=statut_activite,

@@ -27,7 +27,6 @@ import {
   Tabs,
   Text,
   TextInput,
-  Title,
   Tooltip,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
@@ -47,6 +46,8 @@ import { confirmerSuppression } from "../../components/common/confirmerSuppressi
 import { correspond } from "../../utils/recherche";
 import { PAYS_MONDE } from "../../utils/pays";
 import type { NiveauAdministratif, Zone } from "../../types";
+import { TitreRubrique } from "../../components/common/TitreRubrique";
+import { voc } from "../../utils/vocabulaire";
 
 function messageErreurSuppression(defaut: string) {
   return `${defaut} — vérifie qu'aucune zone n'en dépend encore.`;
@@ -628,11 +629,9 @@ export function ZonesAdministrativesPage() {
     <Stack gap="md">
       <Group justify="space-between" align="flex-end">
         <div>
-          <Title order={2}>Zones administratives</Title>
+          <TitreRubrique route="/zones-administratives" defaut="Zones administratives" />
           <Text c="dimmed" size="sm">
-            Nous définissons ici les niveaux administratifs propres à chaque pays (Région, Province, Commune,
-            Village, ou autre) et leur arborescence — utilisés pour localiser bénéficiaires et projets.
-          </Text>
+            {voc("Nous définissons ici les niveaux administratifs propres à chaque pays (Région, Province, Commune, Village, ou autre) et leur arborescence — utilisés pour localiser bénéficiaires et projets.")}</Text>
         </div>
         <Group gap="xs" align="flex-end">
           <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />
@@ -649,7 +648,7 @@ export function ZonesAdministrativesPage() {
 
       {!pays ? (
         <Card withBorder padding="md" radius="md">
-          <EmptyState icon={<MapPin size={32} strokeWidth={1.5} />} message="Choisis un pays pour configurer ses zones administratives." />
+          <EmptyState icon={<MapPin size={32} strokeWidth={1.5} />} message={voc("Choisis un pays pour configurer ses zones administratives.")} />
         </Card>
       ) : chargementNiveaux || chargementZones ? (
         <Text c="dimmed">Chargement…</Text>

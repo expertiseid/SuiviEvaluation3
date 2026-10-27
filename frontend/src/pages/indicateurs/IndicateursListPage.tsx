@@ -11,8 +11,10 @@ import { BoutonModeEdition } from "../../components/common/BoutonModeEdition";
 import { IndicateurForm } from "./IndicateurForm";
 import { ImportIndicateursModal } from "./ImportIndicateursModal";
 import type { Indicateur } from "../../types";
+import { TitreRubrique } from "../../components/common/TitreRubrique";
+import { voc } from "../../utils/vocabulaire";
 
-const SANS_PROJET = "Indicateurs stratégiques (sans projet rattaché)";
+const SANS_PROJET = voc("Indicateurs stratégiques (sans projet rattaché)");
 
 function grouperParProjet(indicateurs: Indicateur[]): [string, Indicateur[]][] {
   const groupes = new Map<string, Indicateur[]>();
@@ -48,13 +50,13 @@ export function IndicateursListPage() {
 
   function handleSupprimer(id: number, libelle: string) {
     confirmerSuppression({
-      message: `Supprimer l'indicateur "${libelle}" ainsi que toutes ses valeurs saisies ? Cette action est irréversible.`,
+      message: voc`Supprimer l'indicateur "${libelle}" ainsi que toutes ses valeurs saisies ? Cette action est irréversible.`,
       onConfirm: async () => {
         try {
           await deleteIndicateur.mutateAsync(id);
-          notifications.show({ message: "Indicateur supprimé", color: "green" });
+          notifications.show({ message: voc("Indicateur supprimé"), color: "green" });
         } catch {
-          notifications.show({ message: "Erreur lors de la suppression de l'indicateur", color: "red" });
+          notifications.show({ message: voc("Erreur lors de la suppression de l'indicateur"), color: "red" });
         }
       },
     });
@@ -63,18 +65,18 @@ export function IndicateursListPage() {
   return (
     <Stack gap="md">
       <Group justify="space-between">
-        <Title order={2}>Indicateurs</Title>
+        <TitreRubrique route="/indicateurs" defaut="Indicateurs" />
         <Group gap="xs">
           <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />
           <Button variant="light" leftSection={<FileSpreadsheet size={16} />} onClick={() => setModalImportOuvert(true)}>
             Importer depuis Excel
           </Button>
-          <Button onClick={() => setModalOpen(true)}>Nouvel indicateur</Button>
+          <Button onClick={() => setModalOpen(true)}>{voc("Nouvel indicateur")}</Button>
         </Group>
       </Group>
 
       <TextInput
-        placeholder="Rechercher un indicateur ou un projet…"
+        placeholder={voc("Rechercher un indicateur ou un projet…")}
         leftSection={<Search size={15} />}
         value={recherche}
         onChange={(e) => setRecherche(e.currentTarget.value)}
@@ -85,7 +87,7 @@ export function IndicateursListPage() {
         <div>Chargement…</div>
       ) : groupes.length === 0 ? (
         <Text c="dimmed" size="sm">
-          {recherche ? "Aucun indicateur ne correspond à la recherche." : "Aucun indicateur pour le moment."}
+          {recherche ? voc("Aucun indicateur ne correspond à la recherche.") : voc("Aucun indicateur pour le moment.")}
         </Text>
       ) : (
         <Stack gap="lg">
@@ -120,12 +122,12 @@ export function IndicateursListPage() {
                       <Table.Td>
                         {editionActive && (
                         <Group gap={4} wrap="nowrap">
-                          <Tooltip label="Modifier l'indicateur">
+                          <Tooltip label={voc("Modifier l'indicateur")}>
                             <ActionIcon variant="subtle" onClick={() => setIndicateurEnEdition(i)}>
                               <Pencil size={15} />
                             </ActionIcon>
                           </Tooltip>
-                          <Tooltip label="Supprimer l'indicateur">
+                          <Tooltip label={voc("Supprimer l'indicateur")}>
                             <ActionIcon
                               variant="subtle"
                               color="red"
@@ -147,11 +149,11 @@ export function IndicateursListPage() {
         </Stack>
       )}
 
-      <Modal opened={modalOpen} onClose={() => setModalOpen(false)} title="Nouvel indicateur" size="lg">
+      <Modal opened={modalOpen} onClose={() => setModalOpen(false)} title={voc("Nouvel indicateur")} size="lg">
         <IndicateurForm onDone={() => setModalOpen(false)} />
       </Modal>
 
-      <Modal opened={!!indicateurEnEdition} onClose={() => setIndicateurEnEdition(null)} title="Modifier l'indicateur" size="lg">
+      <Modal opened={!!indicateurEnEdition} onClose={() => setIndicateurEnEdition(null)} title={voc("Modifier l'indicateur")} size="lg">
         {indicateurEnEdition && (
           <IndicateurForm indicateur={indicateurEnEdition} onDone={() => setIndicateurEnEdition(null)} />
         )}

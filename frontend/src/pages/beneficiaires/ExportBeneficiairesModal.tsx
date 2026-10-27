@@ -5,6 +5,7 @@ import { notifications } from "@mantine/notifications";
 import { telechargerExportBeneficiaires } from "../../api/beneficiaries";
 import { messageErreurApi } from "../../utils/erreurs";
 import { correspond } from "../../utils/recherche";
+import { voc } from "../../utils/vocabulaire";
 
 type ProjetExport = { id: number; code: string; nom: string };
 
@@ -49,7 +50,7 @@ export function ExportBeneficiairesModal({
   }
 
   return (
-    <Modal opened={opened} onClose={onClose} title="Exporter les bénéficiaires" size="lg">
+    <Modal opened={opened} onClose={onClose} title={voc("Exporter les bénéficiaires")} size="lg">
       <Stack gap="sm">
         <SegmentedControl
           value={fichier}
@@ -61,15 +62,15 @@ export function ExportBeneficiairesModal({
         />
 
         <Checkbox
-          label="Tous les bénéficiaires (tous les projets, et ceux sans projet)"
+          label={voc("Tous les bénéficiaires (tous les projets, et ceux sans projet)")}
           checked={tous}
           onChange={() => setCoches([])}
           fw={600}
         />
 
-        <Text size="sm" c="dimmed">Ou cocher un ou plusieurs projets :</Text>
+        <Text size="sm" c="dimmed">{voc("Ou cocher un ou plusieurs projets :")}</Text>
         <TextInput
-          placeholder="Rechercher un projet par code ou nom…"
+          placeholder={voc("Rechercher un projet par code ou nom…")}
           leftSection={<Search size={15} />}
           value={recherche}
           onChange={(e) => setRecherche(e.currentTarget.value)}
@@ -77,7 +78,7 @@ export function ExportBeneficiairesModal({
         />
         <ScrollArea.Autosize mah={300}>
           <Stack gap="xs">
-            {visibles.length === 0 && <Text size="sm" c="dimmed">Aucun projet ne correspond à la recherche.</Text>}
+            {visibles.length === 0 && <Text size="sm" c="dimmed">{voc("Aucun projet ne correspond à la recherche.")}</Text>}
             {visibles.map((p) => (
               <Checkbox
                 key={p.id}
@@ -96,8 +97,8 @@ export function ExportBeneficiairesModal({
         <Group justify="space-between" mt="sm">
           <Text size="sm" c="dimmed">
             {tous
-              ? "Export de tous les bénéficiaires, une feuille par projet."
-              : `${coches.length} projet${coches.length > 1 ? "s" : ""} sélectionné${coches.length > 1 ? "s" : ""}`}
+              ? voc("Export de tous les bénéficiaires, une feuille par projet.")
+              : voc`${coches.length} projet${coches.length > 1 ? "s" : ""} sélectionné${coches.length > 1 ? "s" : ""}`}
           </Text>
           <Button leftSection={<Download size={16} />} onClick={exporter} loading={enCours}>
             Exporter en {fichier === "pdf" ? "PDF" : "Excel"}

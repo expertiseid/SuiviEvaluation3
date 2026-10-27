@@ -11,6 +11,7 @@ import {
 import { EmptyState } from "../common/EmptyState";
 import { confirmerSuppression } from "../common/confirmerSuppression";
 import { messageErreurApi } from "../../utils/erreurs";
+import { voc } from "../../utils/vocabulaire";
 
 export function BeneficiairesTab({
   projetId,
@@ -52,7 +53,7 @@ export function BeneficiairesTab({
     const echecs = resultats.filter((r) => r.status === "rejected");
     if (echecs.length === 0) {
       notifications.show({
-        message: selection.length > 1 ? "Bénéficiaires associés" : "Bénéficiaire associé",
+        message: selection.length > 1 ? voc("Bénéficiaires associés") : voc("Bénéficiaire associé"),
         color: "green",
       });
     } else {
@@ -60,7 +61,7 @@ export function BeneficiairesTab({
       notifications.show({
         message:
           echecs.length === selection.length
-            ? messageErreurApi(premierEchec.reason, "Erreur lors de l'association des bénéficiaires")
+            ? messageErreurApi(premierEchec.reason, voc("Erreur lors de l'association des bénéficiaires"))
             : `${selection.length - echecs.length} associé(s), ${echecs.length} en échec.`,
         color: echecs.length === selection.length ? "red" : "orange",
       });
@@ -75,10 +76,10 @@ export function BeneficiairesTab({
       onConfirm: async () => {
         try {
           await deleteParticipation.mutateAsync(participation.id);
-          notifications.show({ message: "Bénéficiaire retiré", color: "green" });
+          notifications.show({ message: voc("Bénéficiaire retiré"), color: "green" });
         } catch (error) {
           notifications.show({
-            message: messageErreurApi(error, "Erreur lors du retrait du bénéficiaire"),
+            message: messageErreurApi(error, voc("Erreur lors du retrait du bénéficiaire")),
             color: "red",
           });
         }
@@ -90,14 +91,14 @@ export function BeneficiairesTab({
     <Card withBorder padding="md" radius="md">
       <Group align="flex-end" mb="md">
         <TextInput
-          label="Rechercher un bénéficiaire"
+          label={voc("Rechercher un bénéficiaire")}
           placeholder="Nom, prénom, téléphone…"
           value={recherche}
           onChange={(e) => setRecherche(e.currentTarget.value)}
           style={{ flex: 1 }}
         />
         <MultiSelect
-          placeholder="Choisir un ou plusieurs bénéficiaires…"
+          placeholder={voc("Choisir un ou plusieurs bénéficiaires…")}
           data={optionsBeneficiaires}
           value={selection}
           onChange={setSelection}
@@ -118,7 +119,7 @@ export function BeneficiairesTab({
       {isLoading ? (
         <Text c="dimmed">Chargement…</Text>
       ) : !participations || participations.length === 0 ? (
-        <EmptyState icon={<Users size={32} strokeWidth={1.5} />} message="Aucun bénéficiaire associé pour le moment." />
+        <EmptyState icon={<Users size={32} strokeWidth={1.5} />} message={voc("Aucun bénéficiaire associé pour le moment.")} />
       ) : (
         <Table.ScrollContainer minWidth={400}>
           <Table verticalSpacing="sm" striped highlightOnHover>

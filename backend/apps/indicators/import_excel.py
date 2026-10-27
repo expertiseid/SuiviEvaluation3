@@ -9,6 +9,12 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
 
 from apps.core.excel_utils import figer_entete, quadriller
+from apps.core.vocabulaire import adapter_classeur, ramener_classeur, ramener_terme, v
+
+# Le niveau de rattachement est libre : « Aucun », « Projet », ou le nom de
+# n'importe quel niveau de la planification du projet (Objectif spécifique,
+# Résultat, Pilier, Activité...).
+COLONNE_NIVEAU = "Niveau de rattachement (Aucun / Projet / nom d'un niveau de la planification)"
 
 COLONNES = [
     "Libellé",
@@ -17,7 +23,7 @@ COLONNES = [
     "Valeur cible",
     "Fréquence de collecte (MENSUELLE/TRIMESTRIELLE/SEMESTRIELLE/ANNUELLE)",
     "Code projet",
-    "Niveau de rattachement (Aucun/Projet/Objectif général/Objectif spécifique/Activité)",
+    COLONNE_NIVEAU,
     "Nom de l'élément rattaché",
 ]
 
@@ -78,8 +84,9 @@ def generer_modele_import_indicateurs(avec_colonne_projet: bool = True) -> bytes
             "correspondre au code exact d'un projet déjà créé."
         ])
     instructions.append([
-        "- Niveau de rattachement « Projet » : laisse « Nom de l'élément rattaché » vide. Pour Objectif "
-        "général/spécifique/Activité, indique le libellé exact de l'élément dans ce projet."
+        "- Niveau de rattachement « Projet » : laisse « Nom de l'élément rattaché » vide. Pour un élément de "
+        "la planification, indique le nom de son niveau tel qu'il est nommé dans le projet (ex : Objectif "
+        "spécifique, Résultat, Pilier, Activité) et le libellé exact de l'élément."
     ])
     instructions.append(["- Niveau « Aucun » (ou vide) : indicateur stratégique, sans rattachement projet."])
     instructions.append([
@@ -94,6 +101,7 @@ def generer_modele_import_indicateurs(avec_colonne_projet: bool = True) -> bytes
     ])
 
     buffer = io.BytesIO()
+    adapter_classeur(wb)
     wb.save(buffer)
     return buffer.getvalue()
 
@@ -176,7 +184,7 @@ def importer_paliers_alerte(feuille, *, projet=None, indicateurs_par_nom=None, a
     for numero, ligne in enumerate(lignes[1:], start=2):
         if not any(ligne):
             continue
-        portee = str(valeur(ligne, "Portée (Projet/Indicateur/Activité)") or "").strip().upper()
+        portee = ramener_terme(str(valeur(ligne, "Portée (Projet/Indicateur/Activité)") or "")).strip().upper()
         nom = str(valeur(ligne, "Nom de l'élément (laisser vide pour Projet)") or "").strip()
         borne = valeur(ligne, "Seuil (%)")
         libelle = valeur(ligne, "Libellé")
@@ -184,7 +192,7 @@ def importer_paliers_alerte(feuille, *, projet=None, indicateurs_par_nom=None, a
 
         if portee not in ("PROJET", "INDICATEUR", "ACTIVITÉ", "ACTIVITE"):
             resultat["erreurs"].append(
-                {"ligne": numero, "message": f"Portée invalide « {portee} » (Projet/Indicateur/Activité) — ligne ignorée."}
+                {"ligne": numero, "message": f"Portée invalide « {portee}{v(' » (Projet/Indicateur/Activité) — ligne ignorée.')}"}
             )
             continue
         if borne in (None, "") or not str(libelle or "").strip():
@@ -204,14 +212,14 @@ def importer_paliers_alerte(feuille, *, projet=None, indicateurs_par_nom=None, a
     for (portee, nom_lower), paliers in groupes.items():
         if portee == "PROJET":
             if projet is None:
-                resultat["erreurs"].append({"ligne": 0, "message": "Grille « Projet » ignorée : aucun projet dans cet import."})
+                resultat["erreurs"].append({"ligne": 0, "message": v('Grille « Projet » ignorée : aucun projet dans cet import.')})
                 continue
             cible = {"projet": projet}
         elif portee == "INDICATEUR":
             indicateur = (indicateurs_par_nom or {}).get(nom_lower)
             if indicateur is None:
                 resultat["erreurs"].append(
-                    {"ligne": 0, "message": f"Indicateur « {nom_lower} » introuvable — grille ignorée."}
+                    {"ligne": 0, "message": f"{v('Indicateur « ')}{nom_lower} » introuvable — grille ignorée."}
                 )
                 continue
             cible = {"indicateur": indicateur}
@@ -238,29 +246,41 @@ def importer_paliers_alerte(feuille, *, projet=None, indicateurs_par_nom=None, a
 
 
 def _resoudre_rattachement(projet, niveau: str, nom_element: str):
-    from apps.projects.models import Activite, ObjectifGeneral, ObjectifSpecifique
+    """
+    « Aucun » → pas de rattachement ; « Projet » → le projet ; tout autre
+    texte → un élément de la planification du projet, retrouvé par son
+    libellé exact. Si plusieurs éléments portent ce libellé, celui dont le
+    niveau porte le nom indiqué l'emporte (les niveaux sont libres : rien
+    n'est supposé sur leurs noms).
+    """
+    from apps.projects.models import Activite, NiveauActivite
 
-    niveau = (niveau or "").strip().upper()
-    if niveau in ("", "AUCUN"):
+    niveau_brut = ramener_terme((niveau or "").strip())
+    if niveau_brut.upper() in ("", "AUCUN"):
         return {}
-    if niveau == "PROJET":
+    if niveau_brut.upper() == "PROJET":
         return {"projet": projet}
 
-    nom_element = (nom_element or "").strip()
-    if niveau in ("OBJECTIF GÉNÉRAL", "OBJECTIF GENERAL", "OG"):
-        og = ObjectifGeneral.objects.filter(projet=projet).first()
-        return {"objectif_general": og} if og else None
-    if niveau in ("OBJECTIF SPÉCIFIQUE", "OBJECTIF SPECIFIQUE", "OS"):
-        objectif_specifique = ObjectifSpecifique.objects.filter(
-            objectif_general__projet=projet, libelle__iexact=nom_element
-        ).first()
-        return {"objectif_specifique": objectif_specifique} if objectif_specifique else None
-    if niveau in ("ACTIVITÉ", "ACTIVITE"):
-        activite = Activite.objects.filter(
-            objectif_specifique__objectif_general__projet=projet, libelle__iexact=nom_element
-        ).first()
-        return {"activite": activite} if activite else None
-    return None
+    candidats = list(Activite.objects.filter(projet=projet, libelle__iexact=(nom_element or "").strip()))
+    if not candidats:
+        return None
+    if len(candidats) > 1:
+        profondeurs = set(
+            NiveauActivite.objects.filter(projet=projet, nom_niveau__iexact=niveau_brut).values_list(
+                "profondeur", flat=True
+            )
+        )
+        retenus = [a for a in candidats if _profondeur(a) in profondeurs]
+        candidats = retenus or candidats
+    return {"activite": candidats[0]}
+
+
+def _profondeur(activite) -> int:
+    profondeur = 0
+    while activite.activite_parent_id:
+        activite = activite.activite_parent
+        profondeur += 1
+    return profondeur
 
 
 def importer_indicateurs(fichier, projet=None) -> dict:
@@ -270,7 +290,7 @@ def importer_indicateurs(fichier, projet=None) -> dict:
     (import autonome), chaque ligne doit préciser son propre code projet
     dès qu'elle utilise un rattachement.
     """
-    wb = load_workbook(fichier, data_only=True)
+    wb = ramener_classeur(load_workbook(fichier, data_only=True))
     feuille = wb["Indicateurs"] if "Indicateurs" in wb.sheetnames else wb.worksheets[0]
     resultat = importer_indicateurs_depuis_feuille(feuille, projet=projet)
     if "Grilles d'alerte" in wb.sheetnames:
@@ -278,7 +298,7 @@ def importer_indicateurs(fichier, projet=None) -> dict:
             wb["Grilles d'alerte"], projet=projet, indicateurs_par_nom=resultat.pop("_indicateurs_par_nom", {})
         )
         resultat["grilles_alerte_creees"] = resultat_paliers["grilles_creees"]
-        resultat["erreurs"] += [{"ligne": e["ligne"], "message": f"[Grilles d'alerte] {e['message']}"} for e in resultat_paliers["erreurs"]]
+        resultat["erreurs"] += [{"ligne": e["ligne"], "message": f"{v("[Grilles d'alerte] ")}{e['message']}"} for e in resultat_paliers["erreurs"]]
     else:
         resultat.pop("_indicateurs_par_nom", None)
     return resultat
@@ -296,9 +316,13 @@ def importer_indicateurs_depuis_feuille(feuille, projet=None) -> dict:
     entetes = [str(c).strip() if c else "" for c in lignes[0]]
 
     def valeur(ligne, nom_colonne):
-        if nom_colonne not in entetes:
+        if nom_colonne == COLONNE_NIVEAU:
+            # Tolère l'ancien intitulé de la colonne (« Niveau de rattachement (Aucun/Projet/...) »).
+            idx = next((i for i, e in enumerate(entetes) if e.lower().startswith("niveau de rattachement")), None)
+        else:
+            idx = entetes.index(nom_colonne) if nom_colonne in entetes else None
+        if idx is None:
             return None
-        idx = entetes.index(nom_colonne)
         return ligne[idx] if idx < len(ligne) else None
 
     frequences_valides = dict(Indicateur.Frequence.choices)
@@ -331,18 +355,18 @@ def importer_indicateurs_depuis_feuille(feuille, projet=None) -> dict:
             if code_projet:
                 projet_ligne = Projet.objects.filter(code=code_projet).first()
                 if projet_ligne is None:
-                    erreurs.append({"ligne": numero, "message": f"Projet de code « {code_projet} » introuvable — ligne ignorée."})
+                    erreurs.append({"ligne": numero, "message": f"{v('Projet de code « ')}{code_projet} » introuvable — ligne ignorée."})
                     continue
 
-        niveau = str(valeur(ligne, "Niveau de rattachement (Aucun/Projet/Objectif général/Objectif spécifique/Activité)") or "")
+        niveau = str(valeur(ligne, COLONNE_NIVEAU) or "")
         rattachement = {}
         if niveau.strip().upper() not in ("", "AUCUN"):
             if projet_ligne is None:
-                erreurs.append({"ligne": numero, "message": "Un projet (code) est requis pour ce rattachement — ligne ignorée."})
+                erreurs.append({"ligne": numero, "message": v('Un projet (code) est requis pour ce rattachement — ligne ignorée.')})
                 continue
             resolu = _resoudre_rattachement(projet_ligne, niveau, str(valeur(ligne, "Nom de l'élément rattaché") or ""))
             if resolu is None:
-                avertissements.append({"ligne": numero, "message": "Élément de rattachement introuvable — indicateur créé sans rattachement."})
+                avertissements.append({"ligne": numero, "message": v('Élément de rattachement introuvable — indicateur créé sans rattachement.')})
                 resolu = {}
             rattachement = resolu
 
@@ -360,7 +384,7 @@ def importer_indicateurs_depuis_feuille(feuille, projet=None) -> dict:
             # Best-effort comme le reste de cet import : une ligne en erreur
             # (ex : contrainte base de données) ne doit jamais faire échouer
             # tout le fichier.
-            erreurs.append({"ligne": numero, "message": f"Impossible de créer cet indicateur : {exc}"})
+            erreurs.append({"ligne": numero, "message": f"{v('Impossible de créer cet indicateur : ')}{exc}"})
             continue
         indicateurs_par_nom[indicateur.libelle.strip().lower()] = indicateur
         crees += 1

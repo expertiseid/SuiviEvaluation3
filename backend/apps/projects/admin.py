@@ -1,10 +1,10 @@
 from django.contrib import admin
 
-from .models import Activite, Equipe, ObjectifGeneral, ObjectifSpecifique, Projet, SousActivite
+from .models import Activite, Equipe, NiveauActivite, Projet, SousActivite
 
 
-class ObjectifGeneralInline(admin.TabularInline):
-    model = ObjectifGeneral
+class NiveauActiviteInline(admin.TabularInline):
+    model = NiveauActivite
     extra = 0
 
 
@@ -14,31 +14,7 @@ class ProjetAdmin(admin.ModelAdmin):
     list_filter = ("statut", "type_mise_en_oeuvre", "partenaire_bailleur", "cadre_strategique")
     search_fields = ("code", "nom")
     filter_horizontal = ("zones", "utilisateurs_affectes")
-    inlines = [ObjectifGeneralInline]
-
-
-class ObjectifSpecifiqueInline(admin.TabularInline):
-    model = ObjectifSpecifique
-    extra = 0
-
-
-@admin.register(ObjectifGeneral)
-class ObjectifGeneralAdmin(admin.ModelAdmin):
-    list_display = ("libelle", "projet")
-    list_filter = ("projet",)
-    inlines = [ObjectifSpecifiqueInline]
-
-
-class ActiviteInline(admin.TabularInline):
-    model = Activite
-    extra = 0
-
-
-@admin.register(ObjectifSpecifique)
-class ObjectifSpecifiqueAdmin(admin.ModelAdmin):
-    list_display = ("libelle", "objectif_general")
-    list_filter = ("objectif_general__projet",)
-    inlines = [ActiviteInline]
+    inlines = [NiveauActiviteInline]
 
 
 class SousActiviteInline(admin.TabularInline):
@@ -48,8 +24,8 @@ class SousActiviteInline(admin.TabularInline):
 
 @admin.register(Activite)
 class ActiviteAdmin(admin.ModelAdmin):
-    list_display = ("code_activite", "libelle", "objectif_specifique", "statut", "responsable", "budget_alloue", "budget_realise")
-    list_filter = ("objectif_specifique__objectif_general__projet", "statut", "equipe_responsable")
+    list_display = ("code_activite", "libelle", "projet", "activite_parent", "statut", "responsable", "budget_alloue", "budget_realise")
+    list_filter = ("projet", "statut", "equipe_responsable")
     inlines = [SousActiviteInline]
 
 

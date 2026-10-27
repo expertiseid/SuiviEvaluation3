@@ -71,10 +71,10 @@ def lister_echeances(projet_ids, seuil_jours=None):
     activites = Activite.objects.exclude(statut=Activite.Statut.REALISEE).filter(
         date_fin__isnull=False,
         date_fin__lte=limite,
-        objectif_specifique__objectif_general__projet__id__in=projet_ids,
-    ).select_related("objectif_specifique__objectif_general__projet")
+        projet__id__in=projet_ids,
+    ).select_related("projet")
     for activite in activites:
-        projet = activite.objectif_specifique.objectif_general.projet
+        projet = activite.projet
         echeances.append(
             {
                 "type": "ACTIVITE",
@@ -91,10 +91,10 @@ def lister_echeances(projet_ids, seuil_jours=None):
     sous_activites = SousActivite.objects.exclude(statut=SousActivite.Statut.TERMINEE).filter(
         date_fin__isnull=False,
         date_fin__lte=limite,
-        activite__objectif_specifique__objectif_general__projet__id__in=projet_ids,
-    ).select_related("activite__objectif_specifique__objectif_general__projet")
+        activite__projet__id__in=projet_ids,
+    ).select_related("activite__projet")
     for sous_activite in sous_activites:
-        projet = sous_activite.activite.objectif_specifique.objectif_general.projet
+        projet = sous_activite.activite.projet
         echeances.append(
             {
                 "type": "SOUS_ACTIVITE",
@@ -129,10 +129,10 @@ def lister_echeances(projet_ids, seuil_jours=None):
     activites_rappel = Activite.objects.exclude(statut=Activite.Statut.REALISEE).filter(
         date_rappel__isnull=False,
         date_rappel__lte=today,
-        objectif_specifique__objectif_general__projet__id__in=projet_ids,
-    ).select_related("objectif_specifique__objectif_general__projet")
+        projet__id__in=projet_ids,
+    ).select_related("projet")
     for activite in activites_rappel:
-        projet = activite.objectif_specifique.objectif_general.projet
+        projet = activite.projet
         echeances.append(
             {
                 "type": "ACTIVITE",

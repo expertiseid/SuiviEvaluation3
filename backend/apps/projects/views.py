@@ -1,33 +1,33 @@
 from django.http import HttpResponse
+from django.utils import timezone
 from rest_framework import viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.accounts.constants import ROLES_NOTIFIEES_MODIFICATION_ACTIVITE
-from apps.core.permissions import HasGlobalVisibilityOrAssigned, IsAdminOrCreateForAuthenticated
+from apps.core.permissions import HasGlobalVisibilityOrAssigned, IsAdminOrCreateForAuthenticated, IsAdminOrReadOnly
 from apps.indicators.exports import generer_xlsform
 from apps.notifications.models import Notification
 from apps.notifications.services import notifier, notifier_par_role
 
 from .import_excel import generer_modele_import_projet, importer_projet
-from .models import Activite, Equipe, NiveauActivite, ObjectifGeneral, ObjectifSpecifique, Projet, SousActivite
+from .models import Activite, Equipe, JalonLivrable, NiveauActivite, ParametresCalcul, Projet, SousActivite, TauxManuel
 from .queryset_filters import visible_projets_ids
 from .serializers import (
     ActiviteSerializer,
     EquipeSerializer,
+    JalonLivrableSerializer,
     NiveauActiviteSerializer,
-    ObjectifGeneralSerializer,
-    ObjectifSpecifiqueSerializer,
+    ParametresCalculSerializer,
     ProjetSerializer,
     ProjetWriteSerializer,
     SousActiviteSerializer,
+    TauxManuelSerializer,
 )
 from .services import (
     supprimer_activite_cascade,
-    supprimer_objectif_general_cascade,
-    supprimer_objectif_specifique_cascade,
     supprimer_projet_cascade,
     supprimer_sous_activite_cascade,
     synchroniser_projets_associes_activite,
@@ -53,8 +53,9 @@ class ProjetViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return (
-            Projet.objects.select_related("partenaire_bailleur", "partenaire_mise_en_oeuvre")
-            .prefetch_related("objectif_general__objectifs_specifiques__activites__sous_activites")
+            Projet.objects.select_related(
+                "partenaire_bailleur", "partenaire_mise_en_oeuvre", "element_strategique__type_niveau"
+            )
             .filter(id__in=visible_projets_ids(self.request.user))
         )
 
@@ -97,43 +98,15 @@ class ProjetViewSet(viewsets.ModelViewSet):
         return Response(resultat)
 
 
-class ObjectifGeneralViewSet(viewsets.ModelViewSet):
-    serializer_class = ObjectifGeneralSerializer
-    permission_classes = (HasGlobalVisibilityOrAssigned,)
-    filterset_fields = ("projet",)
-
-    def get_queryset(self):
-        return ObjectifGeneral.objects.filter(projet__id__in=visible_projets_ids(self.request.user))
-
-    def perform_destroy(self, instance):
-        supprimer_objectif_general_cascade(instance)
-
-
-class ObjectifSpecifiqueViewSet(viewsets.ModelViewSet):
-    serializer_class = ObjectifSpecifiqueSerializer
-    permission_classes = (HasGlobalVisibilityOrAssigned,)
-    filterset_fields = ("objectif_general",)
-
-    def get_queryset(self):
-        return ObjectifSpecifique.objects.filter(
-            objectif_general__projet__id__in=visible_projets_ids(self.request.user)
-        )
-
-    def perform_destroy(self, instance):
-        supprimer_objectif_specifique_cascade(instance)
-
-
 class ActiviteViewSet(viewsets.ModelViewSet):
     serializer_class = ActiviteSerializer
     permission_classes = (HasGlobalVisibilityOrAssigned,)
-    filterset_fields = ("objectif_specifique", "activite_parent", "responsable")
+    filterset_fields = ("projet", "activite_parent", "responsable")
 
     CHAMPS_SURVEILLES = ("date_debut", "date_fin", "budget_alloue", "quantite_prevue", "statut")
 
     def get_queryset(self):
-        return Activite.objects.filter(
-            objectif_specifique__objectif_general__projet__id__in=visible_projets_ids(self.request.user)
-        )
+        return Activite.objects.filter(projet__id__in=visible_projets_ids(self.request.user))
 
     def perform_destroy(self, instance):
         supprimer_activite_cascade(instance)
@@ -141,7 +114,7 @@ class ActiviteViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="pour-projet")
     def pour_projet(self, request):
         """
-        Liste allégée (id, libellé), non paginée, des activités d'un projet —
+        Liste allégée (id, libellé), non paginée, des éléments d'un projet (tous niveaux) —
         alimente le sélecteur de grille d'alerte par activité (potentiellement
         des centaines d'activités, une pagination classique serait inutile ici).
         """
@@ -149,9 +122,7 @@ class ActiviteViewSet(viewsets.ModelViewSet):
         ids = visible_projets_ids(self.request.user)
         if not projet_id or int(projet_id) not in ids:
             return Response([])
-        activites = self.get_queryset().filter(
-            objectif_specifique__objectif_general__projet__id=projet_id
-        ).order_by("libelle")
+        activites = self.get_queryset().filter(projet__id=projet_id).order_by("libelle")
         return Response([{"id": a.id, "libelle": a.libelle} for a in activites])
 
     def perform_create(self, serializer):
@@ -171,7 +142,7 @@ class ActiviteViewSet(viewsets.ModelViewSet):
             champ for champ in self.CHAMPS_SURVEILLES if anciennes_valeurs[champ] != getattr(activite, champ)
         ]
         if changements and deja_planifiee:
-            projet = activite.objectif_specifique.objectif_general.projet
+            projet = activite.projet
             titre = f"Activité modifiée : {activite.libelle}"
             message = f"Projet {projet.nom} — champ(s) modifié(s) : {', '.join(changements)}."
             lien = f"/projets/{projet.id}"
@@ -202,11 +173,59 @@ class SousActiviteViewSet(viewsets.ModelViewSet):
     filterset_fields = ("activite", "statut")
 
     def get_queryset(self):
-        return SousActivite.objects.filter(
-            activite__objectif_specifique__objectif_general__projet__id__in=visible_projets_ids(
-                self.request.user
-            )
-        )
+        return SousActivite.objects.filter(activite__projet__id__in=visible_projets_ids(self.request.user))
 
     def perform_destroy(self, instance):
         supprimer_sous_activite_cascade(instance)
+
+
+class JalonLivrableViewSet(viewsets.ModelViewSet):
+    """Jalons et livrables d'un élément (méthodes « jalons pondérés » et « livrables »)."""
+
+    serializer_class = JalonLivrableSerializer
+    permission_classes = (HasGlobalVisibilityOrAssigned,)
+    filterset_fields = ("activite", "type")
+
+    def get_queryset(self):
+        return JalonLivrable.objects.filter(activite__projet__id__in=visible_projets_ids(self.request.user))
+
+    def _validation(self, serializer):
+        # La validation d'un livrable garde son auteur et sa date ; la retirer les efface.
+        valide = serializer.validated_data.get("valide")
+        if valide is True and not (serializer.instance and serializer.instance.valide):
+            return {"valide_par": self.request.user, "date_validation": timezone.localdate()}
+        if valide is False:
+            return {"valide_par": None, "date_validation": None}
+        return {}
+
+    def perform_create(self, serializer):
+        serializer.save(**self._validation(serializer))
+
+    def perform_update(self, serializer):
+        serializer.save(**self._validation(serializer))
+
+
+class TauxManuelViewSet(viewsets.ModelViewSet):
+    """Taux saisis à la main (méthode « saisie manuelle »), historisés."""
+
+    serializer_class = TauxManuelSerializer
+    permission_classes = (HasGlobalVisibilityOrAssigned,)
+    filterset_fields = ("activite",)
+
+    def get_queryset(self):
+        return TauxManuel.objects.filter(activite__projet__id__in=visible_projets_ids(self.request.user))
+
+    def perform_create(self, serializer):
+        serializer.save(saisi_par=self.request.user)
+
+
+@api_view(["GET", "PUT", "PATCH"])
+@permission_classes([IsAdminOrReadOnly])
+def parametres_calcul(request):
+    """Méthode de calcul et d'agrégation par défaut de l'organisation (modification : Administrateur)."""
+    parametres = ParametresCalcul.courants()
+    if request.method in ("PUT", "PATCH"):
+        serializer = ParametresCalculSerializer(parametres, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+    return Response(ParametresCalculSerializer(parametres).data)

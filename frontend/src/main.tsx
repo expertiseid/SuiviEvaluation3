@@ -5,6 +5,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createTheme, MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import { ModalsProvider } from "@mantine/modals";
+import { DateInput, DatePickerInput, DatesProvider } from "@mantine/dates";
+import dayjs from "dayjs";
+import "dayjs/locale/fr";
+import customParseFormat from "dayjs/plugin/customParseFormat";
 
 import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";
@@ -17,6 +21,16 @@ import "./index.css";
 
 import App from "./App";
 import { AuthProvider } from "./auth/AuthContext";
+
+// Dates en français partout : noms des mois et jours, semaine commençant le lundi,
+// affichage et saisie au clavier au format JJ/MM/AAAA.
+dayjs.extend(customParseFormat);
+dayjs.locale("fr");
+
+function lireDateSaisie(texte: string): string | null {
+  const date = dayjs(texte.trim(), ["DD/MM/YYYY", "D/M/YYYY", "DD-MM-YYYY", "YYYY-MM-DD"], true);
+  return date.isValid() ? date.format("YYYY-MM-DD") : null;
+}
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -38,22 +52,26 @@ const theme = createTheme({
   components: {
     Card: { defaultProps: { padding: "md", radius: "md" } },
     Button: { defaultProps: { radius: "md" } },
+    DateInput: DateInput.extend({ defaultProps: { valueFormat: "DD/MM/YYYY", dateParser: lireDateSaisie } }),
+    DatePickerInput: DatePickerInput.extend({ defaultProps: { valueFormat: "DD/MM/YYYY" } }),
   },
 });
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <MantineProvider theme={theme} defaultColorScheme="light">
-      <Notifications />
-      <ModalsProvider>
-        <QueryClientProvider client={queryClient}>
-          <BrowserRouter>
-            <AuthProvider>
-              <App />
-            </AuthProvider>
-          </BrowserRouter>
-        </QueryClientProvider>
-      </ModalsProvider>
+      <DatesProvider settings={{ locale: "fr", firstDayOfWeek: 1 }}>
+        <Notifications />
+        <ModalsProvider>
+          <QueryClientProvider client={queryClient}>
+            <BrowserRouter>
+              <AuthProvider>
+                <App />
+              </AuthProvider>
+            </BrowserRouter>
+          </QueryClientProvider>
+        </ModalsProvider>
+      </DatesProvider>
     </MantineProvider>
   </StrictMode>,
 );

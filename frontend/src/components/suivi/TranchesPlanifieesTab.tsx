@@ -9,6 +9,7 @@ import { confirmerSuppression } from "../common/confirmerSuppression";
 import { StatusBadge, type StatusTone } from "../common/StatusBadge";
 import { messageErreurApi } from "../../utils/erreurs";
 import type { TranchePlanifiee } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 const LIBELLE_STATUT: Record<TranchePlanifiee["statut"], string> = {
   ATTEINTE: "Atteinte",
@@ -74,7 +75,7 @@ export function TranchesPlanifieesTab({
 
   function supprimer(tranche: TranchePlanifiee) {
     confirmerSuppression({
-      message: `Supprimer la tranche "${tranche.libelle}" ? Les saisies de suivi déjà faites ne sont pas supprimées, seule cette répartition par période l'est.`,
+      message: voc`Supprimer la tranche "${tranche.libelle}" ? Les saisies de suivi déjà faites ne sont pas supprimées, seule cette répartition par période l'est.`,
       onConfirm: async () => {
         try {
           await deleteTranche.mutateAsync(tranche.id);
@@ -146,8 +147,7 @@ export function TranchesPlanifieesTab({
             </Table>
           </Table.ScrollContainer>
           <Text size="xs" c="dimmed" mt="sm">
-            Somme des cibles de toutes les tranches : {sommeCibles}{unite ? ` ${unite}` : ""} — à comparer à la cible globale de l'activité/indicateur.
-          </Text>
+            Somme des cibles de toutes les tranches : {sommeCibles}{unite ? ` ${unite}` : ""} {voc(" — à comparer à la cible globale de l'activité/indicateur.")}</Text>
         </>
       )}
     </Card>

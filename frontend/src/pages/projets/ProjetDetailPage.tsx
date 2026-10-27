@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Check, Download, FolderTree, MapPin, Paperclip, Pencil, Plus, Search, Trash2, Users, X } from "lucide-react";
+import { Download, ListPlus, MapPin, Paperclip, Pencil, Plus, Search, Trash2, Users } from "lucide-react";
 import {
   ActionIcon,
   Badge,
@@ -9,6 +9,7 @@ import {
   Group,
   Menu,
   Modal,
+  Popover,
   Stack,
   Table,
   Tabs,
@@ -20,16 +21,12 @@ import {
 import { notifications } from "@mantine/notifications";
 import {
   useProjet,
-  useCreateObjectifGeneral,
-  useCreateObjectifSpecifique,
-  useUpdateObjectifGeneral,
-  useUpdateObjectifSpecifique,
-  useDeleteObjectifGeneral,
-  useDeleteObjectifSpecifique,
+  useCreateActivite,
   useDeleteActivite,
   useDeleteSousActivite,
   useDeleteProjet,
   useNiveauxActivite,
+  useNommerNiveau,
   telechargerExportProjet,
 } from "../../api/projects";
 import { useDashboardProjet } from "../../api/dashboard";
@@ -42,6 +39,9 @@ import { BeneficiairesTab } from "../../components/beneficiaires/BeneficiairesTa
 import { PlanificationPeriodeTab } from "./PlanificationPeriodeTab";
 import { BoutonModeEdition } from "../../components/common/BoutonModeEdition";
 import { ActiviteForm } from "./ActiviteForm";
+import { AvancementModal } from "./AvancementModal";
+import { useAuth } from "../../auth/useAuth";
+import { libelleMethodeEffective } from "../../utils/methodesCalcul";
 import { NiveauxActiviteTab } from "./NiveauxActiviteTab";
 import { SousActiviteForm } from "./SousActiviteForm";
 import { FinancementsTab } from "./FinancementsTab";
@@ -51,97 +51,50 @@ import { TauxParIndicateurChart } from "../../components/charts/TauxParIndicateu
 import { PAYS_MONDE } from "../../utils/pays";
 import { correspond } from "../../utils/recherche";
 import type { Activite, SousActivite } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
-function LibelleEditable({
-  valeur,
-  onSave,
-  onDelete,
-  size,
-  fw,
-  editable,
+function AjoutInline({
+  placeholder,
+  demanderNomNiveau,
+  onAdd,
 }: {
-  valeur: string;
-  onSave: (nouveauLibelle: string) => void;
-  onDelete?: () => void;
-  size?: string;
-  fw?: number;
-  editable: boolean;
+  placeholder: string;
+  /** Le niveau n'a pas encore de nom : on le demande en même temps que le premier élément. */
+  demanderNomNiveau?: boolean;
+  onAdd: (libelle: string, nomNiveau: string) => void;
 }) {
-  const [edition, setEdition] = useState(false);
-  const [valeurEditee, setValeurEditee] = useState(valeur);
-
-  if (edition) {
-    return (
-      <Group gap={6} wrap="nowrap">
+  const [value, setValue] = useState("");
+  const [nomNiveau, setNomNiveau] = useState("");
+  const pret = value.trim() && (!demanderNomNiveau || nomNiveau.trim());
+  return (
+    <Group gap="xs" mt={4} align="flex-end">
+      {demanderNomNiveau && (
         <TextInput
           size="xs"
-          value={valeurEditee}
-          onChange={(e) => setValeurEditee(e.currentTarget.value)}
-          style={{ flex: 1 }}
-          autoFocus
+          label="Nom de ce niveau"
+          placeholder="Ex : Résultat, Objectif, Pilier…"
+          value={nomNiveau}
+          onChange={(e) => setNomNiveau(e.currentTarget.value)}
+          w={220}
         />
-        <ActionIcon
-          size="sm"
-          variant="subtle"
-          color="green"
-          onClick={() => {
-            if (valeurEditee.trim()) {
-              onSave(valeurEditee.trim());
-              setEdition(false);
-            }
-          }}
-        >
-          <Check size={14} />
-        </ActionIcon>
-        <ActionIcon
-          size="sm"
-          variant="subtle"
-          onClick={() => {
-            setValeurEditee(valeur);
-            setEdition(false);
-          }}
-        >
-          <X size={14} />
-        </ActionIcon>
-      </Group>
-    );
-  }
-
-  return (
-    <Group gap={6} wrap="nowrap">
-      <Text fw={fw ?? 500} size={size}>{valeur}</Text>
-      {editable && (
-      <Group gap={6} wrap="nowrap">
-        <Tooltip label="Modifier le libellé">
-          <ActionIcon size="sm" variant="subtle" onClick={() => setEdition(true)}>
-            <Pencil size={12} />
-          </ActionIcon>
-        </Tooltip>
-        {onDelete && (
-          <Tooltip label="Supprimer">
-            <ActionIcon size="sm" variant="subtle" color="red" onClick={onDelete}>
-              <Trash2 size={12} />
-            </ActionIcon>
-          </Tooltip>
-        )}
-      </Group>
       )}
-    </Group>
-  );
-}
-
-function AjoutInline({ placeholder, onAdd }: { placeholder: string; onAdd: (libelle: string) => void }) {
-  const [value, setValue] = useState("");
-  return (
-    <Group gap="xs" mt={4}>
-      <TextInput size="xs" placeholder={placeholder} value={value} onChange={(e) => setValue(e.currentTarget.value)} />
+      <TextInput
+        size="xs"
+        label={demanderNomNiveau ? "Libellé" : undefined}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => setValue(e.currentTarget.value)}
+        w={360}
+      />
       <Button
         size="xs"
         variant="light"
+        disabled={!pret}
         onClick={() => {
-          if (value.trim()) {
-            onAdd(value.trim());
+          if (pret) {
+            onAdd(value.trim(), nomNiveau.trim());
             setValue("");
+            setNomNiveau("");
           }
         }}
       >
@@ -151,21 +104,120 @@ function AjoutInline({ placeholder, onAdd }: { placeholder: string; onAdd: (libe
   );
 }
 
-// Une activité peut être imbriquée sous une autre (Activite.activite_parent),
-// profondeur illimitée — ce composant s'affiche donc lui-même pour chaque
-// enfant. Le nom affiché par profondeur (« Résultat », « Activité »...) vient
-// de niveauxNoms, construit depuis NiveauActivite (ou "Activité" par défaut).
+/**
+ * Étiquette du niveau d'un élément — un clic permet de nommer (ou renommer)
+ * ce niveau pour tout le projet, directement depuis l'arbre.
+ */
+function BadgeNiveau({
+  nom,
+  nomme,
+  couleur,
+  onRenommer,
+}: {
+  nom: string;
+  /** false : niveau encore sans nom (affiché avec le nom par défaut). */
+  nomme: boolean;
+  couleur: string;
+  onRenommer: (nouveauNom: string) => Promise<void>;
+}) {
+  const [ouvert, setOuvert] = useState(false);
+  const [valeur, setValeur] = useState(nomme ? nom : "");
+  return (
+    <Popover opened={ouvert} onChange={setOuvert} position="bottom-start" withArrow shadow="md" trapFocus>
+      <Popover.Target>
+        <Tooltip label={nomme ? "Renommer ce niveau" : "Niveau sans nom — clique pour le nommer"}>
+          <Badge
+            color={couleur}
+            variant={nomme ? "light" : "outline"}
+            size="xs"
+            style={{ cursor: "pointer", borderStyle: nomme ? undefined : "dashed" }}
+            onClick={() => {
+              setValeur(nomme ? nom : "");
+              setOuvert((o) => !o);
+            }}
+          >
+            {nom}
+          </Badge>
+        </Tooltip>
+      </Popover.Target>
+      <Popover.Dropdown>
+        <Stack gap={6}>
+          <Text size="xs" c="dimmed">{voc("Nom de ce niveau (pour tous ses éléments dans le projet)")}</Text>
+          <Group gap={6} wrap="nowrap">
+            <TextInput
+              size="xs"
+              placeholder="Ex : Résultat, Pilier…"
+              value={valeur}
+              onChange={(e) => setValeur(e.currentTarget.value)}
+              w={200}
+            />
+            <Button
+              size="xs"
+              disabled={!valeur.trim()}
+              onClick={async () => {
+                try {
+                  await onRenommer(valeur.trim());
+                  setOuvert(false);
+                } catch {
+                  notifications.show({ message: "Erreur lors de l'enregistrement du nom du niveau", color: "red" });
+                }
+              }}
+            >
+              OK
+            </Button>
+          </Group>
+        </Stack>
+      </Popover.Dropdown>
+    </Popover>
+  );
+}
+
+// Couleur de la bordure et du badge selon la profondeur, pour distinguer les
+// niveaux d'un coup d'œil quel que soit leur nombre.
+const COULEURS_NIVEAUX = ["teal", "blue", "grape", "orange", "cyan", "pink", "lime", "indigo"];
+
+function nomDuNiveau(niveauxNoms: Record<number, string>, profondeur: number) {
+  return niveauxNoms[profondeur] ?? "Activité";
+}
+
+/** Tous les éléments de l'arbre, à plat (tous niveaux). */
+function aplatir(elements: Activite[]): Activite[] {
+  return elements.flatMap((e) => [e, ...aplatir(e.enfants)]);
+}
+
+/**
+ * Garde un élément s'il correspond à la recherche, ou si l'un de ses
+ * descendants y correspond — pour ne jamais masquer le chemin vers un
+ * résultat trouvé en profondeur.
+ */
+function filtrerArbre(elements: Activite[], recherche: string): Activite[] {
+  return elements
+    .map((e) => {
+      const correspondDirectement = correspond(e.libelle, recherche) || correspond(e.code_activite ?? "", recherche);
+      if (correspondDirectement) return e;
+      const enfants = filtrerArbre(e.enfants, recherche);
+      const sousActivites = e.sous_activites.filter((sa) => correspond(sa.libelle, recherche));
+      if (enfants.length === 0 && sousActivites.length === 0) return null;
+      return { ...e, enfants, sous_activites: sousActivites };
+    })
+    .filter((e): e is Activite => e !== null);
+}
+
+// Un élément de la planification, à n'importe quel niveau : il s'affiche
+// lui-même pour chacun de ses enfants (profondeur illimitée). Le nom affiché
+// par profondeur vient de niveauxNoms (NiveauActivite du projet).
 function CarteActivite({
   act,
   profondeur,
   editionActive,
   niveauxNoms,
-  utiliseNiveauxPersonnalises,
+  onRenommerNiveau,
   onDocuments,
   onBeneficiaires,
   onEditer,
   onAjouterEnfant,
   onAjouterSousActivite,
+  onAvancement,
   onSupprimer,
   onDocumentsSousActivite,
   onBeneficiairesSousActivite,
@@ -175,36 +227,47 @@ function CarteActivite({
   profondeur: number;
   editionActive: boolean;
   niveauxNoms: Record<number, string>;
-  /** Ce projet a-t-il au moins un niveau d'activité personnalisé (voir NiveauActivite) ? */
-  utiliseNiveauxPersonnalises: boolean;
+  onRenommerNiveau: (profondeur: number, nom: string) => Promise<void>;
   onDocuments: (id: number) => void;
   onBeneficiaires: (id: number) => void;
   onEditer: (act: Activite) => void;
-  onAjouterEnfant: (act: Activite) => void;
+  onAjouterEnfant: (act: Activite, profondeurEnfant: number) => void;
   onAjouterSousActivite: (id: number) => void;
-  onSupprimer: (act: Activite) => void;
+  onAvancement: (act: Activite) => void;
+  onSupprimer: (act: Activite, profondeur: number) => void;
   onDocumentsSousActivite: (id: number) => void;
   onBeneficiairesSousActivite: (id: number) => void;
   onSupprimerSousActivite: (sa: SousActivite) => void;
 }) {
-  const nomNiveau = niveauxNoms[profondeur] ?? "Activité";
-  // Le "+" ajoute un niveau imbriqué de plus (nommé d'après le niveau
-  // configuré suivant, ou "Nouveau niveau" si aucun n'est encore nommé à
-  // cette profondeur) dès que ce projet utilise des niveaux personnalisés —
-  // sinon (projet "classique", jamais personnalisé) il garde le comportement
-  // d'avant : créer une vraie Sous-activité.
+  const nomNiveau = nomDuNiveau(niveauxNoms, profondeur);
   const nomNiveauSuivant = niveauxNoms[profondeur + 1];
-  const ajouterUnNiveau = utiliseNiveauxPersonnalises || !!nomNiveauSuivant;
+  const couleur = COULEURS_NIVEAUX[profondeur % COULEURS_NIVEAUX.length];
 
   return (
-    <Card withBorder radius="sm" padding="xs" bg="gray.0" style={{ borderLeft: "3px solid var(--mantine-color-grape-5)" }}>
+    <Card
+      withBorder
+      radius="sm"
+      padding="xs"
+      bg={profondeur === 0 ? "white" : "gray.0"}
+      style={{ borderLeft: `3px solid var(--mantine-color-${couleur}-5)` }}
+    >
       <Group justify="space-between" align="flex-start" wrap="wrap">
         <div>
           <Group gap={6} wrap="wrap">
-            <Badge color="grape" variant="light" size="xs">{nomNiveau}</Badge>
+            <BadgeNiveau
+              nom={nomNiveau}
+              nomme={profondeur in niveauxNoms}
+              couleur={couleur}
+              onRenommer={(nom) => onRenommerNiveau(profondeur, nom)}
+            />
             {act.code_activite && <Text size="xs" c="dimmed">{act.code_activite}</Text>}
-            <Text size="sm" fw={500}>{act.libelle}</Text>
+            <Text size="sm" fw={profondeur === 0 ? 700 : 500}>{act.libelle}</Text>
           </Group>
+          {act.description && (
+            <Text size="xs" c="dimmed" mt={2}>
+              {act.description}
+            </Text>
+          )}
           {(act.date_debut || act.date_fin) && (
             <Text size="xs" c="dimmed" mt={2}>
               {act.date_debut ?? "?"} → {act.date_fin ?? "?"}
@@ -217,50 +280,51 @@ function CarteActivite({
           )}
         </div>
         <Group gap={4} wrap="nowrap">
-          <Tooltip label="Documents liés">
+          <Tooltip
+            label={`${voc("Taux d'exécution")} — ${libelleMethodeEffective(act.methode_calcul_effective)}${
+              act.taux_avertissements.length ? ` · ${act.taux_avertissements[0]}` : ""
+            }`}
+          >
+            <Button
+              size="compact-xs"
+              variant="light"
+              color={act.taux_avertissements.length ? "orange" : "teal"}
+              onClick={() => onAvancement(act)}
+              miw={56}
+            >
+              {act.taux_realisation === null ? "—" : `${act.taux_realisation.toLocaleString("fr-FR")} %`}
+            </Button>
+          </Tooltip>
+          <Tooltip label={voc("Documents liés")}>
             <ActionIcon size="sm" variant="subtle" onClick={() => onDocuments(act.id)}>
               <Paperclip size={12} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Bénéficiaires liés">
+          <Tooltip label={voc("Bénéficiaires liés")}>
             <ActionIcon size="sm" variant="subtle" onClick={() => onBeneficiaires(act.id)}>
               <Users size={12} />
             </ActionIcon>
           </Tooltip>
           {editionActive && (
-            <Tooltip label="Modifier l'activité">
+            <Tooltip label={`Modifier ce « ${nomNiveau} »`}>
               <ActionIcon size="sm" variant="subtle" onClick={() => onEditer(act)}>
                 <Pencil size={12} />
               </ActionIcon>
             </Tooltip>
           )}
-          <Tooltip
-            label={
-              ajouterUnNiveau
-                ? nomNiveauSuivant
-                  ? `Nouveau « ${nomNiveauSuivant} »`
-                  : "Nouveau niveau"
-                : "Nouvelle sous-activité"
-            }
-          >
-            <ActionIcon
-              size="sm"
-              variant="subtle"
-              onClick={() => (ajouterUnNiveau ? onAjouterEnfant(act) : onAjouterSousActivite(act.id))}
-            >
+          <Tooltip label={nomNiveauSuivant ? `Ajouter un « ${nomNiveauSuivant} » en dessous` : "Ajouter un niveau en dessous"}>
+            <ActionIcon size="sm" variant="subtle" onClick={() => onAjouterEnfant(act, profondeur + 1)}>
               <Plus size={14} />
             </ActionIcon>
           </Tooltip>
-          {!ajouterUnNiveau && (
-            <Tooltip label="Ajouter un niveau imbriqué sous un autre nom (plutôt qu'une sous-activité classique)">
-              <ActionIcon size="sm" variant="subtle" onClick={() => onAjouterEnfant(act)}>
-                <FolderTree size={14} />
-              </ActionIcon>
-            </Tooltip>
-          )}
+          <Tooltip label="Ajouter une sous-activité">
+            <ActionIcon size="sm" variant="subtle" onClick={() => onAjouterSousActivite(act.id)}>
+              <ListPlus size={14} />
+            </ActionIcon>
+          </Tooltip>
           {editionActive && (
-            <Tooltip label="Supprimer l'activité">
-              <ActionIcon size="sm" variant="subtle" color="red" onClick={() => onSupprimer(act)}>
+            <Tooltip label={`Supprimer ce « ${nomNiveau} »`}>
+              <ActionIcon size="sm" variant="subtle" color="red" onClick={() => onSupprimer(act, profondeur)}>
                 <Trash2 size={12} />
               </ActionIcon>
             </Tooltip>
@@ -277,12 +341,13 @@ function CarteActivite({
               profondeur={profondeur + 1}
               editionActive={editionActive}
               niveauxNoms={niveauxNoms}
-              utiliseNiveauxPersonnalises={utiliseNiveauxPersonnalises}
+              onRenommerNiveau={onRenommerNiveau}
               onDocuments={onDocuments}
               onBeneficiaires={onBeneficiaires}
               onEditer={onEditer}
               onAjouterEnfant={onAjouterEnfant}
               onAjouterSousActivite={onAjouterSousActivite}
+              onAvancement={onAvancement}
               onSupprimer={onSupprimer}
               onDocumentsSousActivite={onDocumentsSousActivite}
               onBeneficiairesSousActivite={onBeneficiairesSousActivite}
@@ -309,12 +374,12 @@ function CarteActivite({
                   )}
                 </div>
                 <Group gap={4} wrap="nowrap">
-                  <Tooltip label="Documents liés">
+                  <Tooltip label={voc("Documents liés")}>
                     <ActionIcon size="sm" variant="subtle" onClick={() => onDocumentsSousActivite(sa.id)}>
                       <Paperclip size={12} />
                     </ActionIcon>
                   </Tooltip>
-                  <Tooltip label="Bénéficiaires liés">
+                  <Tooltip label={voc("Bénéficiaires liés")}>
                     <ActionIcon size="sm" variant="subtle" onClick={() => onBeneficiairesSousActivite(sa.id)}>
                       <Users size={12} />
                     </ActionIcon>
@@ -348,20 +413,21 @@ export function ProjetDetailPage() {
     [niveauxActivite],
   );
 
-  const createOG = useCreateObjectifGeneral();
-  const createOS = useCreateObjectifSpecifique();
-  const updateOG = useUpdateObjectifGeneral();
-  const updateOS = useUpdateObjectifSpecifique();
-  const deleteOG = useDeleteObjectifGeneral();
-  const deleteOS = useDeleteObjectifSpecifique();
+  const createActivite = useCreateActivite();
+  const nommerNiveau = useNommerNiveau(projetId);
   const deleteActivite = useDeleteActivite();
   const deleteSousActivite = useDeleteSousActivite();
   const deleteProjet = useDeleteProjet();
 
-  const [modalActiviteFor, setModalActiviteFor] = useState<number | null>(null);
   const [modalActiviteEdition, setModalActiviteEdition] = useState<Activite | null>(null);
-  const [modalActiviteEnfantFor, setModalActiviteEnfantFor] = useState<Activite | null>(null);
+  const [modalActiviteEnfantFor, setModalActiviteEnfantFor] = useState<{ parent: Activite; profondeur: number } | null>(
+    null,
+  );
   const [modalSousActiviteFor, setModalSousActiviteFor] = useState<number | null>(null);
+  const [avancementForId, setAvancementForId] = useState<number | null>(null);
+  const setAvancementFor = (act: Activite) => setAvancementForId(act.id);
+  const { user } = useAuth();
+  const peutModifier = !!user && (user.role === "ADMIN" || user.niveau_acces === "LECTURE_ECRITURE");
   const [documentsActiviteId, setDocumentsActiviteId] = useState<number | null>(null);
   const [documentsSousActiviteId, setDocumentsSousActiviteId] = useState<number | null>(null);
   const [beneficiairesActiviteId, setBeneficiairesActiviteId] = useState<number | null>(null);
@@ -370,47 +436,32 @@ export function ProjetDetailPage() {
   const [recherchePlan, setRecherchePlan] = useState("");
   const [editionActive, setEditionActive] = useState(false);
 
-  // Un objectif spécifique / activité est visible s'il correspond lui-même à
-  // la recherche, ou si un de ses descendants y correspond — pour ne jamais
-  // masquer le chemin vers un résultat trouvé en profondeur (ex: chercher
-  // une sous-activité doit garder visibles son activité et son OS parents).
-  const objectifsSpecifiquesFiltres = useMemo(() => {
-    const liste = projet?.objectif_general?.objectifs_specifiques ?? [];
-    if (!recherchePlan.trim()) return liste;
-    return liste
-      .map((os) => {
-        const activitesFiltrees = os.activites
-          .map((act) => {
-            const sousActivitesFiltrees = act.sous_activites.filter((sa) => correspond(sa.libelle, recherchePlan));
-            const activiteMatch = correspond(act.libelle, recherchePlan) || correspond(act.code_activite ?? "", recherchePlan);
-            if (!activiteMatch && sousActivitesFiltrees.length === 0) return null;
-            return { ...act, sous_activites: activiteMatch ? act.sous_activites : sousActivitesFiltrees };
-          })
-          .filter((act): act is Activite => act !== null);
-        const osMatch = correspond(os.libelle, recherchePlan);
-        if (!osMatch && activitesFiltrees.length === 0) return null;
-        return { ...os, activites: osMatch ? os.activites : activitesFiltrees };
-      })
-      .filter((os): os is NonNullable<typeof os> => os !== null);
+  const elementsFiltres = useMemo(() => {
+    const racines = projet?.activites ?? [];
+    return recherchePlan.trim() ? filtrerArbre(racines, recherchePlan) : racines;
   }, [projet, recherchePlan]);
 
   if (isLoading || !projet) return <Text>Chargement…</Text>;
 
-  const budgetDejaAlloue = (projet.objectif_general?.objectifs_specifiques ?? [])
-    .flatMap((os) => os.activites)
-    .reduce((somme, act) => somme + (act.budget_alloue ? Number(act.budget_alloue) : 0), 0);
+  const budgetDejaAlloue = aplatir(projet.activites).reduce(
+    (somme, act) => somme + (act.budget_alloue ? Number(act.budget_alloue) : 0),
+    0,
+  );
+  const nomPremierNiveau = nomDuNiveau(niveauxNoms, 0);
+  // Relu dans l'arbre à chaque rechargement du projet : la fenêtre suit les saisies.
+  const elementAvancement = aplatir(projet.activites).find((a) => a.id === avancementForId) ?? null;
 
   function handleSupprimer() {
     if (!projet) return;
     confirmerSuppression({
-      message: `Supprimer le projet "${projet.nom}" ainsi que toute sa planification et ses indicateurs ? Cette action est irréversible.`,
+      message: voc`Supprimer le projet "${projet.nom}" ainsi que toute sa planification et ses indicateurs ? Cette action est irréversible.`,
       onConfirm: async () => {
         try {
           await deleteProjet.mutateAsync(projetId);
-          notifications.show({ message: "Projet supprimé", color: "green" });
+          notifications.show({ message: voc("Projet supprimé"), color: "green" });
           navigate("/projets");
         } catch {
-          notifications.show({ message: "Erreur lors de la suppression du projet", color: "red" });
+          notifications.show({ message: voc("Erreur lors de la suppression du projet"), color: "red" });
         }
       },
     });
@@ -445,6 +496,7 @@ export function ProjetDetailPage() {
                 <Text component={Link} to={`/strategie/${projet.cadre_strategique}`} span c="teal.8" fw={500}>
                   {projet.cadre_strategique_nom}
                 </Text>
+                {projet.element_strategique_libelle && ` › ${projet.element_strategique_libelle}`}
               </>
             )}
           </Text>
@@ -474,7 +526,7 @@ export function ProjetDetailPage() {
               <Button variant="light" leftSection={<Download size={16} />}>Exporter</Button>
             </Menu.Target>
             <Menu.Dropdown>
-              <Menu.Label>Planification et suivi</Menu.Label>
+              <Menu.Label>{voc("Planification et suivi")}</Menu.Label>
               <Menu.Item onClick={() => telechargerExportSuiviExcel(projetId, projet.code)}>
                 Excel
               </Menu.Item>
@@ -490,12 +542,12 @@ export function ProjetDetailPage() {
           <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />
           {editionActive && (
           <Group gap="lg">
-            <Tooltip label="Modifier le projet">
+            <Tooltip label={voc("Modifier le projet")}>
               <ActionIcon variant="subtle" size="lg" onClick={() => setModalEditionOuvert(true)}>
                 <Pencil size={18} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Supprimer le projet">
+            <Tooltip label={voc("Supprimer le projet")}>
               <ActionIcon variant="subtle" color="red" size="lg" loading={deleteProjet.isPending} onClick={handleSupprimer}>
                 <Trash2 size={18} />
               </ActionIcon>
@@ -508,129 +560,74 @@ export function ProjetDetailPage() {
       <Tabs defaultValue="hierarchie">
         <Tabs.List>
           <Tabs.Tab value="niveaux">Configuration des niveaux</Tabs.Tab>
-          <Tabs.Tab value="hierarchie">Planification</Tabs.Tab>
-          <Tabs.Tab value="periode">Planification par période</Tabs.Tab>
-          <Tabs.Tab value="equipe">Équipe de projet</Tabs.Tab>
-          <Tabs.Tab value="indicateurs">Indicateurs</Tabs.Tab>
+          <Tabs.Tab value="hierarchie">{voc("Planification")}</Tabs.Tab>
+          <Tabs.Tab value="periode">{voc("Planification par période")}</Tabs.Tab>
+          <Tabs.Tab value="equipe">{voc("Équipe de projet")}</Tabs.Tab>
+          <Tabs.Tab value="indicateurs">{voc("Indicateurs")}</Tabs.Tab>
           <Tabs.Tab value="financement">Financement</Tabs.Tab>
-          <Tabs.Tab value="documents">Documents</Tabs.Tab>
+          <Tabs.Tab value="documents">{voc("Documents")}</Tabs.Tab>
           <Tabs.Tab value="historique">Historique</Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="hierarchie" pt="md">
           <Card withBorder padding="md">
-            {!projet.objectif_general ? (
-              <>
-                <Text size="sm" c="dimmed" mb={4}>
-                  Ce projet n'a pas encore d'objectif général — définis-le d'abord (un seul par projet).
-                </Text>
-                <AjoutInline
-                  placeholder="Objectif général du projet…"
-                  onAdd={(libelle) => createOG.mutate({ projet: projetId, libelle })}
-                />
-              </>
-            ) : (
-              <>
-                <div style={{ marginBottom: 8 }}>
-                  <Badge color="teal" variant="light" size="sm" mb={4}>Objectif général</Badge>
-                  <LibelleEditable
-                    valeur={projet.objectif_general.libelle}
-                    onSave={(libelle) => updateOG.mutate({ id: projet.objectif_general!.id, payload: { libelle } })}
-                    onDelete={() =>
-                      supprimerAvecConfirmation(
-                        `Supprimer l'objectif général "${projet.objectif_general!.libelle}" ainsi que tous ses objectifs spécifiques, activités, sous-activités et indicateurs liés ? Cette action est irréversible.`,
-                        () => deleteOG.mutateAsync(projet.objectif_general!.id),
-                        "Objectif général supprimé",
-                      )
-                    }
-                    size="lg"
-                    fw={700}
-                    editable={editionActive}
-                  />
-                </div>
-                <AjoutInline
-                  placeholder="Nouvel objectif spécifique…"
-                  onAdd={(libelle) => createOS.mutate({ objectif_general: projet.objectif_general!.id, libelle })}
-                />
-                {projet.objectif_general.objectifs_specifiques.length > 0 && (
-                  <TextInput
-                    placeholder="Rechercher un objectif, une activité ou une sous-activité…"
-                    leftSection={<Search size={15} />}
-                    value={recherchePlan}
-                    onChange={(e) => setRecherchePlan(e.currentTarget.value)}
-                    maw={400}
-                    mt="sm"
-                  />
-                )}
-                {recherchePlan.trim() && objectifsSpecifiquesFiltres.length === 0 && (
-                  <Text c="dimmed" size="sm" mt="sm">Aucun résultat ne correspond à la recherche.</Text>
-                )}
-                <Stack mt="sm" gap="sm">
-                  {objectifsSpecifiquesFiltres.map((os) => (
-                    <Card key={os.id} withBorder radius="md" padding="sm" style={{ borderLeft: "4px solid var(--mantine-color-blue-5)" }}>
-                      <Group justify="space-between" align="flex-start" wrap="wrap">
-                        <div>
-                          <Badge color="blue" variant="light" size="sm" mb={4}>Objectif spécifique</Badge>
-                          <LibelleEditable
-                            valeur={os.libelle}
-                            onSave={(libelle) => updateOS.mutate({ id: os.id, payload: { libelle } })}
-                            onDelete={() =>
-                              supprimerAvecConfirmation(
-                                `Supprimer l'objectif spécifique "${os.libelle}" ainsi que ses activités, sous-activités et indicateurs liés ? Cette action est irréversible.`,
-                                () => deleteOS.mutateAsync(os.id),
-                                "Objectif spécifique supprimé",
-                              )
-                            }
-                            editable={editionActive}
-                          />
-                        </div>
-                        <Tooltip label="Nouvelle activité">
-                          <ActionIcon size="sm" variant="subtle" onClick={() => setModalActiviteFor(os.id)}>
-                            <Plus size={14} />
-                          </ActionIcon>
-                        </Tooltip>
-                      </Group>
-
-                      {os.activites.length > 0 && (
-                        <Stack mt="sm" gap="xs" pl="md">
-                          {os.activites.map((act) => (
-                            <CarteActivite
-                              key={act.id}
-                              act={act}
-                              profondeur={0}
-                              editionActive={editionActive}
-                              niveauxNoms={niveauxNoms}
-                              utiliseNiveauxPersonnalises={(niveauxActivite?.length ?? 0) > 0}
-                              onDocuments={setDocumentsActiviteId}
-                              onBeneficiaires={setBeneficiairesActiviteId}
-                              onEditer={setModalActiviteEdition}
-                              onAjouterEnfant={setModalActiviteEnfantFor}
-                              onAjouterSousActivite={setModalSousActiviteFor}
-                              onSupprimer={(a) =>
-                                supprimerAvecConfirmation(
-                                  `Supprimer l'activité "${a.libelle}" ainsi que ses sous-activités, activités imbriquées et indicateurs liés ? Cette action est irréversible.`,
-                                  () => deleteActivite.mutateAsync(a.id),
-                                  "Activité supprimée",
-                                )
-                              }
-                              onDocumentsSousActivite={setDocumentsSousActiviteId}
-                              onBeneficiairesSousActivite={setBeneficiairesSousActiviteId}
-                              onSupprimerSousActivite={(sa) =>
-                                supprimerAvecConfirmation(
-                                  `Supprimer la sous-activité "${sa.libelle}" ? Cette action est irréversible.`,
-                                  () => deleteSousActivite.mutateAsync(sa.id),
-                                  "Sous-activité supprimée",
-                                )
-                              }
-                            />
-                          ))}
-                        </Stack>
-                      )}
-                    </Card>
-                  ))}
-                </Stack>
-              </>
+            <Text size="sm" c="dimmed">
+              {voc("Les niveaux sont libres : leur nom et leur nombre sont propres à ce projet. Clique sur l'étiquette d'un élément pour nommer ou renommer son niveau ; le bouton + ajoute un élément au niveau en dessous.")}</Text>
+            <AjoutInline
+              placeholder={0 in niveauxNoms ? `Nouveau « ${nomPremierNiveau} »…` : "Libellé du premier élément…"}
+              demanderNomNiveau={!(0 in niveauxNoms)}
+              onAdd={async (libelle, nomNiveau) => {
+                if (nomNiveau) await nommerNiveau(0, nomNiveau);
+                createActivite.mutate({ projet: projetId, libelle });
+              }}
+            />
+            {projet.activites.length > 0 && (
+              <TextInput
+                placeholder={voc("Rechercher dans la planification…")}
+                leftSection={<Search size={15} />}
+                value={recherchePlan}
+                onChange={(e) => setRecherchePlan(e.currentTarget.value)}
+                maw={400}
+                mt="sm"
+              />
             )}
+            {recherchePlan.trim() && elementsFiltres.length === 0 && (
+              <Text c="dimmed" size="sm" mt="sm">Aucun résultat ne correspond à la recherche.</Text>
+            )}
+            <Stack mt="sm" gap="sm">
+              {elementsFiltres.map((element) => (
+                <CarteActivite
+                  key={element.id}
+                  act={element}
+                  profondeur={0}
+                  editionActive={editionActive}
+                  niveauxNoms={niveauxNoms}
+                  onRenommerNiveau={nommerNiveau}
+                  onDocuments={setDocumentsActiviteId}
+                  onBeneficiaires={setBeneficiairesActiviteId}
+                  onEditer={setModalActiviteEdition}
+                  onAjouterEnfant={(parent, profondeur) => setModalActiviteEnfantFor({ parent, profondeur })}
+                  onAjouterSousActivite={setModalSousActiviteFor}
+                  onAvancement={setAvancementFor}
+                  onSupprimer={(a, profondeur) =>
+                    supprimerAvecConfirmation(
+                      voc`Supprimer « ${a.libelle} » (${nomDuNiveau(niveauxNoms, profondeur)}) ainsi que tout ce qui se trouve en dessous (niveaux inférieurs, sous-activités, indicateurs liés) ? Cette action est irréversible.`,
+                      () => deleteActivite.mutateAsync(a.id),
+                      "Élément supprimé",
+                    )
+                  }
+                  onDocumentsSousActivite={setDocumentsSousActiviteId}
+                  onBeneficiairesSousActivite={setBeneficiairesSousActiviteId}
+                  onSupprimerSousActivite={(sa) =>
+                    supprimerAvecConfirmation(
+                      `Supprimer la sous-activité "${sa.libelle}" ? Cette action est irréversible.`,
+                      () => deleteSousActivite.mutateAsync(sa.id),
+                      "Sous-activité supprimée",
+                    )
+                  }
+                />
+              ))}
+            </Stack>
           </Card>
         </Tabs.Panel>
 
@@ -650,15 +647,14 @@ export function ProjetDetailPage() {
           {dashboard && dashboard.indicateurs.length > 0 && (
             <Card withBorder padding="md" radius="md" mb="md">
               <Text size="xs" c="dimmed" fw={600} tt="uppercase" mb="sm" style={{ letterSpacing: 0.4 }}>
-                Taux de réalisation par indicateur
-              </Text>
+                {voc("Taux de réalisation par indicateur")}</Text>
               <TauxParIndicateurChart indicateurs={dashboard.indicateurs} />
             </Card>
           )}
           <Table striped>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Indicateur</Table.Th>
+                <Table.Th>{voc("Indicateur")}</Table.Th>
                 <Table.Th>Taux de réalisation</Table.Th>
               </Table.Tr>
             </Table.Thead>
@@ -688,23 +684,9 @@ export function ProjetDetailPage() {
         </Tabs.Panel>
       </Tabs>
 
-      <Modal opened={modalActiviteFor !== null} onClose={() => setModalActiviteFor(null)} title="Nouvelle activité" size="lg">
-        {modalActiviteFor !== null && (
-          <ActiviteForm
-            objectifSpecifiqueId={modalActiviteFor}
-            cadreStrategiqueId={projet.cadre_strategique}
-            projetId={projetId}
-            budgetProjetTotal={Number(projet.budget_total)}
-            budgetDejaAlloue={budgetDejaAlloue}
-            onDone={() => setModalActiviteFor(null)}
-          />
-        )}
-      </Modal>
-
-      <Modal opened={modalActiviteEdition !== null} onClose={() => setModalActiviteEdition(null)} title="Modifier l'activité" size="lg">
+      <Modal opened={modalActiviteEdition !== null} onClose={() => setModalActiviteEdition(null)} title="Modifier l'élément" size="lg">
         {modalActiviteEdition !== null && (
           <ActiviteForm
-            objectifSpecifiqueId={modalActiviteEdition.objectif_specifique}
             cadreStrategiqueId={projet.cadre_strategique}
             projetId={projetId}
             budgetProjetTotal={Number(projet.budget_total)}
@@ -718,13 +700,20 @@ export function ProjetDetailPage() {
       <Modal
         opened={modalActiviteEnfantFor !== null}
         onClose={() => setModalActiviteEnfantFor(null)}
-        title={`Nouveau niveau imbriqué sous « ${modalActiviteEnfantFor?.libelle ?? ""} »`}
+        title={
+          modalActiviteEnfantFor
+            ? modalActiviteEnfantFor.profondeur in niveauxNoms
+              ? `Nouveau « ${niveauxNoms[modalActiviteEnfantFor.profondeur]} » sous « ${modalActiviteEnfantFor.parent.libelle} »`
+              : `Nouvel élément sous « ${modalActiviteEnfantFor.parent.libelle} »`
+            : ""
+        }
         size="lg"
       >
         {modalActiviteEnfantFor !== null && (
           <ActiviteForm
-            objectifSpecifiqueId={modalActiviteEnfantFor.objectif_specifique}
-            activiteParentId={modalActiviteEnfantFor.id}
+            activiteParentId={modalActiviteEnfantFor.parent.id}
+            profondeur={modalActiviteEnfantFor.profondeur}
+            nomNiveau={niveauxNoms[modalActiviteEnfantFor.profondeur] ?? null}
             cadreStrategiqueId={projet.cadre_strategique}
             projetId={projetId}
             budgetProjetTotal={Number(projet.budget_total)}
@@ -744,14 +733,23 @@ export function ProjetDetailPage() {
         )}
       </Modal>
 
-      <Modal opened={modalEditionOuvert} onClose={() => setModalEditionOuvert(false)} title="Modifier le projet" size="lg">
+      <Modal
+        opened={avancementForId !== null}
+        onClose={() => setAvancementForId(null)}
+        title={`${voc("Avancement")} — ${elementAvancement?.libelle ?? ""}`}
+        size="lg"
+      >
+        {elementAvancement && <AvancementModal element={elementAvancement} modifiable={peutModifier} />}
+      </Modal>
+
+      <Modal opened={modalEditionOuvert} onClose={() => setModalEditionOuvert(false)} title={voc("Modifier le projet")} size="lg">
         <ProjetForm projet={projet} onDone={() => setModalEditionOuvert(false)} />
       </Modal>
 
       <Modal
         opened={documentsActiviteId !== null}
         onClose={() => setDocumentsActiviteId(null)}
-        title="Documents liés à l'activité"
+        title={voc("Documents liés à l'élément")}
         size="lg"
       >
         {documentsActiviteId !== null && <DocumentsTab activiteId={documentsActiviteId} />}
@@ -760,7 +758,7 @@ export function ProjetDetailPage() {
       <Modal
         opened={documentsSousActiviteId !== null}
         onClose={() => setDocumentsSousActiviteId(null)}
-        title="Documents liés à la sous-activité"
+        title={voc("Documents liés à la sous-activité")}
         size="lg"
       >
         {documentsSousActiviteId !== null && <DocumentsTab sousActiviteId={documentsSousActiviteId} />}
@@ -769,7 +767,7 @@ export function ProjetDetailPage() {
       <Modal
         opened={beneficiairesActiviteId !== null}
         onClose={() => setBeneficiairesActiviteId(null)}
-        title="Bénéficiaires liés à l'activité"
+        title={voc("Bénéficiaires liés à l'élément")}
         size="lg"
       >
         {beneficiairesActiviteId !== null && (
@@ -780,7 +778,7 @@ export function ProjetDetailPage() {
       <Modal
         opened={beneficiairesSousActiviteId !== null}
         onClose={() => setBeneficiairesSousActiviteId(null)}
-        title="Bénéficiaires liés à la sous-activité"
+        title={voc("Bénéficiaires liés à la sous-activité")}
         size="lg"
       >
         {beneficiairesSousActiviteId !== null && (

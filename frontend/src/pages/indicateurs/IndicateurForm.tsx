@@ -5,6 +5,7 @@ import { useCreateIndicateur, useUpdateIndicateur } from "../../api/indicators";
 import { useElementsStrategiques } from "../../api/strategy";
 import { useHierarchyOptions } from "./useHierarchyOptions";
 import type { Indicateur } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 const FREQUENCES = [
   { value: "MENSUELLE", label: "Mensuelle" },
@@ -13,39 +14,20 @@ const FREQUENCES = [
   { value: "ANNUELLE", label: "Annuelle" },
 ];
 
-type Rattachement = "AUCUN" | "PROJET" | "OG" | "OS" | "ACTIVITE";
-
-// Chaque niveau forme un groupe dans le sélecteur unique — l'utilisateur
-// cherche et choisit directement, sans devoir d'abord préciser le type
-// (projet, objectif, activité...).
-const GROUPES_RATTACHEMENT: { type: Exclude<Rattachement, "AUCUN">; label: string }[] = [
-  { type: "PROJET", label: "Projet" },
-  { type: "OG", label: "Objectif général" },
-  { type: "OS", label: "Objectif spécifique" },
-  { type: "ACTIVITE", label: "Activité" },
-];
+// Un indicateur se rattache au projet lui-même, ou à un élément de sa
+// planification à n'importe quel niveau (objectif, résultat, pilier, activité...).
+type Rattachement = "AUCUN" | "PROJET" | "ACTIVITE";
 
 function rattachementInitial(indicateur?: Indicateur): { type: Rattachement; id: string | null } {
   if (!indicateur) return { type: "AUCUN", id: null };
   if (indicateur.projet) return { type: "PROJET", id: String(indicateur.projet) };
-  if (indicateur.objectif_general) return { type: "OG", id: String(indicateur.objectif_general) };
-  if (indicateur.objectif_specifique) return { type: "OS", id: String(indicateur.objectif_specifique) };
   if (indicateur.activite) return { type: "ACTIVITE", id: String(indicateur.activite) };
   return { type: "AUCUN", id: null };
 }
 
 export function IndicateurForm({ indicateur, onDone }: { indicateur?: Indicateur; onDone: () => void }) {
   const enEdition = !!indicateur;
-  const {
-    projets,
-    objectifsGeneraux,
-    objectifsSpecifiques,
-    activites,
-    cadreParProjetId,
-    projetIdParOG,
-    projetIdParOS,
-    projetIdParActivite,
-  } = useHierarchyOptions();
+  const { projets, elementsParProjet, cadreParProjetId, projetIdParActivite } = useHierarchyOptions();
   const createIndicateur = useCreateIndicateur();
   const updateIndicateur = useUpdateIndicateur();
 
@@ -67,20 +49,18 @@ export function IndicateurForm({ indicateur, onDone }: { indicateur?: Indicateur
     indicateur?.elements_strategiques.map(String) ?? [],
   );
 
-  const listesParType: Record<Exclude<Rattachement, "AUCUN">, { value: string; label: string }[]> = {
-    PROJET: projets,
-    OG: objectifsGeneraux,
-    OS: objectifsSpecifiques,
-    ACTIVITE: activites,
-  };
-
-  // Un seul sélecteur, avec toutes les options mélangées et regroupées par
-  // niveau — l'utilisateur tape et trouve, quel que soit le niveau, plutôt
-  // que de devoir choisir un type avant de chercher.
-  const optionsRattachement = GROUPES_RATTACHEMENT.filter((g) => listesParType[g.type].length > 0).map((g) => ({
-    group: g.label,
-    items: listesParType[g.type].map((o) => ({ value: `${g.type}:${o.value}`, label: o.label })),
-  }));
+  // Un seul sélecteur, avec toutes les options regroupées (les projets, puis la
+  // planification de chaque projet) — l'utilisateur tape et trouve, quel que
+  // soit le niveau.
+  const optionsRattachement = [
+    ...(projets.length > 0
+      ? [{ group: voc("Projets"), items: projets.map((o) => ({ value: voc`PROJET:${o.value}`, label: o.label })) }]
+      : []),
+    ...elementsParProjet.map((g) => ({
+      group: voc`Planification — ${g.projetLabel}`,
+      items: g.options.map((o) => ({ value: `ACTIVITE:${o.value}`, label: o.label })),
+    })),
+  ];
 
   // Détermine le projet concerné par le rattachement choisi (quel que soit
   // le niveau), pour ne proposer que les éléments stratégiques de son cadre.
@@ -88,11 +68,9 @@ export function IndicateurForm({ indicateur, onDone }: { indicateur?: Indicateur
     if (!rattachementId) return null;
     const id = Number(rattachementId);
     if (rattachementType === "PROJET") return id;
-    if (rattachementType === "OG") return projetIdParOG.get(id) ?? null;
-    if (rattachementType === "OS") return projetIdParOS.get(id) ?? null;
     if (rattachementType === "ACTIVITE") return projetIdParActivite.get(id) ?? null;
     return null;
-  }, [rattachementType, rattachementId, projetIdParOG, projetIdParOS, projetIdParActivite]);
+  }, [rattachementType, rattachementId, projetIdParActivite]);
 
   const cadreStrategiqueCourant = projetIdCourant ? cadreParProjetId.get(projetIdCourant) ?? null : null;
 
@@ -112,23 +90,21 @@ export function IndicateurForm({ indicateur, onDone }: { indicateur?: Indicateur
       valeur_cible: String(valeurCible),
       frequence_collecte: frequence as never,
       projet: rattachementType === "PROJET" ? Number(rattachementId) : null,
-      objectif_general: rattachementType === "OG" ? Number(rattachementId) : null,
-      objectif_specifique: rattachementType === "OS" ? Number(rattachementId) : null,
       activite: rattachementType === "ACTIVITE" ? Number(rattachementId) : null,
       elements_strategiques: elementsSelectionnes.map(Number),
     };
     try {
       if (enEdition) {
         await updateIndicateur.mutateAsync({ id: indicateur.id, payload });
-        notifications.show({ message: "Indicateur modifié", color: "green" });
+        notifications.show({ message: voc("Indicateur modifié"), color: "green" });
       } else {
         await createIndicateur.mutateAsync(payload);
-        notifications.show({ message: "Indicateur créé", color: "green" });
+        notifications.show({ message: voc("Indicateur créé"), color: "green" });
       }
       onDone();
     } catch {
       notifications.show({
-        message: enEdition ? "Erreur lors de la modification de l'indicateur" : "Erreur lors de la création de l'indicateur",
+        message: enEdition ? voc("Erreur lors de la modification de l'indicateur") : voc("Erreur lors de la création de l'indicateur"),
         color: "red",
       });
     }
@@ -146,7 +122,7 @@ export function IndicateurForm({ indicateur, onDone }: { indicateur?: Indicateur
 
       <Select
         label="Rattaché à"
-        description="Facultatif — cherche et choisis directement un projet, un objectif ou une activité, quel que soit son niveau. L'indicateur suit la grille d'alerte (paliers/libellés/couleurs) du projet, configurable depuis Paramètres d'alerte."
+        description={voc("Facultatif — cherche et choisis directement le projet ou un élément de sa planification, quel que soit son niveau. L'indicateur suit la grille d'alerte (paliers/libellés/couleurs) du projet, configurable depuis Paramètres d'alerte.")}
         placeholder="Rechercher…"
         data={optionsRattachement}
         value={rattachementValue}
@@ -159,8 +135,8 @@ export function IndicateurForm({ indicateur, onDone }: { indicateur?: Indicateur
         label="Éléments stratégiques rattachés"
         description={
           cadreStrategiqueCourant
-            ? "Limité au cadre stratégique du projet choisi ci-dessus."
-            : "Choisis d'abord un rattachement ci-dessus pour limiter la liste à son cadre stratégique — sinon tous les éléments sont proposés."
+            ? voc("Limité au cadre stratégique du projet choisi ci-dessus.")
+            : voc("Choisis d'abord un rattachement ci-dessus pour limiter la liste à son cadre stratégique — sinon tous les éléments sont proposés.")
         }
         data={elementsStrategiques?.map((el) => ({
           value: String(el.id),

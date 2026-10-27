@@ -10,6 +10,7 @@ import { confirmerSuppression } from "../../components/common/confirmerSuppressi
 import { messageErreurApi } from "../../utils/erreurs";
 import { PAYS_MONDE } from "../../utils/pays";
 import { BeneficiaireForm } from "./BeneficiaireForm";
+import { voc } from "../../utils/vocabulaire";
 
 export function BeneficiaireDetailPage() {
   const { id } = useParams();
@@ -32,15 +33,15 @@ export function BeneficiaireDetailPage() {
 
   function handleSupprimer() {
     confirmerSuppression({
-      message: `Supprimer "${beneficiaire!.nom} ${beneficiaire!.prenom}" ? Ses participations aux projets et signalements de doublon associés seront aussi supprimés. Cette action est irréversible.`,
+      message: voc`Supprimer "${beneficiaire!.nom} ${beneficiaire!.prenom}" ? Ses participations aux projets et signalements de doublon associés seront aussi supprimés. Cette action est irréversible.`,
       onConfirm: async () => {
         try {
           await deleteBeneficiaire.mutateAsync(beneficiaireId);
-          notifications.show({ message: "Bénéficiaire supprimé", color: "green" });
+          notifications.show({ message: voc("Bénéficiaire supprimé"), color: "green" });
           navigate("/beneficiaires");
         } catch (error) {
           notifications.show({
-            message: messageErreurApi(error, "Erreur lors de la suppression du bénéficiaire"),
+            message: messageErreurApi(error, voc("Erreur lors de la suppression du bénéficiaire")),
             color: "red",
           });
         }
@@ -64,7 +65,7 @@ export function BeneficiaireDetailPage() {
           <Button variant="light" leftSection={<Pencil size={15} />} onClick={() => setModalEditionOuvert(true)}>
             Modifier
           </Button>
-          <Tooltip label="Supprimer le bénéficiaire">
+          <Tooltip label={voc("Supprimer le bénéficiaire")}>
             <ActionIcon variant="light" color="red" size="lg" loading={deleteBeneficiaire.isPending} onClick={handleSupprimer}>
               <Trash2 size={16} />
             </ActionIcon>
@@ -103,16 +104,16 @@ export function BeneficiaireDetailPage() {
       <Card withBorder padding="md" radius="md">
         <Group gap="xs" mb="sm">
           <FolderKanban size={16} />
-          <Text fw={600}>Projets qui l'ont aidé(e)</Text>
+          <Text fw={600}>{voc("Projets qui l'ont aidé(e)")}</Text>
         </Group>
         {beneficiaire.participations.length === 0 ? (
-          <EmptyState icon={<FolderKanban size={32} strokeWidth={1.5} />} message="Aucun projet pour le moment." />
+          <EmptyState icon={<FolderKanban size={32} strokeWidth={1.5} />} message={voc("Aucun projet pour le moment.")} />
         ) : (
           <Table.ScrollContainer minWidth={500}>
             <Table striped highlightOnHover verticalSpacing="sm">
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th tt="uppercase" fz="xs" c="dimmed">Projet</Table.Th>
+                  <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Projet")}</Table.Th>
                   <Table.Th tt="uppercase" fz="xs" c="dimmed">Date d'inscription</Table.Th>
                   <Table.Th tt="uppercase" fz="xs" c="dimmed">Rôle</Table.Th>
                 </Table.Tr>

@@ -9,9 +9,11 @@ import io
 
 from django.utils.html import escape
 from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.styles import Alignment, Font
 
-from .export_excel import COULEUR_TITRE, _entete, _largeurs
+from apps.core.vocabulaire import v
+
+from .export_excel import _entete, _largeurs
 from .export_pdf import _badge, _barre_progression, _fmt, _fmt_date, _fmt_pct
 from .services import SOURCE_SAISIE, construire_planification_periode, ecart_texte, taux_de, valeur_attendue_a
 
@@ -21,8 +23,7 @@ STATUT_COULEUR = {"Atteinte": "#0ca30c", "En retard": "#d03b3b", "En cours": "#1
 def _titre(data):
     periode = data["periode"]
     return (
-        f"Planification {periode['libelle']} ({_fmt_date(periode['date_debut'])} → {_fmt_date(periode['date_fin'])})"
-        f" — {data['projet']['code']} — {data['projet']['nom']}"
+        f"{v('Planification ')}{periode['libelle']} ({_fmt_date(periode['date_debut'])} → {_fmt_date(periode['date_fin'])}) — {data['projet']['code']} — {data['projet']['nom']}"
     )
 
 
@@ -32,7 +33,7 @@ def exporter_periode_excel(periode) -> bytes:
     wb = Workbook()
 
     feuille = wb.active
-    feuille.title = "Planification"
+    feuille.title = v('Planification')
     feuille.append([_titre(data)])
     feuille.cell(row=1, column=1).font = Font(bold=True, size=13)
     totaux = data["totaux"]
@@ -58,12 +59,6 @@ def exporter_periode_excel(periode) -> bytes:
         return f"{_fmt_date(debut)} → {_fmt_date(fin)}" if (debut or fin) else ""
 
     for ligne in data["lignes"]:
-        if ligne["type"] == "objectif":
-            feuille.append([ligne["niveau"], "", ligne["libelle"]])
-            for cellule in feuille[feuille.max_row]:
-                cellule.font = Font(bold=True)
-                cellule.fill = PatternFill("solid", fgColor=COULEUR_TITRE)
-            continue
         planifie = ligne["source"] == SOURCE_SAISIE
         feuille.append(
             [
@@ -91,10 +86,10 @@ def exporter_periode_excel(periode) -> bytes:
                 cellule.font = Font(color="888888")
     _largeurs(feuille, [16, 10, 50, 12, 12, 16, 24, 14, 18, 24, 14, 10, 18, 10, 16, 40])
 
-    feuille_indic = wb.create_sheet("Indicateurs")
+    feuille_indic = wb.create_sheet(v('Indicateurs'))
     _entete(
         feuille_indic,
-        ["Indicateur", "Unité", "Cible globale", "Cible période", "Réalisé période", "Taux (%)", "Statut", "Commentaire"],
+        [v('Indicateur'), "Unité", "Cible globale", "Cible période", "Réalisé période", "Taux (%)", "Statut", "Commentaire"],
     )
     for indicateur in data["indicateurs"]:
         feuille_indic.append(
@@ -148,12 +143,6 @@ def exporter_periode_pdf(periode) -> bytes:
 
     lignes_html = []
     for ligne in data["lignes"]:
-        if ligne["type"] == "objectif":
-            lignes_html.append(
-                f'<tr><td colspan="4" style="padding:6px;background:#D9E2F3;font-weight:700;">'
-                f"Objectif spécifique — {escape(ligne['libelle'])}</td></tr>"
-            )
-            continue
         globale = f"{_fmt(ligne['global_quantite'])} {escape(ligne['unite'])}"
         if ligne["type"] == "activite":
             globale += f"<br>{_fmt(ligne['global_budget'], 0)} FCFA"
@@ -162,7 +151,7 @@ def exporter_periode_pdf(periode) -> bytes:
         code = f"{escape(ligne['code'])} " if ligne["code"] else ""
         lignes_html.append(
             "<tr>"
-            f'<td {cellule}><div style="padding-left:{(ligne["profondeur"] - 1) * 12}px;">'
+            f'<td {cellule}><div style="padding-left:{ligne["profondeur"] * 12}px;">'
             f'<span style="color:#7048e8;font-size:8px;text-transform:uppercase;">{escape(ligne["niveau"])}</span><br>'
             f"{code}{escape(ligne['libelle'])}</div></td>"
             f"<td {cellule}>{globale}</td>"
@@ -204,10 +193,10 @@ def exporter_periode_pdf(periode) -> bytes:
         · réalisé : <b>{_fmt(totaux['budget_realise'], 0)} FCFA</b>
         · objectifs définis pour {totaux['nb_definis']} élément(s) sur {totaux['nb_elements']}
       </div>
-      <h3>Planification</h3>
+      <h3>{v('Planification')}</h3>
       <table>{entete_tableau.format("Élément")}{"".join(lignes_html)}</table>
-      <h3>Indicateurs</h3>
-      {f'<table>{entete_tableau.format("Indicateur")}{indicateurs_html}</table>' if indicateurs_html else '<p style="color:#888;">Aucun indicateur rattaché à ce projet.</p>'}
+      <h3>{v('Indicateurs')}</h3>
+      {f'<table>{entete_tableau.format(v('Indicateur'))}{indicateurs_html}</table>' if indicateurs_html else v('<p style="color:#888;">Aucun indicateur rattaché à ce projet.</p>')}
     </body>
     </html>
     """
@@ -236,7 +225,7 @@ def _titre_suivi(data):
         nom = periode["libelle"]  # le nom porte déjà les dates : pas de répétition
     else:
         nom = f"{periode['libelle']} — {dates}"
-    return f"Suivi par période — {nom} — {data['projet']['code']} — {data['projet']['nom']}"
+    return f"{v('Suivi par période — ')}{nom} — {data['projet']['code']} — {data['projet']['nom']}"
 
 
 def _fenetre(element, data):
@@ -287,7 +276,7 @@ def exporter_suivi_periode_excel(periode) -> bytes:
     resume.append([f"Généré le {aujourdhui.strftime('%d/%m/%Y')}"])
     resume.cell(row=2, column=1).font = Font(italic=True, color="666666")
     resume.append([])
-    _entete(resume, ["Indicateur de la période", "Valeur"], ligne=4)
+    _entete(resume, [v('Indicateur de la période'), "Valeur"], ligne=4)
     resume.append(["Exécution physique de la période (%)", totaux["taux_physique"] if totaux["taux_physique"] is not None else "—"])
     resume.append(["Exécution financière de la période (%)", totaux["taux_financier"] if totaux["taux_financier"] is not None else "—"])
     resume.append(["Budget prévu sur la période (FCFA)", float(totaux["budget_prevu"])])
@@ -298,7 +287,7 @@ def exporter_suivi_periode_excel(periode) -> bytes:
     def nombre(valeur):
         return float(valeur) if valeur is not None else None
 
-    elements = [l for l in data["lignes"] if l["type"] != "objectif"]
+    elements = data["lignes"]
     feuille = wb.create_sheet("Activités")
     _entete(
         feuille,
@@ -322,7 +311,7 @@ def exporter_suivi_periode_excel(periode) -> bytes:
                 l["statut"], len(l["saisies"]),
             ]
         )
-        feuille.cell(row=feuille.max_row, column=3).alignment = Alignment(indent=max(l["profondeur"] - 1, 0), wrap_text=True)
+        feuille.cell(row=feuille.max_row, column=3).alignment = Alignment(indent=l["profondeur"], wrap_text=True)
     _largeurs(feuille, [16, 10, 46, 12, 14, 14, 12, 14, 18, 18, 12, 14, 12])
 
     hist = wb.create_sheet("Activités — saisies")
@@ -350,8 +339,8 @@ def exporter_suivi_periode_excel(periode) -> bytes:
             )
     _largeurs(hist, [40, 13, 13, 14, 13, 10, 12, 34, 16, 16, 12, 14, 34])
 
-    indic = wb.create_sheet("Indicateurs")
-    _entete(indic, ["Indicateur", "Unité", "Cible globale", "Objectif période", "Réalisé période", "Taux (%)", "Statut"])
+    indic = wb.create_sheet(v('Indicateurs'))
+    _entete(indic, [v('Indicateur'), "Unité", "Cible globale", "Objectif période", "Réalisé période", "Taux (%)", "Statut"])
     for i in data["indicateurs"]:
         indic.append(
             [i["libelle"], i["unite"], nombre(i["valeur_cible"]), nombre(i["prevu_quantite"]),
@@ -359,10 +348,10 @@ def exporter_suivi_periode_excel(periode) -> bytes:
         )
     _largeurs(indic, [50, 12, 14, 14, 14, 10, 14])
 
-    indic_hist = wb.create_sheet("Indicateurs — saisies")
+    indic_hist = wb.create_sheet(v('Indicateurs — saisies'))
     _entete(
         indic_hist,
-        ["Indicateur", "Période début", "Période fin", "Valeur réalisée", "Cumul période", "Taux (%)", "Attendu", "Écart", "Commentaire"],
+        [v('Indicateur'), "Période début", "Période fin", "Valeur réalisée", "Cumul période", "Taux (%)", "Attendu", "Écart", "Commentaire"],
     )
     for i in data["indicateurs"]:
         for h in _historique_periode(i, data):
@@ -480,15 +469,9 @@ def exporter_suivi_periode_pdf(periode) -> bytes:
 
     activites_html = []
     for ligne in data["lignes"]:
-        if ligne["type"] == "objectif":
-            activites_html.append(
-                f'<div style="margin:14px 0 8px;padding:6px 10px;background:#D9E2F3;font-weight:700;font-size:14px;">'
-                f"Objectif spécifique — {escape(ligne['libelle'])}</div>"
-            )
-        else:
-            activites_html.append(_bloc_suivi_periode(ligne, data, aujourdhui))
+        activites_html.append(_bloc_suivi_periode(ligne, data, aujourdhui))
     indicateurs_html = "".join(_bloc_suivi_periode(i, data, aujourdhui) for i in data["indicateurs"]) or (
-        '<p style="color:#888;">Aucun indicateur rattaché à ce projet.</p>'
+        v('<p style="color:#888;">Aucun indicateur rattaché à ce projet.</p>')
     )
 
     def carte(titre, valeur, barre=""):
@@ -517,8 +500,8 @@ def exporter_suivi_periode_pdf(periode) -> bytes:
         {carte("Budget dépensé / prévu", f'{_fmt(totaux["budget_realise"], 0)} / {_fmt(totaux["budget_prevu"], 0)} FCFA')}
       </div>
       <h3>Activités</h3>
-      {"".join(activites_html) or '<p style="color:#888;">Aucune activité planifiée pour ce projet.</p>'}
-      <h3>Indicateurs</h3>
+      {"".join(activites_html) or v('<p style="color:#888;">Aucune activité planifiée pour ce projet.</p>')}
+      <h3>{v('Indicateurs')}</h3>
       {indicateurs_html}
     </body>
     </html>

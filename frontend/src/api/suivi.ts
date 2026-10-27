@@ -210,3 +210,69 @@ export function useValeursPeriode(periodeId: number | null) {
     enabled: !!periodeId,
   });
 }
+
+// --- Canevas de suivi : Excel prérempli à compléter hors ligne puis à réimporter ---------
+
+export interface LigneCanevas {
+  feuille: string;
+  ligne: number;
+  identifiant: string;
+  libelle: string;
+  statut: "ajout" | "modification" | "ignoree" | "erreur";
+  actions: string[];
+  erreurs: { colonne: string; message: string }[];
+}
+
+export interface ResultatCanevas {
+  mode: ModeCanevas;
+  totaux: { ajout: number; modification: number; ignoree: number; erreur: number };
+  lignes: LigneCanevas[];
+  erreurs_generales: string[];
+}
+
+/** « ajout » : ne remplace jamais une saisie existante ; « mise_a_jour » : la remplace (avec historique). */
+export type ModeCanevas = "ajout" | "mise_a_jour";
+
+export async function telechargerCanevasSuivi(projetId: number, codeProjet: string) {
+  await telecharger(`/suivi/projets/${projetId}/canevas/`, `canevas_suivi_${codeProjet}.xlsx`);
+}
+
+function formulaireCanevas(fichier: File, mode: ModeCanevas) {
+  const formData = new FormData();
+  formData.append("fichier", fichier);
+  formData.append("mode", mode);
+  return formData;
+}
+
+export async function analyserCanevasSuivi(projetId: number, fichier: File, mode: ModeCanevas) {
+  return (await apiClient.post<ResultatCanevas>(`/suivi/projets/${projetId}/canevas/apercu/`, formulaireCanevas(fichier, mode)))
+    .data;
+}
+
+export function useImporterCanevasSuivi() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ projetId, fichier, mode }: { projetId: number; fichier: File; mode: ModeCanevas }) =>
+      (await apiClient.post<ResultatCanevas>(`/suivi/projets/${projetId}/canevas/importer/`, formulaireCanevas(fichier, mode)))
+        .data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["suivi-dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["projets"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["indicateurs"] });
+    },
+  });
+}
+
+export async function telechargerRapportErreursCanevas(projetId: number, fichier: File, mode: ModeCanevas) {
+  const response = await apiClient.post(`/suivi/projets/${projetId}/canevas/rapport-erreurs/`, formulaireCanevas(fichier, mode), {
+    responseType: "blob",
+  });
+  const objetUrl = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement("a");
+  link.href = objetUrl;
+  link.setAttribute("download", "rapport_erreurs_canevas_suivi.xlsx");
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}

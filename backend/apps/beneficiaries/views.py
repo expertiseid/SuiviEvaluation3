@@ -9,6 +9,7 @@ from rest_framework.response import Response
 
 from apps.accounts.constants import ROLE_CHARGE_SE
 from apps.core.permissions import HasGlobalVisibilityOrAssigned
+from apps.core.vocabulaire import v
 from apps.notifications.models import Notification
 from apps.notifications.services import notifier_par_role
 
@@ -102,7 +103,7 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
         if ids:
             projets = list(projets_visibles.filter(id__in=ids))
             if len(projets) != len(set(ids)):
-                raise ValidationError({"projets": "Projet introuvable ou non accessible."})
+                raise ValidationError({"projets": v('Projet introuvable ou non accessible.')})
             queryset = queryset.filter(participations__projet__in=projets).distinct()
             nom = "beneficiaires_" + "_".join(p.code for p in projets)
             tous = False
@@ -142,7 +143,7 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
 
             projet = Projet.objects.filter(id=projet_id, id__in=visible_projets_ids(request.user)).first()
             if projet is None:
-                raise ValidationError({"projet": "Projet introuvable ou non accessible."})
+                raise ValidationError({"projet": v('Projet introuvable ou non accessible.')})
 
         try:
             resultat = importer_beneficiaires(fichier, request.user, projet=projet)
@@ -168,7 +169,7 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
                 notifier_par_role(
                     [ROLE_CHARGE_SE],
                     Notification.Type.DOUBLON_SIGNALE,
-                    f"Doublon bénéficiaire potentiel : {b1} / {b2}",
+                    f"{v('Doublon bénéficiaire potentiel : ')}{b1} / {b2}",
                     message=f"Détecté via {signalement.get_methode_display()} (score {signalement.score}).",
                     lien="/doublons",
                 )

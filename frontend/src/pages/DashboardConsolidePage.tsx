@@ -19,6 +19,8 @@ import { ChoixTypeGraphique, GraphiqueAdaptable, type SerieGraphique } from "../
 import { typesPossibles, type TypeGraphique } from "../utils/typesGraphiques";
 import { PROJET_STATUT_LABEL } from "../utils/statusTones";
 import type { DashboardConsolide, LigneRepartitionProjets, StatutProjet } from "../types";
+import { TitreRubrique } from "../components/common/TitreRubrique";
+import { voc } from "../utils/vocabulaire";
 
 // Couleurs fixes par statut ; une couleur par projet (cycle) pour les répartitions par projet.
 const COULEURS_PROJET_STATUT: Record<StatutProjet, string> = {
@@ -134,7 +136,7 @@ function RepartitionProjets({
         <Table.Thead>
           <Table.Tr>
             <Table.Th>{colonne}</Table.Th>
-            <Table.Th ta="right">Projets</Table.Th>
+            <Table.Th ta="right">{voc("Projets")}</Table.Th>
             <Table.Th ta="right">Montant (FCFA)</Table.Th>
           </Table.Tr>
         </Table.Thead>
@@ -211,7 +213,7 @@ export function DashboardConsolidePage() {
   return (
     <Stack gap="lg">
       <Group justify="space-between">
-        <Title order={2}>TABLEAU DE BORD</Title>
+        <TitreRubrique route="/" defaut="Tableau de bord" majuscules />
         {peutPersonnaliser && (
           <Button variant="light" leftSection={<SlidersHorizontal size={16} />} onClick={() => setPersonnalisation(true)}>
             Personnaliser{blocs.length > 0 && ` (${visibles.length}/${blocs.length} blocs)`}
@@ -231,7 +233,7 @@ export function DashboardConsolidePage() {
                 message={
                   peutPersonnaliser
                     ? "Tous les blocs sont masqués — clique sur « Personnaliser » pour en afficher."
-                    : "Aucun bloc affiché : l'administrateur a masqué tous les blocs du tableau de bord."
+                    : voc("Aucun bloc affiché : l'administrateur a masqué tous les blocs du tableau de bord.")
                 }
               />
             </Grid.Col>
@@ -297,10 +299,10 @@ function definirBlocs(data: DashboardConsolide): Bloc[] {
       cle: "chiffres-cles", titre: "Chiffres clés", groupe: "Vue d'ensemble", largeur: 12, avecCarte: false,
       rendu: () => (
         <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing="md">
-          <StatCard label="Projets" value={data.nombre_projets} icon={<FolderKanban size={20} />} color="teal" />
+          <StatCard label={voc("Projets")} value={data.nombre_projets} icon={<FolderKanban size={20} />} color="teal" />
           <StatCard label="Budget total" value={fcfa(data.budget_total)} icon={<Wallet size={20} />} color="indigo" />
-          <StatCard label="Bénéficiaires" value={data.nombre_beneficiaires} icon={<Users size={20} />} color="grape" />
-          <StatCard label="Indicateurs suivis" value={totalIndicateurs} icon={<Gauge size={20} />} color="orange" />
+          <StatCard label={voc("Bénéficiaires")} value={data.nombre_beneficiaires} icon={<Users size={20} />} color="grape" />
+          <StatCard label={voc("Indicateurs suivis")} value={totalIndicateurs} icon={<Gauge size={20} />} color="orange" />
         </SimpleGrid>
       ),
     },
@@ -308,7 +310,7 @@ function definirBlocs(data: DashboardConsolide): Bloc[] {
       cle: "couverture", titre: "Couverture géographique (nombre de zones)", groupe: "Géographie", largeur: 12,
       rendu: () =>
         data.zones_couvertes.length === 0 ? (
-          <Vide message="Aucun pays renseigné sur les projets." />
+          <Vide message={voc("Aucun pays renseigné sur les projets.")} />
         ) : (
           <SimpleGrid cols={{ base: 2, xs: 4 }} spacing="md">
             {data.zones_couvertes.map((z) => (
@@ -318,19 +320,19 @@ function definirBlocs(data: DashboardConsolide): Bloc[] {
         ),
     },
     {
-      cle: "pays-zones", titre: "Projets par pays et zone d'intervention", groupe: "Géographie", largeur: 12,
+      cle: "pays-zones", titre: voc("Projets par pays et zone d'intervention"), groupe: "Géographie", largeur: 12,
       graphique: graphique(1, "barres"),
       rendu: (type) => (
         <SimpleGrid cols={{ base: 1, md: 2, xl: 1 + Math.max(1, data.projets_par_zone.length) }} spacing="lg">
           <div>
             <Text fw={600} mb="xs">Par pays</Text>
             <RepartitionProjets type={type} lignes={data.projets_par_pays} colonne="Pays" vide="Aucun pays renseigné."
-              couleur="#0c8599" noteMontant="Montant = budget total des projets du pays." />
+              couleur="#0c8599" noteMontant={voc("Montant = budget total des projets du pays.")} />
           </div>
           {data.projets_par_zone.length === 0 ? (
             <div>
-              <Text fw={600} mb="xs">Par zone administrative</Text>
-              <Vide message="Aucune zone d'intervention renseignée sur les fiches projet (champ « Zones »)." />
+              <Text fw={600} mb="xs">{voc("Par zone administrative")}</Text>
+              <Vide message={voc("Aucune zone d'intervention renseignée sur les fiches projet (champ « Zones »).")} />
             </div>
           ) : (
             data.projets_par_zone.map((n) => (
@@ -353,7 +355,7 @@ function definirBlocs(data: DashboardConsolide): Bloc[] {
             <StatCard label="Fonds propres" value={fcfa(budget.fonds_propres)} icon={<Wallet size={20} />} color="teal" />
             <StatCard label="Financements bailleurs" value={fcfa(budget.financements_bailleurs)} icon={<Wallet size={20} />} color="blue" />
             <StatCard label="Alloué aux activités" value={fcfa(budget.alloue_activites)} icon={<Wallet size={20} />} color="grape" />
-            <StatCard label="Dépensé (suivi)" value={fcfa(budget.depense_activites)} icon={<Wallet size={20} />} color="orange" />
+            <StatCard label={voc("Dépensé (suivi)")} value={fcfa(budget.depense_activites)} icon={<Wallet size={20} />} color="orange" />
           </SimpleGrid>
           <GraphiqueAdaptable
             type={type}
@@ -370,33 +372,33 @@ function definirBlocs(data: DashboardConsolide): Bloc[] {
       ),
     },
     {
-      cle: "bailleurs", titre: "Projets par bailleur", groupe: "Budget et financements", largeur: 4,
+      cle: "bailleurs", titre: voc("Projets par bailleur"), groupe: "Budget et financements", largeur: 4,
       graphique: graphique(1, "barres"),
       rendu: (type) => (
         <RepartitionProjets type={type} lignes={data.projets_par_bailleur} colonne="Bailleur" vide="Aucun bailleur renseigné."
           couleur="#1c7ed6"
-          noteMontant="Montant = financements saisis ; à défaut, budget du projet hors fonds propres, attribué au bailleur principal." />
+          noteMontant={voc("Montant = financements saisis ; à défaut, budget du projet hors fonds propres, attribué au bailleur principal.")} />
       ),
     },
     {
-      cle: "consortium", titre: "Projets par partenaire de consortium", groupe: "Budget et financements", largeur: 4,
+      cle: "consortium", titre: voc("Projets par partenaire de consortium"), groupe: "Budget et financements", largeur: 4,
       graphique: graphique(1, "barres"),
       rendu: (type) => (
-        <RepartitionProjets type={type} lignes={data.projets_par_consortium} colonne="Partenaire" vide="Aucun projet en consortium."
-          couleur="#ae3ec9" noteMontant="Montant = budget total des projets auxquels le partenaire participe." />
+        <RepartitionProjets type={type} lignes={data.projets_par_consortium} colonne="Partenaire" vide={voc("Aucun projet en consortium.")}
+          couleur="#ae3ec9" noteMontant={voc("Montant = budget total des projets auxquels le partenaire participe.")} />
       ),
     },
     {
-      cle: "mise-en-oeuvre", titre: "Projets par partenaire de mise en œuvre", groupe: "Budget et financements", largeur: 4,
+      cle: "mise-en-oeuvre", titre: voc("Projets par partenaire de mise en œuvre"), groupe: "Budget et financements", largeur: 4,
       graphique: graphique(1, "barres"),
       rendu: (type) => (
         <RepartitionProjets type={type} lignes={data.projets_par_mise_en_oeuvre} colonne="Partenaire"
           vide="Aucun partenaire de mise en œuvre renseigné." couleur="#f59f00"
-          noteMontant="Montant = budget total des projets mis en œuvre par le partenaire." />
+          noteMontant={voc("Montant = budget total des projets mis en œuvre par le partenaire.")} />
       ),
     },
     {
-      cle: "cibles", titre: "Cibles des projets (par sexe et par statut)", groupe: "Bénéficiaires", largeur: 12,
+      cle: "cibles", titre: voc("Cibles des projets (par sexe et par statut)"), groupe: voc("Bénéficiaires"), largeur: 12,
       graphique: graphique(4, "colonnes"),
       rendu: (type) => (
         <Grid gutter="lg">
@@ -427,26 +429,26 @@ function definirBlocs(data: DashboardConsolide): Bloc[] {
               hauteur={300}
               etiquettes={false}
             />
-            <Text size="xs" c="dimmed">Cibles saisies sur la fiche de chaque projet (les jeunes et les PDI font partie de la cible totale).</Text>
+            <Text size="xs" c="dimmed">{voc("Cibles saisies sur la fiche de chaque projet (les jeunes et les PDI font partie de la cible totale).")}</Text>
           </Grid.Col>
         </Grid>
       ),
     },
     {
-      cle: "projets-statut", titre: "Projets par statut", groupe: "Projets", largeur: 4,
+      cle: "projets-statut", titre: voc("Projets par statut"), groupe: voc("Projets"), largeur: 4,
       graphique: graphique(1, "camembert"),
       rendu: (type) => (
         <GraphiqueAdaptable
           type={type}
           categories={statuts.map((s) => PROJET_STATUT_LABEL[s])}
-          series={[{ cle: "n", nom: "Projets", couleur: "#12b886", valeurs: statuts.map((s) => data.projets_par_statut[s] ?? 0) }]}
+          series={[{ cle: "n", nom: voc("Projets"), couleur: "#12b886", valeurs: statuts.map((s) => data.projets_par_statut[s] ?? 0) }]}
           couleursCategories={statuts.map((s) => COULEURS_PROJET_STATUT[s])}
-          unite={data.nombre_projets > 1 ? "projets" : "projet"}
+          unite={voc(data.nombre_projets > 1 ? "projets" : "projet")}
         />
       ),
     },
     {
-      cle: "budget-projet", titre: "Budget par projet (FCFA)", groupe: "Budget et financements", largeur: 4,
+      cle: "budget-projet", titre: voc("Budget par projet (FCFA)"), groupe: "Budget et financements", largeur: 4,
       graphique: graphique(1, "camembert"),
       rendu: (type) => (
         <GraphiqueAdaptable
@@ -465,20 +467,20 @@ function definirBlocs(data: DashboardConsolide): Bloc[] {
       ),
     },
     {
-      cle: "beneficiaires-sexe", titre: "Bénéficiaires inscrits par sexe", groupe: "Bénéficiaires", largeur: 4,
+      cle: "beneficiaires-sexe", titre: voc("Bénéficiaires inscrits par sexe"), groupe: voc("Bénéficiaires"), largeur: 4,
       graphique: graphique(1, "camembert"),
       rendu: (type) => (
         <GraphiqueAdaptable
           type={type}
           categories={["Femmes", "Hommes"]}
-          series={[{ cle: "n", nom: "Bénéficiaires", couleur: COULEUR_FEMMES, valeurs: [data.beneficiaires_par_sexe.F ?? 0, data.beneficiaires_par_sexe.M ?? 0] }]}
+          series={[{ cle: "n", nom: voc("Bénéficiaires"), couleur: COULEUR_FEMMES, valeurs: [data.beneficiaires_par_sexe.F ?? 0, data.beneficiaires_par_sexe.M ?? 0] }]}
           couleursCategories={[COULEUR_FEMMES, COULEUR_HOMMES]}
-          unite="bénéficiaires"
+          unite={voc("bénéficiaires")}
         />
       ),
     },
     {
-      cle: "activites-projet", titre: "Activités par statut, par projet", groupe: "Projets", largeur: 6,
+      cle: "activites-projet", titre: voc("Activités par statut, par projet"), groupe: voc("Projets"), largeur: 6,
       graphique: graphique(3, "colonnes-empilees"),
       rendu: (type) => (
         <GraphiqueAdaptable
@@ -493,7 +495,7 @@ function definirBlocs(data: DashboardConsolide): Bloc[] {
       ),
     },
     {
-      cle: "beneficiaires-projet", titre: "Bénéficiaires par projet (femmes / hommes)", groupe: "Bénéficiaires", largeur: 6,
+      cle: "beneficiaires-projet", titre: voc("Bénéficiaires par projet (femmes / hommes)"), groupe: voc("Bénéficiaires"), largeur: 6,
       graphique: graphique(2, "colonnes"),
       rendu: (type) => (
         <GraphiqueAdaptable
@@ -507,20 +509,20 @@ function definirBlocs(data: DashboardConsolide): Bloc[] {
       ),
     },
     {
-      cle: "indicateurs-statut", titre: "Indicateurs par statut", groupe: "Projets", largeur: 6,
+      cle: "indicateurs-statut", titre: voc("Indicateurs par statut"), groupe: voc("Projets"), largeur: 6,
       graphique: graphique(1, "colonnes"),
       rendu: (type) => (
         <GraphiqueAdaptable
           type={type}
           categories={data.indicateurs_par_statut.map((p) => p.libelle)}
-          series={[{ cle: "n", nom: "Indicateurs", couleur: "#868e96", valeurs: data.indicateurs_par_statut.map((p) => p.count) }]}
+          series={[{ cle: "n", nom: voc("Indicateurs"), couleur: "#868e96", valeurs: data.indicateurs_par_statut.map((p) => p.count) }]}
           couleursCategories={data.indicateurs_par_statut.map((p) => p.couleur)}
-          unite="indicateurs"
+          unite={voc("indicateurs")}
         />
       ),
     },
     {
-      cle: "execution-projet", titre: "Exécution par projet (%)", groupe: "Projets", largeur: 6,
+      cle: "execution-projet", titre: voc("Exécution par projet (%)"), groupe: voc("Projets"), largeur: 6,
       graphique: graphique(2, "colonnes"),
       rendu: (type) => (
         <GraphiqueAdaptable
@@ -536,11 +538,11 @@ function definirBlocs(data: DashboardConsolide): Bloc[] {
       ),
     },
     {
-      cle: "depenses-mois", titre: "Dépenses cumulées par projet (FCFA)", groupe: "Évolution dans le temps", largeur: 6,
+      cle: "depenses-mois", titre: voc("Dépenses cumulées par projet (FCFA)"), groupe: "Évolution dans le temps", largeur: 6,
       graphique: graphique(2, "courbes"),
       rendu: (type) =>
         data.depenses_par_mois.length === 0 ? (
-          <Vide message="Aucune dépense saisie dans le suivi." />
+          <Vide message={voc("Aucune dépense saisie dans le suivi.")} />
         ) : (
           <GraphiqueAdaptable
             type={type}
@@ -554,7 +556,7 @@ function definirBlocs(data: DashboardConsolide): Bloc[] {
         ),
     },
     {
-      cle: "inscriptions-mois", titre: "Nouveaux bénéficiaires inscrits par mois", groupe: "Évolution dans le temps", largeur: 6,
+      cle: "inscriptions-mois", titre: voc("Nouveaux bénéficiaires inscrits par mois"), groupe: "Évolution dans le temps", largeur: 6,
       graphique: graphique(2, "colonnes"),
       rendu: (type) =>
         data.inscriptions_par_mois.length === 0 ? (
@@ -567,15 +569,15 @@ function definirBlocs(data: DashboardConsolide): Bloc[] {
               series={serieParProjet(data.inscriptions_par_mois).filter((s) => s.valeurs.some((v) => v))}
               formatCategorie={formatMois}
             />
-            <Text size="xs" c="dimmed" mt={4}>Nombre de bénéficiaires ajoutés à chaque projet pendant le mois.</Text>
+            <Text size="xs" c="dimmed" mt={4}>{voc("Nombre de bénéficiaires ajoutés à chaque projet pendant le mois.")}</Text>
           </>
         ),
     },
     {
-      cle: "liste-projets", titre: "Liste des projets", groupe: "Projets", largeur: 12,
+      cle: "liste-projets", titre: voc("Liste des projets"), groupe: voc("Projets"), largeur: 12,
       rendu: () =>
         data.projets.length === 0 ? (
-          <Vide message="Aucun projet pour le moment." />
+          <Vide message={voc("Aucun projet pour le moment.")} />
         ) : (
           <Table.ScrollContainer minWidth={520}>
             <Table striped highlightOnHover verticalSpacing="sm">

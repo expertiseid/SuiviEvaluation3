@@ -1,8 +1,7 @@
 """
 Import combiné « planification complète » : un seul classeur Excel pour créer
 d'un coup un cadre stratégique (avec sa structuration), un projet (avec sa
-planification Objectif général > Objectif spécifique > Activité >
-Sous-activité), ses indicateurs et ses bénéficiaires — en réutilisant telles
+planification à niveaux libres > Sous-activité), ses indicateurs et ses bénéficiaires — en réutilisant telles
 quelles les fonctions d'import de chaque app (apps.strategy, apps.projects,
 apps.indicators, apps.beneficiaries). Même philosophie « best-effort » que
 ces imports unitaires.
@@ -17,25 +16,30 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
 
 from apps.core.excel_utils import figer_entete, quadriller
+from apps.core.vocabulaire import adapter_classeur, ramener_classeur
 
 
 def _prefixer(erreurs, etiquette):
     return [{"ligne": e["ligne"], "message": f"[{etiquette}] {e['message']}"} for e in erreurs]
 
 
+CHAMPS_CADRE = [
+    ("Nom du cadre stratégique", "Plan stratégique 2026-2030"),
+    ("Description", "Cadre de référence de l'organisation pour la période — facultatif."),
+]
+
+
 def generer_modele_import_complet() -> bytes:
     from apps.beneficiaries.services.import_excel import COLONNES as COLONNES_BENEFICIAIRES
     from apps.indicators.import_excel import generer_feuille_indicateurs, generer_feuille_paliers_alerte
     from apps.projects.import_excel import CHAMPS_PROJET, generer_feuille_planification
+    from apps.strategy.services import remplir_feuille_structuration
 
     wb = Workbook()
 
     feuille_cadre = wb.active
     feuille_cadre.title = "Cadre stratégique"
-    for cle, exemple in [
-        ("Nom du cadre stratégique", "Plan stratégique 2026-2030"),
-        ("Description", "Cadre de référence de l'organisation pour la période — facultatif."),
-    ]:
+    for cle, exemple in CHAMPS_CADRE:
         feuille_cadre.append([cle, exemple])
     for ligne in feuille_cadre.iter_rows(min_col=1, max_col=1):
         ligne[0].font = Font(bold=True)
@@ -43,18 +47,15 @@ def generer_modele_import_complet() -> bytes:
     feuille_cadre.column_dimensions["A"].width = 32
     feuille_cadre.column_dimensions["B"].width = 55
 
-    feuille_struct = wb.create_sheet("Structuration")
-    feuille_struct.append(["Orientation stratégique", "Axe d'intervention"])
-    for cellule in feuille_struct[1]:
-        cellule.font = Font(bold=True)
-    feuille_struct.append(["Amplifier la diffusion des pratiques agroécologiques", ""])
-    feuille_struct.append(["", "Renforcement des capacités des producteurs et productrices"])
-    for _ in range(15):
-        feuille_struct.append(["", ""])
-    quadriller(feuille_struct, max_col=2)
-    figer_entete(feuille_struct)
-    feuille_struct.column_dimensions["A"].width = 45
-    feuille_struct.column_dimensions["B"].width = 45
+    remplir_feuille_structuration(
+        wb.create_sheet("Structuration"),
+        ["Orientation stratégique", "Axe d'intervention"],
+        [
+            ["Amplifier la diffusion des pratiques agroécologiques", ""],
+            ["", "Renforcement des capacités des producteurs et productrices"],
+        ],
+        lignes_vides=15,
+    )
 
     feuille_projet = wb.create_sheet("Projet")
     for cle, exemple in CHAMPS_PROJET:
@@ -108,8 +109,9 @@ def generer_modele_import_complet() -> bytes:
         "colonne (voir modèle du Plan stratégique pour le détail du format)."
     ])
     instructions.append([
-        "- Feuille « Planification » : même principe pour Objectif général > Objectif spécifique > "
-        "Activité > Sous-activité."
+        "- Feuille « Planification » : même principe — toutes les colonnes avant « Sous-activité » (sauf "
+        "« Code », en jaune dans le modèle) sont les niveaux de la planification du projet, avec les noms et le nombre que tu veux "
+        "(ex : Objectif général > Objectif spécifique > Activité, ou Résultat > Pilier > Activité)."
     ])
     instructions.append(["- Feuille « Indicateurs » : rattachés au projet créé dans ce même classeur."])
     instructions.append(["- Feuille « Bénéficiaires » : chaque bénéficiaire créé est automatiquement inscrit à ce projet."])
@@ -125,6 +127,7 @@ def generer_modele_import_complet() -> bytes:
     ])
 
     buffer = io.BytesIO()
+    adapter_classeur(wb)
     wb.save(buffer)
     return buffer.getvalue()
 
@@ -137,7 +140,7 @@ def importer_planification_complete(fichier, utilisateur) -> dict:
     from apps.strategy.models import CadreStrategique
     from apps.strategy.services import importer_structuration_depuis_feuille
 
-    wb = load_workbook(fichier, data_only=True)
+    wb = ramener_classeur(load_workbook(fichier, data_only=True))
 
     resultat = {
         "cadre_strategique_id": None,
@@ -145,9 +148,8 @@ def importer_planification_complete(fichier, utilisateur) -> dict:
         "elements_strategiques_crees": 0,
         "projet_id": None,
         "projet_code": None,
-        "objectifs_generaux": 0,
-        "objectifs_specifiques_crees": 0,
-        "activites_creees": 0,
+        "elements_crees": 0,
+        "niveaux": [],
         "sous_activites_creees": 0,
         "indicateurs_crees": 0,
         "beneficiaires_crees": 0,
@@ -170,14 +172,14 @@ def importer_planification_complete(fichier, utilisateur) -> dict:
                 resultat_struct = importer_structuration_depuis_feuille(wb["Structuration"], cadre)
                 resultat["elements_strategiques_crees"] = resultat_struct["elements_crees"]
                 resultat["erreurs"] += _prefixer(resultat_struct["erreurs"], "Structuration")
+                resultat["avertissements"] += _prefixer(resultat_struct.get("avertissements", []), "Structuration")
 
     # ---------- 2. Projet + planification (obligatoire) ----------
     resultat_projet = importer_projet_depuis_wb(wb, cadre_strategique_impose=cadre)
     resultat["projet_id"] = resultat_projet.get("projet_id")
     resultat["projet_code"] = resultat_projet.get("projet_code")
-    resultat["objectifs_generaux"] = resultat_projet.get("objectifs_generaux", 0)
-    resultat["objectifs_specifiques_crees"] = resultat_projet.get("objectifs_specifiques_crees", 0)
-    resultat["activites_creees"] = resultat_projet.get("activites_creees", 0)
+    resultat["elements_crees"] = resultat_projet.get("elements_crees", 0)
+    resultat["niveaux"] = resultat_projet.get("niveaux", [])
     resultat["sous_activites_creees"] = resultat_projet.get("sous_activites_creees", 0)
     resultat["erreurs"] += _prefixer(resultat_projet["erreurs"], "Projet")
     resultat["avertissements"] += _prefixer(resultat_projet["avertissements"], "Projet")
@@ -212,7 +214,7 @@ def importer_planification_complete(fichier, utilisateur) -> dict:
 
         activites_par_nom = {
             a.libelle.strip().lower(): a
-            for a in Activite.objects.filter(objectif_specifique__objectif_general__projet=projet)
+            for a in Activite.objects.filter(projet=projet)
         }
         resultat_paliers = importer_paliers_alerte(
             wb["Grilles d'alerte"], projet=projet, indicateurs_par_nom=indicateurs_par_nom, activites_par_nom=activites_par_nom

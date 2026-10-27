@@ -12,7 +12,8 @@ from apps.core.permissions import IsAdminOrReadOnly, has_global_visibility
 from apps.indicators.services import indicateurs_pour_projet, valeur_realisee_totale
 from apps.projects.models import Activite, Projet
 from apps.projects.queryset_filters import visible_projets_ids
-from apps.reports.services import taux_execution_financiere_global, taux_execution_physique_global
+from apps.projects.taux import ArbreTaux
+from apps.reports.services import taux_execution_financiere_global
 
 from .models import CadreStrategique, ElementStrategique, TypeNiveau
 from .serializers import CadreStrategiqueSerializer, ElementStrategiqueSerializer, TypeNiveauSerializer
@@ -68,8 +69,9 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
 
         lignes = []
         for projet in projets:
+            arbre_taux = ArbreTaux(projet)
             activites = Activite.objects.filter(
-                objectif_specifique__objectif_general__projet=projet
+                projet=projet
             ).order_by("code_activite", "libelle")
             indicateurs = indicateurs_pour_projet(projet.id).order_by("libelle")
             budget_activites_alloue_total = sum((a.budget_alloue or 0 for a in activites), Decimal("0"))
@@ -83,12 +85,14 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
                     "date_debut": projet.date_debut,
                     "date_fin": projet.date_fin,
                     "chef_de_projet_nom": projet.chef_de_projet_nom,
+                    "element_strategique": projet.element_strategique_id,
+                    "element_strategique_nom": str(projet.element_strategique) if projet.element_strategique else None,
                     "bailleur_nom": projet.partenaire_bailleur.nom if projet.partenaire_bailleur else None,
                     "budget_total": projet.budget_total,
                     "budget_activites_alloue_total": budget_activites_alloue_total,
                     "budget_activites_realise_total": budget_activites_realise_total,
                     "financement_bailleurs_total": projet.financement_bailleurs_total,
-                    "taux_execution_physique": taux_execution_physique_global(projet),
+                    "taux_execution_physique": arbre_taux.taux_projet().taux,
                     "taux_execution_financiere": taux_execution_financiere_global(projet),
                     "nombre_activites": activites.count(),
                     "nombre_indicateurs": indicateurs.count(),
@@ -98,7 +102,7 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
                             "code": a.code_activite,
                             "libelle": a.libelle,
                             "statut": a.statut,
-                            "taux_realisation": a.taux_realisation,
+                            "taux_realisation": arbre_taux.resultat(a.id).taux,
                             "quantite_realisee": a.quantite_realisee,
                             "quantite_prevue": a.quantite_prevue,
                             "unite_quantite": a.unite_quantite,
@@ -140,7 +144,9 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
         """
         Données de l'onglet « Axes & budgets » : les éléments du cadre et les
         activités qui y sont rattachées (Activite.axe_strategique) — plus
-        celles des projets du cadre non encore rattachées à un élément. Le
+        celles des projets du cadre non encore rattachées à un élément. Une
+        activité sans élément propre hérite de l'élément de rattachement de son
+        projet (Projet.element_strategique), s'il en a un. Le
         regroupement par niveau (orientation, axe…) se fait à l'écran, un
         élément cumulant les activités de ses sous-éléments. Limité aux
         projets visibles par l'utilisateur.
@@ -151,14 +157,15 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
         ids = visible_projets_ids(request.user)
         elements = ElementStrategique.objects.filter(type_niveau__cadre_strategique=cadre).select_related("type_niveau")
         activites = (
-            Activite.objects.filter(objectif_specifique__objectif_general__projet__id__in=ids)
+            Activite.objects.filter(projet__id__in=ids)
             .filter(
                 Q(axe_strategique__type_niveau__cadre_strategique=cadre)
-                | Q(objectif_specifique__objectif_general__projet__cadre_strategique=cadre, axe_strategique__isnull=True)
+                | Q(projet__cadre_strategique=cadre, axe_strategique__isnull=True)
             )
-            .select_related("objectif_specifique__objectif_general__projet")
-            .order_by("objectif_specifique__objectif_general__projet__code", "code_activite", "libelle")
+            .select_related("projet__element_strategique__type_niveau")
+            .order_by("projet__code", "code_activite", "libelle")
         )
+        arbres_taux = _ArbresTaux()
         return Response(
             {
                 "elements": [
@@ -177,18 +184,37 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
                         "id": a.id,
                         "code": a.code_activite,
                         "libelle": a.libelle,
-                        "projet_id": a.objectif_specifique.objectif_general.projet.id,
-                        "projet_code": a.objectif_specifique.objectif_general.projet.code,
-                        "axe": a.axe_strategique_id,
+                        "projet_id": a.projet.id,
+                        "projet_code": a.projet.code,
+                        "axe": a.axe_strategique_id or _element_du_projet_dans_cadre(a.projet, cadre),
                         "budget_alloue": a.budget_alloue,
                         "budget_realise": a.budget_realise,
-                        "taux_physique": a.taux_realisation,
+                        "taux_physique": arbres_taux.taux(a),
                         "taux_financier": a.taux_execution_financiere,
                     }
                     for a in activites
                 ],
             }
         )
+
+
+class _ArbresTaux:
+    """Taux des éléments de plusieurs projets : un ArbreTaux par projet, chargé à la demande."""
+
+    def __init__(self):
+        self.arbres = {}
+
+    def taux(self, activite):
+        if activite.projet_id not in self.arbres:
+            self.arbres[activite.projet_id] = ArbreTaux(activite.projet)
+        return self.arbres[activite.projet_id].resultat(activite.id).taux
+
+
+def _element_du_projet_dans_cadre(projet, cadre):
+    element = projet.element_strategique
+    if element is not None and element.type_niveau.cadre_strategique_id == cadre.id:
+        return element.id
+    return None
 
 
 class TypeNiveauViewSet(viewsets.ModelViewSet):

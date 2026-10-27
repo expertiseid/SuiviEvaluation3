@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Group, Select, Text } from "@mantine/core";
 import { useCreateZone, useNiveauxAdministratifs, useZones } from "../../api/geo";
 import type { NiveauAdministratif, Zone } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 /** Zone choisie à chaque niveau administratif (clé = id du NiveauAdministratif). */
 export type ZoneCascadeValue = Record<number, string | null>;
@@ -126,8 +127,7 @@ export function ZoneCascadeFields({
   if (niveauxTries.length === 0) {
     return (
       <Text size="sm" c="dimmed">
-        Aucun niveau administratif configuré pour ce pays — configure-le dans « Zones administratives ».
-      </Text>
+        {voc("Aucun niveau administratif configuré pour ce pays — configure-le dans « Zones administratives ».")}</Text>
     );
   }
 

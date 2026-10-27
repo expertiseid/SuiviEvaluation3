@@ -1,12 +1,14 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Activity, RefreshCw, Search } from "lucide-react";
-import { ActionIcon, Card, Group, Stack, Table, Text, TextInput, Title, Tooltip } from "@mantine/core";
+import { ActionIcon, Card, Group, Stack, Table, Text, TextInput, Tooltip } from "@mantine/core";
 import { useProjets } from "../../api/projects";
 import { StatusBadge } from "../../components/common/StatusBadge";
 import { EmptyState } from "../../components/common/EmptyState";
 import { PROJET_STATUT_LABEL, PROJET_STATUT_TONE } from "../../utils/statusTones";
 import { correspond } from "../../utils/recherche";
+import { TitreRubrique } from "../../components/common/TitreRubrique";
+import { voc } from "../../utils/vocabulaire";
 
 export function SuiviPage() {
   const { data: projets, isLoading, isFetching, refetch } = useProjets();
@@ -21,10 +23,9 @@ export function SuiviPage() {
     <Stack gap="md">
       <Group justify="space-between" align="flex-start">
         <div>
-          <Title order={2}>Suivi</Title>
+          <TitreRubrique route="/suivi" defaut="Suivi" />
           <Text c="dimmed" size="sm">
-            Choisis un projet pour saisir le réel et suivre son évolution dans le temps.
-          </Text>
+            {voc("Choisis un projet pour saisir le réel et suivre son évolution dans le temps.")}</Text>
         </div>
         <Tooltip label="Actualiser">
           <ActionIcon variant="light" size="lg" onClick={() => refetch()} loading={isFetching}>
@@ -34,7 +35,7 @@ export function SuiviPage() {
       </Group>
 
       <TextInput
-        placeholder="Rechercher un projet (nom ou code)…"
+        placeholder={voc("Rechercher un projet (nom ou code)…")}
         leftSection={<Search size={15} />}
         value={recherche}
         onChange={(e) => setRecherche(e.currentTarget.value)}
@@ -45,9 +46,9 @@ export function SuiviPage() {
         {isLoading ? (
           <Text c="dimmed">Chargement…</Text>
         ) : !projets || projets.length === 0 ? (
-          <EmptyState icon={<Activity size={32} strokeWidth={1.5} />} message="Aucun projet pour le moment." />
+          <EmptyState icon={<Activity size={32} strokeWidth={1.5} />} message={voc("Aucun projet pour le moment.")} />
         ) : projetsFiltres.length === 0 ? (
-          <EmptyState icon={<Activity size={32} strokeWidth={1.5} />} message="Aucun projet ne correspond à la recherche." />
+          <EmptyState icon={<Activity size={32} strokeWidth={1.5} />} message={voc("Aucun projet ne correspond à la recherche.")} />
         ) : (
           <Table.ScrollContainer minWidth={560}>
             <Table striped highlightOnHover verticalSpacing="sm">

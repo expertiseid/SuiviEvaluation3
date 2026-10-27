@@ -6,13 +6,14 @@ import { useCreateRole, useDeleteRole, useRoles, useUpdateRole } from "../../api
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
 import { messageErreurApi } from "../../utils/erreurs";
 import type { RoleUtilisateur } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
-const LIBELLE_VISIBILITE = "Voit tous les projets";
-const LIBELLE_TABLEAU_DE_BORD = "Peut personnaliser le tableau de bord";
-const AIDE_TABLEAU_DE_BORD = "Choisir les blocs affichés et les types de graphiques, pour tous les utilisateurs.";
+const LIBELLE_VISIBILITE = voc("Voit tous les projets");
+const LIBELLE_TABLEAU_DE_BORD = voc("Peut personnaliser le tableau de bord");
+const AIDE_TABLEAU_DE_BORD = voc("Choisir les blocs affichés et les types de graphiques, pour tous les utilisateurs.");
 const AIDE_VISIBILITE =
-  "Sinon, l'utilisateur ne voit que les projets (et zones) auxquels il est affecté. Ce qu'il peut faire " +
-  "(voir seulement, ou créer et modifier) se règle par utilisateur, avec son niveau d'accès.";
+  voc("Sinon, l'utilisateur ne voit que les projets (et zones) auxquels il est affecté. Ce qu'il peut faire ") +
+  voc("(voir seulement, ou créer et modifier) se règle par utilisateur, avec son niveau d'accès.");
 
 export function ModifierRoleModal({ role, onClose }: { role: RoleUtilisateur | null; onClose: () => void }) {
   const updateRole = useUpdateRole();
@@ -120,9 +121,7 @@ export function RolesTab() {
   return (
     <Stack gap="md">
       <Text c="dimmed" size="sm">
-        Les rôles système (cadenas) sont utilisés par la plateforme : ils peuvent être renommés, pas supprimés.
-        Un rôle ajouté peut être supprimé tant qu'aucun utilisateur ne l'a.
-      </Text>
+        {voc("Les rôles système (cadenas) sont utilisés par la plateforme : ils peuvent être renommés, pas supprimés. Un rôle ajouté peut être supprimé tant qu'aucun utilisateur ne l'a.")}</Text>
 
       <Group align="flex-end">
         <TextInput
@@ -157,8 +156,8 @@ export function RolesTab() {
               <Table.Th>Libellé</Table.Th>
               <Table.Th>Code</Table.Th>
               <Table.Th>Visibilité</Table.Th>
-              <Table.Th>Tableau de bord</Table.Th>
-              <Table.Th>Utilisateurs</Table.Th>
+              <Table.Th>{voc("Tableau de bord")}</Table.Th>
+              <Table.Th>{voc("Utilisateurs")}</Table.Th>
               <Table.Th w={40} />
             </Table.Tr>
           </Table.Thead>
@@ -178,7 +177,7 @@ export function RolesTab() {
                 <Table.Td><Text size="xs" c="dimmed">{r.code}</Text></Table.Td>
                 <Table.Td>
                   <Badge variant="light" color={r.visibilite_globale ? "teal" : "gray"}>
-                    {r.visibilite_globale ? "Tous les projets" : "Projets affectés"}
+                    {r.visibilite_globale ? voc("Tous les projets") : voc("Projets affectés")}
                   </Badge>
                 </Table.Td>
                 <Table.Td>
@@ -199,7 +198,7 @@ export function RolesTab() {
                         r.systeme
                           ? "Rôle système : non supprimable"
                           : r.nb_utilisateurs > 0
-                            ? "Des utilisateurs ont ce rôle"
+                            ? voc("Des utilisateurs ont ce rôle")
                             : "Supprimer"
                       }
                     >

@@ -1,15 +1,20 @@
 # Plateforme de Suivi-Évaluation — Expertise ID
 
 Plateforme de suivi-évaluation (M&E) pour projets de développement : cadre
-stratégique, projets, planification (objectifs → activités → sous-activités,
-avec niveaux imbriqués configurables), indicateurs, suivi périodique,
+stratégique, projets, planification à niveaux entièrement libres (aucun niveau
+imposé : chaque projet nomme et empile les siens, puis sous-activités),
+indicateurs, suivi périodique,
 bénéficiaires, documents, alertes.
 
 - **Backend** : Django 5 + Django REST Framework (Python 3.12)
-- **Frontend** : React 18 + TypeScript + Vite + Mantine v7 + TanStack Query
+- **Frontend** : React 19 + TypeScript + Vite + Mantine 9 + TanStack Query
 - **Base de données** : PostgreSQL 16
 - **Tout tourne en Docker Compose** — aucune installation locale de Python/Node
   n'est nécessaire, seul Docker est requis.
+
+Documentation complète : [README.md](README.md) (présentation, démarrage) et
+[docs/DOCUMENTATION_TECHNIQUE.md](docs/DOCUMENTATION_TECHNIQUE.md) (architecture,
+modèle de données, règles métier, API, frontend, exploitation).
 
 Dépôt GitHub : [expertiseid/SuiviEvaluation2](https://github.com/expertiseid/SuiviEvaluation2) (branche `main`)
 

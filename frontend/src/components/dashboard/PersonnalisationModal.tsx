@@ -1,4 +1,5 @@
 import { Button, Checkbox, Group, Modal, SimpleGrid, Stack, Text } from "@mantine/core";
+import { voc } from "../../utils/vocabulaire";
 
 export interface DefinitionBloc {
   cle: string;
@@ -30,12 +31,10 @@ export function PersonnalisationModal({
   }
 
   return (
-    <Modal opened={opened} onClose={onClose} title="Personnaliser le tableau de bord" size="xl">
+    <Modal opened={opened} onClose={onClose} title={voc("Personnaliser le tableau de bord")} size="xl">
       <Stack gap="md">
         <Text size="sm" c="dimmed">
-          Coche les blocs à afficher. Le type de chaque graphique se change avec le petit bouton en haut à droite
-          du bloc. Ces choix s'appliquent au tableau de bord de tous les utilisateurs.
-        </Text>
+          {voc("Coche les blocs à afficher. Le type de chaque graphique se change avec le petit bouton en haut à droite du bloc. Ces choix s'appliquent au tableau de bord de tous les utilisateurs.")}</Text>
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
           {groupes.map((groupe) => (
             <div key={groupe}>

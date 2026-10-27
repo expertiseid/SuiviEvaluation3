@@ -1,6 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
-import type { Equipe, ImportProjetResultat, NiveauActivite, Paginated, Projet, ProjetInput } from "../types";
+import type {
+  Activite,
+  Equipe,
+  ImportProjetResultat,
+  JalonLivrable,
+  NiveauActivite,
+  Paginated,
+  ParametresCalcul,
+  Projet,
+  ProjetInput,
+  TauxManuel,
+} from "../types";
 
 export async function telechargerModeleImportProjet() {
   const response = await apiClient.get("/projets/modele-import/", { responseType: "blob" });
@@ -80,58 +91,6 @@ export function useDeleteProjet() {
   });
 }
 
-export function useCreateObjectifGeneral() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (payload: { projet: number; libelle: string; description?: string }) =>
-      (await apiClient.post("/objectifs-generaux/", payload)).data,
-    onSuccess: (_d, variables) => queryClient.invalidateQueries({ queryKey: ["projets", variables.projet] }),
-  });
-}
-
-export function useUpdateObjectifGeneral() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, payload }: { id: number; payload: { libelle?: string; description?: string } }) =>
-      (await apiClient.patch(`/objectifs-generaux/${id}/`, payload)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projets"] }),
-  });
-}
-
-export function useDeleteObjectifGeneral() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => apiClient.delete(`/objectifs-generaux/${id}/`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projets"] }),
-  });
-}
-
-export function useCreateObjectifSpecifique() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (payload: { objectif_general: number; libelle: string; description?: string }) =>
-      (await apiClient.post("/objectifs-specifiques/", payload)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projets"] }),
-  });
-}
-
-export function useUpdateObjectifSpecifique() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, payload }: { id: number; payload: { libelle?: string; description?: string } }) =>
-      (await apiClient.patch(`/objectifs-specifiques/${id}/`, payload)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projets"] }),
-  });
-}
-
-export function useDeleteObjectifSpecifique() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => apiClient.delete(`/objectifs-specifiques/${id}/`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projets"] }),
-  });
-}
-
 export function useEquipes() {
   return useQuery({
     queryKey: ["equipes"],
@@ -184,9 +143,11 @@ export function useCreateActivite() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: {
-      objectif_specifique: number;
+      /** Projet de l'élément ; facultatif quand `activite_parent` est donné (repris du parent). */
+      projet?: number;
       activite_parent?: number | null;
       libelle: string;
+      description?: string;
       budget_alloue?: number;
       date_debut?: string;
       date_fin?: string;
@@ -200,7 +161,11 @@ export function useNiveauxActivite(projetId?: number) {
   return useQuery({
     queryKey: ["niveaux-activite", projetId],
     queryFn: async () =>
-      (await apiClient.get<Paginated<NiveauActivite>>("/niveaux-activite/", { params: { projet: projetId } }))
+      (
+        await apiClient.get<Paginated<NiveauActivite>>("/niveaux-activite/", {
+          params: { projet: projetId, page_size: 1000 },
+        })
+      )
         .data.results,
     enabled: !!projetId,
   });
@@ -239,7 +204,11 @@ export function useUpdateActivite() {
   return useMutation({
     mutationFn: async ({ id, payload }: { id: number; payload: Record<string, unknown> }) =>
       (await apiClient.patch(`/activites/${id}/`, payload)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projets"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projets"] });
+      queryClient.invalidateQueries({ queryKey: ["suivi-dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["activite"] });
+    },
   });
 }
 
@@ -281,5 +250,115 @@ export function useDeleteSousActivite() {
   return useMutation({
     mutationFn: async (id: number) => apiClient.delete(`/sous-activites/${id}/`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projets"] }),
+  });
+}
+
+/**
+ * Donne un nom au niveau `profondeur` de la planification d'un projet : le
+ * crée s'il n'existe pas encore, le renomme sinon.
+ */
+export function useNommerNiveau(projetId: number) {
+  const { data: niveaux } = useNiveauxActivite(projetId);
+  const creer = useCreateNiveauActivite();
+  const renommer = useUpdateNiveauActivite();
+  return async (profondeur: number, nom: string) => {
+    const existant = niveaux?.find((n) => n.profondeur === profondeur);
+    if (existant) await renommer.mutateAsync({ id: existant.id, payload: { nom_niveau: nom } });
+    else await creer.mutateAsync({ projet: projetId, profondeur, nom_niveau: nom });
+  };
+}
+
+/** Après une saisie qui change un taux : projets, page Suivi et fiche d'activité à recharger. */
+function invaliderTaux(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: ["projets"] });
+  queryClient.invalidateQueries({ queryKey: ["suivi-dashboard"] });
+  queryClient.invalidateQueries({ queryKey: ["activite"] });
+}
+
+/** Un élément de la planification, avec son taux, sa méthode, ses tâches, jalons et livrables. */
+export function useActivite(id: number | null) {
+  return useQuery({
+    queryKey: ["activite", id],
+    queryFn: async () => (await apiClient.get<Activite>(`/activites/${id}/`)).data,
+    enabled: !!id,
+  });
+}
+
+export function useUpdateSousActivite() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, payload }: { id: number; payload: Record<string, unknown> }) =>
+      (await apiClient.patch(`/sous-activites/${id}/`, payload)).data,
+    onSuccess: () => invaliderTaux(queryClient),
+  });
+}
+
+export function useCreateJalonLivrable() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: Partial<JalonLivrable> & { activite: number; type: string; libelle: string }) =>
+      (await apiClient.post<JalonLivrable>("/jalons-livrables/", payload)).data,
+    onSuccess: () => invaliderTaux(queryClient),
+  });
+}
+
+export function useUpdateJalonLivrable() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, payload }: { id: number; payload: Partial<JalonLivrable> }) =>
+      (await apiClient.patch<JalonLivrable>(`/jalons-livrables/${id}/`, payload)).data,
+    onSuccess: () => invaliderTaux(queryClient),
+  });
+}
+
+export function useDeleteJalonLivrable() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => apiClient.delete(`/jalons-livrables/${id}/`),
+    onSuccess: () => invaliderTaux(queryClient),
+  });
+}
+
+export function useTauxManuels(activiteId: number | null) {
+  return useQuery({
+    queryKey: ["taux-manuels", activiteId],
+    queryFn: async () =>
+      (
+        await apiClient.get<Paginated<TauxManuel>>("/taux-manuels/", {
+          params: { activite: activiteId, page_size: 1000 },
+        })
+      ).data.results,
+    enabled: !!activiteId,
+  });
+}
+
+export function useCreateTauxManuel() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { activite: number; taux: number; date: string; commentaire?: string }) =>
+      (await apiClient.post<TauxManuel>("/taux-manuels/", payload)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["taux-manuels"] });
+      invaliderTaux(queryClient);
+    },
+  });
+}
+
+export function useParametresCalcul() {
+  return useQuery({
+    queryKey: ["parametres-calcul"],
+    queryFn: async () => (await apiClient.get<ParametresCalcul>("/parametres-calcul/")).data,
+  });
+}
+
+export function useUpdateParametresCalcul() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: Partial<ParametresCalcul>) =>
+      (await apiClient.patch<ParametresCalcul>("/parametres-calcul/", payload)).data,
+    onSuccess: (data) => {
+      queryClient.setQueryData(["parametres-calcul"], data);
+      invaliderTaux(queryClient);
+    },
   });
 }

@@ -4,6 +4,7 @@ import { DateInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import { useCreateSousActivite } from "../../api/projects";
 import { useElementsStrategiques, useTypesNiveaux } from "../../api/strategy";
+import { voc } from "../../utils/vocabulaire";
 
 export function SousActiviteForm({
   activiteId,
@@ -61,7 +62,7 @@ export function SousActiviteForm({
       {activitesDuCadre.length > 0 ? (
         <Autocomplete
           label="Libellé"
-          description={`Suggestions issues du niveau « ${niveauFeuille!.nom_niveau} » du cadre stratégique — vous pouvez aussi taper un nouveau libellé.`}
+          description={voc`Suggestions issues du niveau « ${niveauFeuille!.nom_niveau} » du cadre stratégique — vous pouvez aussi taper un nouveau libellé.`}
           data={activitesDuCadre.map((a) => a.nom)}
           value={libelle}
           onChange={(v) => {
@@ -86,8 +87,8 @@ export function SousActiviteForm({
         label="Élément stratégique"
         description={
           cadreStrategiqueId
-            ? "Peut être rattaché à n'importe quelle ligne du cadre stratégique (orientation, axe, activité, sous-activité…), limité au cadre de ce projet."
-            : "Ce projet n'a pas de cadre stratégique associé — tous les éléments existants sont proposés."
+            ? voc("Peut être rattaché à n'importe quelle ligne du cadre stratégique (orientation, axe, activité, sous-activité…), limité au cadre de ce projet.")
+            : voc("Ce projet n'a pas de cadre stratégique associé — tous les éléments existants sont proposés.")
         }
         data={axes?.map((a) => ({ value: String(a.id), label: `${a.type_niveau_nom} · ${a.code ? a.code + " — " : ""}${a.nom}` })) ?? []}
         value={axeStrategique}

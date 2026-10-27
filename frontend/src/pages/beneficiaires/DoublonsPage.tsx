@@ -1,6 +1,8 @@
-import { Badge, Button, Group, Stack, Table, Title } from "@mantine/core";
+import { Badge, Button, Group, Stack, Table } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useSignalementsDoublons, useTraiterSignalement } from "../../api/beneficiaries";
+import { TitreRubrique } from "../../components/common/TitreRubrique";
+import { voc } from "../../utils/vocabulaire";
 
 export function DoublonsPage() {
   const { data: signalements, isLoading } = useSignalementsDoublons("SIGNALE");
@@ -17,15 +19,15 @@ export function DoublonsPage() {
 
   return (
     <Stack gap="md">
-      <Title order={2}>Doublons signalés</Title>
+      <TitreRubrique route="/doublons" defaut="Doublons signalés" />
       {isLoading ? (
         <div>Chargement…</div>
       ) : signalements && signalements.length > 0 ? (
         <Table striped highlightOnHover>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th>Bénéficiaire 1</Table.Th>
-              <Table.Th>Bénéficiaire 2</Table.Th>
+              <Table.Th>{voc("Bénéficiaire 1")}</Table.Th>
+              <Table.Th>{voc("Bénéficiaire 2")}</Table.Th>
               <Table.Th>Méthode</Table.Th>
               <Table.Th>Score</Table.Th>
               <Table.Th>Actions</Table.Th>
@@ -43,8 +45,7 @@ export function DoublonsPage() {
                 <Table.Td>
                   <Group gap="xs">
                     <Button size="xs" variant="light" color="green" onClick={() => handleTraiter(s.id, "FUSIONNE")}>
-                      Confirmer doublon
-                    </Button>
+                      {voc("Confirmer doublon")}</Button>
                     <Button size="xs" variant="light" onClick={() => handleTraiter(s.id, "ECARTE")}>
                       Écarter (faux positif)
                     </Button>
@@ -55,7 +56,7 @@ export function DoublonsPage() {
           </Table.Tbody>
         </Table>
       ) : (
-        <div>Aucun doublon en attente de traitement.</div>
+        <div>{voc("Aucun doublon en attente de traitement.")}</div>
       )}
     </Stack>
   );

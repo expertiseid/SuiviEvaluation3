@@ -1,6 +1,8 @@
 from django.db.models import Sum
 from rest_framework import serializers
 
+from apps.core.vocabulaire import v
+
 from .models import Indicateur, PalierAlerte, ParametresAlerte, ValeurIndicateur
 from .services import palier_pour_taux, paliers_pour, taux_realisation, valeur_realisee_totale
 
@@ -67,6 +69,7 @@ class IndicateurSerializer(serializers.ModelSerializer):
     )
     projet_nom = serializers.StringRelatedField(source="projet", read_only=True)
     projet_rattache_nom = serializers.SerializerMethodField()
+    activite_libelle = serializers.StringRelatedField(source="activite", read_only=True)
 
     class Meta:
         model = Indicateur
@@ -81,9 +84,8 @@ class IndicateurSerializer(serializers.ModelSerializer):
             "projet",
             "projet_nom",
             "projet_rattache_nom",
-            "objectif_general",
-            "objectif_specifique",
             "activite",
+            "activite_libelle",
             "elements_strategiques",
             "elements_strategiques_libelles",
             "valeurs",
@@ -104,14 +106,14 @@ class IndicateurSerializer(serializers.ModelSerializer):
     def get_projet_rattache_nom(self, obj):
         """
         Nom du projet auquel l'indicateur se rattache, quel que soit le
-        niveau de rattachement (projet direct, objectif général/spécifique,
-        activité) — None seulement pour un indicateur purement stratégique,
+        niveau de rattachement (projet direct ou élément de sa planification,
+        à n'importe quel niveau) — None seulement pour un indicateur purement stratégique,
         sans aucun rattachement à la hiérarchie projet.
         """
         projet = obj.projet_rattache
         return projet.nom if projet else None
 
-    RATTACHEMENT_FIELDS = ("projet", "objectif_general", "objectif_specifique", "activite")
+    RATTACHEMENT_FIELDS = ("projet", "activite")
 
     def validate(self, attrs):
         valeurs = [
@@ -119,7 +121,6 @@ class IndicateurSerializer(serializers.ModelSerializer):
         ]
         if sum(bool(v) for v in valeurs) > 1:
             raise serializers.ValidationError(
-                "Un indicateur ne peut être rattaché qu'à un seul niveau parmi : "
-                "Projet, Objectif Général, Objectif Spécifique OU Activité (ou aucun, s'il est purement stratégique)."
+                v("Un indicateur se rattache soit au projet, soit à un élément de sa planification (ou à aucun des deux, s'il est purement stratégique).")
             )
         return attrs

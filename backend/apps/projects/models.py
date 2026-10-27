@@ -7,6 +7,48 @@ from simple_history.models import HistoricalRecords
 from apps.core.models import TimestampedModel
 
 
+class MethodeCalcul(models.TextChoices):
+    """Méthode de calcul du taux d'exécution physique d'un élément (voir apps.projects.taux)."""
+
+    QUANTITE = "QUANTITE", "Par quantité"
+    TACHES = "TACHES", "Par tâches pondérées"
+    JALONS = "JALONS", "Par jalons pondérés"
+    LIVRABLES = "LIVRABLES", "Par livrables"
+    BINAIRE = "BINAIRE", "Binaire (achevé / non achevé)"
+    MANUELLE = "MANUELLE", "Saisie manuelle"
+
+
+class MethodeAgregation(models.TextChoices):
+    """Calcul du taux d'un élément à partir des éléments placés en dessous (voir apps.projects.taux)."""
+
+    MOYENNE = "MOYENNE", "Moyenne simple"
+    PONDEREE_BUDGET = "PONDEREE_BUDGET", "Moyenne pondérée par le budget"
+    PONDEREE_POIDS = "PONDEREE_POIDS", "Moyenne pondérée par les poids"
+
+
+class ParametresCalcul(models.Model):
+    """
+    Réglage de l'organisation (ligne unique, id=1) : méthode de calcul et méthode
+    d'agrégation par défaut, héritées par tous les projets qui ne fixent pas les leurs.
+    """
+
+    methode_calcul = models.CharField(max_length=20, choices=MethodeCalcul.choices, default=MethodeCalcul.QUANTITE)
+    methode_agregation = models.CharField(
+        max_length=20, choices=MethodeAgregation.choices, default=MethodeAgregation.MOYENNE
+    )
+    plafonner_agregation = models.BooleanField(
+        default=True,
+        help_text="Dans les agrégations, un taux supérieur à 100 % compte pour 100 % (le taux réel reste affiché).",
+    )
+
+    class Meta:
+        verbose_name = "Paramètres de calcul des taux"
+
+    @classmethod
+    def courants(cls):
+        return cls.objects.get_or_create(pk=1)[0]
+
+
 class Projet(TimestampedModel):
     class Statut(models.TextChoices):
         EN_PREPARATION = "EN_PREPARATION", "En préparation"
@@ -56,6 +98,15 @@ class Projet(TimestampedModel):
         help_text="Cadre stratégique auquel ce projet est rattaché — borne les éléments stratégiques "
         "proposés pour ses activités. Fortement recommandé mais pas obligatoire.",
     )
+    element_strategique = models.ForeignKey(
+        "strategy.ElementStrategique",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="projets",
+        help_text="Élément du cadre stratégique dont relève ce projet (ex : « Programme 2 », « Pilier 3 ») — "
+        "n'importe quel niveau du cadre, aucun n'est imposé. Permet de regrouper les projets par élément.",
+    )
     budget_total = models.DecimalField(
         max_digits=14, decimal_places=2, default=0, help_text="Coût total = fonds propres + financements bailleurs."
     )
@@ -97,6 +148,10 @@ class Projet(TimestampedModel):
         blank=True, help_text="Saisi en fin de projet : leçons apprises, bonnes pratiques."
     )
 
+    # Vides = hérités des paramètres de l'organisation (ParametresCalcul).
+    methode_calcul = models.CharField(max_length=20, choices=MethodeCalcul.choices, blank=True)
+    methode_agregation = models.CharField(max_length=20, choices=MethodeAgregation.choices, blank=True)
+
     history = HistoricalRecords()
 
     class Meta:
@@ -110,38 +165,6 @@ class Projet(TimestampedModel):
         from django.db.models import Sum
 
         return self.financements.aggregate(total=Sum("montant_finance"))["total"] or 0
-
-
-class ObjectifGeneral(TimestampedModel):
-    projet = models.OneToOneField(Projet, on_delete=models.PROTECT, related_name="objectif_general")
-    libelle = models.CharField(max_length=300)
-    description = models.TextField(blank=True)
-
-    history = HistoricalRecords()
-
-    class Meta:
-        verbose_name = "Objectif général"
-        verbose_name_plural = "Objectifs généraux"
-
-    def __str__(self):
-        return self.libelle
-
-
-class ObjectifSpecifique(TimestampedModel):
-    objectif_general = models.ForeignKey(
-        ObjectifGeneral, on_delete=models.PROTECT, related_name="objectifs_specifiques"
-    )
-    libelle = models.CharField(max_length=300)
-    description = models.TextField(blank=True)
-
-    history = HistoricalRecords()
-
-    class Meta:
-        verbose_name = "Objectif spécifique"
-        verbose_name_plural = "Objectifs spécifiques"
-
-    def __str__(self):
-        return self.libelle
 
 
 class Equipe(TimestampedModel):
@@ -166,24 +189,33 @@ class Equipe(TimestampedModel):
 
 
 class Activite(TimestampedModel):
+    """
+    Élément de la planification d'un projet, à n'importe quel niveau — aucun
+    niveau n'est imposé : un projet peut être planifié en « Objectif général
+    → Objectif spécifique → Activité », un autre en « Résultat → Pilier →
+    Activité », un troisième directement en « Activité ». L'arborescence se
+    construit avec activite_parent, et le nom affiché de chaque niveau est
+    défini par projet dans NiveauActivite. Tous les éléments ont les mêmes
+    capacités (budget, quantités, dates, responsables, suivi, indicateurs).
+    """
+
     class Statut(models.TextChoices):
         NON_REALISEE = "NON_REALISEE", "Non réalisée"
         EN_COURS = "EN_COURS", "En cours"
         REALISEE = "REALISEE", "Réalisée"
 
-    objectif_specifique = models.ForeignKey(
-        ObjectifSpecifique, on_delete=models.PROTECT, related_name="activites"
-    )
+    projet = models.ForeignKey(Projet, on_delete=models.PROTECT, related_name="activites")
+    description = models.TextField(blank=True)
     activite_parent = models.ForeignKey(
         "self",
         null=True,
         blank=True,
         on_delete=models.PROTECT,
         related_name="enfants",
-        help_text="Permet d'imbriquer un niveau intermédiaire librement nommé (ex : « Résultat ») "
-        "au-dessus d'une activité, sans rien perdre de ce qu'une Activité sait déjà faire (budget, "
-        "suivi, responsables, historique...) — voir NiveauActivite pour le nom affiché de chaque "
-        "profondeur. Toujours rattachée au même objectif_specifique que son parent (voir clean()).",
+        help_text="Élément parent dans la planification du projet (vide = élément de premier niveau). "
+        "La profondeur est libre : chaque projet nomme ses niveaux comme il veut (ex : « Objectif "
+        "général » → « Objectif spécifique » → « Activité », ou « Résultat » → « Pilier » → « Activité ») "
+        "— voir NiveauActivite. Toujours dans le même projet que son parent (voir clean()).",
     )
     code_activite = models.CharField(
         max_length=30, blank=True, help_text="Codification interne (ex : AI1.1, AI1.1.2)."
@@ -243,17 +275,36 @@ class Activite(TimestampedModel):
         Equipe, null=True, blank=True, on_delete=models.SET_NULL, related_name="activites"
     )
 
+    # Calcul du taux d'exécution physique — vides = hérités de l'élément parent, puis
+    # du projet, puis de l'organisation (voir apps.projects.taux).
+    methode_calcul = models.CharField(max_length=20, choices=MethodeCalcul.choices, blank=True)
+    methode_agregation = models.CharField(
+        max_length=20,
+        choices=MethodeAgregation.choices,
+        blank=True,
+        help_text="Calcul du taux de cet élément à partir des éléments placés en dessous.",
+    )
+    poids = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Poids de cet élément quand son parent agrège par « Moyenne pondérée par les poids ».",
+    )
+
     history = HistoricalRecords()
+
+    class Meta:
+        # Ordre de création : un import ou une saisie remonte dans l'ordre où il a été fait.
+        ordering = ("id",)
 
     def __str__(self):
         return self.libelle
 
     def clean(self):
         if self.activite_parent_id:
-            if self.activite_parent.objectif_specifique_id != self.objectif_specifique_id:
-                raise ValidationError(
-                    "Une activité doit être rattachée au même objectif spécifique que son activité parente."
-                )
+            if self.activite_parent.projet_id != self.projet_id:
+                raise ValidationError("Un élément doit appartenir au même projet que son élément parent.")
             ancetre = self.activite_parent
             while ancetre is not None:
                 if ancetre.pk == self.pk:
@@ -262,9 +313,10 @@ class Activite(TimestampedModel):
 
     @property
     def taux_realisation(self):
-        if not self.quantite_prevue:
-            return None
-        return round(float(self.quantite_realisee or 0) / float(self.quantite_prevue) * 100, 1)
+        """Taux d'exécution physique selon la méthode de calcul de l'élément (voir apps.projects.taux)."""
+        from .taux import taux_element
+
+        return taux_element(self).taux
 
     @property
     def taux_execution_financiere(self):
@@ -283,12 +335,12 @@ class Activite(TimestampedModel):
 
 class NiveauActivite(TimestampedModel):
     """
-    Nom affiché pour chaque profondeur d'imbrication d'Activité au sein d'un
-    projet (ex : profondeur 0 = « Résultat », profondeur 1 = « Activité ») —
-    purement cosmétique, n'affecte ni le modèle Activite ni son comportement.
-    Profondeur 0 = une Activité sans activite_parent (rattachée directement à
-    un Objectif spécifique) ; chaque profondeur suivante = un niveau
-    d'imbrication (activite_parent) en plus. Sans ligne définie pour une
+    Nom affiché pour chaque niveau de la planification d'un projet (ex :
+    profondeur 0 = « Résultat », profondeur 1 = « Pilier », profondeur 2 =
+    « Activité ») — purement d'affichage, n'affecte ni le modèle Activite ni
+    son comportement. Profondeur 0 = un élément sans activite_parent
+    (premier niveau sous le projet) ; chaque profondeur suivante = un niveau
+    d'imbrication en plus, sans limite. Sans ligne définie pour une
     profondeur donnée, l'affichage retombe sur « Activité ».
     """
 
@@ -325,10 +377,84 @@ class SousActivite(TimestampedModel):
     date_debut = models.DateField(null=True, blank=True)
     date_fin = models.DateField(null=True, blank=True)
     statut = models.CharField(max_length=20, choices=Statut.choices, default=Statut.PLANIFIEE)
+    # Méthode « tâches pondérées » de l'activité : chaque sous-activité est une tâche.
+    poids = models.DecimalField(
+        max_digits=6, decimal_places=2, null=True, blank=True, help_text="Poids de la tâche (les poids totalisent 100)."
+    )
+    avancement = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Niveau d'achèvement saisi (0 à 100 %). Vide : déduit des quantités, sinon du statut.",
+    )
 
     history = HistoricalRecords()
 
-    verbose_name = "Sous-activité"
+    class Meta:
+        # Ordre de création, comme les éléments de la planification.
+        ordering = ("id",)
+        verbose_name = "Sous-activité"
 
     def __str__(self):
         return self.libelle
+
+
+class JalonLivrable(TimestampedModel):
+    """
+    Jalon ou livrable d'un élément de la planification, pour les méthodes de
+    calcul « jalons pondérés » (achèvement de chaque jalon) et « livrables »
+    (seuls les livrables validés comptent).
+    """
+
+    class Type(models.TextChoices):
+        JALON = "JALON", "Jalon"
+        LIVRABLE = "LIVRABLE", "Livrable"
+
+    activite = models.ForeignKey(Activite, on_delete=models.PROTECT, related_name="jalons_livrables")
+    type = models.CharField(max_length=10, choices=Type.choices)
+    libelle = models.CharField(max_length=300)
+    poids = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    date_prevue = models.DateField(null=True, blank=True)
+    achevement = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0, help_text="Jalon : niveau d'achèvement (0 à 100 %)."
+    )
+    valide = models.BooleanField(default=False, help_text="Livrable : validé.")
+    valide_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    date_validation = models.DateField(null=True, blank=True)
+
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ("id",)
+        verbose_name = "Jalon ou livrable"
+        verbose_name_plural = "Jalons et livrables"
+
+    def __str__(self):
+        return self.libelle
+
+
+class TauxManuel(TimestampedModel):
+    """
+    Taux d'exécution saisi à la main (méthode « saisie manuelle ») — historisé :
+    le taux en vigueur est la saisie la plus récente, jamais recalculé.
+    """
+
+    activite = models.ForeignKey(Activite, on_delete=models.PROTECT, related_name="taux_manuels")
+    taux = models.DecimalField(max_digits=5, decimal_places=2)
+    date = models.DateField()
+    saisi_par = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    commentaire = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ("-date", "-id")
+        verbose_name = "Taux saisi manuellement"
+        verbose_name_plural = "Taux saisis manuellement"
+        constraints = [
+            models.CheckConstraint(check=models.Q(taux__gte=0, taux__lte=100), name="taux_manuel_entre_0_et_100")
+        ]
+
+    def __str__(self):
+        return f"{self.activite} — {self.taux} % au {self.date}"

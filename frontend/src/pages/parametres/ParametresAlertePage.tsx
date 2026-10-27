@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { BellRing, CalendarClock, Check, Plus, RotateCcw, Sliders, Trash2 } from "lucide-react";
+import { BellRing, Calculator, CalendarClock, Check, Plus, RotateCcw, Sliders, Trash2 } from "lucide-react";
 import {
   ActionIcon,
   Badge,
@@ -11,9 +11,9 @@ import {
   NumberInput,
   Select,
   Stack,
+  Switch,
   Text,
   TextInput,
-  Title,
   UnstyledButton,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
@@ -25,8 +25,17 @@ import {
   useUpdateParametresAlerte,
 } from "../../api/indicators";
 import { useEcheances } from "../../api/dashboard";
-import { useActivitesPourProjet, useProjets } from "../../api/projects";
+import { useActivitesPourProjet, useParametresCalcul, useProjets, useUpdateParametresCalcul } from "../../api/projects";
+import {
+  AIDES_AGREGATION,
+  AIDES_METHODE,
+  optionsAgregation,
+  optionsMethode,
+} from "../../utils/methodesCalcul";
+import type { MethodeAgregation, MethodeCalcul } from "../../types";
 import type { PorteeAlerte } from "../../types";
+import { TitreRubrique } from "../../components/common/TitreRubrique";
+import { voc } from "../../utils/vocabulaire";
 
 // Palette restreinte à choisir au clic plutôt qu'un sélecteur de couleur
 // libre (code hexa, roue teinte/saturation...) jugé trop compliqué pour ce
@@ -112,17 +121,67 @@ function intervalleTexte(lignesTriees: LignePalier[], position: number): string 
 const PALETTE_GLOBALE = "GLOBALE";
 const NIVEAU_PROJET = "PROJET";
 
+/**
+ * Méthode de calcul et d'agrégation des taux d'exécution par défaut de l'organisation —
+ * héritées par les projets et les éléments qui ne fixent pas les leurs.
+ */
+function CalculTauxCard() {
+  const { data: parametres } = useParametresCalcul();
+  const maj = useUpdateParametresCalcul();
+  const enregistrer = (payload: Parameters<typeof maj.mutate>[0]) =>
+    maj.mutate(payload, {
+      onSuccess: () => notifications.show({ message: "Réglage enregistré", color: "green" }),
+      onError: () => notifications.show({ message: "Erreur lors de l'enregistrement", color: "red" }),
+    });
+  if (!parametres) return null;
+  return (
+    <Card withBorder padding="lg" radius="md">
+      <Group gap={8} mb={4}>
+        <Calculator size={18} />
+        <Text fw={600}>{voc("Calcul des taux d'exécution")}</Text>
+      </Group>
+      <Text size="sm" c="dimmed" mb="sm">
+        {voc("Réglage par défaut de l'organisation : chaque projet peut fixer le sien (fiche projet, onglet Stratégie), et chaque élément de la planification aussi (son formulaire).")}
+      </Text>
+      <Group grow align="flex-start">
+        <Select
+          label="Méthode de calcul par défaut"
+          description={AIDES_METHODE[parametres.methode_calcul]}
+          data={optionsMethode()}
+          value={parametres.methode_calcul}
+          onChange={(v) => v && enregistrer({ methode_calcul: v as MethodeCalcul })}
+          allowDeselect={false}
+        />
+        <Select
+          label="Agrégation par défaut"
+          description={AIDES_AGREGATION[parametres.methode_agregation]}
+          data={optionsAgregation()}
+          value={parametres.methode_agregation}
+          onChange={(v) => v && enregistrer({ methode_agregation: v as MethodeAgregation })}
+          allowDeselect={false}
+        />
+      </Group>
+      <Switch
+        mt="md"
+        label="Plafonner à 100 % dans les agrégations"
+        description="Un dépassement de cible (ex : 130 %) reste affiché, mais compte pour 100 % dans les moyennes."
+        checked={parametres.plafonner_agregation}
+        onChange={(e) => enregistrer({ plafonner_agregation: e.currentTarget.checked })}
+      />
+    </Card>
+  );
+}
+
 export function ParametresAlertePage() {
   return (
     <Stack gap="md">
       <div>
-        <Title order={2}>Paramètres d'alerte</Title>
+        <TitreRubrique route="/parametres-alerte" defaut="Paramètres d'alerte" />
         <Text c="dimmed" size="sm">
-          La grille d'interprétation des taux de réalisation (paliers, libellés, couleurs) se configure ici,
-          projet par projet — un projet sans grille propre utilise la grille globale par défaut.
-        </Text>
+          {voc("La grille d'interprétation des taux de réalisation (paliers, libellés, couleurs) se configure ici, projet par projet — un projet sans grille propre utilise la grille globale par défaut.")}</Text>
       </div>
 
+      <CalculTauxCard />
       <GrilleInterpretationCard />
       <RappelsEcheanceCard />
     </Stack>
@@ -205,7 +264,7 @@ function GrilleInterpretationCard() {
           .map((l) => ({ borne_min: Number(l.borne_min), libelle: l.libelle.trim(), couleur: l.couleur }))
           .sort((a, b) => a.borne_min - b.borne_min),
       });
-      notifications.show({ message: "Grille d'alerte enregistrée", color: "green" });
+      notifications.show({ message: voc("Grille d'alerte enregistrée"), color: "green" });
     } catch {
       notifications.show({ message: "Erreur lors de l'enregistrement", color: "red" });
     }
@@ -224,11 +283,11 @@ function GrilleInterpretationCard() {
 
   const libelleNiveauCourant =
     indicateurId !== null
-      ? "Cet indicateur"
+      ? voc("Cet indicateur")
       : activiteId !== null
         ? "Cette activité"
         : projetId !== null
-          ? "Ce projet"
+          ? voc("Ce projet")
           : null;
 
   return (
@@ -240,8 +299,8 @@ function GrilleInterpretationCard() {
 
       <Group align="flex-start" grow mb="md">
         <Select
-          label="Projet"
-          description="Choisis un projet pour lui définir sa propre grille, ou reste sur la grille globale par défaut."
+          label={voc("Projet")}
+          description={voc("Choisis un projet pour lui définir sa propre grille, ou reste sur la grille globale par défaut.")}
           data={[
             { value: PALETTE_GLOBALE, label: "Grille globale (par défaut)" },
             ...(projets ?? []).map((p) => ({ value: String(p.id), label: `${p.code} — ${p.nom}` })),
@@ -254,13 +313,13 @@ function GrilleInterpretationCard() {
         {projetId !== null && (
           <Select
             label="Niveau"
-            description="La grille du projet entier, ou personnalise-la pour un indicateur ou une activité précis."
+            description={voc("La grille du projet entier, ou personnalise-la pour un indicateur ou une activité précis.")}
             data={[
-              { value: NIVEAU_PROJET, label: "Grille du projet (par défaut)" },
+              { value: NIVEAU_PROJET, label: voc("Grille du projet (par défaut)") },
               ...((indicateursDuProjet?.length ?? 0) > 0
                 ? [
                     {
-                      group: "Indicateurs",
+                      group: voc("Indicateurs"),
                       items: indicateursDuProjet!.map((i) => ({ value: `IND:${i.id}`, label: i.libelle })),
                     },
                   ]
@@ -365,10 +424,7 @@ function RappelsAdateFixeListe() {
         <Text fw={600} size="sm">Rappels à date calendaire programmés</Text>
       </Group>
       <Text size="sm" c="dimmed" mb="sm">
-        En plus du seuil en jours ci-dessus, chaque activité ou projet peut avoir sa propre date de rappel fixe
-        (indépendante du nombre de jours) — à définir directement dans sa fiche, champ « Date de rappel ». Voici
-        celles actuellement programmées :
-      </Text>
+        {voc("En plus du seuil en jours ci-dessus, chaque activité ou projet peut avoir sa propre date de rappel fixe (indépendante du nombre de jours) — à définir directement dans sa fiche, champ « Date de rappel ». Voici celles actuellement programmées :")}</Text>
       {isLoading ? (
         <Text size="sm" c="dimmed">Chargement…</Text>
       ) : rappels.length === 0 ? (
@@ -404,7 +460,7 @@ function RappelsEcheanceCard() {
   async function handleEnregistrer() {
     try {
       await update.mutateAsync({ seuil_echeance_jours: seuilEcheanceJours === "" ? 7 : Number(seuilEcheanceJours) });
-      notifications.show({ message: "Paramètres d'alerte enregistrés", color: "green" });
+      notifications.show({ message: voc("Paramètres d'alerte enregistrés"), color: "green" });
     } catch {
       notifications.show({ message: "Erreur lors de l'enregistrement", color: "red" });
     }
@@ -423,7 +479,7 @@ function RappelsEcheanceCard() {
         <>
           <NumberInput
             label="Alerter avant l'échéance (jours)"
-            description="Seuil global par défaut : une activité, une sous-activité ou un projet non terminé déclenche une notification (et un email) dès que son échéance tombe dans cette fenêtre — et reste alerté si l'échéance est déjà dépassée."
+            description={voc("Seuil global par défaut : une activité, une sous-activité ou un projet non terminé déclenche une notification (et un email) dès que son échéance tombe dans cette fenêtre — et reste alerté si l'échéance est déjà dépassée.")}
             value={seuilEcheanceJours}
             onChange={setSeuilEcheanceJours}
             min={1}

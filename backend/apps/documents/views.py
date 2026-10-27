@@ -7,6 +7,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.core.permissions import HasGlobalVisibilityOrAssigned
+from apps.core.vocabulaire import v
 from apps.projects.queryset_filters import visible_projets_ids
 
 from .models import Document, DocumentVersion, Dossier, PieceJustificative
@@ -36,8 +37,8 @@ class DocumentFilter(django_filters.FilterSet):
     def filtrer_projet(self, queryset, name, value):
         return queryset.filter(
             Q(projet_id=value)
-            | Q(activite__objectif_specifique__objectif_general__projet_id=value)
-            | Q(sous_activite__activite__objectif_specifique__objectif_general__projet_id=value)
+            | Q(activite__projet_id=value)
+            | Q(sous_activite__activite__projet_id=value)
         )
 
 
@@ -74,14 +75,14 @@ class DocumentViewSet(viewsets.ModelViewSet):
         return Document.objects.select_related("cree_par").prefetch_related("versions").filter(
             Q(projet__isnull=True, activite__isnull=True, sous_activite__isnull=True)
             | Q(projet__id__in=ids)
-            | Q(activite__objectif_specifique__objectif_general__projet__id__in=ids)
-            | Q(sous_activite__activite__objectif_specifique__objectif_general__projet__id__in=ids)
+            | Q(activite__projet__id__in=ids)
+            | Q(sous_activite__activite__projet__id__in=ids)
         )
 
     def create(self, request, *args, **kwargs):
         fichier = request.data.get("fichier")
         if not fichier:
-            raise ValidationError({"fichier": "Un fichier est requis pour créer un document."})
+            raise ValidationError({"fichier": v('Un fichier est requis pour créer un document.')})
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

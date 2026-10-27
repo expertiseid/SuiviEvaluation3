@@ -4,6 +4,7 @@ import { Alert, Button, FileInput, Group, List, Modal, Stack, Text } from "@mant
 import { notifications } from "@mantine/notifications";
 import { useImporterIndicateurs, telechargerModeleImportIndicateurs } from "../../api/indicators";
 import type { ImportIndicateursResultat } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 export function ImportIndicateursModal({ opened, onClose }: { opened: boolean; onClose: () => void }) {
   const importer = useImporterIndicateurs();
@@ -27,7 +28,7 @@ export function ImportIndicateursModal({ opened, onClose }: { opened: boolean; o
       const res = await importer.mutateAsync(formData);
       setResultat(res);
       if (res.crees > 0) {
-        notifications.show({ message: `${res.crees} indicateur(s) importé(s)`, color: "green" });
+        notifications.show({ message: voc`${res.crees} indicateur(s) importé(s)`, color: "green" });
       }
     } catch {
       notifications.show({ message: "Erreur lors de l'import — vérifie le format du fichier.", color: "red" });
@@ -35,13 +36,10 @@ export function ImportIndicateursModal({ opened, onClose }: { opened: boolean; o
   }
 
   return (
-    <Modal opened={opened} onClose={fermer} title="Importer des indicateurs depuis Excel" size="lg">
+    <Modal opened={opened} onClose={fermer} title={voc("Importer des indicateurs depuis Excel")} size="lg">
       <Stack gap="md">
         <Alert color="blue" variant="light">
-          Une ligne = un indicateur. Le rattachement (Projet, Objectif général/spécifique, Activité) se
-          fait par le code exact du projet et le libellé exact de l'élément — laisse « Aucun » pour un
-          indicateur stratégique sans projet.
-        </Alert>
+          {voc("Une ligne = un indicateur. Le rattachement (Projet, ou nom d'un niveau de la planification : Objectif, Résultat, Pilier, Activité…) se fait par le code exact du projet et le libellé exact de l'élément — laisse « Aucun » pour un indicateur stratégique sans projet.")}</Alert>
 
         <Button
           variant="light"
@@ -68,7 +66,7 @@ export function ImportIndicateursModal({ opened, onClose }: { opened: boolean; o
         {resultat && (
           <Stack gap="xs">
             <Alert color={resultat.crees > 0 ? "green" : "orange"} title="Résultat de l'import">
-              <Text size="sm"><strong>{resultat.crees}</strong> indicateur(s) créé(s).</Text>
+              <Text size="sm"><strong>{resultat.crees}</strong> {voc(" indicateur(s) créé(s).")}</Text>
             </Alert>
 
             {resultat.erreurs.length > 0 && (

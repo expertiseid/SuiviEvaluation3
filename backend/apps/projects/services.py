@@ -14,89 +14,33 @@ def supprimer_projet_cascade(projet):
     from apps.indicators.models import Indicateur, ValeurIndicateur
     from apps.suivi.models import PointSuivi
 
-    from .models import Activite, ObjectifGeneral, ObjectifSpecifique, SousActivite
+    from .models import Activite, JalonLivrable, SousActivite, TauxManuel
 
     with transaction.atomic():
-        objectifs_generaux = ObjectifGeneral.objects.filter(projet=projet)
-        objectifs_specifiques = ObjectifSpecifique.objects.filter(objectif_general__in=objectifs_generaux)
-        activites = Activite.objects.filter(objectif_specifique__in=objectifs_specifiques)
+        activites = Activite.objects.filter(projet=projet)
         sous_activites = SousActivite.objects.filter(activite__in=activites)
+        JalonLivrable.objects.filter(activite__in=activites).delete()
+        TauxManuel.objects.filter(activite__in=activites).delete()
 
-        indicateurs = Indicateur.objects.filter(
-            Q(projet=projet)
-            | Q(objectif_general__in=objectifs_generaux)
-            | Q(objectif_specifique__in=objectifs_specifiques)
-            | Q(activite__in=activites)
-        )
+        indicateurs = Indicateur.objects.filter(Q(projet=projet) | Q(activite__in=activites))
 
         ValeurIndicateur.objects.filter(indicateur__in=indicateurs).delete()
         indicateurs.delete()
 
         PointSuivi.objects.filter(Q(activite__in=activites) | Q(sous_activite__in=sous_activites)).delete()
         sous_activites.delete()
-        # activite_parent est en PROTECT : puisque TOUTES les activités de ce
-        # projet sont supprimées ensemble, on casse d'abord les liens
-        # parent/enfant entre elles (plutôt que de calculer un ordre de
+        # activite_parent est en PROTECT : puisque TOUS les éléments de ce
+        # projet sont supprimés ensemble, on casse d'abord les liens
+        # parent/enfant entre eux (plutôt que de calculer un ordre de
         # suppression feuilles-vers-racine) avant le bulk delete.
         activites.update(activite_parent=None)
         activites.delete()
-        objectifs_specifiques.delete()
-        objectifs_generaux.delete()
 
         ParticipationProjet.objects.filter(projet=projet).delete()
 
-        # Documents/Dossiers/Financements sont déjà en CASCADE sur Projet,
-        # supprimés automatiquement par le projet.delete() ci-dessous.
+        # Documents/Dossiers/Financements/NiveauActivite sont déjà en CASCADE
+        # sur Projet, supprimés automatiquement par le projet.delete() ci-dessous.
         projet.delete()
-
-
-def supprimer_objectif_general_cascade(objectif_general):
-    from apps.indicators.models import Indicateur, ValeurIndicateur
-    from apps.suivi.models import PointSuivi
-
-    from .models import Activite, ObjectifSpecifique, SousActivite
-
-    with transaction.atomic():
-        objectifs_specifiques = ObjectifSpecifique.objects.filter(objectif_general=objectif_general)
-        activites = Activite.objects.filter(objectif_specifique__in=objectifs_specifiques)
-        sous_activites = SousActivite.objects.filter(activite__in=activites)
-
-        indicateurs = Indicateur.objects.filter(
-            Q(objectif_general=objectif_general)
-            | Q(objectif_specifique__in=objectifs_specifiques)
-            | Q(activite__in=activites)
-        )
-        ValeurIndicateur.objects.filter(indicateur__in=indicateurs).delete()
-        indicateurs.delete()
-
-        PointSuivi.objects.filter(Q(activite__in=activites) | Q(sous_activite__in=sous_activites)).delete()
-        sous_activites.delete()
-        activites.update(activite_parent=None)
-        activites.delete()
-        objectifs_specifiques.delete()
-        objectif_general.delete()
-
-
-def supprimer_objectif_specifique_cascade(objectif_specifique):
-    from apps.indicators.models import Indicateur, ValeurIndicateur
-    from apps.suivi.models import PointSuivi
-
-    from .models import Activite, SousActivite
-
-    with transaction.atomic():
-        activites = Activite.objects.filter(objectif_specifique=objectif_specifique)
-        sous_activites = SousActivite.objects.filter(activite__in=activites)
-        indicateurs = Indicateur.objects.filter(
-            Q(objectif_specifique=objectif_specifique) | Q(activite__in=activites)
-        )
-        ValeurIndicateur.objects.filter(indicateur__in=indicateurs).delete()
-        indicateurs.delete()
-
-        PointSuivi.objects.filter(Q(activite__in=activites) | Q(sous_activite__in=sous_activites)).delete()
-        sous_activites.delete()
-        activites.update(activite_parent=None)
-        activites.delete()
-        objectif_specifique.delete()
 
 
 def synchroniser_projets_associes_equipe(equipe):
@@ -110,7 +54,7 @@ def synchroniser_projets_associes_activite(activite):
     membre de son équipe responsable, doit apparaître dans l'onglet
     « Équipe de projet » du projet concerné sans geste manuel supplémentaire.
     """
-    projet = activite.objectif_specifique.objectif_general.projet
+    projet = activite.projet
     intervenants = list(activite.responsables.all())
     if activite.equipe_responsable_id:
         intervenants += list(activite.equipe_responsable.membres.all())
@@ -122,15 +66,17 @@ def supprimer_activite_cascade(activite):
     from apps.indicators.models import Indicateur, ValeurIndicateur
     from apps.suivi.models import PointSuivi
 
-    from .models import SousActivite
+    from .models import JalonLivrable, SousActivite, TauxManuel
 
     with transaction.atomic():
-        # Les activités imbriquées (activite_parent) doivent être supprimées
-        # avant leur parent (activite_parent est en PROTECT) — récursif, pour
-        # une imbrication sur plusieurs niveaux.
+        # Les éléments imbriqués (activite_parent) doivent être supprimés
+        # avant leur parent (activite_parent est en PROTECT) — récursif, quel
+        # que soit le nombre de niveaux.
         for enfant in list(activite.enfants.all()):
             supprimer_activite_cascade(enfant)
 
+        JalonLivrable.objects.filter(activite=activite).delete()
+        TauxManuel.objects.filter(activite=activite).delete()
         indicateurs = Indicateur.objects.filter(activite=activite)
         ValeurIndicateur.objects.filter(indicateur__in=indicateurs).delete()
         indicateurs.delete()
@@ -147,3 +93,21 @@ def supprimer_sous_activite_cascade(sous_activite):
     with transaction.atomic():
         PointSuivi.objects.filter(sous_activite=sous_activite).delete()
         sous_activite.delete()
+
+
+def nommer_niveaux(projet, noms):
+    """
+    Donne un nom aux premiers niveaux de la planification d'un projet (ex :
+    ["Objectif général", "Objectif spécifique", "Activité"]) — sans jamais
+    renommer un niveau déjà nommé.
+    """
+    from .models import NiveauActivite
+
+    deja_nommes = set(NiveauActivite.objects.filter(projet=projet).values_list("profondeur", flat=True))
+    NiveauActivite.objects.bulk_create(
+        [
+            NiveauActivite(projet=projet, profondeur=profondeur, nom_niveau=nom)
+            for profondeur, nom in enumerate(noms)
+            if profondeur not in deja_nommes
+        ]
+    )

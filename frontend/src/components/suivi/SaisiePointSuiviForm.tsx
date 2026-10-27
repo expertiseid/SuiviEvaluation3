@@ -6,12 +6,14 @@ import { useCreatePointSuivi, useUpdatePointSuivi } from "../../api/suivi";
 import { DocumentsTab } from "../documents/DocumentsTab";
 import { messageErreurApi } from "../../utils/erreurs";
 import type { SuiviHistoriquePoint } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 export function SaisiePointSuiviForm({
   activiteId,
   sousActiviteId,
   statutsDisponibles,
   avecBudget,
+  avecQuantite = true,
   pointExistant,
   historiqueExistant,
   bornes,
@@ -21,6 +23,8 @@ export function SaisiePointSuiviForm({
   sousActiviteId?: number;
   statutsDisponibles: { value: string; label: string }[];
   avecBudget: boolean;
+  /** false : méthode de calcul sans quantité (tâches, livrables...) — période, budget, statut et commentaire seulement. */
+  avecQuantite?: boolean;
   pointExistant?: SuiviHistoriquePoint;
   historiqueExistant?: { id: number; quantite_realisee: string | null }[];
   /** Saisie depuis le suivi par période : dates pré-remplies et limitées à la période. */
@@ -58,7 +62,7 @@ export function SaisiePointSuiviForm({
         sous_activite: sousActiviteId ?? null,
         periode_debut: periodeDebut,
         periode_fin: periodeFin,
-        quantite_realisee: quantiteRealisee === "" ? null : Number(quantiteRealisee),
+        quantite_realisee: !avecQuantite || quantiteRealisee === "" ? null : Number(quantiteRealisee),
         budget_realise: avecBudget && budgetRealise !== "" ? Number(budgetRealise) : null,
         statut: statut ?? "",
         commentaire,
@@ -68,7 +72,7 @@ export function SaisiePointSuiviForm({
       } else {
         await createPoint.mutateAsync(payload as never);
       }
-      notifications.show({ message: enEdition ? "Point de suivi modifié" : "Point de suivi enregistré", color: "green" });
+      notifications.show({ message: enEdition ? voc("Point de suivi modifié") : voc("Point de suivi enregistré"), color: "green" });
       onDone();
     } catch (error) {
       notifications.show({ message: messageErreurApi(error, "Erreur lors de la saisie"), color: "red" });
@@ -96,6 +100,7 @@ export function SaisiePointSuiviForm({
         />
       </Group>
       <Group grow>
+        {avecQuantite && (
         <NumberInput
           label="Quantité réalisée pendant cette période"
           description="Ce qui a été fait entre le début et la fin de cette période précise (pas le total depuis le début)."
@@ -103,6 +108,7 @@ export function SaisiePointSuiviForm({
           onChange={setQuantiteRealisee}
           min={0}
         />
+        )}
         {avecBudget && (
           <NumberInput
             label="Budget dépensé pendant cette période (FCFA)"
@@ -112,7 +118,7 @@ export function SaisiePointSuiviForm({
           />
         )}
       </Group>
-      {nouveauCumul !== null && (
+      {avecQuantite && nouveauCumul !== null && (
         <Text size="xs" c="dimmed">
           Total cumulé après cette saisie : {nouveauCumul}
         </Text>
@@ -127,7 +133,7 @@ export function SaisiePointSuiviForm({
 
       {activiteId !== undefined && (
         <>
-          <Divider label="Documents liés à cette activité" labelPosition="left" mt="sm" />
+          <Divider label={voc("Documents liés à cette activité")} labelPosition="left" mt="sm" />
           <DocumentsTab activiteId={activiteId} />
         </>
       )}

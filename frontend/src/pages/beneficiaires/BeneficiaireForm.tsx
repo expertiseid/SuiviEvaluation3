@@ -22,6 +22,7 @@ import { messageErreurApi } from "../../utils/erreurs";
 import { codeDepuisLibelle } from "../../utils/texte";
 import { PAYS_MONDE } from "../../utils/pays";
 import type { Beneficiaire, SignalementDoublon } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 const CHAMPS_VIDES = {
   nom: "",
@@ -133,7 +134,7 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
     if (enEdition) {
       try {
         await updateBeneficiaire.mutateAsync({ id: beneficiaire.id, payload });
-        notifications.show({ message: "Bénéficiaire modifié", color: "green" });
+        notifications.show({ message: voc("Bénéficiaire modifié"), color: "green" });
         onDone();
       } catch (error) {
         notifications.show({ message: messageErreurApi(error, "Erreur lors de la modification"), color: "red" });
@@ -148,12 +149,12 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
       if (doublons.length > 0) {
         setDoublonsDetectes(doublons);
         notifications.show({
-          message: `${doublons.length} doublon(s) potentiel(s) détecté(s) — à traiter dans l'écran "Doublons signalés".`,
+          message: voc`${doublons.length} doublon(s) potentiel(s) détecté(s) — à traiter dans l'écran "Doublons signalés".`,
           color: "orange",
         });
       } else {
         setDoublonsDetectes(null);
-        notifications.show({ message: "Bénéficiaire créé, aucun doublon détecté.", color: "green" });
+        notifications.show({ message: voc("Bénéficiaire créé, aucun doublon détecté."), color: "green" });
       }
     } catch {
       notifications.show({ message: "Erreur lors de la création.", color: "red" });
@@ -171,14 +172,14 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
     return (
       <Stack gap="sm">
         {doublonsDetectes && (
-          <Alert color="orange" title="Doublons potentiels détectés">
+          <Alert color="orange" title={voc("Doublons potentiels détectés")}>
             {doublonsDetectes.map((d) => (
               <div key={d.id}>{d.beneficiaire_1_nom} / {d.beneficiaire_2_nom} — score {d.score}</div>
             ))}
           </Alert>
         )}
         <Card withBorder padding="md" radius="md">
-          <Title order={4} mb="xs">Bénéficiaire enregistré</Title>
+          <Title order={4} mb="xs">{voc("Bénéficiaire enregistré")}</Title>
           <Text fw={600}>{beneficiaireCree.nom} {beneficiaireCree.prenom}</Text>
           <Text size="sm" c="dimmed">
             {beneficiaireCree.sexe === "F" ? "Féminin" : "Masculin"}
@@ -202,7 +203,7 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
           )}
         </Card>
         <Group justify="flex-end">
-          <Button variant="light" onClick={reinitialiserFormulaire}>Ajouter un autre bénéficiaire</Button>
+          <Button variant="light" onClick={reinitialiserFormulaire}>{voc("Ajouter un autre bénéficiaire")}</Button>
           <Button onClick={onDone}>Terminer</Button>
         </Group>
       </Stack>

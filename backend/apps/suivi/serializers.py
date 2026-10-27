@@ -2,6 +2,8 @@ import datetime
 
 from rest_framework import serializers
 
+from apps.core.vocabulaire import v
+
 from .models import PeriodePlanification, PointSuivi, TranchePlanifiee
 from .services import budget_realise_tranche, realise_tranche, statut_tranche, taux_de
 
@@ -46,8 +48,7 @@ class PointSuiviSerializer(serializers.ModelSerializer):
         sous_activite = attrs.get("sous_activite") or getattr(self.instance, "sous_activite", None)
         if bool(activite) == bool(sous_activite):
             raise serializers.ValidationError(
-                "Un point de suivi doit être rattaché soit à une activité, soit à une sous-activité "
-                "(jamais les deux, jamais aucune)."
+                v('Un point de suivi doit être rattaché soit à une activité, soit à une sous-activité (jamais les deux, jamais aucune).')
             )
 
         periode_debut = attrs.get("periode_debut") or getattr(self.instance, "periode_debut", None)
@@ -59,7 +60,7 @@ class PointSuiviSerializer(serializers.ModelSerializer):
             doublon = doublon.exclude(pk=self.instance.pk)
         if doublon.exists():
             raise serializers.ValidationError(
-                "Un point de suivi existe déjà pour cette période sur cette cible."
+                v('Un point de suivi existe déjà pour cette période sur cette cible.')
             )
         return attrs
 
@@ -142,21 +143,21 @@ class TranchePlanifieeSerializer(serializers.ModelSerializer):
         activite, sous_activite, indicateur = valeur("activite"), valeur("sous_activite"), valeur("indicateur")
         if sum(bool(x) for x in (activite, sous_activite, indicateur)) != 1:
             raise serializers.ValidationError(
-                "Une tranche doit être rattachée à une seule cible : une activité, une sous-activité ou un indicateur."
+                v('Une tranche doit être rattachée à une seule cible : une activité, une sous-activité ou un indicateur.')
             )
 
         periode = valeur("periode")
         if periode is not None:
             if activite:
-                dans_le_projet = activite.objectif_specifique.objectif_general.projet_id == periode.projet_id
+                dans_le_projet = activite.projet_id == periode.projet_id
             elif sous_activite:
-                dans_le_projet = sous_activite.activite.objectif_specifique.objectif_general.projet_id == periode.projet_id
+                dans_le_projet = sous_activite.activite.projet_id == periode.projet_id
             else:
                 from apps.indicators.services import indicateurs_pour_projet
 
                 dans_le_projet = indicateurs_pour_projet(periode.projet_id).filter(id=indicateur.id).exists()
             if not dans_le_projet:
-                raise serializers.ValidationError("Cet élément n'appartient pas au projet de la période.")
+                raise serializers.ValidationError(v("Cet élément n'appartient pas au projet de la période."))
             doublon = TranchePlanifiee.objects.filter(
                 periode=periode, activite=activite, sous_activite=sous_activite, indicateur=indicateur
             )

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Alert, Button, Center, Paper, PasswordInput, Stack, Text, TextInput, Title } from "@mantine/core";
 import { useAuth } from "./useAuth";
+import { voc } from "../utils/vocabulaire";
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -30,8 +31,8 @@ export function LoginPage() {
       <Paper shadow="md" radius="md" p="xl" w={380} withBorder>
         <Stack gap="md">
           <div>
-            <Title order={3}>Plateforme de Suivi-Évaluation</Title>
-            <Text size="sm" c="dimmed">Connectez-vous pour accéder à vos projets</Text>
+            <Title order={3}>{voc("Plateforme de Suivi-Évaluation")}</Title>
+            <Text size="sm" c="dimmed">{voc("Connectez-vous pour accéder à vos projets")}</Text>
           </div>
           {error && <Alert color="red">{error}</Alert>}
           <form onSubmit={handleSubmit}>

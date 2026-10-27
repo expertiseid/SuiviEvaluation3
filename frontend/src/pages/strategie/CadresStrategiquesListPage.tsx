@@ -12,7 +12,6 @@ import {
   Text,
   Textarea,
   TextInput,
-  Title,
   Tooltip,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
@@ -27,6 +26,8 @@ import { EmptyState } from "../../components/common/EmptyState";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
 import { correspond } from "../../utils/recherche";
 import type { CadreStrategique } from "../../types";
+import { TitreRubrique } from "../../components/common/TitreRubrique";
+import { voc } from "../../utils/vocabulaire";
 
 function CadreModal({
   opened,
@@ -55,10 +56,10 @@ function CadreModal({
     try {
       if (cadreExistant) {
         await updateCadre.mutateAsync({ id: cadreExistant.id, payload: { nom: nom.trim(), description } });
-        notifications.show({ message: "Cadre stratégique modifié", color: "green" });
+        notifications.show({ message: voc("Cadre stratégique modifié"), color: "green" });
       } else {
         await createCadre.mutateAsync({ nom: nom.trim(), description });
-        notifications.show({ message: "Cadre stratégique créé", color: "green" });
+        notifications.show({ message: voc("Cadre stratégique créé"), color: "green" });
       }
       onClose();
     } catch {
@@ -71,12 +72,12 @@ function CadreModal({
       opened={opened}
       onClose={onClose}
       onExitTransitionEnd={reinitialiser}
-      title={cadreExistant ? "Modifier le cadre stratégique" : "Nouveau cadre stratégique"}
+      title={cadreExistant ? voc("Modifier le cadre stratégique") : voc("Nouveau cadre stratégique")}
     >
       <Stack gap="sm">
         <TextInput
           label="Nom"
-          description="Ex : « Cadre stratégique 2022-2026 »"
+          description={voc("Ex : « Cadre stratégique 2022-2026 »")}
           value={nom}
           onChange={(e) => setNom(e.currentTarget.value)}
           required
@@ -107,13 +108,13 @@ export function CadresStrategiquesListPage() {
 
   function handleSupprimer(cadre: CadreStrategique) {
     confirmerSuppression({
-      message: `Supprimer le cadre stratégique « ${cadre.nom} » ainsi que tous ses niveaux et éléments ? Cette action est irréversible.`,
+      message: voc`Supprimer le cadre stratégique « ${cadre.nom} » ainsi que tous ses niveaux et éléments ? Cette action est irréversible.`,
       onConfirm: async () => {
         try {
           await deleteCadre.mutateAsync(cadre.id);
-          notifications.show({ message: "Cadre stratégique supprimé", color: "green" });
+          notifications.show({ message: voc("Cadre stratégique supprimé"), color: "green" });
         } catch {
-          notifications.show({ message: "Erreur lors de la suppression du cadre stratégique", color: "red" });
+          notifications.show({ message: voc("Erreur lors de la suppression du cadre stratégique"), color: "red" });
         }
       },
     });
@@ -122,15 +123,15 @@ export function CadresStrategiquesListPage() {
   return (
     <Stack gap="md">
       <Group justify="space-between">
-        <Title order={2}>Cadres stratégiques</Title>
+        <TitreRubrique route="/strategie" defaut="Cadres stratégiques" />
         <Group gap="xs">
           <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />
-          <Button onClick={() => setModalOuvert(true)}>Nouveau cadre stratégique</Button>
+          <Button onClick={() => setModalOuvert(true)}>{voc("Nouveau cadre stratégique")}</Button>
         </Group>
       </Group>
 
       <TextInput
-        placeholder="Rechercher un cadre stratégique…"
+        placeholder={voc("Rechercher un cadre stratégique…")}
         leftSection={<Search size={15} />}
         value={recherche}
         onChange={(e) => setRecherche(e.currentTarget.value)}
@@ -143,7 +144,7 @@ export function CadresStrategiquesListPage() {
         <Card withBorder padding="md" radius="md">
           <EmptyState
             icon={<LayoutGrid size={32} strokeWidth={1.5} />}
-            message="Aucun cadre stratégique pour le moment — crée le premier pour définir sa structuration."
+            message={voc("Aucun cadre stratégique pour le moment — crée le premier pour définir sa structuration.")}
           />
         </Card>
       ) : cadresFiltres.length === 0 ? (

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Download, Pencil, Trash2, Upload } from "lucide-react";
-import { Accordion, ActionIcon, Badge, Button, Group, Modal, Pagination, Stack, Table, Text, TextInput, Title, Tooltip } from "@mantine/core";
+import { Accordion, ActionIcon, Badge, Button, Group, Modal, Pagination, Stack, Table, Text, TextInput, Tooltip } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { useBeneficiaires, useDeleteBeneficiaire } from "../../api/beneficiaries";
@@ -13,6 +13,8 @@ import { BeneficiaireForm } from "./BeneficiaireForm";
 import { ExportBeneficiairesModal } from "./ExportBeneficiairesModal";
 import { ImportBeneficiairesModal } from "./ImportBeneficiairesModal";
 import type { Beneficiaire, StatutParticulier } from "../../types";
+import { TitreRubrique } from "../../components/common/TitreRubrique";
+import { voc } from "../../utils/vocabulaire";
 
 const TAILLE_PAGE = 25;
 const CLE_SANS_PROJET = "sans-projet";
@@ -70,7 +72,7 @@ function GroupeBeneficiaires({
           <Text fw={600} size="sm">{titre}</Text>
           {data && (
             <Badge variant="light" color={projetId ? "teal" : "gray"} size="sm">
-              {data.count} bénéficiaire{data.count > 1 ? "s" : ""}
+              {data.count} {voc(" bénéficiaire")}{data.count > 1 ? "s" : ""}
             </Badge>
           )}
         </Group>
@@ -79,7 +81,7 @@ function GroupeBeneficiaires({
         {isLoading ? (
           <Text size="sm" c="dimmed">Chargement…</Text>
         ) : data?.count === 0 ? (
-          <Text size="sm" c="dimmed">Aucun bénéficiaire associé à ce projet pour l'instant.</Text>
+          <Text size="sm" c="dimmed">{voc("Aucun bénéficiaire associé à ce projet pour l'instant.")}</Text>
         ) : (
           <Table striped highlightOnHover>
             <Table.Thead>
@@ -90,7 +92,7 @@ function GroupeBeneficiaires({
                 <Table.Th>Téléphone</Table.Th>
                 <Table.Th>Zone</Table.Th>
                 <Table.Th>Statut particulier</Table.Th>
-                {projetId && <Table.Th>Autres projets</Table.Th>}
+                {projetId && <Table.Th>{voc("Autres projets")}</Table.Th>}
                 <Table.Th w={40} />
               </Table.Tr>
             </Table.Thead>
@@ -177,14 +179,14 @@ export function BeneficiairesListPage() {
 
   function handleSupprimer(b: Beneficiaire) {
     confirmerSuppression({
-      message: `Supprimer "${b.nom} ${b.prenom}" ? Ses participations aux projets et signalements de doublon associés seront aussi supprimés. Cette action est irréversible.`,
+      message: voc`Supprimer "${b.nom} ${b.prenom}" ? Ses participations aux projets et signalements de doublon associés seront aussi supprimés. Cette action est irréversible.`,
       onConfirm: async () => {
         try {
           await deleteBeneficiaire.mutateAsync(b.id);
-          notifications.show({ message: "Bénéficiaire supprimé", color: "green" });
+          notifications.show({ message: voc("Bénéficiaire supprimé"), color: "green" });
         } catch (error) {
           notifications.show({
-            message: messageErreurApi(error, "Erreur lors de la suppression du bénéficiaire"),
+            message: messageErreurApi(error, voc("Erreur lors de la suppression du bénéficiaire")),
             color: "red",
           });
         }
@@ -204,7 +206,7 @@ export function BeneficiairesListPage() {
   return (
     <Stack gap="md">
       <Group justify="space-between">
-        <Title order={2}>Bénéficiaires</Title>
+        <TitreRubrique route="/beneficiaires" defaut="Bénéficiaires" />
         <Group gap="xs">
           <Button variant="light" leftSection={<Download size={16} />} onClick={() => setModalExportOpen(true)}>
             Exporter
@@ -212,7 +214,7 @@ export function BeneficiairesListPage() {
           <Button variant="light" leftSection={<Upload size={16} />} onClick={() => setModalImportOpen(true)}>
             Importer depuis Excel
           </Button>
-          <Button onClick={() => setModalOpen(true)}>Nouveau bénéficiaire</Button>
+          <Button onClick={() => setModalOpen(true)}>{voc("Nouveau bénéficiaire")}</Button>
         </Group>
       </Group>
 
@@ -223,7 +225,7 @@ export function BeneficiairesListPage() {
           onChange={(e) => setSearch(e.currentTarget.value)}
           w={400}
         />
-        {total && <Text size="sm" c="dimmed">{total.count} bénéficiaire{total.count > 1 ? "s" : ""} au total</Text>}
+        {total && <Text size="sm" c="dimmed">{total.count} {voc(" bénéficiaire")}{total.count > 1 ? "s" : ""} au total</Text>}
       </Group>
 
       <Accordion
@@ -242,7 +244,7 @@ export function BeneficiairesListPage() {
             actions={actions}
           />
         ))}
-        <GroupeBeneficiaires valeur={CLE_SANS_PROJET} titre="Sans projet" search={searchDebounce} actions={actions} />
+        <GroupeBeneficiaires valeur={CLE_SANS_PROJET} titre={voc("Sans projet")} search={searchDebounce} actions={actions} />
       </Accordion>
 
       <ExportBeneficiairesModal
@@ -251,7 +253,7 @@ export function BeneficiairesListPage() {
         projets={projetsTries}
       />
 
-      <Modal opened={modalOpen} onClose={() => setModalOpen(false)} title="Nouveau bénéficiaire" size="lg">
+      <Modal opened={modalOpen} onClose={() => setModalOpen(false)} title={voc("Nouveau bénéficiaire")} size="lg">
         <BeneficiaireForm onDone={() => setModalOpen(false)} />
       </Modal>
 

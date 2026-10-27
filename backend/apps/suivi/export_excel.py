@@ -13,6 +13,8 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
+from apps.core.vocabulaire import v
+
 from .services import construire_dashboard_suivi, ecart_texte, taux_de, valeur_attendue_a
 
 COULEUR_ENTETE = "1F4E78"
@@ -49,12 +51,12 @@ def exporter_suivi_excel(projet) -> bytes:
     # ---------- Résumé ----------
     resume = wb.active
     resume.title = "Résumé"
-    resume.append([f"Suivi — {data['projet']['code']} — {data['projet']['nom']}"])
+    resume.append([f"{v('Suivi — ')}{data['projet']['code']} — {data['projet']['nom']}"])
     resume.cell(row=1, column=1).font = Font(bold=True, size=14)
     resume.append([f"Généré le {aujourdhui.strftime('%d/%m/%Y')}"])
     resume.cell(row=2, column=1).font = Font(italic=True, color="666666")
     resume.append([])
-    _entete(resume, ["Indicateur global", "Valeur"], ligne=4)
+    _entete(resume, [v('Indicateur global'), "Valeur"], ligne=4)
     physique = data["taux_execution_physique_global"]
     financier = data["taux_execution_financiere_global"]
     statut_global_label = {"EN_RETARD": "En retard", "ATTEINT": "Atteint", "EN_COURS": "En cours"}.get(
@@ -63,12 +65,12 @@ def exporter_suivi_excel(projet) -> bytes:
     resume.append(["Exécution physique globale (%)", physique if physique is not None else "—"])
     resume.append(["Exécution financière globale (%)", financier if financier is not None else "—"])
     resume.append(["Statut global", statut_global_label])
-    resume.append(["Nombre d'indicateurs", len(data["indicateurs"])])
+    resume.append([v("Nombre d'indicateurs"), len(data["indicateurs"])])
     resume.append(["Nombre d'activités", len(data["activites"])])
     _largeurs(resume, [34, 20])
 
     # ---------- Indicateurs (résumé) ----------
-    ws_indic = wb.create_sheet("Indicateurs")
+    ws_indic = wb.create_sheet(v('Indicateurs'))
     colonnes = [
         "Libellé",
         "Unité",
@@ -110,9 +112,9 @@ def exporter_suivi_excel(projet) -> bytes:
     _largeurs(ws_indic, [38, 10, 14, 12, 14, 10, 14, 14, 14, 16, 14, 38])
 
     # ---------- Indicateurs — historique ----------
-    ws_indic_hist = wb.create_sheet("Indicateurs — historique")
+    ws_indic_hist = wb.create_sheet(v('Indicateurs — historique'))
     colonnes = [
-        "Indicateur",
+        v('Indicateur'),
         "Période début",
         "Période fin",
         "Valeur réalisée",
@@ -310,7 +312,7 @@ def exporter_suivi_excel(projet) -> bytes:
 
     # Activités avant les indicateurs dans l'ordre des onglets (Résumé en tête).
     ordre = ["Résumé", "Activités", "Activités — historique", "Sous-activités", "Sous-activités — historique",
-             "Indicateurs", "Indicateurs — historique"]
+             v('Indicateurs'), v('Indicateurs — historique')]
     wb._sheets.sort(key=lambda feuille: ordre.index(feuille.title))
     wb.active = 0
 

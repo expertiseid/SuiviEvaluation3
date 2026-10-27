@@ -10,6 +10,7 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
 
 from apps.core.excel_utils import figer_entete, quadriller
+from apps.core.vocabulaire import adapter_classeur, ramener_classeur, v
 
 COLONNES = [
     "Nom",
@@ -83,6 +84,7 @@ def generer_modele_import() -> bytes:
     ])
 
     buffer = io.BytesIO()
+    adapter_classeur(wb)
     wb.save(buffer)
     return buffer.getvalue()
 
@@ -199,7 +201,7 @@ def _resoudre_projet(code):
 
 
 def importer_beneficiaires(fichier, utilisateur, projet=None) -> dict:
-    wb = load_workbook(fichier, data_only=True)
+    wb = ramener_classeur(load_workbook(fichier, data_only=True))
     feuille = wb["Bénéficiaires"] if "Bénéficiaires" in wb.sheetnames else wb.worksheets[0]
     return importer_beneficiaires_depuis_feuille(feuille, utilisateur, projet=projet)
 
@@ -277,7 +279,7 @@ def importer_beneficiaires_depuis_feuille(feuille, utilisateur, projet=None) -> 
         code_projet = valeur(ligne, "Code projet")
         projet_ligne = _resoudre_projet(code_projet) if code_projet else None
         if code_projet and projet_ligne is None:
-            avertissements.append({"ligne": numero, "message": f"Code projet inconnu ignoré : « {code_projet} »."})
+            avertissements.append({"ligne": numero, "message": f"{v('Code projet inconnu ignoré : « ')}{code_projet} »."})
 
         projet_a_rattacher = projet_ligne or projet
         if projet_a_rattacher is not None:

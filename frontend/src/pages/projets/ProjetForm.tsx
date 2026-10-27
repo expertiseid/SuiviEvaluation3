@@ -7,10 +7,17 @@ import { DateInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import { modals } from "@mantine/modals";
 import { useUtilisateurs } from "../../api/accounts";
-import { useCreateProjet, useUpdateProjet } from "../../api/projects";
+import { useCreateProjet, useParametresCalcul, useUpdateProjet } from "../../api/projects";
+import {
+  AIDES_AGREGATION,
+  LIBELLES_AGREGATION,
+  LIBELLES_METHODE,
+  optionsAgregation,
+  optionsMethode,
+} from "../../utils/methodesCalcul";
 import { usePartenaires, useCreatePartenaire } from "../../api/referentiels";
 import { useNiveauxAdministratifs, useZones } from "../../api/geo";
-import { useCadresStrategiques } from "../../api/strategy";
+import { useCadresStrategiques, useElementsStrategiques } from "../../api/strategy";
 import {
   ZoneCascadeFields,
   ZONE_CASCADE_VIDE,
@@ -22,6 +29,7 @@ import { BeneficiairesProjetSection } from "./BeneficiairesProjetSection";
 import { PROJET_STATUT_LABEL } from "../../utils/statusTones";
 import { PAYS_MONDE } from "../../utils/pays";
 import type { Projet, StatutProjet } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 const schema = z.object({
   nom: z.string().min(1, "Requis"),
@@ -39,6 +47,9 @@ const schema = z.object({
   chef_de_projet_nom: z.string().optional(),
   utilisateurs_affectes: z.array(z.string()).optional(),
   cadre_strategique: z.string().optional(),
+  element_strategique: z.string().optional(),
+  methode_calcul: z.string().optional(),
+  methode_agregation: z.string().optional(),
   cible_totale: z.number().nullable().optional(),
   cible_hommes: z.number().nullable().optional(),
   cible_femmes: z.number().nullable().optional(),
@@ -71,6 +82,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
     [partenaires],
   );
   const { data: cadres } = useCadresStrategiques();
+  const { data: parametresCalcul } = useParametresCalcul();
   const { data: utilisateurs } = useUtilisateurs();
   const optionsChefsDeProjet = useMemo(
     () =>
@@ -125,7 +137,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
     setConsortiumInitialise(true);
   }, [enEdition, consortiumInitialise, partenaires, projet]);
 
-  const { control, register, handleSubmit, watch, formState: { errors } } = useForm<FormValues>({
+  const { control, register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: projet
       ? {
@@ -144,6 +156,9 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
           chef_de_projet_nom: projet.chef_de_projet_nom ?? "",
           utilisateurs_affectes: projet.utilisateurs_affectes.map(String),
           cadre_strategique: projet.cadre_strategique ? String(projet.cadre_strategique) : "",
+          element_strategique: projet.element_strategique ? String(projet.element_strategique) : "",
+          methode_calcul: projet.methode_calcul ?? "",
+          methode_agregation: projet.methode_agregation ?? "",
           cible_totale: projet.cible_totale,
           cible_hommes: projet.cible_hommes,
           cible_femmes: projet.cible_femmes,
@@ -158,6 +173,9 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
           statut: "EN_PREPARATION",
           type_mise_en_oeuvre: "DIRECT",
           cadre_strategique: "",
+          element_strategique: "",
+          methode_calcul: "",
+          methode_agregation: "",
           elements_capitalisation: "",
           utilisateurs_affectes: [],
         },
@@ -172,6 +190,23 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
     }
     setZoneCascade(ZONE_CASCADE_VIDE);
   }
+
+
+  // Rattachement du projet : n'importe quel élément du cadre choisi, regroupé par niveau.
+  const cadreChoisi = watch("cadre_strategique");
+  const { data: elementsDuCadre } = useElementsStrategiques(
+    cadreChoisi ? { cadre_strategique: Number(cadreChoisi) } : undefined,
+  );
+  const optionsRattachement = useMemo(() => {
+    if (!cadreChoisi) return [];
+    const groupes = new Map<string, { value: string; label: string }[]>();
+    for (const el of elementsDuCadre ?? []) {
+      const liste = groupes.get(el.type_niveau_nom) ?? [];
+      liste.push({ value: String(el.id), label: `${el.code ? el.code + " — " : ""}${el.nom}` });
+      groupes.set(el.type_niveau_nom, liste);
+    }
+    return [...groupes.entries()].map(([group, items]) => ({ group, items }));
+  }, [cadreChoisi, elementsDuCadre]);
 
   async function enregistrer(values: FormValues) {
     const payload = {
@@ -192,6 +227,9 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
       utilisateurs_affectes: (values.utilisateurs_affectes ?? []).map(Number),
       zones: zonesAjoutees.map((z) => z.id),
       cadre_strategique: values.cadre_strategique ? Number(values.cadre_strategique) : null,
+      element_strategique: values.element_strategique ? Number(values.element_strategique) : null,
+      methode_calcul: values.methode_calcul ?? "",
+      methode_agregation: values.methode_agregation ?? "",
       cible_totale: values.cible_totale ?? null,
       cible_hommes: values.cible_hommes ?? null,
       cible_femmes: values.cible_femmes ?? null,
@@ -202,15 +240,15 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
     try {
       if (enEdition) {
         await updateProjet.mutateAsync({ id: projet.id, payload: payload as never });
-        notifications.show({ message: "Projet modifié", color: "green" });
+        notifications.show({ message: voc("Projet modifié"), color: "green" });
       } else {
         await createProjet.mutateAsync(payload as never);
-        notifications.show({ message: "Projet créé", color: "green" });
+        notifications.show({ message: voc("Projet créé"), color: "green" });
       }
       onDone();
     } catch {
       notifications.show({
-        message: enEdition ? "Erreur lors de la modification du projet" : "Erreur lors de la création du projet",
+        message: enEdition ? voc("Erreur lors de la modification du projet") : voc("Erreur lors de la création du projet"),
         color: "red",
       });
     }
@@ -219,12 +257,10 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
   function onSubmit(values: FormValues) {
     if (!values.cadre_strategique) {
       modals.openConfirmModal({
-        title: "Aucun cadre stratégique associé",
+        title: voc("Aucun cadre stratégique associé"),
         children: (
           <Text size="sm">
-            Vous n'avez pas associé de cadre stratégique à ce projet. Voulez-vous continuer sans cadre stratégique,
-            ou l'associer d'abord ?
-          </Text>
+            {voc("Vous n'avez pas associé de cadre stratégique à ce projet. Voulez-vous continuer sans cadre stratégique, ou l'associer d'abord ?")}</Text>
         ),
         labels: { confirm: "Continuer", cancel: "Associer un cadre" },
         onConfirm: () => enregistrer(values),
@@ -255,13 +291,13 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
       <Tabs value={ongletActif} onChange={setOngletActif}>
         <Tabs.List>
           <Tabs.Tab value="general">Général</Tabs.Tab>
-          <Tabs.Tab value="cibles">Cibles bénéficiaires</Tabs.Tab>
+          <Tabs.Tab value="cibles">{voc("Cibles bénéficiaires")}</Tabs.Tab>
           <Tabs.Tab value="strategie">Stratégie & capitalisation</Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="general" pt="sm">
           <Stack gap="sm">
-            <TextInput label="Nom du projet" {...register("nom")} error={errors.nom?.message} required />
+            <TextInput label={voc("Nom du projet")} {...register("nom")} error={errors.nom?.message} required />
             <TextInput label="Code" {...register("code")} error={errors.code?.message} required />
             <Group grow>
               <Controller
@@ -301,7 +337,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
               render={({ field }) => (
                 <DateInput
                   label="Date de rappel (optionnel)"
-                  description="Déclenche une alerte à cette date précise, indépendamment du seuil de jours avant l'échéance."
+                  description={voc("Déclenche une alerte à cette date précise, indépendamment du seuil de jours avant l'échéance.")}
                   value={field.value ?? null}
                   onChange={field.onChange}
                   clearable
@@ -339,8 +375,8 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
               name="chef_de_projet_nom"
               render={({ field }) => (
                 <Autocomplete
-                  label="Chef de projet"
-                  description="Choisis un utilisateur existant dans la liste, ou tape librement un nom — la personne n'a pas besoin d'avoir un compte sur la plateforme. Ceci est juste un intitulé affiché : ça ne donne accès à rien tout seul."
+                  label={voc("Chef de projet")}
+                  description={voc("Choisis un utilisateur existant dans la liste, ou tape librement un nom — la personne n'a pas besoin d'avoir un compte sur la plateforme. Ceci est juste un intitulé affiché : ça ne donne accès à rien tout seul.")}
                   data={optionsChefsDeProjet}
                   value={field.value ?? ""}
                   onChange={field.onChange}
@@ -352,9 +388,9 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
               name="utilisateurs_affectes"
               render={({ field }) => (
                 <MultiSelect
-                  label="Utilisateurs affectés (accès à la plateforme)"
-                  description="Indispensable pour qu'un chef de projet, animateur, etc. puisse se connecter et voir ce projet — sans ça, même désigné ci-dessus, il ne verra rien après connexion."
-                  placeholder="Rechercher un utilisateur…"
+                  label={voc("Utilisateurs affectés (accès à la plateforme)")}
+                  description={voc("Indispensable pour qu'un chef de projet, animateur, etc. puisse se connecter et voir ce projet — sans ça, même désigné ci-dessus, il ne verra rien après connexion.")}
+                  placeholder={voc("Rechercher un utilisateur…")}
                   data={optionsUtilisateursAffectes}
                   value={field.value ?? []}
                   onChange={field.onChange}
@@ -564,9 +600,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
               <BeneficiairesProjetSection projet={projet} />
             ) : (
               <Alert color="blue" variant="light" py={6}>
-                Enregistre d'abord le projet pour pouvoir y associer des bénéficiaires (import Excel ou recherche
-                dans la base).
-              </Alert>
+                {voc("Enregistre d'abord le projet pour pouvoir y associer des bénéficiaires (import Excel ou recherche dans la base).")}</Alert>
             )}
           </Stack>
         </Tabs.Panel>
@@ -579,28 +613,84 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
               render={({ field }) => (
                 <Stack gap={4}>
                   <Select
-                    label="Cadre stratégique"
-                    placeholder="Choisir le cadre stratégique associé…"
-                    description="Détermine les éléments (axes, orientations…) proposés ensuite pour les activités de ce projet."
+                    label={voc("Cadre stratégique")}
+                    placeholder={voc("Choisir le cadre stratégique associé…")}
+                    description={voc("Détermine les éléments (axes, orientations…) proposés ensuite pour les activités de ce projet.")}
                     data={cadres?.map((c) => ({ value: String(c.id), label: c.nom })) ?? []}
                     value={field.value ?? null}
-                    onChange={(v) => field.onChange(v ?? "")}
+                    onChange={(v) => {
+                      field.onChange(v ?? "");
+                      // Le rattachement appartient au cadre : il ne survit pas à un changement de cadre.
+                      setValue("element_strategique", "");
+                    }}
                     searchable
                     clearable
                   />
                   {!field.value && (
                     <Alert color="orange" variant="light" py={6}>
-                      Aucun cadre stratégique choisi — tu peux quand même créer le projet, mais ses activités ne
-                      pourront pas être rattachées à une structuration stratégique tant qu'un cadre n'est pas
-                      renseigné.
-                    </Alert>
+                      {voc("Aucun cadre stratégique choisi — tu peux quand même créer le projet, mais ses activités ne pourront pas être rattachées à une structuration stratégique tant qu'un cadre n'est pas renseigné.")}</Alert>
                   )}
                 </Stack>
               )}
             />
+            <Controller
+              control={control}
+              name="element_strategique"
+              render={({ field }) => (
+                <Select
+                  label={voc("Rattachement dans le cadre stratégique")}
+                  placeholder={cadreChoisi ? voc("Choisir l'élément dont relève le projet…") : voc("Choisis d'abord un cadre stratégique")}
+                  description={voc("Facultatif — l'élément du cadre dont relève ce projet, à n'importe quel niveau (programme, axe, pilier…). Permet de regrouper les projets par élément.")}
+                  data={optionsRattachement}
+                  value={field.value || null}
+                  onChange={(v) => field.onChange(v ?? "")}
+                  disabled={!cadreChoisi}
+                  searchable
+                  clearable
+                />
+              )}
+            />
+            <Group grow align="flex-start">
+              <Controller
+                control={control}
+                name="methode_calcul"
+                render={({ field }) => (
+                  <Select
+                    label="Méthode de calcul des taux"
+                    description={voc("Pour tous les éléments du projet qui ne fixent pas la leur.")}
+                    data={optionsMethode(
+                      `Hériter de l'organisation (${parametresCalcul ? LIBELLES_METHODE[parametresCalcul.methode_calcul] : "…"})`,
+                    )}
+                    value={field.value ?? ""}
+                    onChange={(v) => field.onChange(v ?? "")}
+                    allowDeselect={false}
+                  />
+                )}
+              />
+              <Controller
+                control={control}
+                name="methode_agregation"
+                render={({ field }) => (
+                  <Select
+                    label={voc("Agrégation du taux du projet")}
+                    description={
+                      field.value
+                        ? AIDES_AGREGATION[field.value as keyof typeof AIDES_AGREGATION]
+                        : voc("Calcul du taux global à partir des éléments de la planification.")
+                    }
+                    data={optionsAgregation(
+                      `Hériter de l'organisation (${parametresCalcul ? LIBELLES_AGREGATION[parametresCalcul.methode_agregation] : "…"})`,
+                    )}
+                    value={field.value ?? ""}
+                    onChange={(v) => field.onChange(v ?? "")}
+                    allowDeselect={false}
+                  />
+                )}
+              />
+            </Group>
             <Textarea
               label="Éléments de capitalisation"
-              description="À compléter en fin de projet : leçons apprises, bonnes pratiques."
+              description={voc("À compléter en fin de projet : leçons apprises, bonnes pratiques.")}
               minRows={3}
               {...register("elements_capitalisation")}
             />

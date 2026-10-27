@@ -4,7 +4,8 @@ import { Pencil, Trash2 } from "lucide-react";
 export interface LigneHistoriqueSuivi {
   id: number;
   periode: string;
-  valeur: string;
+  /** Absente quand le taux ne vient pas des quantités (méthode de calcul autre). */
+  valeur?: string;
   cumule?: string;
   detail?: string;
   attendu?: string;
@@ -35,6 +36,7 @@ export function HistoriqueSuiviTable({
     );
   }
 
+  const aValeur = lignes.some((l) => l.valeur);
   const aCumule = lignes.some((l) => l.cumule);
   const aAttendu = lignes.some((l) => l.attendu);
   const aDetail = lignes.some((l) => l.detail);
@@ -45,7 +47,7 @@ export function HistoriqueSuiviTable({
       <Table.Thead>
         <Table.Tr>
           <Table.Th fw={600} c="dimmed" tt="none">Période</Table.Th>
-          <Table.Th fw={600} c="dimmed" tt="none">Cette période</Table.Th>
+          {aValeur && <Table.Th fw={600} c="dimmed" tt="none">Cette période</Table.Th>}
           {aCumule && <Table.Th fw={600} c="dimmed" tt="none">Cumul</Table.Th>}
           {aDetail && <Table.Th fw={600} c="dimmed" tt="none">Budget</Table.Th>}
           {aAttendu && <Table.Th fw={600} c="dimmed" tt="none">Attendu</Table.Th>}
@@ -57,7 +59,7 @@ export function HistoriqueSuiviTable({
         {lignes.map((ligne) => (
           <Table.Tr key={ligne.id}>
             <Table.Td c="dimmed" style={{ whiteSpace: "nowrap" }}>{ligne.periode}</Table.Td>
-            <Table.Td fw={500}>{ligne.valeur}</Table.Td>
+            {aValeur && <Table.Td fw={500}>{ligne.valeur}</Table.Td>}
             {aCumule && <Table.Td c="dimmed">{ligne.cumule}</Table.Td>}
             {aDetail && <Table.Td c="dimmed">{ligne.detail}</Table.Td>}
             {aAttendu && <Table.Td c="dimmed">{ligne.attendu}</Table.Td>}

@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from django.db.models import CheckConstraint, Q, UniqueConstraint
+from simple_history.models import HistoricalRecords
 
 from apps.core.models import TimestampedModel
 
@@ -43,6 +44,9 @@ class PointSuivi(TimestampedModel):
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="points_suivi_saisis"
     )
     date_saisie = models.DateTimeField(auto_now_add=True)
+
+    # Trace de chaque modification (saisie à l'écran ou import du canevas de suivi).
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = "Point de suivi"

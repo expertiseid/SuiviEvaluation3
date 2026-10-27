@@ -23,20 +23,14 @@ class Indicateur(TimestampedModel):
     valeur_cible = models.DecimalField(max_digits=14, decimal_places=2)
     frequence_collecte = models.CharField(max_length=20, choices=Frequence.choices)
 
-    # Rattachement à au plus un des quatre niveaux de la hiérarchie projet
-    # (contrainte ci-dessous) — quatre FK nullables plutôt qu'un
-    # GenericForeignKey, plus simple à filtrer/afficher côté DRF et React.
-    # Un indicateur peut n'avoir aucun de ces rattachements : c'est alors un
-    # indicateur purement stratégique, relié uniquement via
-    # elements_strategiques ci-dessous.
+    # Rattachement au projet lui-même OU à un élément de sa planification, à
+    # n'importe quel niveau (Activite couvre tous les niveaux librement nommés :
+    # objectif, résultat, pilier, activité...) — au plus un des deux
+    # (contrainte ci-dessous). Un indicateur peut n'avoir aucun de ces
+    # rattachements : c'est alors un indicateur purement stratégique, relié
+    # uniquement via elements_strategiques ci-dessous.
     projet = models.ForeignKey(
         "projects.Projet", null=True, blank=True, on_delete=models.PROTECT, related_name="indicateurs"
-    )
-    objectif_general = models.ForeignKey(
-        "projects.ObjectifGeneral", null=True, blank=True, on_delete=models.PROTECT, related_name="indicateurs"
-    )
-    objectif_specifique = models.ForeignKey(
-        "projects.ObjectifSpecifique", null=True, blank=True, on_delete=models.PROTECT, related_name="indicateurs"
     )
     activite = models.ForeignKey(
         "projects.Activite", null=True, blank=True, on_delete=models.PROTECT, related_name="indicateurs"
@@ -58,38 +52,7 @@ class Indicateur(TimestampedModel):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=(
-                    Q(
-                        projet__isnull=True,
-                        objectif_general__isnull=True,
-                        objectif_specifique__isnull=True,
-                        activite__isnull=True,
-                    )
-                    | Q(
-                        projet__isnull=False,
-                        objectif_general__isnull=True,
-                        objectif_specifique__isnull=True,
-                        activite__isnull=True,
-                    )
-                    | Q(
-                        projet__isnull=True,
-                        objectif_general__isnull=False,
-                        objectif_specifique__isnull=True,
-                        activite__isnull=True,
-                    )
-                    | Q(
-                        projet__isnull=True,
-                        objectif_general__isnull=True,
-                        objectif_specifique__isnull=False,
-                        activite__isnull=True,
-                    )
-                    | Q(
-                        projet__isnull=True,
-                        objectif_general__isnull=True,
-                        objectif_specifique__isnull=True,
-                        activite__isnull=False,
-                    )
-                ),
+                check=~Q(projet__isnull=False, activite__isnull=False),
                 name="indicateur_rattachement_au_plus_un",
             )
         ]
@@ -102,11 +65,7 @@ class Indicateur(TimestampedModel):
         if self.projet_id:
             return self.projet
         if self.activite_id:
-            return self.activite.objectif_specifique.objectif_general.projet
-        if self.objectif_specifique_id:
-            return self.objectif_specifique.objectif_general.projet
-        if self.objectif_general_id:
-            return self.objectif_general.projet
+            return self.activite.projet
         return None
 
 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { AlertTriangle, Download, FileText, RefreshCw, Search } from "lucide-react";
+import { AlertTriangle, Download, FileSpreadsheet, FileText, RefreshCw, Search } from "lucide-react";
 import { ActionIcon, Alert, Badge, Button, Card, Group, Menu, Modal, SimpleGrid, Stack, Tabs, Text, TextInput, Title, Tooltip } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useSuiviDashboard, telechargerExportSuiviExcel, telechargerExportSuiviPdf } from "../../api/suivi";
@@ -26,6 +26,12 @@ import {
 } from "../../utils/statusTones";
 import type { SuiviDashboardIndicateur, SuiviHistoriquePoint } from "../../types";
 import { ecartTexte, tauxDe, valeurAttendueA, type FenetreAttendue } from "../../utils/suivi";
+import { voc } from "../../utils/vocabulaire";
+import { ImportCanevasSuiviModal } from "../../components/suivi/ImportCanevasSuiviModal";
+import { useAuth } from "../../auth/useAuth";
+import { MethodeCalculLigne } from "../../components/suivi/MethodeCalculLigne";
+import { SaisieSuiviMethode } from "../../components/suivi/SaisieSuiviMethode";
+import { libelleMethodeEffective } from "../../utils/methodesCalcul";
 
 function libelleStatut(statut: string, labels: Record<string, string>): string | undefined {
   if (!statut) return undefined;
@@ -117,6 +123,9 @@ export function SuiviProjetDashboard() {
     point: SuiviHistoriquePoint;
   } | null>(null);
   const [recherche, setRecherche] = useState("");
+  const [canevasOuvert, setCanevasOuvert] = useState(false);
+  const { user } = useAuth();
+  const peutSaisir = !!user && (user.role === "ADMIN" || user.niveau_acces === "LECTURE_ECRITURE");
   const [editionActive, setEditionActive] = useState(false);
   const { data: parametresAlerte } = useParametresAlerte();
   const seuilEcheanceJours = parametresAlerte?.seuil_echeance_jours ?? 7;
@@ -177,7 +186,7 @@ export function SuiviProjetDashboard() {
 
   function handleSupprimerValeur(id: number) {
     confirmerSuppression({
-      message: "Supprimer cette saisie d'indicateur ? Cette action est irréversible.",
+      message: voc("Supprimer cette saisie d'indicateur ? Cette action est irréversible."),
       onConfirm: async () => {
         try {
           await deleteValeur.mutateAsync(id);
@@ -191,11 +200,11 @@ export function SuiviProjetDashboard() {
 
   function handleSupprimerPoint(id: number) {
     confirmerSuppression({
-      message: "Supprimer ce point de suivi ? Cette action est irréversible.",
+      message: voc("Supprimer ce point de suivi ? Cette action est irréversible."),
       onConfirm: async () => {
         try {
           await deletePoint.mutateAsync(id);
-          notifications.show({ message: "Point de suivi supprimé", color: "green" });
+          notifications.show({ message: voc("Point de suivi supprimé"), color: "green" });
         } catch {
           notifications.show({ message: "Erreur lors de la suppression", color: "red" });
         }
@@ -207,7 +216,7 @@ export function SuiviProjetDashboard() {
     <Stack gap="lg" className="bareme-police-suivi">
       <Group justify="space-between">
         <div>
-          <Title order={2}>Suivi — {data.projet.nom}</Title>
+          <Title order={2}>{voc("Suivi — ")}{data.projet.nom}</Title>
           <Text c="dimmed">{data.projet.code}</Text>
         </div>
         <Group gap="xs">
@@ -240,14 +249,25 @@ export function SuiviProjetDashboard() {
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
+          {peutSaisir && (
+            <Button variant="light" leftSection={<FileSpreadsheet size={16} />} onClick={() => setCanevasOuvert(true)}>
+              Saisie par Excel
+            </Button>
+          )}
           <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />
         </Group>
       </Group>
+      <ImportCanevasSuiviModal
+        projetId={projetId}
+        codeProjet={data.projet.code}
+        opened={canevasOuvert}
+        onClose={() => setCanevasOuvert(false)}
+      />
 
       <Tabs defaultValue="global" keepMounted={false} styles={{ tabLabel: { fontSize: "var(--mantine-font-size-md)", fontWeight: 600 } }}>
         <Tabs.List>
-          <Tabs.Tab value="global">Suivi global</Tabs.Tab>
-          <Tabs.Tab value="periode">Suivi par période</Tabs.Tab>
+          <Tabs.Tab value="global">{voc("Suivi global")}</Tabs.Tab>
+          <Tabs.Tab value="periode">{voc("Suivi par période")}</Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="periode" pt="md">
@@ -300,7 +320,7 @@ export function SuiviProjetDashboard() {
 
               {(data.indicateurs.length > 0 || data.activites.length > 0) && (
                 <TextInput
-                  placeholder="Rechercher un indicateur ou une activité…"
+                  placeholder={voc("Rechercher un indicateur ou une activité…")}
                   leftSection={<Search size={15} />}
                   value={recherche}
                   onChange={(e) => setRecherche(e.currentTarget.value)}
@@ -312,12 +332,13 @@ export function SuiviProjetDashboard() {
               {data.activites.length > 0 && <LegendeGraphique />}
               <Stack gap="sm">
                 {data.activites.length === 0 && (
-                  <Text c="dimmed">Aucune activité planifiée pour ce projet.</Text>
+                  <Text c="dimmed">{voc("Aucune activité planifiée pour ce projet.")}</Text>
                 )}
                 {data.activites.length > 0 && activitesFiltrees.length === 0 && (
                   <Text c="dimmed">Aucune activité ne correspond à la recherche.</Text>
                 )}
                 {activitesFiltrees.map((activite) => {
+                  const parQuantite = activite.methode_calcul_effective === "QUANTITE";
                   const cible = activite.quantite_prevue ? Number(activite.quantite_prevue) : null;
                   const fenetreAttendue: FenetreAttendue | null =
                     activite.date_debut && activite.date_fin && cible !== null
@@ -368,15 +389,35 @@ export function SuiviProjetDashboard() {
                         />
                       </Group>
                       <Button size="sm" variant="light" onClick={() => setModalActivite(activite.id)}>
-                        Saisir un suivi
-                      </Button>
+                        {voc("Saisir un suivi")}</Button>
                     </Group>
                     {fenetreAttendue && (
                       <Text size="sm" c="dimmed" mb="xs">
                         Planifié : {fenetreAttendue.debut} → {fenetreAttendue.fin}
                       </Text>
                     )}
-                    {cible !== null && (
+                    <MethodeCalculLigne
+                      activite={{ ...activite, quantite_realisee: derniereQuantiteCumulee === null ? null : String(derniereQuantiteCumulee) }}
+                      modifiable={peutSaisir}
+                    />
+                    {/* Avancement physique : par quantité, la barre détaille chaque saisie ; avec une autre
+                        méthode, elle montre le taux calculé selon cette méthode (le même que le badge). */}
+                    {activite.methode_calcul_effective !== "QUANTITE" ? (
+                      <BarreProgression
+                        label="Avancement physique"
+                        segments={[
+                          {
+                            key: "taux",
+                            valeur: activite.taux_realisation ?? 0,
+                            titre: `${libelleMethodeEffective(activite.methode_calcul_effective)} : ${activite.taux_realisation ?? "—"} %`,
+                          },
+                        ]}
+                        cible={100}
+                        attendu={null}
+                        unite="%"
+                        tone={toneDeTaux(activite.taux_realisation)}
+                      />
+                    ) : cible !== null && (
                       <BarreProgression
                         label="Avancement physique"
                         segments={activite.historique.map((h) => ({
@@ -404,11 +445,13 @@ export function SuiviProjetDashboard() {
                         tone={toneDeTaux(tauxDe(derniereBudgetCumule, budgetAlloue))}
                       />
                     )}
-                    <EvolutionChart
-                      data={activite.historique.map((h) => ({ date: h.periode_fin, valeur: Number(h.quantite_cumulee ?? 0) }))}
-                      cible={cible ?? undefined}
-                      unite={activite.unite_quantite}
-                    />
+                    {activite.methode_calcul_effective === "QUANTITE" && (
+                      <EvolutionChart
+                        data={activite.historique.map((h) => ({ date: h.periode_fin, valeur: Number(h.quantite_cumulee ?? 0) }))}
+                        cible={cible ?? undefined}
+                        unite={activite.unite_quantite}
+                      />
+                    )}
                     <HistoriqueSuiviTable
                       editable={editionActive}
                       lignes={[...activite.historique]
@@ -429,9 +472,9 @@ export function SuiviProjetDashboard() {
                           return {
                             id: h.id,
                             periode: `${h.periode_debut} → ${h.periode_fin}`,
-                            valeur: `${h.quantite_realisee ?? "—"} ${activite.unite_quantite}`,
+                            valeur: parQuantite ? `${h.quantite_realisee ?? "—"} ${activite.unite_quantite}` : undefined,
                             cumule:
-                              cumule !== null
+                              parQuantite && cumule !== null
                                 ? `${cumule} ${activite.unite_quantite}${tauxCumule !== null ? ` (${tauxCumule}%)` : ""}`
                                 : undefined,
                             detail: h.budget_realise
@@ -441,7 +484,7 @@ export function SuiviProjetDashboard() {
                                   : "")
                               : undefined,
                             attendu:
-                              valeurAttendue !== null
+                              parQuantite && valeurAttendue !== null
                                 ? `${Math.round(valeurAttendue)} ${activite.unite_quantite} (${tauxAttendu}%)${ecart ? " · " + ecart : ""}`
                                 : undefined,
                             statut: libelleStatut(h.statut, ACTIVITE_STATUT_LABEL),
@@ -495,8 +538,7 @@ export function SuiviProjetDashboard() {
                                   />
                                 </Group>
                                 <Button size="sm" variant="subtle" onClick={() => setModalSousActivite(sousActivite.id)}>
-                                  Saisir un suivi
-                                </Button>
+                                  {voc("Saisir un suivi")}</Button>
                               </Group>
                               {cible !== null && (
                                 <BarreProgression
@@ -568,14 +610,14 @@ export function SuiviProjetDashboard() {
                 })}
               </Stack>
 
-              <Title order={3}>Indicateurs</Title>
+              <Title order={3}>{voc("Indicateurs")}</Title>
               {data.indicateurs.length > 0 && <LegendeGraphique />}
               <Stack gap="sm">
                 {data.indicateurs.length === 0 && (
-                  <Text c="dimmed">Aucun indicateur rattaché à ce projet.</Text>
+                  <Text c="dimmed">{voc("Aucun indicateur rattaché à ce projet.")}</Text>
                 )}
                 {data.indicateurs.length > 0 && indicateursFiltres.length === 0 && (
-                  <Text c="dimmed">Aucun indicateur ne correspond à la recherche.</Text>
+                  <Text c="dimmed">{voc("Aucun indicateur ne correspond à la recherche.")}</Text>
                 )}
                 {indicateursFiltres.map((indicateur) => {
                   const cible = Number(indicateur.valeur_cible);
@@ -654,7 +696,7 @@ export function SuiviProjetDashboard() {
       <Modal
         opened={modalIndicateur !== null}
         onClose={() => setModalIndicateur(null)}
-        title="Nouvelle saisie — indicateur"
+        title={voc("Nouvelle saisie — indicateur")}
         size="lg"
       >
         {modalIndicateur !== null && (
@@ -669,24 +711,27 @@ export function SuiviProjetDashboard() {
       <Modal
         opened={modalActivite !== null}
         onClose={() => setModalActivite(null)}
-        title="Nouveau point de suivi — activité"
+        title={`${voc("Saisir un suivi")} — ${data.activites.find((a) => a.id === modalActivite)?.libelle ?? ""}`}
         size="lg"
       >
-        {modalActivite !== null && (
-          <SaisiePointSuiviForm
-            activiteId={modalActivite}
-            statutsDisponibles={STATUTS_ACTIVITE}
-            avecBudget
-            historiqueExistant={data.activites.find((a) => a.id === modalActivite)?.historique}
-            onDone={() => setModalActivite(null)}
-          />
-        )}
+        {modalActivite !== null &&
+          (data.activites.find((a) => a.id === modalActivite)?.methode_calcul_effective === "QUANTITE" ? (
+            <SaisiePointSuiviForm
+              activiteId={modalActivite}
+              statutsDisponibles={STATUTS_ACTIVITE}
+              avecBudget
+              historiqueExistant={data.activites.find((a) => a.id === modalActivite)?.historique}
+              onDone={() => setModalActivite(null)}
+            />
+          ) : (
+            <SaisieSuiviMethode activiteId={modalActivite} modifiable={peutSaisir} onDone={() => setModalActivite(null)} />
+          ))}
       </Modal>
 
       <Modal
         opened={modalSousActivite !== null}
         onClose={() => setModalSousActivite(null)}
-        title="Nouveau point de suivi — sous-activité"
+        title={voc("Nouveau point de suivi — sous-activité")}
         size="lg"
       >
         {modalSousActivite !== null && (
@@ -705,7 +750,7 @@ export function SuiviProjetDashboard() {
       <Modal
         opened={editionValeur !== null}
         onClose={() => setEditionValeur(null)}
-        title="Modifier la saisie — indicateur"
+        title={voc("Modifier la saisie — indicateur")}
         size="lg"
       >
         {editionValeur !== null && (
@@ -721,7 +766,7 @@ export function SuiviProjetDashboard() {
       <Modal
         opened={editionPointActivite !== null}
         onClose={() => setEditionPointActivite(null)}
-        title="Modifier le point de suivi — activité"
+        title={voc("Modifier le point de suivi — activité")}
         size="lg"
       >
         {editionPointActivite !== null && (
@@ -731,6 +776,9 @@ export function SuiviProjetDashboard() {
             avecBudget
             historiqueExistant={data.activites.find((a) => a.id === editionPointActivite.activiteId)?.historique}
             pointExistant={editionPointActivite.point}
+            avecQuantite={
+              data.activites.find((a) => a.id === editionPointActivite.activiteId)?.methode_calcul_effective === "QUANTITE"
+            }
             onDone={() => setEditionPointActivite(null)}
           />
         )}
@@ -739,7 +787,7 @@ export function SuiviProjetDashboard() {
       <Modal
         opened={editionPointSousActivite !== null}
         onClose={() => setEditionPointSousActivite(null)}
-        title="Modifier le point de suivi — sous-activité"
+        title={voc("Modifier le point de suivi — sous-activité")}
         size="lg"
       >
         {editionPointSousActivite !== null && (

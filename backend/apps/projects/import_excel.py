@@ -1,6 +1,6 @@
 """
-Import d'un projet complet (fiche + planification Objectif général > Objectif
-spécifique > Activité > Sous-activité) depuis un classeur Excel — même
+Import d'un projet complet (fiche + planification à niveaux libres >
+Sous-activité) depuis un classeur Excel — même
 philosophie « best-effort » que l'import de structuration stratégique
 (apps.strategy.services) : une ligne en erreur est ignorée sans bloquer
 l'import des autres, tout est rapporté au client.
@@ -10,9 +10,11 @@ import io
 import unicodedata
 
 from openpyxl import Workbook, load_workbook
-from openpyxl.styles import Font
+from openpyxl.comments import Comment
+from openpyxl.styles import Alignment, Font, PatternFill
 
 from apps.core.excel_utils import figer_entete, quadriller
+from apps.core.vocabulaire import adapter_classeur, ramener_classeur, v
 
 
 def _normaliser_entete(texte: str) -> str:
@@ -30,6 +32,7 @@ CHAMPS_PROJET = [
     ("Nom du projet", "Programme d'appui à la résilience communautaire"),
     ("Code du projet", "PRJ-2026-001"),
     ("Cadre stratégique", "Nom exact d'un cadre stratégique déjà créé (laisser vide si aucun)"),
+    ("Rattachement dans le cadre stratégique", "Nom exact d'un élément du cadre (ex : Programme 2) — facultatif"),
     ("Pays (codes ISO séparés par ;)", "BF"),
     ("Budget total (FCFA)", 100000000),
     ("Fonds propres (FCFA)", 10000000),
@@ -49,6 +52,10 @@ CHAMPS_PROJET = [
     ("Cible PDI", 100),
 ]
 
+# Les colonnes placées AVANT « Sous-activité » (sauf « Code ») sont les niveaux
+# de la planification : leurs noms et leur nombre sont libres. Le modèle propose
+# Objectif général → Objectif spécifique → Activité, mais une organisation peut
+# les renommer (ex : Résultat → Pilier → Activité), en ajouter ou en retirer.
 COLONNES_PLANIFICATION = [
     "Objectif général",
     "Objectif spécifique",
@@ -62,11 +69,26 @@ COLONNES_PLANIFICATION = [
     "Date début (AAAA-MM-JJ)",
     "Date fin (AAAA-MM-JJ)",
     "Commentaire",
+    # Calcul du taux d'exécution (facultatifs, placés en fin pour ne pas décaler les anciens fichiers).
+    "Méthode de calcul",
+    "Poids (%)",
 ]
 
+# Repère visuel des colonnes de niveau dans le modèle (en-têtes renommables).
+COULEUR_NIVEAU = "FFF2CC"
+COLONNES_NIVEAUX_MODELE = ("Objectif général", "Objectif spécifique", "Activité")
+LEGENDE_NIVEAUX = (
+    "En jaune : les niveaux de votre planification. Leurs noms sont libres (ex : Résultat, Pilier, Activité) — "
+    "renommez ces en-têtes, ajoutez ou supprimez des colonnes de niveau, toujours avant « Sous-activité »."
+)
+COMMENTAIRE_NIVEAU = (
+    "Nom libre : renommez cette colonne (ex : Résultat, Pilier). Vous pouvez aussi ajouter ou supprimer "
+    "des colonnes de niveau, toujours avant « Sous-activité »."
+)
+
 LIGNES_EXEMPLE_PLANIFICATION = [
-    ["Améliorer la sécurité alimentaire des ménages vulnérables", "", "", "", "", "", "", "", "", "", "", ""],
-    ["", "Renforcer les capacités techniques des producteurs", "", "", "", "", "", "", "", "", "", ""],
+    ["Améliorer la sécurité alimentaire des ménages vulnérables"] + [""] * 13,
+    ["", "Renforcer les capacités techniques des producteurs"] + [""] * 12,
     [
         "",
         "",
@@ -80,8 +102,17 @@ LIGNES_EXEMPLE_PLANIFICATION = [
         "2026-02-01",
         "2026-06-30",
         "",
+        "Par tâches pondérées",
+        "",
     ],
-    ["", "", "", "", "Session de formation en zone rurale", "", "", 100, "producteurs", "2026-02-01", "2026-03-31", ""],
+    [
+        "", "", "", "", "Session de formation en zone rurale", "", "", 100, "producteurs", "2026-02-01", "2026-03-31", "",
+        "", 60,
+    ],
+    [
+        "", "", "", "", "Suivi des parcelles de démonstration", "", "", 20, "parcelles", "2026-04-01", "2026-06-30", "",
+        "", 40,
+    ],
 ]
 
 
@@ -101,9 +132,24 @@ def generer_feuille_projet(wb):
 def generer_feuille_planification(wb, avec_exemple=True):
     feuille = wb.create_sheet("Planification")
     nb_colonnes = len(COLONNES_PLANIFICATION)
+
+    # Ligne 1 : légende ; ligne 2 : en-têtes (l'import retrouve seul la ligne
+    # d'en-têtes, voir _ligne_entetes). Les en-têtes de niveau sont en jaune et
+    # commentés, pour qu'on voie tout de suite qu'ils sont renommables.
+    feuille.append([LEGENDE_NIVEAUX])
+    feuille.merge_cells(start_row=1, start_column=1, end_row=1, end_column=nb_colonnes)
+    legende = feuille.cell(row=1, column=1)
+    legende.font = Font(italic=True, color="7F6000")
+    legende.fill = PatternFill("solid", fgColor=COULEUR_NIVEAU)
+    legende.alignment = Alignment(wrap_text=True, vertical="center")
+    feuille.row_dimensions[1].height = 32
+
     feuille.append(COLONNES_PLANIFICATION)
-    for cellule in feuille[1]:
+    for cellule in feuille[2]:
         cellule.font = Font(bold=True)
+        if cellule.value in COLONNES_NIVEAUX_MODELE:
+            cellule.fill = PatternFill("solid", fgColor=COULEUR_NIVEAU)
+            cellule.comment = Comment(COMMENTAIRE_NIVEAU, "Plateforme S&E")
     if avec_exemple:
         for ligne in LIGNES_EXEMPLE_PLANIFICATION:
             feuille.append(ligne)
@@ -115,10 +161,22 @@ def generer_feuille_planification(wb, avec_exemple=True):
     for _ in range(lignes_vides_supplementaires):
         feuille.append([""] * nb_colonnes)
 
-    quadriller(feuille, max_col=nb_colonnes)
-    figer_entete(feuille)
+    quadriller(feuille, min_row=2, max_col=nb_colonnes)
+    figer_entete(feuille, ligne_entete=2)
 
-    largeurs = {"A": 34, "B": 34, "C": 14, "D": 40, "E": 34, "F": 14, "G": 16, "H": 14, "I": 14, "J": 16, "K": 16}
+    # Méthode de calcul : liste déroulante (libellés de MethodeCalcul).
+    from openpyxl.utils import get_column_letter
+    from openpyxl.worksheet.datavalidation import DataValidation
+
+    from .models import MethodeCalcul
+
+    colonne = get_column_letter(COLONNES_PLANIFICATION.index("Méthode de calcul") + 1)
+    liste = DataValidation(type="list", formula1='"' + ",".join(MethodeCalcul.labels) + '"', allow_blank=True)
+    liste.add(f"{colonne}3:{colonne}{feuille.max_row}")
+    feuille.add_data_validation(liste)
+
+    largeurs = {"A": 34, "B": 34, "C": 14, "D": 40, "E": 34, "F": 14, "G": 16, "H": 14, "I": 14, "J": 16, "K": 16,
+                "L": 24, "M": 24, "N": 11}
     for colonne, largeur in largeurs.items():
         feuille.column_dimensions[colonne].width = largeur
 
@@ -145,23 +203,37 @@ def generer_modele_import_projet() -> bytes:
         "est ignoré avec un avertissement, sans bloquer le reste de l'import."
     ])
     instructions.append([
-        "- Feuille « Planification » : une colonne = un niveau (Objectif général → Objectif spécifique → "
-        "Activité → Sous-activité). Sur chaque ligne, remplis UNE SEULE de ces colonnes de niveau : son "
-        "rattachement est déduit automatiquement (le dernier élément de niveau immédiatement supérieur "
-        "renseigné au-dessus)."
+        "- « Rattachement dans le cadre stratégique » (facultatif) : nom exact de l'élément du cadre dont relève "
+        "le projet (un programme, un axe, un pilier... n'importe quel niveau du cadre)."
     ])
     instructions.append([
-        "- Tu peux insérer d'AUTRES colonnes de niveau entre « Objectif spécifique » et « Sous-activité », "
-        "nommées comme tu veux (ex : « Résultat »), pour imbriquer un niveau de plus — le nom de la colonne "
-        "devient le nom affiché de ce niveau. Attention : toute colonne placée dans cette zone devient un "
-        "niveau, y compris une colonne qui n'en est pas censée être un (une note ponctuelle par ex.) — place "
-        "ce genre de colonne avant « Objectif général » ou après « Date fin » pour éviter ça."
+        "- Feuille « Planification » : toutes les colonnes placées AVANT « Sous-activité » (sauf « Code ») sont "
+        "les niveaux de la planification du projet, du plus haut au plus bas (en jaune dans le modèle). Leurs "
+        "noms et leur nombre sont LIBRES : renomme, ajoute ou retire des colonnes de niveau comme tu veux (ex : « Résultat », « Pilier », "
+        "« Activité »). Le nom de chaque colonne devient le nom affiché de ce niveau."
     ])
     instructions.append([
-        "- Les colonnes Code activité / Valeur de base / Budget alloué / Quantité prévue / Unité / Date début / "
-        "Date fin / Commentaire s'appliquent à la ligne d'Activité (à n'importe quel niveau imbriqué) ou de "
-        "Sous-activité correspondante (Code activité, Valeur de base, Budget alloué et Commentaire uniquement "
-        "pour une Activité) — toujours sur LA MÊME LIGNE que le niveau concerné, jamais sur une ligne à part."
+        "- Sur chaque ligne, remplis UNE SEULE colonne de niveau : son rattachement est déduit automatiquement "
+        "(le dernier élément du niveau immédiatement supérieur renseigné au-dessus)."
+    ])
+    instructions.append([
+        "- Une colonne de note ou de remarque doit être placée APRÈS « Commentaire », sinon elle serait lue "
+        "comme un niveau."
+    ])
+    instructions.append([
+        "- Les colonnes Code / Valeur de base / Budget alloué / Quantité prévue / Unité / Date début / Date fin / "
+        "Commentaire s'appliquent à l'élément de la même ligne, quel que soit son niveau, ou à la Sous-activité "
+        "(Code, Valeur de base, Budget alloué et Commentaire uniquement pour un élément de niveau)."
+    ])
+    instructions.append([
+        "- Méthode de calcul (facultative, liste déroulante) : comment calculer le taux d'exécution de l'élément "
+        "de la ligne — Par quantité, Par tâches pondérées (ses sous-activités), Par jalons pondérés, Par livrables, "
+        "Binaire, Saisie manuelle. Vide : celle du niveau au-dessus, sinon du projet, sinon de l'organisation."
+    ])
+    instructions.append([
+        "- Poids (%) (facultatif) : sur une ligne de Sous-activité, poids de la tâche (méthode « tâches pondérées », "
+        "les poids des sous-activités d'un élément totalisant 100) ; sur un élément, son poids quand le niveau "
+        "au-dessus agrège par « moyenne pondérée par les poids »."
     ])
     instructions.append([
         "- Valeur de base : niveau avant le démarrage de l'activité (comme la Valeur de référence d'un "
@@ -176,6 +248,7 @@ def generer_modele_import_projet() -> bytes:
     ])
 
     buffer = io.BytesIO()
+    adapter_classeur(wb)
     wb.save(buffer)
     return buffer.getvalue()
 
@@ -237,47 +310,67 @@ def _lire_champs_cle_valeur(feuille) -> dict:
     return champs
 
 
+def methode_depuis_texte(texte):
+    """
+    Méthode de calcul saisie dans un fichier (libellé « Par tâches pondérées », code
+    « TACHES », ou mot-clé « tâches ») → code de MethodeCalcul ; None si inconnue.
+    """
+    from .models import MethodeCalcul
+
+    saisi = _normaliser_entete(str(texte))
+    for code, libelle in MethodeCalcul.choices:
+        if saisi in (_normaliser_entete(code), _normaliser_entete(libelle)):
+            return code
+    mots_cles = {"quantite": "QUANTITE", "tache": "TACHES", "jalon": "JALONS", "livrable": "LIVRABLES",
+                 "binaire": "BINAIRE", "manuel": "MANUELLE"}
+    return next((code for mot, code in mots_cles.items() if mot in saisi), None)
+
+
+def _ligne_entetes(lignes) -> int:
+    """
+    Index de la ligne d'en-têtes de la feuille « Planification » : la
+    première (parmi les 10 premières) qui contient « Sous-activité » ou une
+    colonne de données connue — le modèle place une légende au-dessus, et un
+    ancien fichier sans légende a ses en-têtes en première ligne.
+    """
+    reperes = {_normaliser_entete(n) for n in ("Sous-activité", "Quantité prévue", "Budget alloué (FCFA)", "Unité")}
+    for i, ligne in enumerate(lignes[:10]):
+        if any(c and _normaliser_entete(str(c)) in reperes for c in ligne):
+            return i
+    return 0
+
+
 def importer_planification(feuille, projet) -> dict:
     """
-    Importe la feuille « Planification » (Objectif général > Objectif
-    spécifique > [niveaux d'Activité imbriqués, en nombre libre] >
-    Sous-activité) dans la hiérarchie du projet donné.
+    Importe la feuille « Planification » dans la planification du projet.
 
-    Les colonnes entre « Objectif spécifique » et « Sous-activité » forment
-    une chaîne de niveaux d'Activité imbriqués (via Activite.activite_parent)
-    — une seule colonne (« Activité ») par défaut dans le modèle téléchargé,
-    mais rien n'empêche d'en insérer d'autres, librement nommées (ex :
-    « Résultat » puis « Activité »), comme pour l'import de structuration
-    stratégique. Le nom de chaque colonne devient le libellé affiché de ce
-    niveau pour ce projet (voir NiveauActivite), déduit automatiquement au
-    premier import.
+    Toutes les colonnes placées avant « Sous-activité » (hors colonnes de
+    données connues et colonnes « Code… ») sont les niveaux de la
+    planification, du plus haut au plus bas — leurs noms et leur nombre sont
+    libres (ex : « Objectif général » → « Objectif spécifique » → « Activité »,
+    ou « Résultat » → « Pilier » → « Activité »). Chaque niveau devient une
+    profondeur d'Activite (via activite_parent) et le nom de la colonne
+    devient le nom affiché de ce niveau pour ce projet (NiveauActivite), sauf
+    s'il est déjà nommé.
     """
-    from .models import Activite, NiveauActivite, ObjectifGeneral, ObjectifSpecifique, SousActivite
+    from .models import Activite, NiveauActivite, SousActivite
 
-    resultat = {
-        "objectifs_generaux": 0,
-        "objectifs_specifiques_crees": 0,
-        "activites_creees": 0,
-        "sous_activites_creees": 0,
-        "erreurs": [],
-    }
+    resultat = {"elements_crees": 0, "sous_activites_creees": 0, "niveaux": [], "erreurs": []}
 
     lignes = list(feuille.iter_rows(min_row=1, values_only=True))
     if not lignes:
         return resultat
 
-    entetes = [str(c).strip() if c else "" for c in lignes[0]]
-
+    ligne_entetes = _ligne_entetes(lignes)
+    entetes = [str(c).strip() if c else "" for c in lignes[ligne_entetes]]
     entetes_normalises = [_normaliser_entete(e) for e in entetes]
 
     def index(nom):
         nom_normalise = _normaliser_entete(nom)
         return entetes_normalises.index(nom_normalise) if nom_normalise in entetes_normalises else None
 
-    idx_og = index("Objectif général")
-    idx_os = index("Objectif spécifique")
     idx_sa = index("Sous-activité")
-    idx_code = index("Code activité")
+    idx_code = next((i for i, e in enumerate(entetes_normalises) if e.startswith("code")), None)
     idx_valeur_ref = index("Valeur de base")
     idx_budget = index("Budget alloué (FCFA)")
     idx_qte = index("Quantité prévue")
@@ -285,51 +378,36 @@ def importer_planification(feuille, projet) -> dict:
     idx_debut = index("Date début (AAAA-MM-JJ)")
     idx_fin = index("Date fin (AAAA-MM-JJ)")
     idx_commentaire = index("Commentaire")
+    idx_methode = index("Méthode de calcul")
+    idx_poids = index("Poids (%)")
 
-    colonnes_fixes = {
+    colonnes_donnees = {
         i
         for i in (
-            idx_og,
-            idx_os,
-            idx_sa,
-            idx_code,
-            idx_valeur_ref,
-            idx_budget,
-            idx_qte,
-            idx_unite,
-            idx_debut,
-            idx_fin,
-            idx_commentaire,
+            idx_sa, idx_code, idx_valeur_ref, idx_budget, idx_qte, idx_unite, idx_debut, idx_fin, idx_commentaire,
+            idx_methode, idx_poids,
         )
         if i is not None
     }
-    borne_fin = idx_sa if idx_sa is not None else len(entetes)
-    debut_recherche = (idx_os + 1) if idx_os is not None else 0
-    # Une colonne = un niveau, sans exception ni devinette sur son contenu —
-    # même principe que l'import de structuration stratégique : toute colonne
-    # nommée entre Objectif spécifique et Sous-activité (ou la fin si pas de
-    # Sous-activité) devient un niveau d'Activité imbriqué. Ajouter une
-    # colonne dans cette zone qu'on ne veut PAS voir comme un niveau (une
-    # note, un suivi ponctuel...) la fait donc devenir un niveau — à l'auteur
-    # du fichier de la placer plutôt avant « Objectif général » ou après
-    # « Date fin » si ce n'est pas l'effet voulu.
-    idx_activite_niveaux = [
+    # Une colonne = un niveau, sans devinette sur son contenu : toute colonne
+    # nommée avant « Sous-activité » (ou avant la première colonne de données
+    # s'il n'y a pas de Sous-activité) est un niveau.
+    borne_fin = idx_sa if idx_sa is not None else min((colonnes_donnees - {idx_code}) | {len(entetes)})
+    idx_niveaux = [
         i
-        for i in range(debut_recherche, borne_fin)
-        if i not in colonnes_fixes and entetes[i] and not entetes_normalises[i].startswith("code")
+        for i in range(0, borne_fin)
+        if i not in colonnes_donnees and entetes[i] and not entetes_normalises[i].startswith("code")
     ]
+    resultat["niveaux"] = [entetes[i] for i in idx_niveaux]
 
-    if idx_og is None and idx_os is None and not idx_activite_niveaux and idx_sa is None:
-        resultat["erreurs"].append({"ligne": 1, "message": "Aucune colonne de planification reconnue."})
+    if not idx_niveaux:
+        resultat["erreurs"].append(
+            {"ligne": 1, "message": "Aucune colonne de niveau trouvée avant « Sous-activité »."}
+        )
         return resultat
 
-    # Mémorise le nom de chaque colonne « niveau d'activité » rencontrée pour
-    # CE projet (affichage uniquement) — crée les niveaux manquants, ne
-    # renomme jamais un niveau déjà nommé par un import précédent.
-    profondeurs_existantes = set(
-        NiveauActivite.objects.filter(projet=projet).values_list("profondeur", flat=True)
-    )
-    for profondeur, idx in enumerate(idx_activite_niveaux):
+    profondeurs_existantes = set(NiveauActivite.objects.filter(projet=projet).values_list("profondeur", flat=True))
+    for profondeur, idx in enumerate(idx_niveaux):
         if profondeur not in profondeurs_existantes:
             NiveauActivite.objects.create(projet=projet, profondeur=profondeur, nom_niveau=entetes[idx])
 
@@ -349,118 +427,98 @@ def importer_planification(feuille, projet) -> dict:
         except ValueError:
             return None
 
-    og_actuel = ObjectifGeneral.objects.filter(projet=projet).first()
-    os_actuel = None
-    dernier_par_niveau: list = [None] * len(idx_activite_niveaux)
+    dernier_par_niveau: list = [None] * len(idx_niveaux)
 
-    for numero, ligne in enumerate(lignes[1:], start=2):
+    for numero, ligne in enumerate(lignes[ligne_entetes + 1 :], start=ligne_entetes + 2):
         if not any(ligne):
             continue
 
-        if idx_og is not None and valeur(ligne, idx_og):
-            nom = str(valeur(ligne, idx_og)).strip()
-            if og_actuel:
-                og_actuel.libelle = nom
-                og_actuel.save(update_fields=["libelle"])
-            else:
-                og_actuel = ObjectifGeneral.objects.create(projet=projet, libelle=nom)
-                resultat["objectifs_generaux"] += 1
-            os_actuel = None
-            dernier_par_niveau = [None] * len(idx_activite_niveaux)
-            continue
-
-        if idx_os is not None and valeur(ligne, idx_os):
-            if not og_actuel:
-                resultat["erreurs"].append(
-                    {"ligne": numero, "message": "Aucun objectif général défini au-dessus — ligne ignorée."}
-                )
-                continue
-            nom = str(valeur(ligne, idx_os)).strip()
-            existant = ObjectifSpecifique.objects.filter(objectif_general=og_actuel, libelle__iexact=nom).first()
-            os_actuel = existant or ObjectifSpecifique.objects.create(objectif_general=og_actuel, libelle=nom)
-            if not existant:
-                resultat["objectifs_specifiques_crees"] += 1
-            dernier_par_niveau = [None] * len(idx_activite_niveaux)
-            continue
-
-        profondeurs_remplies = [p for p, idx in enumerate(idx_activite_niveaux) if valeur(ligne, idx)]
+        profondeurs_remplies = [p for p, idx in enumerate(idx_niveaux) if valeur(ligne, idx)]
         if len(profondeurs_remplies) > 1:
             resultat["erreurs"].append(
-                {"ligne": numero, "message": "Une seule colonne de niveau d'activité doit être remplie par ligne — ligne ignorée."}
+                {"ligne": numero, "message": "Une seule colonne de niveau doit être remplie par ligne — ligne ignorée."}
             )
             continue
 
         if profondeurs_remplies:
             profondeur = profondeurs_remplies[0]
-            idx_colonne = idx_activite_niveaux[profondeur]
-            if not os_actuel:
-                resultat["erreurs"].append(
-                    {"ligne": numero, "message": "Aucun objectif spécifique défini au-dessus — ligne ignorée."}
-                )
-                continue
-
-            activite_parent = dernier_par_niveau[profondeur - 1] if profondeur > 0 else None
-            if profondeur > 0 and activite_parent is None:
-                nom_niveau_parent = entetes[idx_activite_niveaux[profondeur - 1]]
+            parent = dernier_par_niveau[profondeur - 1] if profondeur > 0 else None
+            if profondeur > 0 and parent is None:
+                nom_niveau_parent = entetes[idx_niveaux[profondeur - 1]]
                 resultat["erreurs"].append(
                     {
                         "ligne": numero,
-                        "message": f"Aucun élément « {nom_niveau_parent} » renseigné au-dessus pour rattacher cette ligne — ligne ignorée.",
+                        "message": f"Aucun élément « {nom_niveau_parent} » renseigné au-dessus pour rattacher "
+                        "cette ligne — ligne ignorée.",
                     }
                 )
                 continue
 
-            nom = str(valeur(ligne, idx_colonne)).strip()
-            existant = Activite.objects.filter(
-                objectif_specifique=os_actuel, activite_parent=activite_parent, libelle__iexact=nom
-            ).first()
-            act_actuel = existant or Activite(objectif_specifique=os_actuel, activite_parent=activite_parent, libelle=nom)
-            act_actuel.libelle = nom
+            nom = str(valeur(ligne, idx_niveaux[profondeur])).strip()
+            existant = Activite.objects.filter(projet=projet, activite_parent=parent, libelle__iexact=nom).first()
+            element = existant or Activite(projet=projet, activite_parent=parent, libelle=nom)
+            element.libelle = nom
             if valeur(ligne, idx_code):
-                act_actuel.code_activite = str(valeur(ligne, idx_code)).strip()
+                element.code_activite = str(valeur(ligne, idx_code)).strip()
             if valeur(ligne, idx_valeur_ref) not in (None, ""):
-                act_actuel.valeur_reference = valeur(ligne, idx_valeur_ref)
+                element.valeur_reference = valeur(ligne, idx_valeur_ref)
             if valeur(ligne, idx_budget) not in (None, ""):
-                act_actuel.budget_alloue = valeur(ligne, idx_budget)
+                element.budget_alloue = valeur(ligne, idx_budget)
             if valeur(ligne, idx_qte) not in (None, ""):
-                act_actuel.quantite_prevue = valeur(ligne, idx_qte)
+                element.quantite_prevue = valeur(ligne, idx_qte)
             if valeur(ligne, idx_unite):
-                act_actuel.unite_quantite = str(valeur(ligne, idx_unite)).strip()
+                element.unite_quantite = str(valeur(ligne, idx_unite)).strip()
             date_debut = date_cellule(ligne, idx_debut)
             if date_debut:
-                act_actuel.date_debut = date_debut
+                element.date_debut = date_debut
             date_fin = date_cellule(ligne, idx_fin)
             if date_fin:
-                act_actuel.date_fin = date_fin
+                element.date_fin = date_fin
             if valeur(ligne, idx_commentaire):
-                act_actuel.commentaire = str(valeur(ligne, idx_commentaire)).strip()
+                element.commentaire = str(valeur(ligne, idx_commentaire)).strip()
+            if valeur(ligne, idx_methode):
+                methode = methode_depuis_texte(valeur(ligne, idx_methode))
+                if methode is None:
+                    resultat["erreurs"].append(
+                        {
+                            "ligne": numero,
+                            "message": f"Méthode de calcul inconnue « {valeur(ligne, idx_methode)} » — laissée vide "
+                            "(héritée du niveau au-dessus ou du projet).",
+                        }
+                    )
+                else:
+                    element.methode_calcul = methode
+            if valeur(ligne, idx_poids) not in (None, ""):
+                element.poids = valeur(ligne, idx_poids)
             try:
-                act_actuel.clean()
+                element.clean()
             except Exception as exc:  # ValidationError du modèle
                 resultat["erreurs"].append({"ligne": numero, "message": str(exc)})
                 continue
-            act_actuel.save()
+            element.save()
             if not existant:
-                resultat["activites_creees"] += 1
+                resultat["elements_crees"] += 1
 
-            dernier_par_niveau[profondeur] = act_actuel
+            dernier_par_niveau[profondeur] = element
             for j in range(profondeur + 1, len(dernier_par_niveau)):
                 dernier_par_niveau[j] = None
             continue
 
         if idx_sa is not None and valeur(ligne, idx_sa):
-            act_actuel = next((a for a in reversed(dernier_par_niveau) if a is not None), None)
-            if not act_actuel:
+            element = next((a for a in reversed(dernier_par_niveau) if a is not None), None)
+            if not element:
                 resultat["erreurs"].append(
-                    {"ligne": numero, "message": "Aucune activité définie au-dessus — ligne ignorée."}
+                    {"ligne": numero, "message": v('Aucun élément de planification défini au-dessus — ligne ignorée.')}
                 )
                 continue
             nom = str(valeur(ligne, idx_sa)).strip()
-            existant = SousActivite.objects.filter(activite=act_actuel, libelle__iexact=nom).first()
-            sa = existant or SousActivite(activite=act_actuel, libelle=nom)
+            existant = SousActivite.objects.filter(activite=element, libelle__iexact=nom).first()
+            sa = existant or SousActivite(activite=element, libelle=nom)
             sa.libelle = nom
             if valeur(ligne, idx_qte) not in (None, ""):
                 sa.quantite_prevue = valeur(ligne, idx_qte)
+            if valeur(ligne, idx_poids) not in (None, ""):
+                sa.poids = valeur(ligne, idx_poids)
             if valeur(ligne, idx_unite):
                 sa.unite_quantite = str(valeur(ligne, idx_unite)).strip()
             date_debut = date_cellule(ligne, idx_debut)
@@ -489,21 +547,21 @@ def importer_projet(fichier, cadre_strategique_impose=None) -> dict:
 
     from .models import Activite, Projet
 
-    wb = load_workbook(fichier, data_only=True)
+    wb = ramener_classeur(load_workbook(fichier, data_only=True))
     resultat = importer_projet_depuis_wb(wb, cadre_strategique_impose=cadre_strategique_impose)
 
     if resultat.get("projet_id") and "Grilles d'alerte" in wb.sheetnames:
         projet = Projet.objects.get(id=resultat["projet_id"])
         activites_par_nom = {
             a.libelle.strip().lower(): a
-            for a in Activite.objects.filter(objectif_specifique__objectif_general__projet=projet)
+            for a in Activite.objects.filter(projet=projet)
         }
         resultat_paliers = importer_paliers_alerte(
             wb["Grilles d'alerte"], projet=projet, activites_par_nom=activites_par_nom
         )
         resultat["grilles_alerte_creees"] = resultat_paliers["grilles_creees"]
         resultat["erreurs"] += [
-            {"ligne": e["ligne"], "message": f"[Grilles d'alerte] {e['message']}"} for e in resultat_paliers["erreurs"]
+            {"ligne": e["ligne"], "message": f"{v("[Grilles d'alerte] ")}{e['message']}"} for e in resultat_paliers["erreurs"]
         ]
 
     return resultat
@@ -512,14 +570,14 @@ def importer_projet(fichier, cadre_strategique_impose=None) -> dict:
 def importer_projet_depuis_wb(wb, cadre_strategique_impose=None) -> dict:
     from django.contrib.auth import get_user_model
 
-    from apps.strategy.models import CadreStrategique
+    from apps.strategy.models import CadreStrategique, ElementStrategique
 
     from .models import Projet
 
     User = get_user_model()
 
     if "Projet" not in wb.sheetnames:
-        return {"projet_id": None, "erreurs": [{"ligne": 0, "message": "Feuille « Projet » introuvable."}], "avertissements": []}
+        return {"projet_id": None, "erreurs": [{"ligne": 0, "message": v('Feuille « Projet » introuvable.')}], "avertissements": []}
 
     champs = _lire_champs_cle_valeur(wb["Projet"])
     erreurs = []
@@ -528,11 +586,11 @@ def importer_projet_depuis_wb(wb, cadre_strategique_impose=None) -> dict:
     nom = _texte(champs, "Nom du projet")
     code = _texte(champs, "Code du projet")
     if not nom or not code:
-        erreurs.append({"ligne": 0, "message": "Nom du projet et Code du projet sont obligatoires."})
+        erreurs.append({"ligne": 0, "message": v('Nom du projet et Code du projet sont obligatoires.')})
         return {"projet_id": None, "erreurs": erreurs, "avertissements": avertissements}
 
     if Projet.objects.filter(code=code).exists():
-        erreurs.append({"ligne": 0, "message": f"Un projet avec le code « {code} » existe déjà — import annulé."})
+        erreurs.append({"ligne": 0, "message": f"{v('Un projet avec le code « ')}{code} » existe déjà — import annulé."})
         return {"projet_id": None, "erreurs": erreurs, "avertissements": avertissements}
 
     date_debut = _date(champs, "Date de début (AAAA-MM-JJ)")
@@ -550,8 +608,22 @@ def importer_projet_depuis_wb(wb, cadre_strategique_impose=None) -> dict:
             cadre = CadreStrategique.objects.filter(nom__iexact=nom_cadre).first()
             if not cadre:
                 avertissements.append(
-                    {"ligne": 0, "message": f"Cadre stratégique « {nom_cadre} » introuvable — laissé vide."}
+                    {"ligne": 0, "message": f"{v('Cadre stratégique « ')}{nom_cadre} » introuvable — laissé vide."}
                 )
+
+    element_strategique = None
+    nom_element = _texte(champs, "Rattachement dans le cadre stratégique")
+    if nom_element:
+        elements = ElementStrategique.objects.filter(nom__iexact=nom_element)
+        if cadre is not None:
+            elements = elements.filter(type_niveau__cadre_strategique=cadre)
+        element_strategique = elements.first()
+        if element_strategique is None:
+            avertissements.append(
+                {"ligne": 0, "message": f"Élément « {nom_element} » introuvable dans le cadre — rattachement laissé vide."}
+            )
+        elif cadre is None:
+            cadre = element_strategique.type_niveau.cadre_strategique
 
     pays = [c.strip().upper() for c in _texte(champs, "Pays (codes ISO séparés par ;)").split(";") if c.strip()]
 
@@ -580,7 +652,7 @@ def importer_projet_depuis_wb(wb, cadre_strategique_impose=None) -> dict:
             utilisateurs_affectes.append(utilisateur)
         else:
             avertissements.append(
-                {"ligne": 0, "message": f"Utilisateur « {identifiant} » introuvable — non affecté au projet."}
+                {"ligne": 0, "message": f"{v('Utilisateur « ')}{identifiant}{v(' » introuvable — non affecté au projet.')}"}
             )
 
     projet = Projet.objects.create(
@@ -588,6 +660,7 @@ def importer_projet_depuis_wb(wb, cadre_strategique_impose=None) -> dict:
         code=code,
         pays=pays,
         cadre_strategique=cadre,
+        element_strategique=element_strategique,
         budget_total=_nombre(champs, "Budget total (FCFA)"),
         fonds_propres=_nombre(champs, "Fonds propres (FCFA)"),
         date_debut=date_debut,
@@ -608,13 +681,7 @@ def importer_projet_depuis_wb(wb, cadre_strategique_impose=None) -> dict:
     if utilisateurs_affectes:
         projet.utilisateurs_affectes.set(utilisateurs_affectes)
 
-    resultat_plan = {
-        "objectifs_generaux": 0,
-        "objectifs_specifiques_crees": 0,
-        "activites_creees": 0,
-        "sous_activites_creees": 0,
-        "erreurs": [],
-    }
+    resultat_plan = {"elements_crees": 0, "sous_activites_creees": 0, "niveaux": [], "erreurs": []}
     if "Planification" in wb.sheetnames:
         resultat_plan = importer_planification(wb["Planification"], projet)
 

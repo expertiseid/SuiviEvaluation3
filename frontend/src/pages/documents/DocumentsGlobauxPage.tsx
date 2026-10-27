@@ -1,5 +1,7 @@
-import { Stack, Text, Title } from "@mantine/core";
+import { Stack, Text } from "@mantine/core";
 import { DocumentsTab } from "../../components/documents/DocumentsTab";
+import { TitreRubrique } from "../../components/common/TitreRubrique";
+import { voc } from "../../utils/vocabulaire";
 
 /**
  * Bibliothèque de documents libres, sans rattachement à un projet, une
@@ -10,8 +12,8 @@ export function DocumentsGlobauxPage() {
   return (
     <Stack gap="lg">
       <div>
-        <Title order={2}>Documents</Title>
-        <Text c="dimmed">Documents libres, sans rattachement à un projet en particulier.</Text>
+        <TitreRubrique route="/documents" defaut="Documents" />
+        <Text c="dimmed">{voc("Documents libres, sans rattachement à un projet en particulier.")}</Text>
       </div>
       <DocumentsTab />
     </Stack>

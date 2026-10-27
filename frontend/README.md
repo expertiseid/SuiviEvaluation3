@@ -1,32 +1,30 @@
-# React + TypeScript + Vite
+# Frontend — Plateforme de Suivi-Évaluation
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Application React 19 + TypeScript, construite avec Vite et l'interface Mantine 9. Elle
+ne communique qu'avec l'API REST du backend (`VITE_API_BASE_URL`).
 
-Currently, two official plugins are available:
+En local, le frontend tourne dans le conteneur `frontend` (voir le
+[README principal](../README.md)) ; aucune installation de Node n'est nécessaire.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Organisation de `src/`
 
-## React Compiler
+| Dossier | Contenu |
+|---|---|
+| `api/` | Appels à l'API, un fichier par domaine ; `client.ts` configure Axios (jeton JWT, renouvellement automatique) |
+| `auth/` | Contexte utilisateur, garde des routes (`RequireAuth`), page de connexion |
+| `pages/` | Écrans, un dossier par domaine |
+| `components/` | Composants réutilisables (graphiques, statuts, sélecteurs, historique, notifications) |
+| `layouts/` | Mise en page générale et menu latéral |
+| `utils/` | Calculs et utilitaires partagés |
+| `types/` | Types TypeScript des objets de l'API |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Contrôles avant de livrer une modification
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npx tsc --noEmit -p .   # types
+npx oxlint src          # analyse statique
+npx vite build          # compilation de production
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Détails (écrans, authentification, règles à respecter) :
+[documentation technique, section Frontend](../docs/DOCUMENTATION_TECHNIQUE.md#10-frontend).

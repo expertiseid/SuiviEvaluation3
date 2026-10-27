@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.core.permissions import IsAdmin, IsAdminOrReadOnly
+from apps.core.vocabulaire import v
 
 from .models import Role, User
 from .serializers import RoleSerializer, UserSerializer, UserWriteSerializer
@@ -41,8 +42,7 @@ class UserViewSet(viewsets.ModelViewSet):
         except ProtectedError:
             raise ValidationError(
                 {
-                    "detail": "Impossible de supprimer cet utilisateur : il a déjà des données rattachées "
-                    "(valeurs saisies, documents, points de suivi...). Désactive-le plutôt (Actif = Non)."
+                    "detail": v('Impossible de supprimer cet utilisateur : il a déjà des données rattachées (valeurs saisies, documents, points de suivi...). Désactive-le plutôt (Actif = Non).')
                 }
             )
 
@@ -60,6 +60,6 @@ class RoleViewSet(viewsets.ModelViewSet):
             raise ValidationError({"detail": "Rôle système : il peut être renommé, mais pas supprimé."})
         if User.objects.filter(role=instance.code).exists():
             raise ValidationError(
-                {"detail": "Impossible de supprimer ce rôle : des utilisateurs l'ont encore. Change d'abord leur rôle."}
+                {"detail": v("Impossible de supprimer ce rôle : des utilisateurs l'ont encore. Change d'abord leur rôle.")}
             )
         instance.delete()

@@ -63,11 +63,7 @@ def construire_dashboard_suivi(projet) -> dict:
         valeur_realisee_totale,
     )
     from apps.projects.models import Activite
-    from apps.reports.services import (
-        statut_global,
-        taux_execution_financiere_global,
-        taux_execution_physique_global,
-    )
+    from apps.reports.services import statut_global, taux_execution_financiere_global
 
     def _serialiser_palier(palier):
         if palier is None:
@@ -116,9 +112,12 @@ def construire_dashboard_suivi(projet) -> dict:
 
     activites_detail = []
     activites = (
-        Activite.objects.filter(objectif_specifique__objectif_general__projet=projet)
+        Activite.objects.filter(projet=projet)
         .prefetch_related("sous_activites", "points_suivi", "sous_activites__points_suivi")
     )
+    from apps.projects.taux import ArbreTaux
+
+    arbre_taux = ArbreTaux(projet)
     for activite in activites:
         historique = []
         cumul_quantite = Decimal("0")
@@ -168,7 +167,9 @@ def construire_dashboard_suivi(projet) -> dict:
                     "historique": sous_historique,
                 }
             )
-        palier_activite = palier_pour_taux(activite.taux_realisation, paliers_pour(activite=activite, projet=projet))
+        resultat_taux = arbre_taux.resultat(activite.id)
+        taux_activite = resultat_taux.taux
+        palier_activite = palier_pour_taux(taux_activite, paliers_pour(activite=activite, projet=projet))
         activites_detail.append(
             {
                 "id": activite.id,
@@ -181,7 +182,11 @@ def construire_dashboard_suivi(projet) -> dict:
                 "budget_alloue": activite.budget_alloue,
                 "date_debut": activite.date_debut,
                 "date_fin": activite.date_fin,
-                "taux_realisation": activite.taux_realisation,
+                "taux_realisation": taux_activite,
+                # Méthode réglée sur l'élément (vide = héritée) et méthode appliquée (ou AGREGATION).
+                "methode_calcul": activite.methode_calcul,
+                "methode_calcul_effective": resultat_taux.methode,
+                "taux_avertissements": resultat_taux.avertissements,
                 "taux_execution_financiere": activite.taux_execution_financiere,
                 "palier_actuel": _serialiser_palier(palier_activite),
                 "sous_activites": sous_activites_detail,
@@ -191,7 +196,7 @@ def construire_dashboard_suivi(projet) -> dict:
 
     return {
         "projet": {"id": projet.id, "code": projet.code, "nom": projet.nom, "statut": projet.statut},
-        "taux_execution_physique_global": taux_execution_physique_global(projet),
+        "taux_execution_physique_global": arbre_taux.taux_projet().taux,
         "taux_execution_financiere_global": taux_execution_financiere_global(projet),
         "statut_global": statut_global(projet),
         "indicateurs": indicateurs_detail,
@@ -348,8 +353,9 @@ def chevauche_periode(debut, fin, periode) -> bool | None:
 def construire_planification_periode(periode) -> dict:
     """
     Données de l'onglet « Planification par période » pour une période —
-    arborescence du projet (objectifs spécifiques > activités imbriquées >
-    sous-activités) dans l'ordre d'affichage, plus les indicateurs du projet.
+    arborescence complète de la planification du projet (tous ses niveaux,
+    librement nommés, puis sous-activités) dans l'ordre d'affichage, plus les
+    indicateurs du projet.
     Pour chaque élément : ses valeurs globales, ses objectifs sur la période
     (définis par l'utilisateur, sinon « à définir ») et le réalisé sur la
     période, toujours calculé.
@@ -358,7 +364,7 @@ def construire_planification_periode(periode) -> dict:
     import datetime
 
     from apps.indicators.services import indicateurs_pour_projet
-    from apps.projects.models import NiveauActivite, ObjectifSpecifique
+    from apps.projects.models import Activite, NiveauActivite
 
     from .models import TranchePlanifiee
 
@@ -406,7 +412,7 @@ def construire_planification_periode(periode) -> dict:
                 "type": "activite",
                 "id": activite.id,
                 "niveau": noms_niveaux.get(profondeur, "Activité"),
-                "profondeur": profondeur + 1,
+                "profondeur": profondeur,
                 "code": activite.code_activite,
                 "libelle": activite.libelle,
                 "unite": activite.unite_quantite,
@@ -425,7 +431,7 @@ def construire_planification_periode(periode) -> dict:
                     "type": "sous_activite",
                     "id": sous_activite.id,
                     "niveau": "Sous-activité",
-                    "profondeur": profondeur + 2,
+                    "profondeur": profondeur + 1,
                     "code": "",
                     "libelle": sous_activite.libelle,
                     "unite": sous_activite.unite_quantite,
@@ -439,13 +445,11 @@ def construire_planification_periode(periode) -> dict:
                 }
             )
 
-    objectifs = ObjectifSpecifique.objects.filter(objectif_general__projet=projet).prefetch_related(
-        "activites__enfants", "activites__sous_activites"
+    racines = Activite.objects.filter(projet=projet, activite_parent__isnull=True).prefetch_related(
+        "enfants", "sous_activites"
     )
-    for objectif in objectifs:
-        lignes.append({"type": "objectif", "niveau": "Objectif spécifique", "profondeur": 0, "libelle": objectif.libelle})
-        for activite in objectif.activites.filter(activite_parent__isnull=True):
-            ajouter_activite(activite, 0)
+    for activite in racines:
+        ajouter_activite(activite, 0)
 
     indicateurs = []
     for indicateur in indicateurs_pour_projet(projet.id).select_related("activite").order_by("libelle"):
@@ -467,7 +471,7 @@ def construire_planification_periode(periode) -> dict:
             }
         )
 
-    elements = [l for l in lignes if l["type"] != "objectif"]
+    elements = lignes
     # Mêmes règles que l'exécution globale (reports.services), restreintes
     # aux activités dont l'objectif de la période a été défini.
     activites_definies = [l for l in elements if l["type"] == "activite" and l["source"] == SOURCE_SAISIE]

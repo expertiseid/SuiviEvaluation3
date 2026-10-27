@@ -1,14 +1,27 @@
+from zipfile import BadZipFile
+
 from django.db.models import Q
 from django.http import HttpResponse
+from openpyxl.utils.exceptions import InvalidFileException
 from rest_framework import viewsets
-from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.decorators import action, api_view, parser_classes, permission_classes
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.core.permissions import HasGlobalVisibilityOrAssigned
+from apps.core.vocabulaire import v
 from apps.projects.models import Projet
 from apps.projects.queryset_filters import visible_projets_ids
 
+from .canevas import (
+    MODE_AJOUT,
+    MODE_MISE_A_JOUR,
+    apercu_canevas,
+    generer_canevas_suivi,
+    importer_canevas,
+    rapport_erreurs,
+)
 from .export_excel import exporter_suivi_excel
 from .export_periode import (
     exporter_periode_excel,
@@ -31,8 +44,8 @@ class PointSuiviViewSet(viewsets.ModelViewSet):
         ids = visible_projets_ids(self.request.user)
         return (
             PointSuivi.objects.filter(
-                Q(activite__objectif_specifique__objectif_general__projet__id__in=ids)
-                | Q(sous_activite__activite__objectif_specifique__objectif_general__projet__id__in=ids)
+                Q(activite__projet__id__in=ids)
+                | Q(sous_activite__activite__projet__id__in=ids)
             )
             .select_related("activite", "sous_activite", "saisi_par")
         )
@@ -68,19 +81,11 @@ class TranchePlanifieeViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         ids = visible_projets_ids(self.request.user)
         return TranchePlanifiee.objects.filter(
-            Q(activite__objectif_specifique__objectif_general__projet__id__in=ids)
-            | Q(sous_activite__activite__objectif_specifique__objectif_general__projet__id__in=ids)
-            | Q(
-                indicateur__isnull=False,
-                indicateur__projet__isnull=True,
-                indicateur__objectif_general__isnull=True,
-                indicateur__objectif_specifique__isnull=True,
-                indicateur__activite__isnull=True,
-            )
+            Q(activite__projet__id__in=ids)
+            | Q(sous_activite__activite__projet__id__in=ids)
+            | Q(indicateur__isnull=False, indicateur__projet__isnull=True, indicateur__activite__isnull=True)
             | Q(indicateur__projet__id__in=ids)
-            | Q(indicateur__objectif_general__projet__id__in=ids)
-            | Q(indicateur__objectif_specifique__objectif_general__projet__id__in=ids)
-            | Q(indicateur__activite__objectif_specifique__objectif_general__projet__id__in=ids)
+            | Q(indicateur__activite__projet__id__in=ids)
         ).select_related("activite", "sous_activite", "indicateur")
 
 
@@ -142,7 +147,7 @@ class PeriodePlanificationViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         if serializer.validated_data["projet"].id not in set(visible_projets_ids(self.request.user)):
-            raise PermissionDenied("Projet non accessible.")
+            raise PermissionDenied(v('Projet non accessible.'))
         serializer.save()
 
     def perform_update(self, serializer):
@@ -170,7 +175,7 @@ def _projet_visible_ou_404(request, projet_id):
 def suivi_dashboard_projet(request, projet_id):
     projet = _projet_visible_ou_404(request, projet_id)
     if projet is None:
-        return Response({"detail": "Projet introuvable ou non accessible."}, status=404)
+        return Response({"detail": v('Projet introuvable ou non accessible.')}, status=404)
     return Response(construire_dashboard_suivi(projet))
 
 
@@ -179,7 +184,7 @@ def suivi_dashboard_projet(request, projet_id):
 def suivi_exporter_excel(request, projet_id):
     projet = _projet_visible_ou_404(request, projet_id)
     if projet is None:
-        return Response({"detail": "Projet introuvable ou non accessible."}, status=404)
+        return Response({"detail": v('Projet introuvable ou non accessible.')}, status=404)
 
     contenu = exporter_suivi_excel(projet)
     response = HttpResponse(
@@ -194,9 +199,77 @@ def suivi_exporter_excel(request, projet_id):
 def suivi_exporter_pdf(request, projet_id):
     projet = _projet_visible_ou_404(request, projet_id)
     if projet is None:
-        return Response({"detail": "Projet introuvable ou non accessible."}, status=404)
+        return Response({"detail": v('Projet introuvable ou non accessible.')}, status=404)
 
     contenu = exporter_suivi_pdf(projet)
     response = HttpResponse(contenu, content_type="application/pdf")
     response["Content-Disposition"] = f"attachment; filename=suivi_{projet.code}.pdf"
+    return response
+
+
+# --- Canevas de suivi (Excel prérempli, import en masse avec aperçu) ---------------------
+
+
+@api_view(["GET"])
+@permission_classes([HasGlobalVisibilityOrAssigned])
+def canevas_suivi(request, projet_id):
+    projet = _projet_visible_ou_404(request, projet_id)
+    if projet is None:
+        return Response({"detail": v("Projet introuvable ou non accessible.")}, status=404)
+    response = HttpResponse(
+        generer_canevas_suivi(projet), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = f"attachment; filename=canevas_suivi_{projet.code}.xlsx"
+    return response
+
+
+def _fichier_et_mode(request):
+    fichier = request.data.get("fichier")
+    if not fichier:
+        raise ValidationError({"fichier": "Un fichier Excel (.xlsx) est requis."})
+    mode = request.data.get("mode") or MODE_AJOUT
+    if mode not in (MODE_AJOUT, MODE_MISE_A_JOUR):
+        raise ValidationError({"mode": "Mode attendu : ajout ou mise_a_jour."})
+    return fichier, mode
+
+
+def _traiter_canevas(request, projet_id, traitement):
+    projet = _projet_visible_ou_404(request, projet_id)
+    if projet is None:
+        return None, Response({"detail": v("Projet introuvable ou non accessible.")}, status=404)
+    fichier, mode = _fichier_et_mode(request)
+    try:
+        return traitement(fichier, projet, mode, request.user), None
+    except (BadZipFile, InvalidFileException, KeyError, OSError) as exc:
+        raise ValidationError({"fichier": f"Impossible de lire ce fichier : {exc}"})
+
+
+@api_view(["POST"])
+@permission_classes([HasGlobalVisibilityOrAssigned])
+@parser_classes([MultiPartParser, FormParser])
+def canevas_suivi_apercu(request, projet_id):
+    """Analyse sans rien enregistrer : ce qui sera ajouté, modifié, ignoré, et les erreurs par cellule."""
+    resultat, erreur = _traiter_canevas(request, projet_id, apercu_canevas)
+    return erreur or Response(resultat)
+
+
+@api_view(["POST"])
+@permission_classes([HasGlobalVisibilityOrAssigned])
+@parser_classes([MultiPartParser, FormParser])
+def canevas_suivi_importer(request, projet_id):
+    """Enregistre les lignes valides du canevas (les lignes en erreur sont ignorées)."""
+    resultat, erreur = _traiter_canevas(request, projet_id, importer_canevas)
+    return erreur or Response(resultat)
+
+
+@api_view(["POST"])
+@permission_classes([HasGlobalVisibilityOrAssigned])
+@parser_classes([MultiPartParser, FormParser])
+def canevas_suivi_rapport_erreurs(request, projet_id):
+    """Le fichier reçu avec les cellules en erreur surlignées et commentées, plus une feuille « Erreurs »."""
+    contenu, erreur = _traiter_canevas(request, projet_id, rapport_erreurs)
+    if erreur:
+        return erreur
+    response = HttpResponse(contenu, content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response["Content-Disposition"] = "attachment; filename=rapport_erreurs_canevas_suivi.xlsx"
     return response

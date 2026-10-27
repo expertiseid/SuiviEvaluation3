@@ -14,7 +14,6 @@ import {
   Tabs,
   Text,
   TextInput,
-  Title,
   Tooltip,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
@@ -32,6 +31,8 @@ import { confirmerSuppression } from "../../components/common/confirmerSuppressi
 import { messageErreurApi } from "../../utils/erreurs";
 import type { RoleUtilisateur, User } from "../../types";
 import { ModifierRoleModal, RolesTab } from "./RolesTab";
+import { TitreRubrique } from "../../components/common/TitreRubrique";
+import { voc } from "../../utils/vocabulaire";
 
 const PREFIXE_CREATION = "__creer__";
 
@@ -136,7 +137,7 @@ function RoleSelect({ value, onChange }: { value: string | null; onChange: (code
                     role.systeme
                       ? "Rôle système : non supprimable"
                       : role.nb_utilisateurs > 0
-                        ? "Des utilisateurs ont ce rôle"
+                        ? voc("Des utilisateurs ont ce rôle")
                         : "Supprimer le rôle"
                   }
                 >
@@ -217,7 +218,7 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
           ...(password ? { password } : {}),
         },
       });
-      notifications.show({ message: "Utilisateur modifié", color: "green" });
+      notifications.show({ message: voc("Utilisateur modifié"), color: "green" });
       onClose();
     } catch {
       notifications.show({ message: "Erreur lors de la modification", color: "red" });
@@ -265,14 +266,14 @@ export function UtilisateursPage() {
 
   function handleSupprimer(u: User) {
     confirmerSuppression({
-      message: `Supprimer l'utilisateur "${u.username}" ? Cette action est irréversible.`,
+      message: voc`Supprimer l'utilisateur "${u.username}" ? Cette action est irréversible.`,
       onConfirm: async () => {
         try {
           await deleteUtilisateur.mutateAsync(u.id);
-          notifications.show({ message: "Utilisateur supprimé", color: "green" });
+          notifications.show({ message: voc("Utilisateur supprimé"), color: "green" });
         } catch (error) {
           notifications.show({
-            message: messageErreurApi(error, "Erreur lors de la suppression de l'utilisateur"),
+            message: messageErreurApi(error, voc("Erreur lors de la suppression de l'utilisateur")),
             color: "red",
           });
         }
@@ -310,7 +311,7 @@ export function UtilisateursPage() {
       setNom("");
       setEmail("");
       setPassword("");
-      notifications.show({ message: "Utilisateur créé", color: "green" });
+      notifications.show({ message: voc("Utilisateur créé"), color: "green" });
     } catch {
       notifications.show({ message: "Erreur lors de la création (identifiant déjà utilisé ?)", color: "red" });
     }
@@ -319,16 +320,14 @@ export function UtilisateursPage() {
   return (
     <Stack gap="md">
       <div>
-        <Title order={2}>Utilisateurs</Title>
+        <TitreRubrique route="/utilisateurs" defaut="Utilisateurs" />
         <Text c="dimmed" size="sm">
-          Un Administrateur a toujours accès à tout. Pour les autres, choisis le rôle (détermine les projets
-          visibles) et le niveau d'accès (voir seulement, ou créer et modifier dans son périmètre).
-        </Text>
+          {voc("Un Administrateur a toujours accès à tout. Pour les autres, choisis le rôle (détermine les projets visibles) et le niveau d'accès (voir seulement, ou créer et modifier dans son périmètre).")}</Text>
       </div>
 
       <Tabs defaultValue="utilisateurs" keepMounted={false}>
         <Tabs.List>
-          <Tabs.Tab value="utilisateurs">Utilisateurs</Tabs.Tab>
+          <Tabs.Tab value="utilisateurs">{voc("Utilisateurs")}</Tabs.Tab>
           <Tabs.Tab value="roles">Rôles</Tabs.Tab>
         </Tabs.List>
 

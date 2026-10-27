@@ -7,6 +7,7 @@ import { EmptyState } from "../../components/common/EmptyState";
 import { STATUS_HEX } from "../../components/common/statusPalette";
 import { toneDeTaux } from "../../components/suivi/BarreProgression";
 import type { RecapAxesCadreStrategique, TypeNiveau } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 type Activite = RecapAxesCadreStrategique["activites"][number];
 
@@ -233,7 +234,7 @@ export function AxesBudgetsTab({ cadreId, niveaux }: { cadreId: number; niveaux:
     return (
       <EmptyState
         icon={<Layers size={32} strokeWidth={1.5} />}
-        message="Aucun niveau défini pour ce cadre stratégique (onglet « Configuration des niveaux »)."
+        message={voc("Aucun niveau défini pour ce cadre stratégique (onglet « Configuration des niveaux »).")}
       />
     );
   }
@@ -316,8 +317,7 @@ export function AxesBudgetsTab({ cadreId, niveaux }: { cadreId: number; niveaux:
 
       {nbNonRattachees > 0 && (
         <Text size="sm" c="orange.8">
-          {nbNonRattachees} activité{nbNonRattachees > 1 ? "s" : ""} des projets de ce cadre n'
-          {nbNonRattachees > 1 ? "ont" : "a"} pas encore d'élément stratégique : à renseigner dans la fiche de
+          {nbNonRattachees} activité{nbNonRattachees > 1 ? "s" : ""} {voc(" des projets de ce cadre n'")}{nbNonRattachees > 1 ? "ont" : "a"} pas encore d'élément stratégique : à renseigner dans la fiche de
           l'activité (champ « Élément stratégique »).
         </Text>
       )}

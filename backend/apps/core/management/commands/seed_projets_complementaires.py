@@ -24,7 +24,8 @@ from apps.geo.models import Zone
 from apps.indicators.models import Indicateur, ValeurIndicateur
 from apps.intervenants.models import Intervenant
 from apps.partners.models import Bailleur, Financement, Partenaire
-from apps.projects.models import Activite, ObjectifGeneral, ObjectifSpecifique, Projet, SousActivite
+from apps.projects.models import Activite, Projet, SousActivite
+from apps.projects.services import nommer_niveaux
 from apps.strategy.models import CadreStrategique, ElementStrategique, TypeNiveau
 from apps.suivi.models import PointSuivi
 from apps.suivi.services import synchroniser_activite_depuis_suivi, synchroniser_sous_activite_depuis_suivi
@@ -144,7 +145,7 @@ class Command(BaseCommand):
         (delta, pas cumul) ; Activite.quantite_realisee/budget_realise/statut sont ensuite dérivés
         automatiquement de ces points par synchroniser_activite_depuis_suivi (source de vérité unique)."""
         activite = Activite.objects.create(
-            objectif_specifique=os,
+            projet=os.projet, activite_parent=os,
             code_activite=code,
             libelle=libelle,
             axe_strategique=element,
@@ -273,6 +274,7 @@ class Command(BaseCommand):
             cible_jeunes=3100,
             cible_pdi=250,
         )
+        nommer_niveaux(projet, ["Objectif général", "Objectif spécifique", "Activité"])
         zones = self.zones_par_nom("Kadiogo", "Boulkiemde", "Sanguie")
         projet.zones.set(zones)
         projet.utilisateurs_affectes.set([u for u in (self.users["chef_projet"], self.users["charge_se"]) if u])
@@ -280,18 +282,18 @@ class Command(BaseCommand):
             projet=projet, bailleur=self.bailleur("Union Européenne"), montant_finance=Decimal("369000000")
         )
 
-        og = ObjectifGeneral.objects.create(
+        og = Activite.objects.create(
             projet=projet,
             libelle="Contribuer à l'amélioration de l'accès à une éducation de base de qualité dans les zones rurales d'intervention",
             description="Le programme combine ouverture de classes alternatives, alphabétisation des adultes et renforcement des capacités enseignantes sur deux ans (2026-2027).",
         )
-        os1 = ObjectifSpecifique.objects.create(
-            objectif_general=og,
+        os1 = Activite.objects.create(
+            projet=og.projet, activite_parent=og,
             libelle="Améliorer l'accès à l'éducation de base pour les enfants non scolarisés et les adultes analphabètes",
             description="Ouverture de centres d'éducation alternative et de centres d'alphabétisation fonctionnelle.",
         )
-        os2 = ObjectifSpecifique.objects.create(
-            objectif_general=og,
+        os2 = Activite.objects.create(
+            projet=og.projet, activite_parent=og,
             libelle="Renforcer la qualité de l'enseignement et les infrastructures scolaires",
             description="Formation continue des enseignants et réhabilitation d'infrastructures scolaires.",
         )
@@ -348,12 +350,12 @@ class Command(BaseCommand):
         )
         self.creer_indicateur(
             libelle="Taux net de scolarisation dans les zones d'intervention", unite="%",
-            valeur_reference=48, valeur_cible=72, frequence="ANNUELLE", rattachement={"objectif_general": og},
+            valeur_reference=48, valeur_cible=72, frequence="ANNUELLE", rattachement={"activite": og},
             element=None, valeurs=[(date(2026, 1, 15), date(2026, 8, 20), 55)],
         )
         self.creer_indicateur(
             libelle="Nombre d'enfants non scolarisés accédant à une offre éducative", unite="enfants",
-            valeur_reference=0, valeur_cible=1500, frequence="SEMESTRIELLE", rattachement={"objectif_specifique": os1},
+            valeur_reference=0, valeur_cible=1500, frequence="SEMESTRIELLE", rattachement={"activite": os1},
             element=el["RA1.1.1"], valeurs=[(date(2026, 2, 1), date(2026, 8, 20), 680)],
         )
         self.creer_indicateur(
@@ -436,6 +438,7 @@ class Command(BaseCommand):
             cible_jeunes=1500,
             cible_pdi=700,
         )
+        nommer_niveaux(projet, ["Objectif général", "Objectif spécifique", "Activité"])
         zones = self.zones_par_nom("Guiriko", "Houet", "Kenedougou")
         projet.zones.set(zones)
         projet.utilisateurs_affectes.set([u for u in (self.users["coordo"], self.users["charge_se"]) if u])
@@ -444,18 +447,18 @@ class Command(BaseCommand):
             montant_finance=Decimal("477000000"),
         )
 
-        og = ObjectifGeneral.objects.create(
+        og = Activite.objects.create(
             projet=projet,
             libelle="Contribuer à la réduction de la mortalité maternelle et infantile dans la région du Guiriko",
             description="Le projet renforce l'offre de soins prénatals, la prise en charge nutritionnelle et les capacités des agents de santé communautaire sur deux ans (2026-2027).",
         )
-        os1 = ObjectifSpecifique.objects.create(
-            objectif_general=og,
+        os1 = Activite.objects.create(
+            projet=og.projet, activite_parent=og,
             libelle="Améliorer la couverture en soins prénatals et la prise en charge de la malnutrition infantile",
             description="Consultations prénatales, dépistage et prise en charge de la malnutrition aiguë.",
         )
-        os2 = ObjectifSpecifique.objects.create(
-            objectif_general=og,
+        os2 = Activite.objects.create(
+            projet=og.projet, activite_parent=og,
             libelle="Renforcer les capacités et les équipements des agents de santé communautaire",
             description="Formation et dotation en kits des agents de santé à base communautaire (ASBC).",
         )
@@ -507,12 +510,12 @@ class Command(BaseCommand):
         )
         self.creer_indicateur(
             libelle="Taux de couverture en consultations prénatales dans les zones d'intervention", unite="%",
-            valeur_reference=41, valeur_cible=80, frequence="ANNUELLE", rattachement={"objectif_general": og},
+            valeur_reference=41, valeur_cible=80, frequence="ANNUELLE", rattachement={"activite": og},
             element=None, valeurs=[(date(2026, 2, 1), date(2026, 8, 20), 58)],
         )
         self.creer_indicateur(
             libelle="Nombre d'enfants dépistés et pris en charge pour malnutrition aiguë", unite="enfants",
-            valeur_reference=0, valeur_cible=3500, frequence="SEMESTRIELLE", rattachement={"objectif_specifique": os1},
+            valeur_reference=0, valeur_cible=3500, frequence="SEMESTRIELLE", rattachement={"activite": os1},
             element=el["RA1.1.2"], valeurs=[(date(2026, 2, 15), date(2026, 8, 20), 980)],
         )
         self.creer_indicateur(
@@ -593,6 +596,7 @@ class Command(BaseCommand):
             cible_jeunes=2600,
             cible_pdi=1200,
         )
+        nommer_niveaux(projet, ["Objectif général", "Objectif spécifique", "Activité"])
         projet.partenaires_consortium.set([consortium_p])
         zones = self.zones_par_nom("Soum", "Yatenga", "Loroum")
         projet.zones.set(zones)
@@ -601,18 +605,18 @@ class Command(BaseCommand):
             projet=projet, bailleur=self.bailleur("Agence Française de Développement"), montant_finance=Decimal("603000000")
         )
 
-        og = ObjectifGeneral.objects.create(
+        og = Activite.objects.create(
             projet=projet,
             libelle="Contribuer à l'amélioration durable de l'accès à l'eau potable, l'hygiène et l'assainissement dans le Soum",
             description="Le programme combine réalisation de points d'eau, promotion de l'hygiène et assainissement familial sur un an et demi (2026-2027), en zone à fort taux de déplacement interne.",
         )
-        os1 = ObjectifSpecifique.objects.create(
-            objectif_general=og,
+        os1 = Activite.objects.create(
+            projet=og.projet, activite_parent=og,
             libelle="Étendre l'accès des ménages à une source d'eau potable améliorée",
             description="Réalisation et réhabilitation de forages et de bornes-fontaines.",
         )
-        os2 = ObjectifSpecifique.objects.create(
-            objectif_general=og,
+        os2 = Activite.objects.create(
+            projet=og.projet, activite_parent=og,
             libelle="Promouvoir l'adoption de pratiques d'hygiène et d'assainissement au niveau des ménages et des communautés",
             description="Sensibilisation à l'hygiène, assainissement total piloté par la communauté (ATPC), construction de latrines familiales.",
         )
@@ -664,12 +668,12 @@ class Command(BaseCommand):
         )
         self.creer_indicateur(
             libelle="Taux de couverture en eau potable dans les zones d'intervention", unite="%",
-            valeur_reference=32, valeur_cible=75, frequence="ANNUELLE", rattachement={"objectif_general": og},
+            valeur_reference=32, valeur_cible=75, frequence="ANNUELLE", rattachement={"activite": og},
             element=None, valeurs=[(date(2026, 3, 1), date(2026, 8, 20), 46)],
         )
         self.creer_indicateur(
             libelle="Nombre de villages certifiés « Fin de défécation à l'air libre » (FDAL)", unite="villages",
-            valeur_reference=0, valeur_cible=120, frequence="TRIMESTRIELLE", rattachement={"objectif_specifique": os2},
+            valeur_reference=0, valeur_cible=120, frequence="TRIMESTRIELLE", rattachement={"activite": os2},
             element=el["RA1.2.1"], valeurs=[(date(2026, 3, 15), date(2026, 8, 20), 22)],
         )
         self.creer_indicateur(
@@ -749,6 +753,7 @@ class Command(BaseCommand):
             cible_jeunes=1700,
             cible_pdi=300,
         )
+        nommer_niveaux(projet, ["Objectif général", "Objectif spécifique", "Activité"])
         zones = self.zones_par_nom("Nazinon", "Zoundweogo", "Nahouri", "Bazega")
         projet.zones.set(zones)
         projet.utilisateurs_affectes.set([u for u in (self.users["coordo"], self.users["chef_service"]) if u])
@@ -759,18 +764,18 @@ class Command(BaseCommand):
             projet=projet, bailleur=self.bailleur("Fondation Grameen", Bailleur.TypeBailleur.FONDATION), montant_finance=Decimal("92000000")
         )
 
-        og = ObjectifGeneral.objects.create(
+        og = Activite.objects.create(
             projet=projet,
             libelle="Contribuer à l'autonomisation économique des femmes et des jeunes ruraux de la région du Nazinon",
             description="Projet pilote d'un an (2026) combinant accès au financement, entrepreneuriat et formation professionnelle courte.",
         )
-        os1 = ObjectifSpecifique.objects.create(
-            objectif_general=og,
+        os1 = Activite.objects.create(
+            projet=og.projet, activite_parent=og,
             libelle="Faciliter l'accès des femmes et des jeunes au financement et à l'entrepreneuriat",
             description="Mise en place de fonds de garantie, appui aux groupements d'épargne et crédit.",
         )
-        os2 = ObjectifSpecifique.objects.create(
-            objectif_general=og,
+        os2 = Activite.objects.create(
+            projet=og.projet, activite_parent=og,
             libelle="Renforcer les compétences techniques et entrepreneuriales des bénéficiaires",
             description="Formation professionnelle courte sur les métiers porteurs et gestion d'entreprise.",
         )
@@ -821,12 +826,12 @@ class Command(BaseCommand):
         )
         self.creer_indicateur(
             libelle="Taux de femmes et de jeunes ayant un revenu mensuel en hausse suite à l'appui reçu", unite="%",
-            valeur_reference=18, valeur_cible=60, frequence="ANNUELLE", rattachement={"objectif_general": og},
+            valeur_reference=18, valeur_cible=60, frequence="ANNUELLE", rattachement={"activite": og},
             element=None, valeurs=[(date(2026, 1, 1), date(2026, 8, 20), 37)],
         )
         self.creer_indicateur(
             libelle="Nombre de micro-entreprises actives 6 mois après le financement", unite="micro-entreprises",
-            valeur_reference=0, valeur_cible=350, frequence="TRIMESTRIELLE", rattachement={"objectif_specifique": os1},
+            valeur_reference=0, valeur_cible=350, frequence="TRIMESTRIELLE", rattachement={"activite": os1},
             element=el["RA1.1.1"], valeurs=[(date(2026, 3, 1), date(2026, 8, 20), 140)],
         )
         self.creer_indicateur(
