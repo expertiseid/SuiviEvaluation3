@@ -53,16 +53,36 @@ def _carte(b, origine):
     </div>"""
 
 
+CARTES_PAR_PAGE = 8  # 2 colonnes × 4 rangées
+
+
 def cartes_pdf(beneficiaires, origine: str) -> bytes:
+    """
+    Cartes à imprimer, 8 par page A4. Chaque page est construite explicitement (tableau de
+    2 × 4) : le moteur PDF ne coupe ainsi jamais une carte entre deux pages.
+    """
     from weasyprint import HTML
 
-    cartes = "".join(_carte(b, origine) for b in beneficiaires)
+    cartes = [_carte(b, origine) for b in beneficiaires]
+    pages = []
+    for debut in range(0, len(cartes), CARTES_PAR_PAGE):
+        lot = cartes[debut : debut + CARTES_PAR_PAGE]
+        rangees = "".join(
+            "<tr>" + "".join(f"<td>{c}</td>" for c in lot[i : i + 2]) + "</tr>" for i in range(0, len(lot), 2)
+        )
+        pages.append(f'<table class="page">{rangees}</table>')
     html = f"""<html><head><meta charset="utf-8"><style>
-      @page {{ size: A4; margin: 12mm 10mm; }}
+      @page {{ size: A4; margin: 12mm 12mm 14mm;
+              @bottom-left {{ content: "Imprimé le {datetime.date.today():%d/%m/%Y} — {len(beneficiaires)} carte(s)";
+                              font-family: sans-serif; font-size: 7pt; color: #888; }}
+              @bottom-right {{ content: "Page " counter(page) " / " counter(pages);
+                               font-family: sans-serif; font-size: 7pt; color: #888; }} }}
       body {{ font-family: sans-serif; margin: 0; }}
-      .grille {{ display: flex; flex-wrap: wrap; gap: 6mm 8mm; }}
+      table.page {{ border-collapse: separate; border-spacing: 6mm 5mm; margin: -5mm -6mm; page-break-after: always; }}
+      table.page:last-child {{ page-break-after: auto; }}
+      td {{ padding: 0; vertical-align: top; }}
       .carte {{ width: 85mm; height: 54mm; border: 0.3mm solid #9aa; border-radius: 3mm; overflow: hidden;
-               page-break-inside: avoid; box-sizing: border-box; }}
+               box-sizing: border-box; }}
       .bandeau {{ background: #0c8a5f; color: white; font-size: 8pt; font-weight: bold; padding: 1.5mm 3mm;
                   text-transform: uppercase; letter-spacing: 0.3mm; }}
       .corps {{ display: flex; padding: 2.5mm 3mm; gap: 2mm; }}
@@ -71,9 +91,5 @@ def cartes_pdf(beneficiaires, origine: str) -> bytes:
       .id {{ font-family: monospace; font-size: 10pt; color: #0c8a5f; margin: 1mm 0 1.5mm; }}
       .ligne {{ font-size: 7.5pt; color: #444; margin-bottom: 0.8mm; }}
       .qr svg {{ width: 26mm; height: 26mm; }}
-      .pied {{ font-size: 7pt; color: #888; margin-top: 4mm; }}
-    </style></head><body>
-      <div class="grille">{cartes}</div>
-      <div class="pied">Imprimé le {datetime.date.today():%d/%m/%Y} — {len(beneficiaires)} carte(s)</div>
-    </body></html>"""
+    </style></head><body>{"".join(pages)}</body></html>"""
     return HTML(string=html).write_pdf()
