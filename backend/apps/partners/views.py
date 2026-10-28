@@ -1,16 +1,24 @@
 from django.db import transaction
-from django.db.models import Sum
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.core.permissions import HasGlobalVisibilityOrAssigned, IsAdminOrCreateForAuthenticated, IsAdminOrReadOnly
 
-from .models import Bailleur, CategoriePartiePrenante, Financement, Partenaire, PartiePrenante, StructureOrganisation
+from .models import (
+    Bailleur,
+    CategoriePartiePrenante,
+    Financement,
+    Partenaire,
+    PartiePrenante,
+    RallongeFinancement,
+    StructureOrganisation,
+)
 from .serializers import (
     BailleurSerializer,
     CategoriePartiePrenanteSerializer,
     FinancementSerializer,
+    RallongeFinancementSerializer,
     PartenaireSerializer,
     PartiePrenanteSerializer,
     StructureOrganisationSerializer,
@@ -25,8 +33,7 @@ def _synchroniser_budget_total(projet):
     figé à sa valeur de création du projet et ne reflétait jamais les
     financements bailleurs ajoutés ensuite.
     """
-    total_financements = projet.financements.aggregate(total=Sum("montant_finance"))["total"] or 0
-    projet.budget_total = projet.fonds_propres + total_financements
+    projet.budget_total = projet.fonds_propres + projet.financement_bailleurs_total
     projet.save(update_fields=["budget_total"])
 
 
@@ -62,6 +69,28 @@ class FinancementViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         projet = instance.projet
+        super().perform_destroy(instance)
+        _synchroniser_budget_total(projet)
+
+
+class RallongeFinancementViewSet(viewsets.ModelViewSet):
+    """Fonds supplémentaires d'un bailleur (motif obligatoire) ; le coût total du projet suit."""
+
+    queryset = RallongeFinancement.objects.select_related("financement__bailleur", "saisi_par")
+    serializer_class = RallongeFinancementSerializer
+    permission_classes = (HasGlobalVisibilityOrAssigned,)
+    filterset_fields = ("financement", "financement__projet")
+
+    def perform_create(self, serializer):
+        serializer.save(saisi_par=self.request.user)
+        _synchroniser_budget_total(serializer.instance.financement.projet)
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        _synchroniser_budget_total(serializer.instance.financement.projet)
+
+    def perform_destroy(self, instance):
+        projet = instance.financement.projet
         super().perform_destroy(instance)
         _synchroniser_budget_total(projet)
 

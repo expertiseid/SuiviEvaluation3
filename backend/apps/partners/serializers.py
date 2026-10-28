@@ -1,6 +1,14 @@
 from rest_framework import serializers
 
-from .models import Bailleur, CategoriePartiePrenante, Financement, Partenaire, PartiePrenante, StructureOrganisation
+from .models import (
+    Bailleur,
+    CategoriePartiePrenante,
+    Financement,
+    Partenaire,
+    PartiePrenante,
+    RallongeFinancement,
+    StructureOrganisation,
+)
 
 
 class PartenaireSerializer(serializers.ModelSerializer):
@@ -42,12 +50,37 @@ class BailleurSerializer(serializers.ModelSerializer):
         fields = ("id", "nom", "type", "contact")
 
 
+class RallongeFinancementSerializer(serializers.ModelSerializer):
+    saisi_par_nom = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RallongeFinancement
+        fields = ("id", "financement", "montant", "date", "motif", "saisi_par_nom", "created_at")
+
+    def get_saisi_par_nom(self, obj):
+        u = obj.saisi_par
+        return (u.get_full_name() or u.username) if u else ""
+
+    def validate_montant(self, valeur):
+        if valeur <= 0:
+            raise serializers.ValidationError("Le montant de la rallonge doit être positif.")
+        return valeur
+
+    def validate_motif(self, valeur):
+        if not valeur.strip():
+            raise serializers.ValidationError("Indiquez le motif de la rallonge.")
+        return valeur.strip()
+
+
 class FinancementSerializer(serializers.ModelSerializer):
     bailleur_nom = serializers.StringRelatedField(source="bailleur", read_only=True)
+    rallonges = RallongeFinancementSerializer(many=True, read_only=True)
+    montant_rallonges = serializers.DecimalField(max_digits=16, decimal_places=2, read_only=True)
+    montant_total = serializers.DecimalField(max_digits=16, decimal_places=2, read_only=True)
 
     class Meta:
         model = Financement
-        fields = ("id", "projet", "bailleur", "bailleur_nom", "montant_finance")
+        fields = ("id", "projet", "bailleur", "bailleur_nom", "montant_finance", "montant_rallonges", "montant_total", "rallonges")
 
 
 class StructureOrganisationSerializer(serializers.ModelSerializer):

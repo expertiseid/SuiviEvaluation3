@@ -23,11 +23,14 @@ import { ZonesAdministrativesPage } from "./pages/geo/ZonesAdministrativesPage";
 import { PlanificationImportPage } from "./pages/planification/PlanificationImportPage";
 import { DocumentsGlobauxPage } from "./pages/documents/DocumentsGlobauxPage";
 import { ParametresAlertePage } from "./pages/parametres/ParametresAlertePage";
+import { PagePartagee } from "./pages/partage/PagePartagee";
 
 export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      {/* Lien de partage public : hors connexion, en lecture seule. */}
+      <Route path="/partage/:jeton" element={<PagePartagee />} />
       <Route
         element={
           <RequireAuth>

@@ -145,6 +145,19 @@ export interface Financement {
   bailleur: number;
   bailleur_nom: string;
   montant_finance: string;
+  montant_rallonges: string;
+  montant_total: string;
+  rallonges: RallongeFinancement[];
+}
+
+export interface RallongeFinancement {
+  id: number;
+  financement: number;
+  montant: string;
+  date: string;
+  motif: string;
+  saisi_par_nom: string;
+  created_at: string;
 }
 
 export interface CadreStrategique {
@@ -1127,3 +1140,44 @@ export interface Approbations {
   demandes: DemandeModification[];
 }
 
+
+export type NiveauRisque = "FAIBLE" | "MOYEN" | "ELEVE" | "CRITIQUE";
+export type StatutRisque = "ACTIF" | "SURVENU" | "MAITRISE" | "CLOS";
+
+export interface EvaluationRisque {
+  id: number;
+  risque: number;
+  date: string;
+  probabilite: number;
+  impact: number;
+  niveau: NiveauRisque;
+  statut: StatutRisque;
+  actions_menees: string;
+  commentaire: string;
+  saisi_par_nom: string;
+  created_at: string;
+}
+
+export interface Risque {
+  id: number;
+  projet: number;
+  code: string;
+  libelle: string;
+  description: string;
+  nature: "INTERNE" | "EXTERNE";
+  categorie: string;
+  element: number | null;
+  element_libelle: string;
+  probabilite: number;
+  impact: number;
+  criticite: number;
+  niveau: NiveauRisque;
+  mesures_attenuation: string;
+  plan_contingence: string;
+  responsable: number | null;
+  responsable_nom: string;
+  statut: StatutRisque;
+  date_identification: string;
+  date_prochaine_revue: string | null;
+  evaluations: EvaluationRisque[];
+}

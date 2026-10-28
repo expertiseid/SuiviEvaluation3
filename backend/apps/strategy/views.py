@@ -7,7 +7,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
-from apps.core.permissions import IsAdminOrReadOnly, has_global_visibility
+from apps.core.permissions import HasGlobalVisibilityOrAssigned, IsAdminOrReadOnly, has_global_visibility
 from apps.indicators.services import indicateurs_pour_projet, valeur_realisee_totale
 from apps.projects.budgets import activites_comptees, total_budget
 from apps.projects.models import Activite, Projet
@@ -15,8 +15,13 @@ from apps.projects.queryset_filters import visible_projets_ids
 from apps.projects.taux import ArbreTaux
 from apps.reports.services import taux_execution_financiere_global
 
-from .models import CadreStrategique, ElementStrategique, TypeNiveau
-from .serializers import CadreStrategiqueSerializer, ElementStrategiqueSerializer, TypeNiveauSerializer
+from .models import AppreciationStrategique, CadreStrategique, ElementStrategique, TypeNiveau
+from .serializers import (
+    AppreciationStrategiqueSerializer,
+    CadreStrategiqueSerializer,
+    ElementStrategiqueSerializer,
+    TypeNiveauSerializer,
+)
 from .services import (
     exporter_structuration,
     generer_modele_import,
@@ -139,6 +144,41 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
         )
 
 
+    @action(detail=True, methods=["get"], url_path="suivi")
+    def suivi(self, request, pk=None):
+        """
+        Vue d'ensemble du suivi du document : pour chaque élément, avancement calculé depuis les
+        projets, nombre d'indicateurs propres et dernière appréciation renseignée.
+        """
+        from apps.indicators.models import IndicateurElement
+
+        from .suivi import contribution_projets
+
+        cadre = self.get_object()
+        ids = list(visible_projets_ids(request.user))
+        elements = list(ElementStrategique.objects.filter(type_niveau__cadre_strategique=cadre).select_related("type_niveau"))
+        indicateurs = {}
+        for element_id in IndicateurElement.objects.filter(element_strategique__in=elements).values_list("element_strategique_id", flat=True):
+            indicateurs[element_id] = indicateurs.get(element_id, 0) + 1
+        dernieres = {}
+        for a in AppreciationStrategique.objects.filter(element__in=elements).order_by("periode_fin", "id"):
+            dernieres[a.element_id] = a
+        arbres = {}
+        lignes = []
+        for e in elements:
+            calcule = contribution_projets(e, ids, arbres)
+            derniere = dernieres.get(e.id)
+            lignes.append({
+                "id": e.id, "code": e.code, "nom": e.nom, "element_parent": e.element_parent_id,
+                "niveau": e.type_niveau.nom_niveau, "ordre_niveau": e.type_niveau.ordre,
+                "taux_physique": calcule["taux_physique"], "taux_financier": calcule["taux_financier"],
+                "nombre_projets": len(calcule["projets"]), "nombre_indicateurs": indicateurs.get(e.id, 0),
+                "derniere_appreciation": {
+                    "etat": derniere.etat, "libelle_periode": derniere.libelle_periode, "periode_fin": derniere.periode_fin,
+                } if derniere else None,
+            })
+        return Response({"elements": lignes})
+
     @action(detail=True, methods=["get"], url_path="recap-axes")
     def recap_axes(self, request, pk=None):
         """
@@ -253,6 +293,13 @@ class ElementStrategiqueViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     filterset_fields = ("type_niveau", "element_parent")
 
+    @action(detail=True, methods=["get"], permission_classes=[HasGlobalVisibilityOrAssigned])
+    def suivi(self, request, pk=None):
+        """Suivi d'un élément : avancement calculé, indicateurs (avec saisie directe), appréciations."""
+        from .suivi import suivi_element
+
+        return Response(suivi_element(self.get_object(), list(visible_projets_ids(request.user)), request))
+
     def get_queryset(self):
         qs = ElementStrategique.objects.select_related("type_niveau", "element_parent").prefetch_related(
             "parents_secondaires", "structures", "parties_prenantes"
@@ -294,3 +341,15 @@ class ElementStrategiqueViewSet(viewsets.ModelViewSet):
         except Exception as exc:  # fichier corrompu, mauvais format, etc.
             raise ValidationError({"fichier": f"Impossible de lire ce fichier : {exc}"})
         return Response(resultat)
+
+
+class AppreciationStrategiqueViewSet(viewsets.ModelViewSet):
+    """Appréciations d'un élément de document stratégique par période (?element=)."""
+
+    queryset = AppreciationStrategique.objects.select_related("saisi_par").prefetch_related("pieces_justificatives__uploaded_by")
+    serializer_class = AppreciationStrategiqueSerializer
+    permission_classes = (HasGlobalVisibilityOrAssigned,)
+    filterset_fields = ("element",)
+
+    def perform_create(self, serializer):
+        serializer.save(saisi_par=self.request.user)

@@ -491,6 +491,48 @@ structure l'arbre et compte dans les budgets et les taux : les autres liens sont
 (« contribue aussi à »), pour éviter le double compte. Dans un même cadre, un lien
 secondaire ne peut viser qu'un niveau supérieur, jamais le parent principal ni un descendant.
 
+### 5.12 Rapports, cadre logique, risques, suivi stratégique, partage
+
+- **Rallonges de fonds** (`partners.RallongeFinancement`) : un bailleur ajoute des fonds en
+  cours de projet, avec date et motif obligatoire. Le total d'un financement est
+  `montant_finance` + rallonges ; le coût total du projet (`budget_total`) et les répartitions
+  du tableau de bord les comptent.
+- **Rapport financier seul** (`reports/financier.py`, `rapports/financier/{projet}/`) : sources
+  (fonds propres, bailleurs, rallonges), rallonges et motifs, exécution par composante (premier
+  niveau qui compte plusieurs éléments), détail par élément, dépenses par trimestre ; sections
+  et période des dépenses au choix ; PDF, Word ou Excel. Mêmes règles que le reste : saisies
+  approuvées seulement, budget compté au niveau le plus bas où il est saisi.
+- **Version Word des rapports** (`reports/word.py`) : un convertisseur unique transforme le HTML
+  des exports PDF en .docx (titres, tableaux, gras/couleurs, paysage) — PDF et Word ont donc
+  toujours le même contenu. Les exports PDF sont séparés en `html_…()` + `exporter_…_pdf()`.
+- **Cadre logique** (`reports/cadre_logique.py`, onglet du projet) : une ligne par élément de la
+  planification (niveaux libres) avec ses indicateurs (référence, cible, réalisé), les
+  champs `Activite.sources_verification` et `Activite.hypotheses`, saisis sur place ; les
+  indicateurs rattachés au projet forment la première ligne. Export PDF et Word (paysage).
+- **Risques** (`projects.Risque`, `projects.EvaluationRisque`, onglet du projet) : nature
+  interne ou externe, catégorie, élément exposé, probabilité × impact de 1 à 5 (niveau faible
+  1-4, moyen 5-9, élevé 10-15, critique 16-25), atténuation, contingence, responsable
+  (intervenant), prochaine revue. Chaque réévaluation est gardée ; la plus récente (par date)
+  donne la cotation et le statut courants, en supprimer une rétablit la précédente. Codes
+  R1, R2… ; registre exportable (matrice, registre, suivi) en PDF et Word.
+- **Suivi propre aux documents stratégiques** (`strategy/suivi.py`, onglet « Suivi
+  stratégique ») : pour chaque élément, l'avancement calculé depuis les projets qui y
+  contribuent (activités rattachées à lui ou à un élément en dessous, sans double compte),
+  ses indicateurs (ceux sans projet se saisissent directement), des appréciations par période
+  (`strategy.AppreciationStrategique` : état, analyse, difficultés, recommandations) et des
+  pièces justificatives (`PieceJustificative`, rattachée à une valeur d'indicateur ou à une
+  appréciation, téléchargée par `pieces-justificatives/{id}/telecharger/`, compte connecté).
+  Rapport de suivi du document en PDF et Word. Correction au passage : le rattachement
+  indicateur ↔ élément stratégique (table `IndicateurElement`) est maintenant enregistré par
+  l'API (il était ignoré en silence).
+- **Liens de partage** (`reports.LienPartage`, `reports/partage.py`) : lien secret (jeton de
+  32 octets) vers le tableau de bord (projets visibles par le créateur, filtres du moment)
+  ou le suivi d'un projet (tout, activités ou indicateurs), en lecture seule et sans compte,
+  avec expiration facultative, désactivable, et un compteur de consultations. La page
+  publique `/partage/{jeton}` réutilise les écrans habituels : `utils/partage.ts` fournit le
+  jeton, les hooks lisent alors `public/partage/{jeton}/{ressource}/` (sans authentification)
+  et les actions d'écriture et d'export sont masquées.
+
 ## 6. Utilisateurs, rôles et permissions
 
 Deux notions indépendantes définissent les droits d'un utilisateur :
@@ -574,9 +616,10 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 |---|---|
 | Comptes | `utilisateurs/`, `roles/` |
 | Géographie | `zones/`, `niveaux-administratifs/` |
-| Cadre stratégique | `cadres-strategiques/`, `types-niveaux/`, `elements-strategiques/` |
-| Partenaires | `partenaires/`, `bailleurs/`, `financements/`, `intervenants/` |
-| Projets | `projets/`, `activites/` (éléments de planification, tous niveaux), `sous-activites/`, `niveaux-activite/`, `equipes/` |
+| Cadre stratégique | `cadres-strategiques/`, `types-niveaux/`, `elements-strategiques/`, `appreciations-strategiques/` |
+| Partenaires | `partenaires/`, `bailleurs/`, `financements/`, `rallonges-financement/`, `intervenants/` |
+| Projets | `projets/`, `activites/` (éléments de planification, tous niveaux), `sous-activites/`, `niveaux-activite/`, `equipes/`, `risques/`, `evaluations-risques/` |
+| Partage | `liens-partage/` (les siens ; tous pour l'Administrateur) |
 | Indicateurs | `indicateurs/`, `valeurs-indicateurs/` |
 | Suivi | `points-suivi/`, `periodes-planification/`, `tranches-planifiees/` |
 | Bénéficiaires | `beneficiaires/`, `participations-projet/`, `statuts-particuliers/`, `types-activite-beneficiaire/`, `signalements-doublons/` |
@@ -605,6 +648,14 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 | GET | `limites-administratives/` | Contours GeoJSON d'un niveau (`?pays=BF&niveau=2`) et leur source |
 | GET | `couches-carte/` | Couche d'habillage importée (`?pays=BF&cle=routes`) |
 | GET | `localites/` | Villes et villages d'une zone (`?pays=BF&bbox=sud,ouest,nord,est`) |
+| GET | `rapports/financier/{projet}/` | Rapport financier : `?fichier=pdf, docx ou xlsx&sections=sources,rallonges,execution,detail,trimestres&debut=&fin=` |
+| GET | `rapports/cadre-logique/{projet}/` | Cadre logique (JSON), ou `?fichier=pdf` ou `docx` |
+| GET | `rapports/risques/{projet}/` | Registre des risques : `?fichier=pdf` ou `docx` |
+| GET | `rapports/suivi-strategique/{cadre}/` | Suivi d'un document stratégique : `?fichier=pdf` ou `docx` |
+| GET | `suivi/projets/{id}/exporter/word/`, `periodes-planification/{id}/exporter/word/`, `…/exporter-suivi/word/` | Versions Word des exports de suivi et de planification |
+| GET | `cadres-strategiques/{id}/suivi/`, `elements-strategiques/{id}/suivi/` | Suivi stratégique : vue d'ensemble, détail d'un élément |
+| GET | `pieces-justificatives/{id}/telecharger/` | Fichier d'une pièce justificative (compte connecté) |
+| GET | `public/partage/{jeton}/[ressource/]` | Page partagée, sans authentification : description, puis `dashboard`, `configuration`, `menu`, `suivi`, `parametres-alerte` |
 | GET | `beneficiaires/exporter/` | Export des bénéficiaires : `?fichier=excel` ou `pdf`, `?projets=1,3` pour choisir les projets |
 | POST | `beneficiaires/{id}/verifier-doublons/` | Recherche des doublons d'un bénéficiaire |
 | GET / POST | `documents/{id}/versions/`, `documents/{id}/nouvelle-version/` | Versions d'un document |
@@ -643,7 +694,9 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 | Indicateurs et grilles d'alerte | Excel | `indicators/import_excel.py` |
 | Bénéficiaires | Excel (import) ; Excel et PDF (export, une feuille par projet) | `beneficiaries/services/` |
 | Planification complète | Un classeur : cadre, projet, planification, indicateurs, bénéficiaires, grilles d'alerte | `planification/services.py` |
-| Suivi d'un projet ou d'une période | Excel et PDF (WeasyPrint) | `suivi/export_excel.py`, `export_pdf.py`, `export_periode.py` |
+| Suivi d'un projet ou d'une période | Excel, PDF (WeasyPrint) et Word | `suivi/export_excel.py`, `export_pdf.py`, `export_periode.py`, `reports/word.py` |
+| Rapport financier | PDF, Word, Excel (sections et période au choix) | `reports/financier.py` |
+| Cadre logique, registre des risques, suivi stratégique | PDF et Word | `reports/cadre_logique.py`, `risques.py`, `suivi_strategique.py` |
 | Formulaire de collecte | XLSForm | `projects/views.py` (`export_xlsform`) |
 
 Les utilitaires communs de mise en forme (bordures, en-têtes figés) sont dans
@@ -690,8 +743,8 @@ mutualisées) puis rejoue la requête, ou renvoie vers la page de connexion.
 | `/login` | Connexion |
 | `/` | Tableau de bord consolidé |
 | `/planification` | Import « planification complète » |
-| `/strategie`, `/strategie/:id` | Cadres stratégiques ; onglets Configuration des niveaux, Arborescence et saisie, Axes et budgets, Projets et budgets |
-| `/projets`, `/projets/:id` | Projets ; onglets Configuration des niveaux, Planification, Planification par période, Équipe de projet, Partenaires, Indicateurs, Financement, Documents, Contrôle de cohérence, Historique |
+| `/strategie`, `/strategie/:id` | Cadres stratégiques ; onglets Configuration des niveaux, Arborescence et saisie, Axes et budgets, Suivi stratégique, Projets et budgets |
+| `/projets`, `/projets/:id` | Projets ; onglets Configuration des niveaux, Planification, Planification par période, Cadre logique, Risques, Équipe de projet, Partenaires, Indicateurs, Financement (rallonges), Documents, Contrôle de cohérence, Historique ; menu Exporter (Word, rapport financier) |
 | `/indicateurs`, `/indicateurs/:id` | Indicateurs et saisie des valeurs |
 | `/suivi`, `/suivi/:id` | Suivi des projets et tableau de suivi d'un projet |
 | `/beneficiaires`, `/beneficiaires/:id` | Bénéficiaires (identifiant, QR code, carte à imprimer, variables) |
@@ -704,6 +757,7 @@ mutualisées) puis rejoue la requête, ou renvoie vers la page de connexion.
 | `/utilisateurs` | Utilisateurs et rôles (Administrateur) |
 | `/organisation` | Structure de l'organisation, parties prenantes, partenaires (Administrateur) |
 | `/parametres-alerte` | Grilles d'alerte, délai d'échéance et périodes de rapportage (Administrateur) |
+| `/partage/:jeton` | Page partagée par lien, sans compte et en lecture seule (hors du menu) |
 
 ### 10.4 Points d'attention
 

@@ -127,9 +127,7 @@ def exporter_periode_excel(periode) -> bytes:
     return buffer.getvalue()
 
 
-def exporter_periode_pdf(periode) -> bytes:
-    from weasyprint import HTML
-
+def html_periode(periode) -> str:
     data = construire_planification_periode(periode)
     aujourdhui = datetime.date.today()
     totaux = data["totaux"]
@@ -218,7 +216,13 @@ def exporter_periode_pdf(periode) -> bytes:
     </body>
     </html>
     """
-    return HTML(string=html_content).write_pdf()
+    return html_content
+
+
+def exporter_periode_pdf(periode) -> bytes:
+    from weasyprint import HTML
+
+    return HTML(string=html_periode(periode)).write_pdf()
 
 
 # ---------------------------------------------------------------------------
@@ -507,9 +511,7 @@ def _bloc_suivi_periode(element, data, aujourdhui):
     """
 
 
-def exporter_suivi_periode_pdf(periode) -> bytes:
-    from weasyprint import HTML
-
+def html_suivi_periode(periode) -> str:
     data = construire_planification_periode(periode)
     aujourdhui = datetime.date.today()
     totaux = data["totaux"]
@@ -553,4 +555,10 @@ def exporter_suivi_periode_pdf(periode) -> bytes:
     </body>
     </html>
     """
-    return HTML(string=html_content).write_pdf()
+    return html_content
+
+
+def exporter_suivi_periode_pdf(periode) -> bytes:
+    from weasyprint import HTML
+
+    return HTML(string=html_suivi_periode(periode)).write_pdf()

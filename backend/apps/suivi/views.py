@@ -28,8 +28,10 @@ from .export_periode import (
     exporter_periode_pdf,
     exporter_suivi_periode_excel,
     exporter_suivi_periode_pdf,
+    html_periode,
+    html_suivi_periode,
 )
-from .export_pdf import exporter_suivi_pdf
+from .export_pdf import exporter_suivi_pdf, html_suivi
 from .models import PeriodePlanification, PointSuivi, TranchePlanifiee
 from .serializers import PeriodePlanificationSerializer, PointSuiviSerializer, TranchePlanifieeSerializer
 from .services import construire_dashboard_suivi, construire_planification_periode, synchroniser_activite_depuis_suivi, synchroniser_sous_activite_depuis_suivi
@@ -122,6 +124,13 @@ class PeriodePlanificationViewSet(viewsets.ModelViewSet):
         response["Content-Disposition"] = f"attachment; filename={self._nom_fichier(periode)}.pdf"
         return response
 
+    @action(detail=True, methods=["get"], url_path="exporter/word")
+    def exporter_word(self, request, pk=None):
+        from apps.reports.word import reponse_docx
+
+        periode = self.get_object()
+        return reponse_docx(html_periode(periode), self._nom_fichier(periode))
+
     @action(detail=True, methods=["get"], url_path="exporter-suivi/excel")
     def exporter_suivi_excel(self, request, pk=None):
         """Export du suivi par période (module Suivi) — même présentation que l'export du suivi global."""
@@ -139,6 +148,13 @@ class PeriodePlanificationViewSet(viewsets.ModelViewSet):
         response = HttpResponse(exporter_suivi_periode_pdf(periode), content_type="application/pdf")
         response["Content-Disposition"] = f"attachment; filename={self._nom_fichier(periode, 'suivi')}.pdf"
         return response
+
+    @action(detail=True, methods=["get"], url_path="exporter-suivi/word")
+    def exporter_suivi_word(self, request, pk=None):
+        from apps.reports.word import reponse_docx
+
+        periode = self.get_object()
+        return reponse_docx(html_suivi_periode(periode), self._nom_fichier(periode, "suivi"))
 
     @staticmethod
     def _nom_fichier(periode, prefixe="planification"):
@@ -205,6 +221,18 @@ def suivi_exporter_pdf(request, projet_id):
     response = HttpResponse(contenu, content_type="application/pdf")
     response["Content-Disposition"] = f"attachment; filename=suivi_{projet.code}.pdf"
     return response
+
+
+@api_view(["GET"])
+@permission_classes([HasGlobalVisibilityOrAssigned])
+def suivi_exporter_word(request, projet_id):
+    """Fiche de suivi du projet au format Word : même contenu que le PDF."""
+    from apps.reports.word import reponse_docx
+
+    projet = _projet_visible_ou_404(request, projet_id)
+    if projet is None:
+        return Response({"detail": v('Projet introuvable ou non accessible.')}, status=404)
+    return reponse_docx(html_suivi(projet), f"suivi_{projet.code}")
 
 
 # --- Canevas de suivi (Excel prérempli, import en masse avec aperçu) ---------------------

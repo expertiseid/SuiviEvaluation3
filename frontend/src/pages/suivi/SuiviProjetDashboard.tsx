@@ -3,7 +3,9 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import { AlertTriangle, Download, FileSpreadsheet, FileText, RefreshCw, Search } from "lucide-react";
 import { ActionIcon, Alert, Badge, Button, Card, Group, Menu, Modal, SimpleGrid, Stack, Tabs, Text, TextInput, Title, Tooltip } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { useSuiviDashboard, telechargerExportSuiviExcel, telechargerExportSuiviPdf } from "../../api/suivi";
+import { usePartage } from "../../utils/partage";
+import { BoutonPartage } from "../../components/partage/BoutonPartage";
+import { useSuiviDashboard, telechargerExportSuiviExcel, telechargerExportSuiviPdf, telechargerExportSuiviWord } from "../../api/suivi";
 import { useDeleteValeurIndicateur, useParametresAlerte } from "../../api/indicators";
 import { useDeletePointSuivi } from "../../api/suivi";
 import { AlerteBadge } from "../../components/indicators/AlerteBadge";
@@ -122,7 +124,11 @@ const STATUTS_SOUS_ACTIVITE = [
 export function SuiviProjetDashboard() {
   const { id } = useParams();
   const location = useLocation();
-  const projetId = Number(id);
+  // Lien de partage : le projet vient du lien, la page est en lecture seule.
+  const partage = usePartage();
+  const projetId = partage?.projetId ?? Number(id);
+  const afficherActivites = partage?.contenu !== "INDICATEURS";
+  const afficherIndicateurs = partage?.contenu !== "ACTIVITES";
   const { data, isLoading, isFetching, refetch } = useSuiviDashboard(projetId);
   const deleteValeur = useDeleteValeurIndicateur();
   const deletePoint = useDeletePointSuivi();
@@ -149,9 +155,9 @@ export function SuiviProjetDashboard() {
   const { estMasque, peutEcrire } = useAccesModules();
   // Projet clôturé (BandeauProjetCloture) ou saisie fermée hors période de rapportage
   // (BandeauSaisieFermee, l'administrateur n'est pas bloqué) : pas de saisie de réalisations.
-  const { data: projetDetail } = useProjet(projetId);
+  const { data: projetDetail } = useProjet(partage ? undefined : projetId);
   const cloture = data?.projet.statut === "CLOTURE";
-  const saisieImpossible = cloture || saisieBloquee(projetDetail, user?.role).realisations;
+  const saisieImpossible = !!partage || cloture || saisieBloquee(projetDetail, user?.role).realisations;
   const peutSaisir = peutEcrire("/suivi") && !saisieImpossible;
   const [editionDemandee, setEditionActive] = useState(false);
   const editionActive = editionDemandee && !saisieImpossible;
@@ -256,6 +262,8 @@ export function SuiviProjetDashboard() {
               <RefreshCw size={18} />
             </ActionIcon>
           </Tooltip>
+          {!partage && <BoutonPartage type="SUIVI_PROJET" projetId={projetId} />}
+          {!partage && (
           <Menu position="bottom-end">
             <Menu.Target>
               <Button variant="light" leftSection={<Download size={16} />}>
@@ -275,8 +283,15 @@ export function SuiviProjetDashboard() {
               >
                 PDF
               </Menu.Item>
+              <Menu.Item
+                leftSection={<FileText size={14} />}
+                onClick={() => telechargerExportSuiviWord(projetId, data.projet.code)}
+              >
+                Word (.docx)
+              </Menu.Item>
             </Menu.Dropdown>
           </Menu>
+          )}
           {peutSaisir && (
             <Button variant="light" leftSection={<FileSpreadsheet size={16} />} onClick={() => setCanevasOuvert(true)}>
               Saisie par Excel
@@ -285,7 +300,7 @@ export function SuiviProjetDashboard() {
           {!saisieImpossible && <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />}
         </Group>
       </Group>
-      {cloture && <BandeauProjetCloture projetId={projetId} />}
+      {cloture && !partage && <BandeauProjetCloture projetId={projetId} />}
       {!cloture && projetDetail && <BandeauSaisieFermee projet={projetDetail} />}
       <ImportCanevasSuiviModal
         projetId={projetId}
@@ -361,6 +376,8 @@ export function SuiviProjetDashboard() {
                 />
               )}
 
+              {afficherActivites && (
+              <>
               <Title order={3}>Activités</Title>
               {data.activites.length > 0 && <LegendeGraphique />}
               <Stack gap="sm">
@@ -662,7 +679,11 @@ export function SuiviProjetDashboard() {
                   );
                 })}
               </Stack>
+              </>
+              )}
 
+              {afficherIndicateurs && (
+              <>
               <Title order={3}>{voc("Indicateurs")}</Title>
               {data.indicateurs.length > 0 && <LegendeGraphique />}
               <Stack gap="sm">
@@ -745,6 +766,8 @@ export function SuiviProjetDashboard() {
                   );
                 })}
               </Stack>
+              </>
+              )}
           </Stack>
         </Tabs.Panel>
       </Tabs>

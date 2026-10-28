@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
-from .models import CadreStrategique, ElementStrategique, TypeNiveau
+from .models import AppreciationStrategique, CadreStrategique, ElementStrategique, TypeNiveau
 
 
 class CadreStrategiqueSerializer(serializers.ModelSerializer):
@@ -96,3 +96,31 @@ class ElementStrategiqueSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {"parents_secondaires": f"« {parent} » n'est pas d'un niveau supérieur à « {type_niveau.nom_niveau} »."}
                 )
+
+
+class AppreciationStrategiqueSerializer(serializers.ModelSerializer):
+    saisi_par_nom = serializers.SerializerMethodField()
+    pieces = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AppreciationStrategique
+        fields = (
+            "id", "element", "libelle_periode", "periode_debut", "periode_fin", "etat", "commentaire", "difficultes",
+            "recommandations", "saisi_par_nom", "pieces", "created_at",
+        )
+
+    def get_saisi_par_nom(self, obj):
+        u = obj.saisi_par
+        return (u.get_full_name() or u.username) if u else ""
+
+    def get_pieces(self, obj):
+        from .suivi import piece_jointe
+
+        return [piece_jointe(p, self.context.get("request")) for p in obj.pieces_justificatives.all()]
+
+    def validate(self, data):
+        debut = data.get("periode_debut", getattr(self.instance, "periode_debut", None))
+        fin = data.get("periode_fin", getattr(self.instance, "periode_fin", None))
+        if debut and fin and fin < debut:
+            raise serializers.ValidationError({"periode_fin": "La fin de la période précède son début."})
+        return data

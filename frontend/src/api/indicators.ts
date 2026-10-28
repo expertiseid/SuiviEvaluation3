@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
+import { cheminApi, usePartage } from "../utils/partage";
 import type {
   ImportIndicateursResultat,
   Indicateur,
@@ -19,9 +20,11 @@ function paramsPortee(portee: PorteeAlerte): Record<string, number> {
 }
 
 export function useParametresAlerte() {
+  const partage = usePartage();
   return useQuery({
-    queryKey: ["parametres-alerte"],
-    queryFn: async () => (await apiClient.get<ParametresAlerte>("/parametres-alerte/")).data,
+    queryKey: ["parametres-alerte", partage?.jeton],
+    queryFn: async () =>
+      (await apiClient.get<ParametresAlerte>(cheminApi(partage, "/parametres-alerte/", "parametres-alerte"))).data,
     staleTime: 5 * 60 * 1000,
   });
 }

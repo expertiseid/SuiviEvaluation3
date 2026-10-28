@@ -62,6 +62,33 @@ class Financement(TimestampedModel):
     def __str__(self):
         return f"{self.bailleur} → {self.projet} : {self.montant_finance}"
 
+    @property
+    def montant_rallonges(self):
+        return self.rallonges.aggregate(total=models.Sum("montant"))["total"] or 0
+
+    @property
+    def montant_total(self):
+        """Montant initial + rallonges accordées en cours de projet."""
+        return self.montant_finance + self.montant_rallonges
+
+
+class RallongeFinancement(TimestampedModel):
+    """Fonds supplémentaires accordés par un bailleur en cours de projet, avec leur motif."""
+
+    financement = models.ForeignKey(Financement, on_delete=models.CASCADE, related_name="rallonges")
+    montant = models.DecimalField(max_digits=16, decimal_places=2)
+    date = models.DateField()
+    motif = models.TextField()
+    saisi_par = models.ForeignKey(
+        "accounts.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="rallonges_saisies"
+    )
+
+    class Meta:
+        ordering = ("date", "id")
+
+    def __str__(self):
+        return f"Rallonge {self.montant} ({self.financement})"
+
 
 class StructureOrganisation(TimestampedModel):
     """

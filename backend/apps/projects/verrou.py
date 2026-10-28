@@ -46,11 +46,15 @@ def _projet_id(instance):
     from apps.indicators.models import Indicateur
     from apps.suivi.models import PeriodePlanification
 
-    from .models import Activite, SousActivite
+    from .models import Activite, Risque, SousActivite
 
     if getattr(instance, "projet_id", None):
         return instance.projet_id
+    from apps.partners.models import Financement
+
     liens = (
+        ("financement_id", Financement, "projet_id"),
+        ("risque_id", Risque, "projet_id"),
         ("periode_id", PeriodePlanification, "projet_id"),
         ("activite_id", Activite, "projet_id"),
         ("sous_activite_id", SousActivite, "activite__projet_id"),
@@ -119,15 +123,17 @@ def connecter():
     from apps.beneficiaries.models import ParticipationProjet
     from apps.documents.models import Document, Dossier
     from apps.indicators.models import Indicateur, ValeurIndicateur
-    from apps.partners.models import Financement
+    from apps.partners.models import Financement, RallongeFinancement
     from apps.suivi.models import PeriodePlanification, PointSuivi, TranchePlanifiee
 
-    from .models import Activite, JalonLivrable, NiveauActivite, PartenaireProjet, Projet, SousActivite, TauxManuel
+    from .models import (
+        Activite, EvaluationRisque, JalonLivrable, NiveauActivite, PartenaireProjet, Projet, Risque, SousActivite, TauxManuel,
+    )
 
     modeles = (
         Activite, NiveauActivite, SousActivite, JalonLivrable, TauxManuel, PointSuivi, PeriodePlanification,
         TranchePlanifiee, Indicateur, ValeurIndicateur, ParticipationProjet, Financement, Document, Dossier,
-        PartenaireProjet,
+        PartenaireProjet, RallongeFinancement, Risque, EvaluationRisque,
     )
     for modele in modeles:
         pre_save.connect(_avant_enregistrement, sender=modele, dispatch_uid=f"verrou_save_{modele.__name__}")

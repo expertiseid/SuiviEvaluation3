@@ -1,22 +1,88 @@
-import { useState } from "react";
-import { Button, Card, Group, NumberInput, SimpleGrid, Stack, Table, Text } from "@mantine/core";
+import { Fragment, useState } from "react";
+import { ActionIcon, Badge, Button, Card, Group, Modal, NumberInput, SimpleGrid, Stack, Table, Text, Textarea, Tooltip } from "@mantine/core";
+import { DateInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import { useProjet } from "../../api/projects";
-import { useBailleurs, useCreateBailleur, useCreateFinancement, useFinancements } from "../../api/referentiels";
+import {
+  useBailleurs,
+  useCreateBailleur,
+  useCreateFinancement,
+  useEnregistrerRallonge,
+  useFinancements,
+  useSupprimerRallonge,
+} from "../../api/referentiels";
 import { StatCard } from "../../components/common/StatCard";
 import { SelectOrCreate } from "../../components/common/SelectOrCreate";
-import { Wallet, Landmark, PiggyBank } from "lucide-react";
+import { confirmerSuppression } from "../../components/common/confirmerSuppression";
+import { messageErreurApi } from "../../utils/erreurs";
+import { Wallet, Landmark, PiggyBank, Plus, Trash2 } from "lucide-react";
 import { voc } from "../../utils/vocabulaire";
+import type { Financement } from "../../types";
 
-export function FinancementsTab({ projetId }: { projetId: number }) {
+const fcfa = (montant: string | number) => `${Number(montant).toLocaleString("fr-FR")} FCFA`;
+const dateFr = (d: string) => new Date(d).toLocaleDateString("fr-FR");
+
+/** Fonds supplémentaires accordés par un bailleur en cours de projet : montant, date, motif. */
+function RallongeModal({ financement, projetId, onClose }: { financement: Financement; projetId: number; onClose: () => void }) {
+  const enregistrer = useEnregistrerRallonge(projetId);
+  const [montant, setMontant] = useState<number | string>("");
+  const [date, setDate] = useState<string | null>(new Date().toISOString().slice(0, 10));
+  const [motif, setMotif] = useState("");
+
+  async function valider() {
+    if (montant === "" || Number(montant) <= 0 || !date || !motif.trim()) {
+      notifications.show({ message: "Montant, date et motif sont requis.", color: "orange" });
+      return;
+    }
+    try {
+      await enregistrer.mutateAsync({ financement: financement.id, montant: Number(montant), date, motif: motif.trim() });
+      notifications.show({ message: "Rallonge enregistrée : le coût total du projet est mis à jour.", color: "green" });
+      onClose();
+    } catch (e) {
+      notifications.show({ message: messageErreurApi(e, "Erreur lors de l'enregistrement"), color: "red" });
+    }
+  }
+
+  return (
+    <Modal opened onClose={onClose} title={`Rallonge de fonds — ${financement.bailleur_nom}`}>
+      <Stack gap="sm">
+        <Text size="sm" c="dimmed">
+          Financement actuel : {fcfa(financement.montant_total)}
+          {Number(financement.montant_rallonges) > 0 && ` (dont ${fcfa(financement.montant_rallonges)} de rallonges)`}
+        </Text>
+        <Group grow align="flex-start">
+          <NumberInput label="Montant ajouté (FCFA)" value={montant} onChange={setMontant} min={0} thousandSeparator=" " required data-autofocus />
+          <DateInput label="Date d'accord" value={date} onChange={setDate} valueFormat="DD/MM/YYYY" required />
+        </Group>
+        <Textarea
+          label="Motif"
+          placeholder="Ex : extension de la zone d'intervention à deux nouvelles communes"
+          value={motif}
+          onChange={(e) => setMotif(e.currentTarget.value)}
+          autosize
+          minRows={3}
+          required
+        />
+        <Group justify="flex-end">
+          <Button variant="subtle" onClick={onClose}>Annuler</Button>
+          <Button onClick={valider} loading={enregistrer.isPending}>Enregistrer la rallonge</Button>
+        </Group>
+      </Stack>
+    </Modal>
+  );
+}
+
+export function FinancementsTab({ projetId, lectureSeule = false }: { projetId: number; lectureSeule?: boolean }) {
   const { data: projet } = useProjet(projetId);
   const { data: financements } = useFinancements(projetId);
   const { data: bailleurs } = useBailleurs();
   const createFinancement = useCreateFinancement();
   const createBailleur = useCreateBailleur();
+  const supprimerRallonge = useSupprimerRallonge(projetId);
 
   const [bailleur, setBailleur] = useState<string | null>(null);
   const [montant, setMontant] = useState<number | string>("");
+  const [rallongePour, setRallongePour] = useState<Financement | null>(null);
 
   async function handleAdd() {
     if (!bailleur || montant === "") {
@@ -34,56 +100,115 @@ export function FinancementsTab({ projetId }: { projetId: number }) {
   }
 
   if (!projet) return <Text c="dimmed">Chargement…</Text>;
+  const totalRallonges = (financements ?? []).reduce((s, f) => s + Number(f.montant_rallonges), 0);
 
   return (
     <Stack gap="md">
       <SimpleGrid cols={{ base: 1, sm: 3 }}>
-        <StatCard label="Coût total" value={`${Number(projet.budget_total).toLocaleString("fr-FR")} FCFA`} icon={<Wallet size={20} />} color="teal" />
-        <StatCard label="Fonds propres" value={`${Number(projet.fonds_propres).toLocaleString("fr-FR")} FCFA`} icon={<PiggyBank size={20} />} color="indigo" />
-        <StatCard label="Financements bailleurs" value={`${Number(projet.financement_bailleurs_total).toLocaleString("fr-FR")} FCFA`} icon={<Landmark size={20} />} color="grape" />
+        <StatCard label="Coût total" value={fcfa(projet.budget_total)} icon={<Wallet size={20} />} color="teal" />
+        <StatCard label="Fonds propres" value={fcfa(projet.fonds_propres)} icon={<PiggyBank size={20} />} color="indigo" />
+        <StatCard
+          label={totalRallonges > 0 ? `Financements bailleurs (dont ${fcfa(totalRallonges)} de rallonges)` : "Financements bailleurs"}
+          value={fcfa(projet.financement_bailleurs_total)}
+          icon={<Landmark size={20} />}
+          color="grape"
+        />
       </SimpleGrid>
 
-      <Card withBorder padding="md" radius="md">
-        <Text size="sm" fw={600} mb="xs">Ajouter un financement</Text>
-        <Group align="flex-end">
-          <SelectOrCreate
-            label="Bailleur"
-            data={bailleurs?.map((b) => ({ value: String(b.id), label: b.nom })) ?? []}
-            value={bailleur}
-            onChange={setBailleur}
-            creating={createBailleur.isPending}
-            onCreate={async (nom) => {
-              try {
-                const cree = await createBailleur.mutateAsync({ nom, type: "AUTRE" });
-                setBailleur(String(cree.id));
-              } catch {
-                notifications.show({ message: "Erreur lors de la création du bailleur", color: "red" });
-              }
-            }}
-          />
-          <NumberInput label="Montant financé (FCFA)" value={montant} onChange={setMontant} min={0} w={200} />
-          <Button onClick={handleAdd} loading={createFinancement.isPending}>Ajouter</Button>
-        </Group>
-      </Card>
+      {!lectureSeule && (
+        <Card withBorder padding="md" radius="md">
+          <Text size="sm" fw={600} mb="xs">Ajouter un financement</Text>
+          <Group align="flex-end">
+            <SelectOrCreate
+              label="Bailleur"
+              data={bailleurs?.map((b) => ({ value: String(b.id), label: b.nom })) ?? []}
+              value={bailleur}
+              onChange={setBailleur}
+              creating={createBailleur.isPending}
+              onCreate={async (nom) => {
+                try {
+                  const cree = await createBailleur.mutateAsync({ nom, type: "AUTRE" });
+                  setBailleur(String(cree.id));
+                } catch {
+                  notifications.show({ message: "Erreur lors de la création du bailleur", color: "red" });
+                }
+              }}
+            />
+            <NumberInput label="Montant financé (FCFA)" value={montant} onChange={setMontant} min={0} w={200} thousandSeparator=" " />
+            <Button onClick={handleAdd} loading={createFinancement.isPending}>Ajouter</Button>
+          </Group>
+        </Card>
+      )}
 
       <Card withBorder padding="md" radius="md">
-        <Table striped>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Bailleur</Table.Th>
-              <Table.Th>Montant financé</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {financements?.map((f) => (
-              <Table.Tr key={f.id}>
-                <Table.Td>{f.bailleur_nom}</Table.Td>
-                <Table.Td>{Number(f.montant_finance).toLocaleString("fr-FR")} FCFA</Table.Td>
+        <Table.ScrollContainer minWidth={620}>
+          <Table>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Bailleur</Table.Th>
+                <Table.Th ta="right">Montant initial</Table.Th>
+                <Table.Th ta="right">Rallonges</Table.Th>
+                <Table.Th ta="right">Total</Table.Th>
+                {!lectureSeule && <Table.Th w={150} />}
               </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
+            </Table.Thead>
+            <Table.Tbody>
+              {financements?.map((f) => (
+                <Fragment key={f.id}>
+                  <Table.Tr>
+                    <Table.Td fw={500}>{f.bailleur_nom}</Table.Td>
+                    <Table.Td ta="right">{fcfa(f.montant_finance)}</Table.Td>
+                    <Table.Td ta="right">
+                      {Number(f.montant_rallonges) > 0 ? <Text span c="grape.7" fw={500}>+ {fcfa(f.montant_rallonges)}</Text> : "—"}
+                    </Table.Td>
+                    <Table.Td ta="right" fw={600}>{fcfa(f.montant_total)}</Table.Td>
+                    {!lectureSeule && (
+                      <Table.Td ta="right">
+                        <Button size="compact-xs" variant="light" color="grape" leftSection={<Plus size={12} />} onClick={() => setRallongePour(f)}>
+                          Rallonge
+                        </Button>
+                      </Table.Td>
+                    )}
+                  </Table.Tr>
+                  {f.rallonges.map((r) => (
+                    <Table.Tr key={`r-${r.id}`} bg="var(--mantine-color-grape-0)">
+                      <Table.Td colSpan={2} pl="xl">
+                        <Group gap={6} wrap="nowrap" align="flex-start">
+                          <Badge size="xs" variant="light" color="grape" style={{ flexShrink: 0 }}>Rallonge du {dateFr(r.date)}</Badge>
+                          <Text size="xs">{r.motif}</Text>
+                        </Group>
+                        {r.saisi_par_nom && <Text size="xs" c="dimmed" mt={2}>Saisie par {r.saisi_par_nom}</Text>}
+                      </Table.Td>
+                      <Table.Td ta="right"><Text size="sm" c="grape.7">+ {fcfa(r.montant)}</Text></Table.Td>
+                      <Table.Td />
+                      {!lectureSeule && (
+                        <Table.Td ta="right">
+                          <Tooltip label="Supprimer la rallonge">
+                            <ActionIcon
+                              size="sm"
+                              variant="subtle"
+                              color="red"
+                              onClick={() =>
+                                confirmerSuppression({
+                                  message: `Supprimer la rallonge de ${fcfa(r.montant)} du ${dateFr(r.date)} ?`,
+                                  onConfirm: () => supprimerRallonge.mutate(r.id),
+                                })
+                              }
+                            >
+                              <Trash2 size={13} />
+                            </ActionIcon>
+                          </Tooltip>
+                        </Table.Td>
+                      )}
+                    </Table.Tr>
+                  ))}
+                </Fragment>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
       </Card>
+      {rallongePour && <RallongeModal financement={rallongePour} projetId={projetId} onClose={() => setRallongePour(null)} />}
     </Stack>
   );
 }

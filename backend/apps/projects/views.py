@@ -28,6 +28,7 @@ from .models import (
     Activite,
     DemandeModification,
     Equipe,
+    EvaluationRisque,
     FenetreRapportage,
     JalonLivrable,
     NiveauActivite,
@@ -35,6 +36,7 @@ from .models import (
     ParametresRapportage,
     PartenaireProjet,
     Projet,
+    Risque,
     SousActivite,
     TauxManuel,
 )
@@ -52,6 +54,8 @@ from .serializers import (
     SousActiviteSerializer,
     TauxManuelSerializer,
     PartenaireProjetSerializer,
+    EvaluationRisqueSerializer,
+    RisqueSerializer,
 )
 from .services import (
     dupliquer_activite,
@@ -520,3 +524,56 @@ def traiter_demande_vue(request, pk):
     approuver, motif = _decision(request)
     traiter_demande(demande, request.user, approuver, motif)
     return Response({"etat": demande.etat})
+
+
+class RisqueViewSet(SuppressionAtomiqueMixin, viewsets.ModelViewSet):
+    """Registre des risques d'un projet (?projet=) ; l'historique des réévaluations est inclus."""
+
+    serializer_class = RisqueSerializer
+    permission_classes = (HasGlobalVisibilityOrAssigned,)
+    filterset_fields = ("projet", "statut", "nature")
+
+    def get_queryset(self):
+        return Risque.objects.filter(projet__id__in=visible_projets_ids(self.request.user)).select_related(
+            "responsable", "element"
+        ).prefetch_related("evaluations__saisi_par")
+
+    def perform_create(self, serializer):
+        if serializer.validated_data["projet"].id not in set(visible_projets_ids(self.request.user)):
+            raise PermissionDenied("Projet non accessible.")
+        serializer.save()
+
+
+class EvaluationRisqueViewSet(SuppressionAtomiqueMixin, viewsets.ModelViewSet):
+    """
+    Réévaluations d'un risque : la plus récente (par date) devient sa cotation et son statut
+    courants ; en supprimer une rétablit la précédente.
+    """
+
+    serializer_class = EvaluationRisqueSerializer
+    permission_classes = (HasGlobalVisibilityOrAssigned,)
+    filterset_fields = ("risque",)
+
+    def get_queryset(self):
+        return EvaluationRisque.objects.filter(risque__projet__id__in=visible_projets_ids(self.request.user))
+
+    @staticmethod
+    def _reporter(risque):
+        derniere = risque.evaluations.order_by("-date", "-id").first()
+        if derniere is not None:
+            risque.probabilite, risque.impact, risque.statut = derniere.probabilite, derniere.impact, derniere.statut
+            risque.save(update_fields=["probabilite", "impact", "statut", "updated_at"])
+
+    def perform_create(self, serializer):
+        if serializer.validated_data["risque"].projet_id not in set(visible_projets_ids(self.request.user)):
+            raise PermissionDenied("Projet non accessible.")
+        evaluation = serializer.save(saisi_par=self.request.user)
+        self._reporter(evaluation.risque)
+
+    def perform_update(self, serializer):
+        self._reporter(serializer.save().risque)
+
+    def perform_destroy(self, instance):
+        risque = instance.risque
+        super().perform_destroy(instance)
+        self._reporter(risque)

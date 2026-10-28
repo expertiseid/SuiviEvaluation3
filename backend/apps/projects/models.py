@@ -262,7 +262,11 @@ class Projet(TimestampedModel):
     def financement_bailleurs_total(self):
         from django.db.models import Sum
 
-        return self.financements.aggregate(total=Sum("montant_finance"))["total"] or 0
+        from apps.partners.models import RallongeFinancement
+
+        initial = self.financements.aggregate(total=Sum("montant_finance"))["total"] or 0
+        rallonges = RallongeFinancement.objects.filter(financement__projet=self).aggregate(total=Sum("montant"))["total"] or 0
+        return initial + rallonges
 
 
 class Equipe(TimestampedModel):
@@ -322,6 +326,13 @@ class Activite(TimestampedModel):
     statut = models.CharField(max_length=20, choices=Statut.choices, default=Statut.NON_REALISEE)
     commentaire = models.TextField(
         blank=True, help_text="Note libre (ex : validation, remarque) — n'affecte ni le suivi ni les calculs."
+    )
+    # Cadre logique (lot 5) : à n'importe quel niveau de la planification.
+    sources_verification = models.TextField(
+        blank=True, help_text="Cadre logique : où trouver la preuve (rapports, listes de présence, enquêtes…)."
+    )
+    hypotheses = models.TextField(
+        blank=True, help_text="Cadre logique : hypothèses et risques extérieurs dont dépend la réussite."
     )
     axe_strategique = models.ForeignKey(
         "strategy.ElementStrategique", null=True, blank=True, on_delete=models.SET_NULL, related_name="activites"
@@ -646,3 +657,114 @@ class PartenaireProjet(TimestampedModel):
 
     def __str__(self):
         return f"{self.partenaire} — {self.projet.code}"
+
+
+class Risque(TimestampedModel):
+    """
+    Risque (interne ou externe) de la mise en œuvre d'un projet : identifié et coté (probabilité
+    × impact, de 1 à 5), avec ses mesures, puis suivi par des réévaluations successives
+    (EvaluationRisque) — la dernière donne son état courant.
+    """
+
+    class Nature(models.TextChoices):
+        INTERNE = "INTERNE", "Interne"
+        EXTERNE = "EXTERNE", "Externe"
+
+    class Statut(models.TextChoices):
+        ACTIF = "ACTIF", "Actif (à surveiller)"
+        SURVENU = "SURVENU", "Survenu"
+        MAITRISE = "MAITRISE", "Maîtrisé"
+        CLOS = "CLOS", "Clos"
+
+    CATEGORIES = (
+        "Financier", "Opérationnel", "Sécuritaire", "Politique et institutionnel", "Climatique et environnemental",
+        "Social et communautaire", "Sanitaire", "Juridique", "Fiduciaire", "Autre",
+    )
+
+    projet = models.ForeignKey(Projet, on_delete=models.CASCADE, related_name="risques")
+    code = models.CharField(max_length=20, blank=True)
+    libelle = models.CharField(max_length=300)
+    description = models.TextField(blank=True, help_text="Causes et conséquences possibles.")
+    nature = models.CharField(max_length=10, choices=Nature.choices, default=Nature.EXTERNE)
+    categorie = models.CharField(max_length=60, blank=True)
+    element = models.ForeignKey(
+        Activite, null=True, blank=True, on_delete=models.SET_NULL, related_name="risques",
+        help_text="Élément de la planification le plus exposé (facultatif).",
+    )
+    probabilite = models.PositiveSmallIntegerField(default=3, help_text="1 (rare) à 5 (quasi certain).")
+    impact = models.PositiveSmallIntegerField(default=3, help_text="1 (négligeable) à 5 (majeur).")
+    mesures_attenuation = models.TextField(blank=True, help_text="Ce qui est prévu pour réduire la probabilité ou l'impact.")
+    plan_contingence = models.TextField(blank=True, help_text="Ce qui sera fait si le risque survient.")
+    responsable = models.ForeignKey(
+        "intervenants.Intervenant", null=True, blank=True, on_delete=models.SET_NULL, related_name="risques_suivis",
+        help_text="Personne chargée de surveiller le risque (comme les responsables d'activités).",
+    )
+    statut = models.CharField(max_length=10, choices=Statut.choices, default=Statut.ACTIF)
+    date_identification = models.DateField(default=datetime.date.today)
+    date_prochaine_revue = models.DateField(null=True, blank=True)
+
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ("projet", "code", "id")
+        constraints = [
+            models.CheckConstraint(check=models.Q(probabilite__gte=1, probabilite__lte=5), name="risque_probabilite_1_5"),
+            models.CheckConstraint(check=models.Q(impact__gte=1, impact__lte=5), name="risque_impact_1_5"),
+        ]
+
+    def __str__(self):
+        return f"{self.code} {self.libelle}".strip()
+
+    @property
+    def criticite(self) -> int:
+        return self.probabilite * self.impact
+
+    @staticmethod
+    def niveau_pour(criticite: int) -> str:
+        """FAIBLE (1-4), MOYEN (5-9), ELEVE (10-15), CRITIQUE (16-25)."""
+        if criticite >= 16:
+            return "CRITIQUE"
+        if criticite >= 10:
+            return "ELEVE"
+        if criticite >= 5:
+            return "MOYEN"
+        return "FAIBLE"
+
+    @property
+    def niveau(self) -> str:
+        return self.niveau_pour(self.criticite)
+
+    def save(self, *args, **kwargs):
+        if not self.code and self.projet_id:
+            # R1, R2… : le numéro suit le plus grand existant (pas de doublon après une suppression au milieu).
+            numeros = [
+                int(c[1:]) for c in Risque.objects.filter(projet_id=self.projet_id).values_list("code", flat=True)
+                if c[:1] == "R" and c[1:].isdigit()
+            ]
+            self.code = f"R{max(numeros, default=0) + 1}"
+        super().save(*args, **kwargs)
+
+
+class EvaluationRisque(TimestampedModel):
+    """Réévaluation d'un risque à une date : sa cotation, son statut et les actions menées."""
+
+    risque = models.ForeignKey(Risque, on_delete=models.CASCADE, related_name="evaluations")
+    date = models.DateField(default=datetime.date.today)
+    probabilite = models.PositiveSmallIntegerField()
+    impact = models.PositiveSmallIntegerField()
+    statut = models.CharField(max_length=10, choices=Risque.Statut.choices)
+    actions_menees = models.TextField(blank=True)
+    commentaire = models.TextField(blank=True)
+    saisi_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="evaluations_risques"
+    )
+
+    class Meta:
+        ordering = ("-date", "-id")
+        constraints = [
+            models.CheckConstraint(check=models.Q(probabilite__gte=1, probabilite__lte=5), name="evaluation_probabilite_1_5"),
+            models.CheckConstraint(check=models.Q(impact__gte=1, impact__lte=5), name="evaluation_impact_1_5"),
+        ]
+
+    def __str__(self):
+        return f"{self.risque} au {self.date}"

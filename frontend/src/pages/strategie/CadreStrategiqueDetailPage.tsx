@@ -46,12 +46,14 @@ import { confirmerSuppression } from "../../components/common/confirmerSuppressi
 import { toneDeTaux } from "../../components/suivi/BarreProgression";
 import { correspond } from "../../utils/recherche";
 import { AxesBudgetsTab } from "./AxesBudgetsTab";
+import { SuiviStrategiqueTab } from "./SuiviStrategiqueTab";
 import { ImportStructurationModal } from "./ImportStructurationModal";
 import type { ElementStrategique, RecapCadreStrategique, TypeNiveau } from "../../types";
 import { voc } from "../../utils/vocabulaire";
 import { messageErreurApi } from "../../utils/erreurs";
 import { usePartiesPrenantes, useStructures } from "../../api/organisation";
 import { optionsStructures } from "../../utils/organisation";
+import { useAccesModules } from "../../utils/modules";
 
 // Une couleur par rang de niveau (pas par nom) — fixe et cohérente sur tout
 // l'écran, pour distinguer visuellement "à quel niveau appartient ce nœud"
@@ -1018,6 +1020,7 @@ export function CadreStrategiqueDetailPage() {
   const { data: niveaux, isLoading: chargementNiveaux } = useTypesNiveaux(cadreId);
   const { data: elements, isLoading: chargementElements } = useElementsStrategiques({ cadre_strategique: cadreId });
   const [modalImportOuvert, setModalImportOuvert] = useState(false);
+  const { peutEcrire } = useAccesModules();
   const [editionActive, setEditionActive] = useState(false);
 
   return (
@@ -1058,6 +1061,9 @@ export function CadreStrategiqueDetailPage() {
             <Tabs.Tab value="axes" leftSection={<Layers size={15} />}>
               Axes &amp; budgets
             </Tabs.Tab>
+            <Tabs.Tab value="suivi" leftSection={<Gauge size={15} />}>
+              {voc("Suivi stratégique")}
+            </Tabs.Tab>
             <Tabs.Tab value="recap" leftSection={<Wallet size={15} />}>
               {voc("Projets & budgets")}</Tabs.Tab>
           </Tabs.List>
@@ -1072,6 +1078,10 @@ export function CadreStrategiqueDetailPage() {
 
           <Tabs.Panel value="axes" pt="md">
             <AxesBudgetsTab cadreId={cadreId} niveaux={niveaux ?? []} />
+          </Tabs.Panel>
+
+          <Tabs.Panel value="suivi" pt="md">
+            <SuiviStrategiqueTab cadreId={cadreId} modifiable={peutEcrire("/strategie")} />
           </Tabs.Panel>
 
           <Tabs.Panel value="recap" pt="md">

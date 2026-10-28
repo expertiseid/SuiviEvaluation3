@@ -16,9 +16,15 @@ class PieceJustificativeSerializer(serializers.ModelSerializer):
             "uploaded_by",
             "uploaded_by_nom",
             "valeur_indicateur",
+            "appreciation_strategique",
             "created_at",
         )
         read_only_fields = ("uploaded_by", "created_at")
+
+    def validate(self, data):
+        if not (data.get("valeur_indicateur") or data.get("appreciation_strategique")) and self.instance is None:
+            raise serializers.ValidationError("Rattachez la pièce à une valeur d'indicateur ou à une appréciation.")
+        return data
 
     def create(self, validated_data):
         validated_data["uploaded_by"] = self.context["request"].user

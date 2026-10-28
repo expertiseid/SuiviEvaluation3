@@ -383,6 +383,12 @@ export function SuiviPeriodeTab({
                 >
                   PDF
                 </Menu.Item>
+                <Menu.Item
+                  leftSection={<FileText size={14} />}
+                  onClick={() => telechargerExportSuiviPeriode(periode, data.projet.code, "word")}
+                >
+                  Word (.docx)
+                </Menu.Item>
               </Menu.Dropdown>
             </Menu>
           )}

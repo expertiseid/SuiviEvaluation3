@@ -5,6 +5,7 @@
  * Les mêmes règles sont appliquées côté serveur (apps/core/modules.py).
  */
 import { useAuth } from "../auth/useAuth";
+import { usePartage } from "./partage";
 import type { NiveauModule, User } from "../types";
 import { voc } from "./vocabulaire";
 
@@ -42,6 +43,8 @@ export function modulesReglables(): { group: string; items: ModuleReglable[] }[]
         { cle: "projet:periode", label: voc("Planification par période"), ecriture: false },
         { cle: "projet:indicateurs", label: voc("Indicateurs"), ecriture: false },
         { cle: "projet:documents", label: voc("Documents"), ecriture: false },
+        { cle: "projet:cadre-logique", label: voc("Cadre logique"), ecriture: false },
+        { cle: "projet:risques", label: voc("Risques"), ecriture: true },
         { cle: "projet:coherence", label: voc("Contrôle de cohérence"), ecriture: false },
         { cle: "projet:historique", label: "Historique", ecriture: false },
       ],
@@ -75,6 +78,11 @@ export function niveauModule(user: User | null | undefined, cle: string): Niveau
 /** Droits de l'utilisateur connecté : estMasque(clé) et peutEcrire(clé). */
 export function useAccesModules() {
   const { user } = useAuth();
+  const partage = usePartage();
+  if (partage) {
+    // Lien de partage : lecture seule, sans les vues qui demandent un compte (suivi par période).
+    return { estMasque: (cle: string) => cle.startsWith("suivi:"), peutEcrire: () => false };
+  }
   return {
     estMasque: (cle: string) => niveauModule(user, cle) === "MASQUE",
     peutEcrire: (cle: string) => niveauModule(user, cle) === "ECRITURE",

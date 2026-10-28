@@ -184,7 +184,12 @@ def dashboard_consolide(request):
     ?statuts=EN_COURS,CLOTURE. Toutes les statistiques portent sur les
     projets retenus.
     """
-    projets = filtrer_projets(Projet.objects.filter(id__in=visible_projets_ids(request.user)), request.query_params)
+    return Response(donnees_consolidees(visible_projets_ids(request.user), request.query_params))
+
+
+def donnees_consolidees(ids_visibles, filtres) -> dict:
+    """Chiffres du tableau de bord pour ces projets (aussi servis par un lien de partage)."""
+    projets = filtrer_projets(Projet.objects.filter(id__in=ids_visibles), filtres)
     ids = list(projets.values_list("id", flat=True))
     projets = Projet.objects.filter(id__in=ids)
     indicateurs = _indicateurs_pour_projets(ids)
@@ -192,21 +197,19 @@ def dashboard_consolide(request):
         ParticipationProjet.objects.filter(projet__id__in=ids).values("beneficiaire").distinct().count()
     )
 
-    return Response(
-        {
-            "nombre_projets": projets.count(),
-            "budget_total": sum((p.budget_total for p in projets), start=0),
-            "nombre_beneficiaires": nombre_beneficiaires,
-            "indicateurs_par_statut": _resume_indicateurs(indicateurs),
-            "zones_couvertes": _zones_couvertes(ids),
-            **_repartitions(projets, ids),
-            **repartitions_projets(projets),
-            "projets": [
-                {"id": p.id, "code": p.code, "nom": p.nom, "statut": p.statut, "budget_total": p.budget_total}
-                for p in projets
-            ],
-        }
-    )
+    return {
+        "nombre_projets": projets.count(),
+        "budget_total": sum((p.budget_total for p in projets), start=0),
+        "nombre_beneficiaires": nombre_beneficiaires,
+        "indicateurs_par_statut": _resume_indicateurs(indicateurs),
+        "zones_couvertes": _zones_couvertes(ids),
+        **_repartitions(projets, ids),
+        **repartitions_projets(projets),
+        "projets": [
+            {"id": p.id, "code": p.code, "nom": p.nom, "statut": p.statut, "budget_total": p.budget_total}
+            for p in projets
+        ],
+    }
 
 
 @api_view(["GET"])

@@ -32,7 +32,10 @@ import {
   telechargerExportProjet,
 } from "../../api/projects";
 import { useDashboardProjet } from "../../api/dashboard";
-import { telechargerExportSuiviExcel, telechargerExportSuiviPdf } from "../../api/suivi";
+import { telechargerExportSuiviExcel, telechargerExportSuiviPdf, telechargerExportSuiviWord } from "../../api/suivi";
+import { RapportFinancierModal } from "./RapportFinancierModal";
+import { CadreLogiqueTab } from "./CadreLogiqueTab";
+import { RisquesTab } from "./RisquesTab";
 import { AlerteBadge } from "../../components/indicators/AlerteBadge";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
 import { HistoriqueModification } from "../../components/audit/HistoriqueModification";
@@ -496,6 +499,7 @@ export function ProjetDetailPage() {
   const [beneficiairesActiviteId, setBeneficiairesActiviteId] = useState<number | null>(null);
   const [beneficiairesSousActiviteId, setBeneficiairesSousActiviteId] = useState<number | null>(null);
   const [modalEditionOuvert, setModalEditionOuvert] = useState(false);
+  const [rapportFinancierOuvert, setRapportFinancierOuvert] = useState(false);
   const [recherchePlan, setRecherchePlan] = useState("");
   const [editionDemandee, setEditionActive] = useState(false);
   const editionActive = editionDemandee && !lectureSeule;
@@ -602,12 +606,24 @@ export function ProjetDetailPage() {
               <Menu.Item onClick={() => telechargerExportSuiviPdf(projetId, projet.code)}>
                 PDF
               </Menu.Item>
+              <Menu.Item onClick={() => telechargerExportSuiviWord(projetId, projet.code)}>
+                Word
+              </Menu.Item>
+              {!estMasque("projet:financement") && (
+                <>
+                  <Menu.Label>Finances</Menu.Label>
+                  <Menu.Item onClick={() => setRapportFinancierOuvert(true)}>Rapport financier…</Menu.Item>
+                </>
+              )}
               <Menu.Label>Pour la collecte terrain</Menu.Label>
               <Menu.Item onClick={() => telechargerExportProjet(projetId, "xlsform")}>
                 XLSForm (KoboToolbox/ODK)
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
+          {rapportFinancierOuvert && (
+            <RapportFinancierModal projetId={projetId} codeProjet={projet.code} onClose={() => setRapportFinancierOuvert(false)} />
+          )}
           {!lectureSeule && <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />}
           {editionActive && (
           <Group gap="lg">
@@ -633,6 +649,8 @@ export function ProjetDetailPage() {
           {!estMasque("projet:niveaux") && <Tabs.Tab value="niveaux">Configuration des niveaux</Tabs.Tab>}
           <Tabs.Tab value="hierarchie">{voc("Planification")}</Tabs.Tab>
           {!estMasque("projet:periode") && <Tabs.Tab value="periode">{voc("Planification par période")}</Tabs.Tab>}
+          {!estMasque("projet:cadre-logique") && <Tabs.Tab value="cadre-logique">{voc("Cadre logique")}</Tabs.Tab>}
+          {!estMasque("projet:risques") && <Tabs.Tab value="risques">{voc("Risques")}</Tabs.Tab>}
           {!estMasque("projet:equipe") && <Tabs.Tab value="equipe">{voc("Équipe de projet")}</Tabs.Tab>}
           {!estMasque("projet:partenaires") && <Tabs.Tab value="partenaires">{voc("Partenaires")}</Tabs.Tab>}
           {!estMasque("projet:indicateurs") && <Tabs.Tab value="indicateurs">{voc("Indicateurs")}</Tabs.Tab>}
@@ -769,13 +787,25 @@ export function ProjetDetailPage() {
 
         {!estMasque("projet:financement") && (
           <Tabs.Panel value="financement" pt="md">
-            <FinancementsTab projetId={projetId} />
+            <FinancementsTab projetId={projetId} lectureSeule={lectureSeule} />
           </Tabs.Panel>
         )}
 
         {!estMasque("projet:documents") && (
           <Tabs.Panel value="documents" pt="md">
             <DocumentsTab projetId={projetId} />
+          </Tabs.Panel>
+        )}
+
+        {!estMasque("projet:cadre-logique") && (
+          <Tabs.Panel value="cadre-logique" pt="md">
+            <CadreLogiqueTab projetId={projetId} codeProjet={projet.code} modifiable={!lectureSeule && peutModifier} />
+          </Tabs.Panel>
+        )}
+
+        {!estMasque("projet:risques") && (
+          <Tabs.Panel value="risques" pt="md">
+            <RisquesTab projetId={projetId} codeProjet={projet.code} modifiable={!lectureSeule && peutEcrire("projet:risques")} />
           </Tabs.Panel>
         )}
 

@@ -47,7 +47,19 @@ class PieceJustificativeViewSet(viewsets.ModelViewSet):
     serializer_class = PieceJustificativeSerializer
     permission_classes = (HasGlobalVisibilityOrAssigned,)
     parser_classes = (MultiPartParser, FormParser)
-    filterset_fields = ("valeur_indicateur", "type_document")
+    filterset_fields = ("valeur_indicateur", "appreciation_strategique", "type_document")
+
+    @action(detail=True, methods=["get"])
+    def telecharger(self, request, pk=None):
+        """Fichier de la pièce, servi aux seuls comptes connectés (sans dépendre du serveur web)."""
+        import os
+
+        from django.http import FileResponse
+
+        piece = self.get_object()
+        extension = os.path.splitext(piece.fichier.name)[1]
+        nom = piece.nom if piece.nom.lower().endswith(extension.lower()) else f"{piece.nom}{extension}"
+        return FileResponse(piece.fichier.open("rb"), as_attachment=True, filename=nom)
 
 
 class DossierViewSet(viewsets.ModelViewSet):

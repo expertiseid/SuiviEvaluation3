@@ -7,7 +7,9 @@ from collections import defaultdict
 from decimal import Decimal
 
 
-from apps.partners.models import Financement
+from django.db.models import Sum
+
+from apps.partners.models import Financement, RallongeFinancement
 
 PAYS_LIBELLE = {"BF": "Burkina Faso", "ML": "Mali", "NE": "Niger", "CI": "Côte d'Ivoire", "SN": "Sénégal",
                 "TG": "Togo", "BJ": "Bénin", "GH": "Ghana", "TD": "Tchad", "MR": "Mauritanie", "GN": "Guinée"}
@@ -56,10 +58,15 @@ def repartitions_projets(projets):
     financements = Financement.objects.filter(projet_id__in=ids).select_related("bailleur", "projet")
     finance_par_projet = defaultdict(Decimal)
     par_bailleur = _compteur()
+    rallonges = dict(
+        RallongeFinancement.objects.filter(financement__in=financements)
+        .values("financement").annotate(total=Sum("montant")).values_list("financement", "total")
+    )
     for f in financements:
-        finance_par_projet[f.projet_id] += f.montant_finance
+        montant = f.montant_finance + rallonges.get(f.id, 0)  # rallonges comprises
+        finance_par_projet[f.projet_id] += montant
         par_bailleur[f.bailleur.nom]["projets"].add(f.projet.code)
-        par_bailleur[f.bailleur.nom]["montant"] += f.montant_finance
+        par_bailleur[f.bailleur.nom]["montant"] += montant
     # Projet sans financement détaillé mais avec un bailleur principal : on
     # lui attribue la part non couverte par les fonds propres.
     for p in projets:

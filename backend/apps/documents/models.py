@@ -13,13 +13,23 @@ class PieceJustificative(TimestampedModel):
     nom = models.CharField(max_length=200)
     type_document = models.CharField(max_length=100, blank=True)
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="documents_uploades")
+    # Justifie une valeur d'indicateur OU une appréciation d'un élément stratégique.
     valeur_indicateur = models.ForeignKey(
-        "indicators.ValeurIndicateur", on_delete=models.CASCADE, related_name="pieces_justificatives"
+        "indicators.ValeurIndicateur", null=True, blank=True, on_delete=models.CASCADE, related_name="pieces_justificatives"
+    )
+    appreciation_strategique = models.ForeignKey(
+        "strategy.AppreciationStrategique", null=True, blank=True, on_delete=models.CASCADE, related_name="pieces_justificatives"
     )
 
     class Meta:
         verbose_name = "Pièce justificative"
         verbose_name_plural = "Pièces justificatives"
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(valeur_indicateur__isnull=False) | models.Q(appreciation_strategique__isnull=False),
+                name="piece_rattachee",
+            )
+        ]
 
     def __str__(self):
         return self.nom

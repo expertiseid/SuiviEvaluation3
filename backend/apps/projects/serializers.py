@@ -7,6 +7,7 @@ from .budgets import avertissements_budget
 from .models import (
     Activite,
     Equipe,
+    EvaluationRisque,
     FenetreRapportage,
     JalonLivrable,
     NiveauActivite,
@@ -14,6 +15,7 @@ from .models import (
     ParametresRapportage,
     PartenaireProjet,
     Projet,
+    Risque,
     SousActivite,
     TauxManuel,
 )
@@ -120,6 +122,8 @@ class ActiviteSerializer(serializers.ModelSerializer):
             "description",
             "statut",
             "commentaire",
+            "sources_verification",
+            "hypotheses",
             "axe_strategique",
             "axe_strategique_libelle",
             "axes_strategiques_secondaires",
@@ -500,3 +504,62 @@ class PartenaireProjetSerializer(serializers.ModelSerializer):
         if etrangers:
             raise serializers.ValidationError({"elements": v("Ces éléments n'appartiennent pas à ce projet.")})
         return attrs
+
+
+class EvaluationRisqueSerializer(serializers.ModelSerializer):
+    saisi_par_nom = serializers.SerializerMethodField()
+    niveau = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EvaluationRisque
+        fields = (
+            "id", "risque", "date", "probabilite", "impact", "niveau", "statut", "actions_menees", "commentaire",
+            "saisi_par_nom", "created_at",
+        )
+
+    def get_saisi_par_nom(self, obj):
+        u = obj.saisi_par
+        return (u.get_full_name() or u.username) if u else ""
+
+    def get_niveau(self, obj):
+        return Risque.niveau_pour(obj.probabilite * obj.impact)
+
+    def validate(self, data):
+        for champ in ("probabilite", "impact"):
+            if champ in data and not 1 <= data[champ] <= 5:
+                raise serializers.ValidationError({champ: "Valeur de 1 à 5."})
+        return data
+
+
+class RisqueSerializer(serializers.ModelSerializer):
+    criticite = serializers.IntegerField(read_only=True)
+    niveau = serializers.CharField(read_only=True)
+    responsable_nom = serializers.SerializerMethodField()
+    element_libelle = serializers.SerializerMethodField()
+    evaluations = EvaluationRisqueSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Risque
+        fields = (
+            "id", "projet", "code", "libelle", "description", "nature", "categorie", "element", "element_libelle",
+            "probabilite", "impact", "criticite", "niveau", "mesures_attenuation", "plan_contingence", "responsable",
+            "responsable_nom", "statut", "date_identification", "date_prochaine_revue", "evaluations",
+        )
+        read_only_fields = ("code",)
+
+    def get_responsable_nom(self, obj):
+        return str(obj.responsable) if obj.responsable else ""
+
+    def get_element_libelle(self, obj):
+        e = obj.element
+        return f"{e.code_activite} {e.libelle}".strip() if e else ""
+
+    def validate(self, data):
+        for champ in ("probabilite", "impact"):
+            if champ in data and not 1 <= data[champ] <= 5:
+                raise serializers.ValidationError({champ: "Valeur de 1 à 5."})
+        projet = data.get("projet") or getattr(self.instance, "projet", None)
+        element = data.get("element")
+        if element is not None and projet is not None and element.projet_id != projet.id:
+            raise serializers.ValidationError({"element": "Cet élément n'appartient pas au projet."})
+        return data

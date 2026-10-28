@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
+import { cheminApi, usePartage } from "../utils/partage";
 import type {
   Paginated,
   PeriodePlanification,
@@ -10,14 +11,16 @@ import type {
 } from "../types";
 
 export function useSuiviDashboard(projetId: number | undefined) {
+  const partage = usePartage();
   return useQuery({
-    queryKey: ["suivi-dashboard", projetId],
-    queryFn: async () => (await apiClient.get<SuiviDashboard>(`/suivi/projets/${projetId}/dashboard/`)).data,
+    queryKey: ["suivi-dashboard", projetId, partage?.jeton],
+    queryFn: async () =>
+      (await apiClient.get<SuiviDashboard>(cheminApi(partage, `/suivi/projets/${projetId}/dashboard/`, "suivi"))).data,
     enabled: !!projetId,
   });
 }
 
-async function telecharger(url: string, nomFichier: string) {
+export async function telecharger(url: string, nomFichier: string) {
   const response = await apiClient.get(url, { responseType: "blob" });
   const objetUrl = window.URL.createObjectURL(new Blob([response.data]));
   const link = document.createElement("a");
@@ -34,6 +37,28 @@ export async function telechargerExportSuiviExcel(projetId: number, codeProjet: 
 
 export async function telechargerExportSuiviPdf(projetId: number, codeProjet: string) {
   await telecharger(`/suivi/projets/${projetId}/exporter/pdf/`, `suivi_${codeProjet}.pdf`);
+}
+
+/** Fiche de suivi au format Word (même contenu que le PDF). */
+export async function telechargerExportSuiviWord(projetId: number, codeProjet: string) {
+  await telecharger(`/suivi/projets/${projetId}/exporter/word/`, `suivi_${codeProjet}.docx`);
+}
+
+export type FormatExport = "excel" | "pdf" | "word";
+const EXTENSION: Record<FormatExport, string> = { excel: "xlsx", pdf: "pdf", word: "docx" };
+
+export type SectionRapportFinancier = "sources" | "rallonges" | "execution" | "detail" | "trimestres";
+
+/** Rapport financier seul, sections et période au choix. */
+export async function telechargerRapportFinancier(
+  projetId: number,
+  codeProjet: string,
+  options: { fichier: "pdf" | "docx" | "xlsx"; sections: SectionRapportFinancier[]; debut?: string | null; fin?: string | null },
+) {
+  const params = new URLSearchParams({ fichier: options.fichier, sections: options.sections.join(",") });
+  if (options.debut) params.set("debut", options.debut);
+  if (options.fin) params.set("fin", options.fin);
+  await telecharger(`/rapports/financier/${projetId}/?${params}`, `rapport_financier_${codeProjet}.${options.fichier}`);
 }
 
 export function useCreatePointSuivi() {
@@ -177,11 +202,11 @@ export function useDeletePeriodePlanification() {
   });
 }
 
-export async function telechargerExportPeriode(periode: PeriodePlanification, codeProjet: string, format: "excel" | "pdf") {
+export async function telechargerExportPeriode(periode: PeriodePlanification, codeProjet: string, format: FormatExport) {
   const libelle = periode.libelle.replace(/[^\p{L}\p{N}]+/gu, "_");
   await telecharger(
     `/periodes-planification/${periode.id}/exporter/${format}/`,
-    `planification_${codeProjet}_${libelle}.${format === "excel" ? "xlsx" : "pdf"}`,
+    `planification_${codeProjet}_${libelle}.${EXTENSION[format]}`,
   );
 }
 
@@ -189,12 +214,12 @@ export async function telechargerExportPeriode(periode: PeriodePlanification, co
 export async function telechargerExportSuiviPeriode(
   periode: PeriodePlanification,
   codeProjet: string,
-  format: "excel" | "pdf",
+  format: FormatExport,
 ) {
   const libelle = periode.libelle.replace(/[^\p{L}\p{N}]+/gu, "_");
   await telecharger(
     `/periodes-planification/${periode.id}/exporter-suivi/${format}/`,
-    `suivi_${codeProjet}_${libelle}.${format === "excel" ? "xlsx" : "pdf"}`,
+    `suivi_${codeProjet}_${libelle}.${EXTENSION[format]}`,
   );
 }
 

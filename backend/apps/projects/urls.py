@@ -7,6 +7,8 @@ from .views import (
     FenetreRapportageViewSet,
     JalonLivrableViewSet,
     PartenaireProjetViewSet,
+    EvaluationRisqueViewSet,
+    RisqueViewSet,
     NiveauActiviteViewSet,
     ProjetViewSet,
     SousActiviteViewSet,
@@ -26,6 +28,8 @@ router.register("niveaux-activite", NiveauActiviteViewSet, basename="niveau-acti
 router.register("equipes", EquipeViewSet, basename="equipe")
 router.register("jalons-livrables", JalonLivrableViewSet, basename="jalon-livrable")
 router.register("partenaires-projet", PartenaireProjetViewSet, basename="partenaire-projet")
+router.register("risques", RisqueViewSet, basename="risque")
+router.register("evaluations-risques", EvaluationRisqueViewSet, basename="evaluation-risque")
 router.register("taux-manuels", TauxManuelViewSet, basename="taux-manuel")
 router.register("periodes-rapportage", FenetreRapportageViewSet, basename="periode-rapportage")
 

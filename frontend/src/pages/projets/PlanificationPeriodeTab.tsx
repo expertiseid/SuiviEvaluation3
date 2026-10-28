@@ -877,6 +877,7 @@ export function PlanificationPeriodeTab({
                   <Menu.Label>{periode.libelle}</Menu.Label>
                   <Menu.Item onClick={() => telechargerExportPeriode(periode, projet.code, "excel")}>Excel</Menu.Item>
                   <Menu.Item onClick={() => telechargerExportPeriode(periode, projet.code, "pdf")}>PDF</Menu.Item>
+                  <Menu.Item onClick={() => telechargerExportPeriode(periode, projet.code, "word")}>Word</Menu.Item>
                 </Menu.Dropdown>
               </Menu>
             )}

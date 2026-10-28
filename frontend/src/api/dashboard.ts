@@ -1,5 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
+import { cheminApi, usePartage } from "../utils/partage";
 import type { Vocabulaire } from "../utils/vocabulaire";
 import type {
   ConfigurationTableauDeBord,
@@ -10,13 +11,15 @@ import type {
 } from "../types";
 
 export function useDashboardConsolide(filtres: FiltresDashboard = {}) {
+  const partage = usePartage();
   const params = {
     ...filtres,
     statuts: filtres.statuts?.length ? filtres.statuts.join(",") : undefined,
   };
   return useQuery({
-    queryKey: ["dashboard", "consolide", params],
-    queryFn: async () => (await apiClient.get<DashboardConsolide>("/dashboard/consolide/", { params })).data,
+    queryKey: ["dashboard", "consolide", params, partage?.jeton],
+    queryFn: async () =>
+      (await apiClient.get<DashboardConsolide>(cheminApi(partage, "/dashboard/consolide/", "dashboard"), { params })).data,
     // Garde l'affichage précédent pendant le rechargement après un changement de filtre.
     placeholderData: keepPreviousData,
   });
@@ -40,9 +43,11 @@ export function useDashboardProjet(projetId: number | undefined) {
 
 /** Blocs masqués et types de graphiques, communs à tous les utilisateurs. */
 export function useConfigurationTableauDeBord() {
+  const partage = usePartage();
   return useQuery({
-    queryKey: ["dashboard", "configuration"],
-    queryFn: async () => (await apiClient.get<ConfigurationTableauDeBord>("/dashboard/configuration/")).data,
+    queryKey: ["dashboard", "configuration", partage?.jeton],
+    queryFn: async () =>
+      (await apiClient.get<ConfigurationTableauDeBord>(cheminApi(partage, "/dashboard/configuration/", "configuration"))).data,
   });
 }
 
@@ -66,9 +71,10 @@ export interface ConfigurationMenu {
 }
 
 export function useConfigurationMenu() {
+  const partage = usePartage();
   return useQuery({
-    queryKey: ["configuration-menu"],
-    queryFn: async () => (await apiClient.get<ConfigurationMenu>("/interface/menu/")).data,
+    queryKey: ["configuration-menu", partage?.jeton],
+    queryFn: async () => (await apiClient.get<ConfigurationMenu>(cheminApi(partage, "/interface/menu/", "menu"))).data,
     staleTime: 5 * 60 * 1000,
   });
 }

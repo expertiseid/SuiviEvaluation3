@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
-import type { Bailleur, Financement, Paginated, Partenaire, StatutParticulier, TypeActiviteBeneficiaire } from "../types";
+import type { Bailleur, Financement, Paginated, Partenaire, RallongeFinancement, StatutParticulier, TypeActiviteBeneficiaire } from "../types";
 
 export function usePartenaires() {
   return useQuery({
@@ -77,6 +77,30 @@ export function useFinancements(projetId?: number) {
         })
       ).data.results,
     enabled: !!projetId,
+  });
+}
+
+/** Rallonge de fonds d'un bailleur (motif obligatoire) ; le coût total du projet est recalculé. */
+export function useEnregistrerRallonge(projetId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { financement: number; montant: number; date: string; motif: string }) =>
+      (await apiClient.post<RallongeFinancement>("/rallonges-financement/", payload)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["financements"] });
+      queryClient.invalidateQueries({ queryKey: ["projets", projetId] });
+    },
+  });
+}
+
+export function useSupprimerRallonge(projetId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => apiClient.delete(`/rallonges-financement/${id}/`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["financements"] });
+      queryClient.invalidateQueries({ queryKey: ["projets", projetId] });
+    },
   });
 }
 

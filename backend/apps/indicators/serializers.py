@@ -2,6 +2,7 @@ from django.db.models import Sum
 from rest_framework import serializers
 
 from apps.core.vocabulaire import v
+from apps.strategy.models import ElementStrategique
 
 from .models import Indicateur, PalierAlerte, ParametresAlerte, ValeurIndicateur
 from .services import palier_pour_taux, paliers_pour, taux_realisation, valeur_realisee_totale
@@ -64,6 +65,11 @@ class IndicateurSerializer(serializers.ModelSerializer):
     valeurs = ValeurIndicateurSerializer(many=True, read_only=True)
     taux_realisation_actuel = serializers.SerializerMethodField()
     palier_actuel = serializers.SerializerMethodField()
+    # Lien par table intermédiaire (IndicateurElement) : DRF le rendrait en lecture seule, le
+    # rattachement envoyé par le formulaire était alors ignoré sans message.
+    elements_strategiques = serializers.PrimaryKeyRelatedField(
+        many=True, required=False, queryset=ElementStrategique.objects.all()
+    )
     elements_strategiques_libelles = serializers.StringRelatedField(
         source="elements_strategiques", many=True, read_only=True
     )
@@ -114,6 +120,20 @@ class IndicateurSerializer(serializers.ModelSerializer):
         return projet.nom if projet else None
 
     RATTACHEMENT_FIELDS = ("projet", "activite")
+
+    def create(self, validated_data):
+        elements = validated_data.pop("elements_strategiques", None)
+        indicateur = super().create(validated_data)
+        if elements is not None:
+            indicateur.elements_strategiques.set(elements)
+        return indicateur
+
+    def update(self, instance, validated_data):
+        elements = validated_data.pop("elements_strategiques", None)
+        indicateur = super().update(instance, validated_data)
+        if elements is not None:
+            indicateur.elements_strategiques.set(elements)
+        return indicateur
 
     def validate(self, attrs):
         valeurs = [

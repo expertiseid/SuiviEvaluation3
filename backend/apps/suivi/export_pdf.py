@@ -288,9 +288,7 @@ def _bloc_activite(activite, aujourdhui):
     """
 
 
-def exporter_suivi_pdf(projet) -> bytes:
-    from weasyprint import HTML
-
+def html_suivi(projet) -> str:
     data = construire_dashboard_suivi(projet)
     aujourdhui = datetime.date.today()
 
@@ -345,4 +343,10 @@ def exporter_suivi_pdf(projet) -> bytes:
     </body>
     </html>
     """
-    return HTML(string=html_content).write_pdf()
+    return html_content
+
+
+def exporter_suivi_pdf(projet) -> bytes:
+    from weasyprint import HTML
+
+    return HTML(string=html_suivi(projet)).write_pdf()

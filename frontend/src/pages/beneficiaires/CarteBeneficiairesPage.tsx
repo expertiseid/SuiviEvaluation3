@@ -276,7 +276,7 @@ export function CarteBeneficiairesPage() {
           >
             <SuiviVue onChange={(zoom, bbox) => setVue({ zoom, bbox })} />
             {tuiles && (
-              <TileLayer key={fondChoisi} attribution={`${tuiles.attribution} · limites : ${regions?.source ?? "geoBoundaries"}`} url={tuiles.url} />
+              <TileLayer key={fondChoisi} attribution={tuiles.attribution} url={tuiles.url} />
             )}
             {active("communes") && <Limites pays={pays} niveau={3} zoom={vue.zoom} noms={noms} />}
             {active("provinces") && <Limites pays={pays} niveau={2} zoom={vue.zoom} noms={noms} />}
@@ -321,11 +321,9 @@ export function CarteBeneficiairesPage() {
           <Text size="xs" c="dimmed">Zoomer pour voir les villes et villages.</Text>
         )}
       </Group>
-      {regions && (
+      {regions?.source === "geoBoundaries" && (
         <Text size="xs" c="dimmed">
-          {regions.source === "geoBoundaries"
-            ? `Contours : geoBoundaries (${regions.annee}) — un découpage plus récent que la source n'y figure pas encore ; ses zones sont placées au centre de leurs zones rattachées.`
-            : `Contours, routes et localités : ${regions.source}.`}
+          {`Contours : geoBoundaries (${regions.annee}) — un découpage plus récent que la source n'y figure pas encore ; ses zones sont placées au centre de leurs zones rattachées.`}
         </Text>
       )}
     </Stack>

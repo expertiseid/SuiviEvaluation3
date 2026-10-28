@@ -136,3 +136,37 @@ class ElementStrategique(TimestampedModel):
             f"« {niveau_attendu.nom_niveau} »"
             + (" (ou d'un niveau supérieur, saut de niveau autorisé)." if self.type_niveau.saut_niveau_autorise else ".")
         )
+
+
+class AppreciationStrategique(TimestampedModel):
+    """
+    Renseignement propre à un élément d'un document stratégique pour une période, en plus du
+    calcul automatique à partir des projets : appréciation de l'avancement, analyse,
+    difficultés, recommandations (pièces jointes : documents.PieceJustificative).
+    """
+
+    class Etat(models.TextChoices):
+        BON = "BON", "Bonne progression"
+        MOYEN = "MOYEN", "Progression moyenne"
+        INSUFFISANT = "INSUFFISANT", "Progression insuffisante"
+
+    element = models.ForeignKey(ElementStrategique, on_delete=models.CASCADE, related_name="appreciations")
+    libelle_periode = models.CharField(max_length=100, blank=True, help_text="Ex : « Année 2026 », « 1er semestre 2027 ».")
+    periode_debut = models.DateField()
+    periode_fin = models.DateField()
+    etat = models.CharField(max_length=12, choices=Etat.choices)
+    commentaire = models.TextField(blank=True, help_text="Analyse de l'avancement sur la période.")
+    difficultes = models.TextField(blank=True)
+    recommandations = models.TextField(blank=True)
+    saisi_par = models.ForeignKey(
+        "accounts.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="appreciations_strategiques"
+    )
+
+    class Meta:
+        ordering = ("-periode_fin", "-id")
+        constraints = [
+            models.CheckConstraint(check=models.Q(periode_fin__gte=models.F("periode_debut")), name="appreciation_periode_valide")
+        ]
+
+    def __str__(self):
+        return f"{self.element} — {self.libelle_periode or self.periode_fin}"

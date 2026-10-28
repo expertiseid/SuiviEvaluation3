@@ -24,11 +24,14 @@ NIVEAUX = (MASQUE, LECTURE, ECRITURE)
 # Module (route du menu ou onglet) → préfixes d'API dont il protège l'écriture.
 API_PAR_MODULE = {
     "/planification": ["/api/v1/planification/"],
-    "/strategie": ["/api/v1/cadres-strategiques", "/api/v1/types-niveaux", "/api/v1/elements-strategiques"],
+    "/strategie": [
+        "/api/v1/cadres-strategiques", "/api/v1/types-niveaux", "/api/v1/elements-strategiques",
+        "/api/v1/appreciations-strategiques", "/api/v1/rapports/suivi-strategique",
+    ],
     "/projets": [
         "/api/v1/projets", "/api/v1/activites", "/api/v1/sous-activites", "/api/v1/niveaux-activite",
         "/api/v1/jalons-livrables", "/api/v1/tranches-planifiees", "/api/v1/periodes-planification",
-        "/api/v1/partenaires-projet",
+        "/api/v1/partenaires-projet", "/api/v1/rapports/cadre-logique",
     ],
     "/indicateurs": ["/api/v1/indicateurs", "/api/v1/valeurs-indicateurs"],
     "/suivi": ["/api/v1/points-suivi", "/api/v1/taux-manuels", "/api/v1/suivi/"],
@@ -39,7 +42,8 @@ API_PAR_MODULE = {
     "/documents": ["/api/v1/documents", "/api/v1/dossiers", "/api/v1/pieces-justificatives"],
     "/zones-administratives": ["/api/v1/zones", "/api/v1/niveaux-administratifs"],
     "projet:equipe": ["/api/v1/equipes"],
-    "projet:financement": ["/api/v1/financements"],
+    "projet:risques": ["/api/v1/risques", "/api/v1/evaluations-risques", "/api/v1/rapports/risques"],
+    "projet:financement": ["/api/v1/financements", "/api/v1/rallonges-financement", "/api/v1/rapports/financier"],
 }
 # Modules refusés même en lecture quand ils sont cachés.
 LECTURE_BLOQUEE_SI_MASQUE = {"/beneficiaires", "/documents", "projet:financement"}

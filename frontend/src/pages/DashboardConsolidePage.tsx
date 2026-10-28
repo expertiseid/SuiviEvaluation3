@@ -10,6 +10,8 @@ import {
 } from "../api/dashboard";
 import { notifications } from "@mantine/notifications";
 import { messageErreurApi } from "../utils/erreurs";
+import { usePartage } from "../utils/partage";
+import { BoutonPartage } from "../components/partage/BoutonPartage";
 import { FiltresTableauDeBord } from "../components/dashboard/FiltresTableauDeBord";
 import { FILTRES_PAR_DEFAUT, versParametres, type EtatFiltres } from "../utils/filtresTableauDeBord";
 import { PersonnalisationModal, type DefinitionBloc } from "../components/dashboard/PersonnalisationModal";
@@ -18,7 +20,7 @@ import { CamembertChart } from "../components/charts/CamembertChart";
 import { ChoixTypeGraphique, GraphiqueAdaptable, type SerieGraphique } from "../components/charts/GraphiqueAdaptable";
 import { typesPossibles, type TypeGraphique } from "../utils/typesGraphiques";
 import { PROJET_STATUT_LABEL } from "../utils/statusTones";
-import type { DashboardConsolide, LigneRepartitionProjets, StatutProjet } from "../types";
+import type { DashboardConsolide, FiltresDashboard, LigneRepartitionProjets, StatutProjet } from "../types";
 import { TitreRubrique } from "../components/common/TitreRubrique";
 import { voc } from "../utils/vocabulaire";
 
@@ -200,9 +202,12 @@ export function DashboardConsolidePage() {
         notifications.show({ message: messageErreurApi(error, "Erreur lors de l'enregistrement"), color: "red" }),
     });
   }
-  const { data, isLoading, isFetching } = useDashboardConsolide(versParametres(filtres));
+  // Lien de partage : filtres enregistrés avec le lien, ni personnalisation ni liens vers les projets.
+  const partage = usePartage();
+  const parametres = partage ? (partage.filtres as FiltresDashboard) : versParametres(filtres);
+  const { data, isLoading, isFetching } = useDashboardConsolide(parametres);
 
-  const blocs = data ? definirBlocs(data) : [];
+  const blocs = data ? definirBlocs(data, !partage) : [];
   const visibles = blocs.filter((b) => !masques.includes(b.cle));
 
   function typeDe(b: Bloc): TypeGraphique {
@@ -214,14 +219,15 @@ export function DashboardConsolidePage() {
     <Stack gap="lg">
       <Group justify="space-between">
         <TitreRubrique route="/" defaut="Tableau de bord" majuscules />
-        {peutPersonnaliser && (
+        {!partage && <BoutonPartage type="TABLEAU_DE_BORD" filtres={parametres as Record<string, unknown>} />}
+        {peutPersonnaliser && !partage && (
           <Button variant="light" leftSection={<SlidersHorizontal size={16} />} onClick={() => setPersonnalisation(true)}>
             Personnaliser{blocs.length > 0 && ` (${visibles.length}/${blocs.length} blocs)`}
           </Button>
         )}
       </Group>
 
-      <FiltresTableauDeBord valeur={filtres} onChange={setFiltres} nombreProjets={data?.nombre_projets} />
+      {!partage && <FiltresTableauDeBord valeur={filtres} onChange={setFiltres} nombreProjets={data?.nombre_projets} />}
 
       {isLoading || !data ? (
         <Text c="dimmed">Chargement…</Text>
@@ -276,7 +282,7 @@ export function DashboardConsolidePage() {
 }
 
 /** Tous les blocs du tableau de bord, dans l'ordre d'affichage. */
-function definirBlocs(data: DashboardConsolide): Bloc[] {
+function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
   // Un projet garde la même couleur dans tous les graphiques (ordre alphabétique des codes).
   const codesProjets = data.projets.map((p) => p.code).sort();
   const couleurProjet = (code: string) => COULEURS_SERIE[codesProjets.indexOf(code) % COULEURS_SERIE.length];
@@ -596,9 +602,13 @@ function definirBlocs(data: DashboardConsolide): Bloc[] {
                       <Text size="sm" fw={500} c="dimmed">{p.code}</Text>
                     </Table.Td>
                     <Table.Td>
-                      <Text component={Link} to={`/projets/${p.id}`} size="sm" fw={500} c="teal.8">
-                        {p.nom}
-                      </Text>
+                      {liensProjets ? (
+                        <Text component={Link} to={`/projets/${p.id}`} size="sm" fw={500} c="teal.8">
+                          {p.nom}
+                        </Text>
+                      ) : (
+                        <Text size="sm" fw={500}>{p.nom}</Text>
+                      )}
                     </Table.Td>
                     <Table.Td>{PROJET_STATUT_LABEL[p.statut] ?? p.statut}</Table.Td>
                     <Table.Td ta="right">{fcfa(Number(p.budget_total))}</Table.Td>
