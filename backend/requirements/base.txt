@@ -12,3 +12,4 @@ weasyprint>=62.0,<63
 pydyf==0.11.0
 Pillow>=10.4,<10.5
 segno>=1.6,<1.7
+pyshp>=3.0,<4

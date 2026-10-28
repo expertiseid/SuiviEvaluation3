@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { FolderKanban, IdCard, MapPin, Pencil, Trash2 } from "lucide-react";
-import { ActionIcon, Badge, Button, Card, Group, Modal, SimpleGrid, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
+import { ActionIcon, Badge, Button, Card, Flex, Group, Modal, SimpleGrid, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import {
   telechargerCartesBeneficiaires,
@@ -142,8 +142,9 @@ export function BeneficiaireDetailPage() {
       </Group>
 
       <Card withBorder padding="md" radius="md">
-        <Group justify="space-between" align="flex-start" wrap="nowrap">
-        <div>
+        {/* Sur téléphone, le QR passe sous les informations. */}
+        <Flex direction={{ base: "column", xs: "row" }} justify="space-between" align={{ base: "stretch", xs: "flex-start" }} gap="md">
+        <div style={{ minWidth: 0 }}>
         <Text size="xs" c="dimmed" fw={600} tt="uppercase" mb="sm" style={{ letterSpacing: 0.4 }}>
           Informations
         </Text>
@@ -176,7 +177,7 @@ export function BeneficiaireDetailPage() {
         </Stack>
         </div>
         <CarteQr id={beneficiaire.id} identifiant={beneficiaire.identifiant} />
-        </Group>
+        </Flex>
       </Card>
 
       <InformationsComplementaires beneficiaire={beneficiaire} />
@@ -189,7 +190,22 @@ export function BeneficiaireDetailPage() {
         {beneficiaire.participations.length === 0 ? (
           <EmptyState icon={<FolderKanban size={32} strokeWidth={1.5} />} message={voc("Aucun projet pour le moment.")} />
         ) : (
-          <Table.ScrollContainer minWidth={500}>
+          <>
+          {/* Téléphone : une ligne par projet plutôt qu'un tableau coupé. */}
+          <Stack gap="xs" hiddenFrom="sm">
+            {beneficiaire.participations.map((p) => (
+              <div key={p.id} style={{ borderTop: "1px solid var(--mantine-color-gray-2)", paddingTop: 8 }}>
+                <Text component={Link} to={`/projets/${p.projet}`} size="sm" fw={500} c="teal.8">
+                  {p.projet_nom}
+                </Text>
+                <Text size="xs" c="dimmed">
+                  Inscrit(e) le {p.date_inscription}
+                  {p.role_dans_projet && ` · ${p.role_dans_projet}`}
+                </Text>
+              </div>
+            ))}
+          </Stack>
+          <Table.ScrollContainer minWidth={500} visibleFrom="sm">
             <Table striped highlightOnHover verticalSpacing="sm">
               <Table.Thead>
                 <Table.Tr>
@@ -217,6 +233,7 @@ export function BeneficiaireDetailPage() {
               </Table.Tbody>
             </Table>
           </Table.ScrollContainer>
+          </>
         )}
       </Card>
 

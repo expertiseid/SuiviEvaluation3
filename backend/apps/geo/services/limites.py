@@ -76,7 +76,7 @@ def telecharger(pays: str, niveau: int):
 
 
 def _nom_approche(nom, centres):
-    """Orthographe voisine (« Kourittenga » / « Kouritenga ») : le nom le plus proche, s'il l'est assez."""
+    """Orthographe voisine (« Kourittenga » / « Kouritenga », « Gourci » / « Gourcy ») : le nom le plus proche, s'il l'est assez."""
     from difflib import SequenceMatcher
 
     meilleur, score = None, 0.0
@@ -84,7 +84,7 @@ def _nom_approche(nom, centres):
         ratio = SequenceMatcher(None, nom, candidat).ratio()
         if ratio > score:
             meilleur, score = position, ratio
-    return meilleur if score >= 0.85 else None
+    return meilleur if score >= 0.8 else None
 
 
 def completer_par_les_enfants(pays) -> int:

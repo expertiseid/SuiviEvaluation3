@@ -106,6 +106,7 @@ function GroupeBeneficiaires({
         ) : data?.count === 0 ? (
           <Text size="sm" c="dimmed">{voc("Aucun bénéficiaire associé à ce projet pour l'instant.")}</Text>
         ) : (
+          <Table.ScrollContainer minWidth={760}>
           <Table striped highlightOnHover>
             <Table.Thead>
               <Table.Tr>
@@ -128,7 +129,7 @@ function GroupeBeneficiaires({
                 return (
                   <Table.Tr key={b.id}>
                     <Table.Td>
-                      <Text size="xs" ff="monospace" c="dimmed">{b.identifiant}</Text>
+                      <Text size="xs" ff="monospace" c="dimmed" style={{ whiteSpace: "nowrap" }}>{b.identifiant}</Text>
                     </Table.Td>
                     <Table.Td>
                       <Text component={Link} to={`/beneficiaires/${b.id}`} size="sm" fw={500} c="teal.8">
@@ -176,6 +177,7 @@ function GroupeBeneficiaires({
               })}
             </Table.Tbody>
           </Table>
+          </Table.ScrollContainer>
         )}
 
         {nombrePages > 1 && (

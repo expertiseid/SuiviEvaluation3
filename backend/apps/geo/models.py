@@ -121,7 +121,7 @@ class LimiteAdministrative(TimestampedModel):
     niveau = models.PositiveSmallIntegerField()
     nom_niveau = models.CharField(max_length=60, blank=True, help_text="Nom donné par la source (Region, Province…).")
     annee = models.CharField(max_length=10, blank=True)
-    source = models.URLField(max_length=500, blank=True)
+    source = models.CharField(max_length=500, blank=True, help_text="geoBoundaries (adresse) ou base nationale importée (BNDT…).")
     geojson = models.JSONField()
 
     class Meta:
@@ -129,3 +129,43 @@ class LimiteAdministrative(TimestampedModel):
 
     def __str__(self):
         return f"{self.pays} niveau {self.niveau}"
+
+
+class CoucheCarte(TimestampedModel):
+    """Couche d'habillage de la carte des bénéficiaires (ex. réseau routier), GeoJSON simplifié."""
+
+    pays = models.CharField(max_length=2)
+    cle = models.SlugField(max_length=30, help_text="Ex : routes.")
+    libelle = models.CharField(max_length=100)
+    source = models.CharField(max_length=500, blank=True)
+    geojson = models.JSONField()
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("pays", "cle"), name="couche_pays_cle_unique")]
+
+    def __str__(self):
+        return f"{self.pays} {self.libelle}"
+
+
+class Localite(models.Model):
+    """
+    Localité nommée (ville, village) d'une base topographique nationale : affichée sur la carte
+    à fort zoom, par zone visible (plusieurs dizaines de milliers par pays).
+    """
+
+    VILLE = "VILLE"
+    VILLAGE_ADMINISTRATIF = "VILLAGE_ADMIN"
+    VILLAGE = "VILLAGE"
+
+    pays = models.CharField(max_length=2)
+    nom = models.CharField(max_length=150)
+    statut = models.CharField(max_length=20)
+    commune = models.CharField(max_length=150, blank=True)
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+
+    class Meta:
+        indexes = [models.Index(fields=("pays", "latitude", "longitude"), name="localite_position_idx")]
+
+    def __str__(self):
+        return self.nom

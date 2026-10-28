@@ -98,13 +98,45 @@ export function useLimitesAdministratives(pays: string | undefined, niveau: numb
     queryKey: ["limites-administratives", pays, niveau],
     queryFn: async () =>
       (
-        await apiClient.get<{ pays: string; niveau: number; nom_niveau: string; annee: string; geojson: GeoJSON.FeatureCollection }>(
+        await apiClient.get<{ pays: string; niveau: number; nom_niveau: string; annee: string; source: string; geojson: GeoJSON.FeatureCollection }>(
           "/limites-administratives/",
           { params: { pays, niveau } },
         )
       ).data,
     enabled: !!pays,
     staleTime: Infinity,
+    retry: false,
+  });
+}
+
+/** Couche d'habillage importée (ex. routes) ; absente tant qu'elle n'a pas été importée. */
+export function useCoucheCarte(pays: string | undefined, cle: string, active: boolean) {
+  return useQuery({
+    queryKey: ["couches-carte", pays, cle],
+    queryFn: async () =>
+      (await apiClient.get<{ cle: string; libelle: string; source: string; geojson: GeoJSON.FeatureCollection }>("/couches-carte/", { params: { pays, cle } })).data,
+    enabled: !!pays && active,
+    staleTime: Infinity,
+    retry: false,
+  });
+}
+
+export interface LocaliteCarte {
+  nom: string;
+  statut: "VILLE" | "VILLAGE_ADMIN" | "VILLAGE";
+  commune: string;
+  lat: number;
+  lng: number;
+}
+
+/** Villes et villages de la partie visible de la carte (bbox : sud,ouest,nord,est). */
+export function useLocalites(pays: string | undefined, bbox: string | null) {
+  return useQuery({
+    queryKey: ["localites", pays, bbox],
+    queryFn: async () => (await apiClient.get<{ total: number; localites: LocaliteCarte[] }>("/localites/", { params: { pays, bbox } })).data,
+    enabled: !!pays && !!bbox,
+    staleTime: Infinity,
+    placeholderData: (precedent) => precedent,
     retry: false,
   });
 }

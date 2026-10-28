@@ -317,6 +317,19 @@ en attente avec ces règles et retire ceux qui ne tiennent plus.
   mal leurs contours, ex. les communes du Burkina en 2007) ; les zones absentes de la source
   (découpage plus récent) prennent le centre de leurs zones enfants, ou se placent à la main
   (Zones administratives).
+- **Base topographique nationale** (BNDT de l'IGB pour le Burkina Faso, shapefiles WGS84) :
+  `importer_bndt` (`apps/geo/services/bndt.py`, bibliothèque `pyshp`) remplace les contours
+  geoBoundaries par ceux de la base, à jour du découpage de 2025 (17 régions, 47 provinces,
+  352 communes, noms et point d'étiquette dans chaque contour), ajoute le réseau routier
+  (`CoucheCarte` « routes », classes nationale / régionale / départementale) et les villes et
+  villages nommés (`Localite`, sans l'habitat dispersé), puis place les zones. Contours et
+  routes sont simplifiés (Douglas-Peucker) ; les localités sont servies par zone visible
+  (`localites/?bbox=`, 3 000 au plus, villes d'abord). Les fichiers sources ne sont pas
+  versionnés.
+- **Couches de la carte** au choix : régions, provinces, communes, routes, villes et villages
+  (à partir du zoom 10), noms (selon le zoom : régions, puis provinces, communes, villages à
+  partir du zoom 12) ; fond neutre sans noms (Esri, par défaut quand une base nationale est
+  importée), OpenStreetMap, satellite (Esri) ou aucun.
 
 ### 5.7 Imports « au mieux »
 
@@ -589,7 +602,9 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 | GET | `beneficiaires/carte/` | Données de la carte des bénéficiaires (`?projet=`) |
 | CRUD | `variables-beneficiaires/` | Variables personnalisées (modification : Administrateur) |
 | POST | `signalements-doublons/reverifier/` | Repasse les signalements en attente avec les règles actuelles |
-| GET | `limites-administratives/` | Contours GeoJSON d'un niveau (`?pays=BF&niveau=2`) |
+| GET | `limites-administratives/` | Contours GeoJSON d'un niveau (`?pays=BF&niveau=2`) et leur source |
+| GET | `couches-carte/` | Couche d'habillage importée (`?pays=BF&cle=routes`) |
+| GET | `localites/` | Villes et villages d'une zone (`?pays=BF&bbox=sud,ouest,nord,est`) |
 | GET | `beneficiaires/exporter/` | Export des bénéficiaires : `?fichier=excel` ou `pdf`, `?projets=1,3` pour choisir les projets |
 | POST | `beneficiaires/{id}/verifier-doublons/` | Recherche des doublons d'un bénéficiaire |
 | GET / POST | `documents/{id}/versions/`, `documents/{id}/nouvelle-version/` | Versions d'un document |
@@ -711,6 +726,7 @@ mutualisées) puis rejoue la requête, ou renvoie vers la page de connexion.
 | `seed_projets_filtres` | Ajoute (ou supprime avec `--supprimer`) des projets `TEST-…` pour tester les filtres |
 | `seed_points_suivi` | Ajoute des points de suivi de démonstration |
 | `charger_limites BF [--niveaux 1 2 3] [--recalculer]` | Télécharge les limites administratives d'un pays (geoBoundaries) et place les zones sur la carte |
+| `importer_bndt WGS84.zip [--pays BF] [--recalculer]` | Importe une base topographique en shapefiles (archive ou dossier) : contours, routes, localités, puis place les zones |
 
 Exécution : `docker compose exec backend python manage.py <commande>`.
 

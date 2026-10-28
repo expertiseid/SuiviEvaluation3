@@ -10,6 +10,7 @@ import {
   FolderKanban,
   Gauge,
   LayoutDashboard,
+  LogOut,
   MapPin,
   PenLine,
   RotateCcw,
@@ -328,22 +329,25 @@ export function AppLayout() {
     <AppShell
       header={{ height: afficherBandeau ? 88 : 56 }}
       navbar={{ width: 230, breakpoint: "sm", collapsed: { mobile: !opened } }}
-      padding="lg"
+      padding={{ base: "sm", sm: "lg" }}
     >
       <AppShell.Header withBorder={false} bg="teal.9" c="white">
-        <Group h={56} px="md" justify="space-between">
-          <Group gap="sm">
+        <Group h={56} px={{ base: "xs", sm: "md" }} justify="space-between" wrap="nowrap">
+          <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" color="white" />
-            <Text fw={700} size="sm">Plateforme de Suivi-Évaluation</Text>
+            <Text fw={700} size="sm" truncate>
+              <Text span inherit visibleFrom="xs">Plateforme de </Text>Suivi-Évaluation
+            </Text>
           </Group>
-          <Group gap="sm">
+          {/* Sur téléphone : cloche, initiales et icône de déconnexion seulement. */}
+          <Group gap="sm" wrap="nowrap">
             <NotificationBell />
             {user && (
-              <Group gap={8}>
+              <Group gap={8} wrap="nowrap">
                 <Avatar size={26} radius="xl" color="teal.2" variant="filled">
                   {initiales(user.first_name || user.username)}
                 </Avatar>
-                <Text size="xs" c="teal.1">
+                <Text size="xs" c="teal.1" visibleFrom="md">
                   {user.first_name || user.username} · {user.role_libelle || user.role}
                 </Text>
               </Group>
@@ -352,6 +356,7 @@ export function AppLayout() {
               variant="subtle"
               color="gray.0"
               size="xs"
+              visibleFrom="sm"
               onClick={() => {
                 logout();
                 navigate("/login");
@@ -359,6 +364,18 @@ export function AppLayout() {
             >
               Déconnexion
             </Button>
+            <ActionIcon
+              variant="subtle"
+              color="gray.0"
+              hiddenFrom="sm"
+              aria-label="Déconnexion"
+              onClick={() => {
+                logout();
+                navigate("/login");
+              }}
+            >
+              <LogOut size={18} />
+            </ActionIcon>
           </Group>
         </Group>
         {afficherBandeau && <EcheancesBanner />}
