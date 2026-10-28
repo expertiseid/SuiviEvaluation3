@@ -35,6 +35,7 @@ import {
 import type { MethodeAgregation, MethodeCalcul } from "../../types";
 import type { PorteeAlerte } from "../../types";
 import { TitreRubrique } from "../../components/common/TitreRubrique";
+import { RapportageCard } from "./RapportageCard";
 import { voc } from "../../utils/vocabulaire";
 
 // Palette restreinte à choisir au clic plutôt qu'un sélecteur de couleur
@@ -182,6 +183,7 @@ export function ParametresAlertePage() {
       </div>
 
       <CalculTauxCard />
+      <RapportageCard />
       <GrilleInterpretationCard />
       <RappelsEcheanceCard />
     </Stack>

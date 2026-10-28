@@ -29,8 +29,9 @@ import {
 } from "../../api/accounts";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
 import { messageErreurApi } from "../../utils/erreurs";
-import type { RoleUtilisateur, User } from "../../types";
+import type { NiveauModule, RoleUtilisateur, User } from "../../types";
 import { ModifierRoleModal, RolesTab } from "./RolesTab";
+import { DroitsModules } from "./DroitsModules";
 import { TitreRubrique } from "../../components/common/TitreRubrique";
 import { voc } from "../../utils/vocabulaire";
 
@@ -186,6 +187,7 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
   const [niveauAcces, setNiveauAcces] = useState<string | null>("LECTURE_ECRITURE");
   const [actif, setActif] = useState(true);
   const [password, setPassword] = useState("");
+  const [droits, setDroits] = useState<Record<string, NiveauModule>>({});
 
   // Le modal reste monté en permanence (seul `utilisateur` change à chaque
   // clic sur "Modifier") — un useEffect est donc nécessaire pour resynchroniser
@@ -199,6 +201,7 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
     setNiveauAcces(utilisateur.niveau_acces);
     setActif(utilisateur.is_active);
     setPassword("");
+    setDroits(utilisateur.acces_modules ?? {});
   }, [utilisateur]);
 
   const estAdmin = role === "ADMIN";
@@ -215,6 +218,7 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
           role: role as never,
           niveau_acces: (estAdmin ? "LECTURE_ECRITURE" : niveauAcces) as never,
           is_active: actif,
+          acces_modules: estAdmin ? {} : droits,
           ...(password ? { password } : {}),
         },
       });
@@ -226,7 +230,7 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
   }
 
   return (
-    <Modal opened={!!utilisateur} onClose={onClose} title={`Modifier — ${utilisateur?.username ?? ""}`}>
+    <Modal size="xl" opened={!!utilisateur} onClose={onClose} title={`Modifier — ${utilisateur?.username ?? ""}`}>
       <Stack gap="sm">
         <Group grow>
           <TextInput label="Prénom" value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} />
@@ -235,13 +239,18 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
         <TextInput label="Email" value={email} onChange={(e) => setEmail(e.currentTarget.value)} />
         <RoleSelect value={role} onChange={setRole} />
         <Select
-          label="Niveau d'accès"
+          label="Niveau d'accès par défaut"
           data={NIVEAUX_ACCES}
           value={estAdmin ? "LECTURE_ECRITURE" : niveauAcces}
           onChange={setNiveauAcces}
           disabled={estAdmin}
-          description={estAdmin ? "Toujours complet pour un Administrateur" : undefined}
+          description={estAdmin ? "Toujours complet pour un Administrateur" : "Appliqué aux modules non réglés ci-dessous"}
         />
+        {estAdmin ? (
+          <Text size="xs" c="dimmed">Un Administrateur a toujours accès à tous les modules.</Text>
+        ) : (
+          <DroitsModules value={droits} onChange={setDroits} niveauAcces={niveauAcces} />
+        )}
         <Switch label="Compte actif" checked={actif} onChange={(e) => setActif(e.currentTarget.checked)} />
         <PasswordInput
           label="Nouveau mot de passe"
@@ -385,6 +394,9 @@ export function UtilisateursPage() {
                         <Badge variant="light" color={u.role === "ADMIN" || u.niveau_acces === "LECTURE_ECRITURE" ? "teal" : "gray"}>
                           {u.role === "ADMIN" ? "Complet" : LIBELLES_NIVEAU_ACCES[u.niveau_acces] ?? u.niveau_acces}
                         </Badge>
+                        {u.role !== "ADMIN" && Object.keys(u.acces_modules ?? {}).length > 0 && (
+                          <Badge variant="light" color="orange" ml={4}>Droits par module</Badge>
+                        )}
                       </Table.Td>
                       <Table.Td>{u.is_active ? "Oui" : "Non"}</Table.Td>
                       <Table.Td>

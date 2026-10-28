@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from simple_history.models import HistoricalRecords
 
-from apps.core.models import TimestampedModel
+from apps.core.models import EtatApprobation, SaisieApprouvable, TimestampedModel
 
 
 def duree_en_jours(debut, fin):
@@ -56,6 +56,51 @@ class ParametresCalcul(models.Model):
     @classmethod
     def courants(cls):
         return cls.objects.get_or_create(pk=1)[0]
+
+
+class PerimetreFermeture(models.TextChoices):
+    """Ce qui passe en lecture seule quand la saisie est fermée (voir apps.projects.rapportage)."""
+
+    REALISATIONS = "REALISATIONS", "Les réalisations seulement"
+    TOUT = "TOUT", "Tout le projet"
+
+
+class ParametresRapportage(models.Model):
+    """
+    Réglage de l'organisation (ligne unique, id=1) : contrôle des périodes de rapportage. Quand
+    il est actif, la saisie n'est ouverte que pendant les périodes de rapportage (générales ou
+    propres au projet) ; le reste du temps, le périmètre choisi est en lecture seule.
+    """
+
+    controle_actif = models.BooleanField(default=False)
+    perimetre = models.CharField(
+        max_length=20, choices=PerimetreFermeture.choices, default=PerimetreFermeture.REALISATIONS
+    )
+
+    class Meta:
+        verbose_name = "Paramètres des périodes de rapportage"
+
+    @classmethod
+    def courants(cls):
+        return cls.objects.get_or_create(pk=1)[0]
+
+
+class FenetreRapportage(TimestampedModel):
+    """Période pendant laquelle la saisie est ouverte : pour tous les projets (projet vide) ou un seul."""
+
+    projet = models.ForeignKey(
+        "Projet", null=True, blank=True, on_delete=models.CASCADE, related_name="fenetres_rapportage"
+    )
+    libelle = models.CharField(max_length=100, help_text="Ex : « Rapport du 1er trimestre 2026 ».")
+    date_debut = models.DateField()
+    date_fin = models.DateField()
+
+    class Meta:
+        ordering = ("date_debut", "id")
+        verbose_name = "Période de rapportage"
+
+    def __str__(self):
+        return self.libelle
 
 
 class Projet(TimestampedModel):
@@ -133,6 +178,33 @@ class Projet(TimestampedModel):
         max_length=20, choices=TypeMiseEnOeuvre.choices, default=TypeMiseEnOeuvre.DIRECT
     )
     zones = models.ManyToManyField("geo.Zone", blank=True, related_name="projets")
+    class Saisie(models.TextChoices):
+        HERITE = "HERITE", "Selon le réglage général"
+        OUVERTE = "OUVERTE", "Toujours ouverte"
+        FERMEE = "FERMEE", "Fermée, sauf pendant les périodes propres au projet"
+
+    saisie = models.CharField(
+        max_length=20,
+        choices=Saisie.choices,
+        default=Saisie.HERITE,
+        help_text="Ouverture de la saisie pour ce projet (voir les périodes de rapportage).",
+    )
+    perimetre_fermeture = models.CharField(
+        max_length=20,
+        choices=PerimetreFermeture.choices,
+        blank=True,
+        help_text="Ce qui est fermé hors période de rapportage ; vide = réglage général.",
+    )
+    approbation_realisations = models.BooleanField(
+        default=False,
+        help_text="Les saisies de réalisations (suivis, valeurs d'indicateurs, taux manuels) ne comptent "
+        "qu'une fois approuvées (voir apps.projects.approbation).",
+    )
+    approbation_planification = models.BooleanField(
+        default=False,
+        help_text="Les ajouts, modifications et suppressions d'éléments de la planification passent par "
+        "une demande à approuver.",
+    )
     tout_le_pays = models.BooleanField(
         default=False,
         help_text="Intervention sur l'ensemble du territoire du ou des pays d'intervention : aucune zone à "
@@ -460,7 +532,7 @@ class JalonLivrable(TimestampedModel):
         return self.libelle
 
 
-class TauxManuel(TimestampedModel):
+class TauxManuel(TimestampedModel, SaisieApprouvable):
     """
     Taux d'exécution saisi à la main (méthode « saisie manuelle ») — historisé :
     le taux en vigueur est la saisie la plus récente, jamais recalculé.
@@ -482,3 +554,46 @@ class TauxManuel(TimestampedModel):
 
     def __str__(self):
         return f"{self.activite} — {self.taux} % au {self.date}"
+
+
+class DemandeModification(TimestampedModel):
+    """
+    Changement de planification en attente d'approbation (projets avec
+    approbation_planification, voir apps.projects.approbation) : ajout, modification ou
+    suppression d'un élément ou d'une sous-activité, appliqué seulement une fois approuvé.
+    """
+
+    class Cible(models.TextChoices):
+        ACTIVITE = "activite", "Élément de la planification"
+        SOUS_ACTIVITE = "sous_activite", "Sous-activité"
+
+    class Action(models.TextChoices):
+        CREATION = "CREATION", "Ajout"
+        MODIFICATION = "MODIFICATION", "Modification"
+        SUPPRESSION = "SUPPRESSION", "Suppression"
+
+    projet = models.ForeignKey(Projet, on_delete=models.CASCADE, related_name="demandes_modification")
+    cible = models.CharField(max_length=20, choices=Cible.choices)
+    cible_id = models.PositiveIntegerField(null=True, blank=True, help_text="Vide pour un ajout.")
+    action = models.CharField(max_length=20, choices=Action.choices)
+    libelle = models.CharField(max_length=300, help_text="Élément concerné, au moment de la demande.")
+    donnees = models.JSONField(default=dict, blank=True, help_text="Valeurs demandées (telles que saisies).")
+    changements = models.JSONField(
+        default=list, blank=True, help_text="[{champ, avant, apres}] pour affichage (modification)."
+    )
+    etat = models.CharField(max_length=20, choices=EtatApprobation.choices, default=EtatApprobation.EN_ATTENTE)
+    demandeur = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    traite_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    traite_le = models.DateTimeField(null=True, blank=True)
+    motif_rejet = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+        verbose_name = "Demande de modification"
+        verbose_name_plural = "Demandes de modification"
+
+    def __str__(self):
+        return f"{self.get_action_display()} — {self.libelle}"
+

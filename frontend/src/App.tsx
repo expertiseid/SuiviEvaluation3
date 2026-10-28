@@ -14,6 +14,7 @@ import { BeneficiaireDetailPage } from "./pages/beneficiaires/BeneficiaireDetail
 import { DoublonsPage } from "./pages/beneficiaires/DoublonsPage";
 import { UtilisateursPage } from "./pages/utilisateurs/UtilisateursPage";
 import { CadresStrategiquesListPage } from "./pages/strategie/CadresStrategiquesListPage";
+import { ApprobationsPage } from "./pages/approbations/ApprobationsPage";
 import { CadreStrategiqueDetailPage } from "./pages/strategie/CadreStrategiqueDetailPage";
 import { ZonesAdministrativesPage } from "./pages/geo/ZonesAdministrativesPage";
 import { PlanificationImportPage } from "./pages/planification/PlanificationImportPage";
@@ -41,6 +42,7 @@ export default function App() {
         <Route path="/beneficiaires" element={<BeneficiairesListPage />} />
         <Route path="/beneficiaires/:id" element={<BeneficiaireDetailPage />} />
         <Route path="/doublons" element={<DoublonsPage />} />
+        <Route path="/approbations" element={<ApprobationsPage />} />
         <Route path="/strategie" element={<CadresStrategiquesListPage />} />
         <Route path="/strategie/:id" element={<CadreStrategiqueDetailPage />} />
         <Route path="/zones-administratives" element={<ZonesAdministrativesPage />} />

@@ -50,7 +50,7 @@ import {
   useUpdatePeriodePlanification,
   useUpdateTranchePlanifiee,
 } from "../../api/suivi";
-import { useAuth } from "../../auth/useAuth";
+import { useAccesModules } from "../../utils/modules";
 import { EmptyState } from "../../components/common/EmptyState";
 import { StatCard } from "../../components/common/StatCard";
 import { EnTetePeriode } from "../../components/suivi/EnTetePeriode";
@@ -687,8 +687,7 @@ export function PlanificationPeriodeTab({
   >(null);
   const [recherche, setRecherche] = useState("");
   const [seulementDansLesDates, setSeulementDansLesDates] = useState(false);
-  const { user } = useAuth();
-  const peutModifier = !!user && (user.role === "ADMIN" || user.niveau_acces === "LECTURE_ECRITURE");
+  const peutModifier = useAccesModules().peutEcrire("/projets");
   const { data: suivi } = useSuiviDashboard(projet.id);
   const indicateurs = suivi?.indicateurs ?? [];
 

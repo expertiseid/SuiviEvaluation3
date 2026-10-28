@@ -22,14 +22,14 @@ def supprimer_projet_cascade(projet):
         activites = Activite.objects.filter(projet=projet)
         sous_activites = SousActivite.objects.filter(activite__in=activites)
         JalonLivrable.objects.filter(activite__in=activites).delete()
-        TauxManuel.objects.filter(activite__in=activites).delete()
+        TauxManuel.tous.filter(activite__in=activites).delete()
 
         indicateurs = Indicateur.objects.filter(Q(projet=projet) | Q(activite__in=activites))
 
-        ValeurIndicateur.objects.filter(indicateur__in=indicateurs).delete()
+        ValeurIndicateur.tous.filter(indicateur__in=indicateurs).delete()
         indicateurs.delete()
 
-        PointSuivi.objects.filter(Q(activite__in=activites) | Q(sous_activite__in=sous_activites)).delete()
+        PointSuivi.tous.filter(Q(activite__in=activites) | Q(sous_activite__in=sous_activites)).delete()
         sous_activites.delete()
         # activite_parent est en PROTECT : puisque TOUS les éléments de ce
         # projet sont supprimés ensemble, on casse d'abord les liens
@@ -78,13 +78,13 @@ def supprimer_activite_cascade(activite):
             supprimer_activite_cascade(enfant)
 
         JalonLivrable.objects.filter(activite=activite).delete()
-        TauxManuel.objects.filter(activite=activite).delete()
+        TauxManuel.tous.filter(activite=activite).delete()
         indicateurs = Indicateur.objects.filter(activite=activite)
-        ValeurIndicateur.objects.filter(indicateur__in=indicateurs).delete()
+        ValeurIndicateur.tous.filter(indicateur__in=indicateurs).delete()
         indicateurs.delete()
 
         sous_activites = SousActivite.objects.filter(activite=activite)
-        PointSuivi.objects.filter(Q(activite=activite) | Q(sous_activite__in=sous_activites)).delete()
+        PointSuivi.tous.filter(Q(activite=activite) | Q(sous_activite__in=sous_activites)).delete()
         sous_activites.delete()
         activite.delete()
 
@@ -135,7 +135,7 @@ def supprimer_sous_activite_cascade(sous_activite):
     from apps.suivi.models import PointSuivi
 
     with transaction.atomic():
-        PointSuivi.objects.filter(sous_activite=sous_activite).delete()
+        PointSuivi.tous.filter(sous_activite=sous_activite).delete()
         sous_activite.delete()
 
 

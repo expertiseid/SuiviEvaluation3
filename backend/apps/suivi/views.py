@@ -9,7 +9,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
-from apps.core.permissions import HasGlobalVisibilityOrAssigned
+from apps.core.permissions import AvertissementsSaisieMixin, HasGlobalVisibilityOrAssigned, SuppressionAtomiqueMixin
 from apps.core.vocabulaire import v
 from apps.projects.models import Projet
 from apps.projects.queryset_filters import visible_projets_ids
@@ -35,7 +35,7 @@ from .serializers import PeriodePlanificationSerializer, PointSuiviSerializer, T
 from .services import construire_dashboard_suivi, construire_planification_periode, synchroniser_activite_depuis_suivi, synchroniser_sous_activite_depuis_suivi
 
 
-class PointSuiviViewSet(viewsets.ModelViewSet):
+class PointSuiviViewSet(AvertissementsSaisieMixin, SuppressionAtomiqueMixin, viewsets.ModelViewSet):
     serializer_class = PointSuiviSerializer
     permission_classes = (HasGlobalVisibilityOrAssigned,)
     filterset_fields = ("activite", "sous_activite")
@@ -43,7 +43,7 @@ class PointSuiviViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         ids = visible_projets_ids(self.request.user)
         return (
-            PointSuivi.objects.filter(
+            PointSuivi.tous.filter(
                 Q(activite__projet__id__in=ids)
                 | Q(sous_activite__activite__projet__id__in=ids)
             )

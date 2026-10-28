@@ -7,7 +7,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.accounts.constants import ROLE_CHARGE_SE
-from apps.core.permissions import HasGlobalVisibilityOrAssigned, IsAdminOrReadOnly
+from apps.core.permissions import AvertissementsSaisieMixin, HasGlobalVisibilityOrAssigned, IsAdminOrReadOnly, SuppressionAtomiqueMixin
 from apps.core.vocabulaire import v
 from apps.notifications.models import Notification
 from apps.notifications.services import notifier, notifier_par_role
@@ -206,14 +206,14 @@ class IndicateurViewSet(viewsets.ModelViewSet):
         return Response(resultat)
 
 
-class ValeurIndicateurViewSet(viewsets.ModelViewSet):
+class ValeurIndicateurViewSet(AvertissementsSaisieMixin, SuppressionAtomiqueMixin, viewsets.ModelViewSet):
     serializer_class = ValeurIndicateurSerializer
     permission_classes = (HasGlobalVisibilityOrAssigned,)
     filterset_fields = ("indicateur",)
 
     def get_queryset(self):
         ids = visible_projets_ids(self.request.user)
-        return ValeurIndicateur.objects.filter(
+        return ValeurIndicateur.tous.filter(
             Q(indicateur__projet__isnull=True, indicateur__activite__isnull=True)
             | Q(indicateur__projet__id__in=ids)
             | Q(indicateur__activite__projet__id__in=ids)

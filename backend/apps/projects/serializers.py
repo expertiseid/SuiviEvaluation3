@@ -3,7 +3,19 @@ from rest_framework import serializers
 from apps.core.vocabulaire import v
 
 from .budgets import avertissements_budget
-from .models import Activite, Equipe, JalonLivrable, NiveauActivite, ParametresCalcul, Projet, SousActivite, TauxManuel
+from .models import (
+    Activite,
+    Equipe,
+    FenetreRapportage,
+    JalonLivrable,
+    NiveauActivite,
+    ParametresCalcul,
+    ParametresRapportage,
+    Projet,
+    SousActivite,
+    TauxManuel,
+)
+from .rapportage import etat_saisie
 from .taux import ArbreTaux
 
 
@@ -249,6 +261,27 @@ class ParametresCalculSerializer(serializers.ModelSerializer):
         fields = ("methode_calcul", "methode_agregation", "plafonner_agregation")
 
 
+class ParametresRapportageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ParametresRapportage
+        fields = ("controle_actif", "perimetre")
+
+
+class FenetreRapportageSerializer(serializers.ModelSerializer):
+    projet_code = serializers.CharField(source="projet.code", read_only=True, default=None)
+
+    class Meta:
+        model = FenetreRapportage
+        fields = ("id", "projet", "projet_code", "libelle", "date_debut", "date_fin")
+
+    def validate(self, attrs):
+        debut = attrs.get("date_debut", getattr(self.instance, "date_debut", None))
+        fin = attrs.get("date_fin", getattr(self.instance, "date_fin", None))
+        if debut and fin and fin < debut:
+            raise serializers.ValidationError({"date_fin": "La fin doit être après le début."})
+        return attrs
+
+
 class ProjetSerializer(serializers.ModelSerializer):
     """
     Lecture : FK affichées en clair + planification imbriquée (`activites` :
@@ -263,6 +296,13 @@ class ProjetSerializer(serializers.ModelSerializer):
     element_strategique_libelle = serializers.SerializerMethodField()
     activites = serializers.SerializerMethodField()
     financement_bailleurs_total = serializers.ReadOnlyField()
+
+    etat_saisie = serializers.SerializerMethodField()
+
+    def get_etat_saisie(self, obj):
+        """Saisie ouverte ou fermée aujourd'hui (périodes de rapportage, voir apps.projects.rapportage)."""
+        etat = etat_saisie(obj)
+        return {"ouverte": etat.ouverte, "perimetre": etat.perimetre, "message": etat.message}
 
     class Meta:
         model = Projet
@@ -287,6 +327,11 @@ class ProjetSerializer(serializers.ModelSerializer):
             "type_mise_en_oeuvre",
             "zones",
             "tout_le_pays",
+            "etat_saisie",
+            "saisie",
+            "perimetre_fermeture",
+            "approbation_realisations",
+            "approbation_planification",
             "cadre_strategique",
             "cadre_strategique_nom",
             "element_strategique",
@@ -337,6 +382,10 @@ class ProjetWriteSerializer(serializers.ModelSerializer):
             "type_mise_en_oeuvre",
             "zones",
             "tout_le_pays",
+            "saisie",
+            "perimetre_fermeture",
+            "approbation_realisations",
+            "approbation_planification",
             "cadre_strategique",
             "element_strategique",
             "chef_de_projet_nom",

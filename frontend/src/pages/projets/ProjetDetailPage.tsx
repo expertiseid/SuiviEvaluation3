@@ -40,6 +40,9 @@ import { DocumentsTab } from "../../components/documents/DocumentsTab";
 import { BeneficiairesTab } from "../../components/beneficiaires/BeneficiairesTab";
 import { PlanificationPeriodeTab } from "./PlanificationPeriodeTab";
 import { BandeauProjetCloture } from "../../components/common/BandeauProjetCloture";
+import { BandeauSaisieFermee } from "../../components/common/BandeauSaisieFermee";
+import { saisieBloquee } from "../../utils/rapportage";
+import { useAccesModules } from "../../utils/modules";
 import { BoutonModeEdition } from "../../components/common/BoutonModeEdition";
 import { ActiviteForm } from "./ActiviteForm";
 import { AvancementModal } from "./AvancementModal";
@@ -49,6 +52,7 @@ import { NiveauxActiviteTab } from "./NiveauxActiviteTab";
 import { SousActiviteForm } from "./SousActiviteForm";
 import { FinancementsTab } from "./FinancementsTab";
 import { EquipeTab } from "./EquipeTab";
+import { CoherenceTab } from "./CoherenceTab";
 import { ProjetForm } from "./ProjetForm";
 import { TauxParIndicateurChart } from "../../components/charts/TauxParIndicateurChart";
 import { PAYS_MONDE } from "../../utils/pays";
@@ -250,6 +254,7 @@ function CarteActivite({
   const nomNiveau = nomDuNiveau(niveauxNoms, profondeur);
   const nomNiveauSuivant = niveauxNoms[profondeur + 1];
   const couleur = COULEURS_NIVEAUX[profondeur % COULEURS_NIVEAUX.length];
+  const { estMasque } = useAccesModules();
 
   return (
     <Card
@@ -309,16 +314,20 @@ function CarteActivite({
               {act.taux_realisation === null ? "—" : `${act.taux_realisation.toLocaleString("fr-FR")} %`}
             </Button>
           </Tooltip>
-          <Tooltip label={voc("Documents liés")}>
-            <ActionIcon size="sm" variant="subtle" onClick={() => onDocuments(act.id)}>
-              <Paperclip size={12} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={voc("Bénéficiaires liés")}>
-            <ActionIcon size="sm" variant="subtle" onClick={() => onBeneficiaires(act.id)}>
-              <Users size={12} />
-            </ActionIcon>
-          </Tooltip>
+          {!estMasque("/documents") && (
+            <Tooltip label={voc("Documents liés")}>
+              <ActionIcon size="sm" variant="subtle" onClick={() => onDocuments(act.id)}>
+                <Paperclip size={12} />
+              </ActionIcon>
+            </Tooltip>
+          )}
+          {!estMasque("/beneficiaires") && (
+            <Tooltip label={voc("Bénéficiaires liés")}>
+              <ActionIcon size="sm" variant="subtle" onClick={() => onBeneficiaires(act.id)}>
+                <Users size={12} />
+              </ActionIcon>
+            </Tooltip>
+          )}
           {editionActive && (
             <Tooltip label={`Modifier ce « ${nomNiveau} »`}>
               <ActionIcon size="sm" variant="subtle" onClick={() => onEditer(act)}>
@@ -401,16 +410,20 @@ function CarteActivite({
                   )}
                 </div>
                 <Group gap={4} wrap="nowrap">
-                  <Tooltip label={voc("Documents liés")}>
-                    <ActionIcon size="sm" variant="subtle" onClick={() => onDocumentsSousActivite(sa.id)}>
-                      <Paperclip size={12} />
-                    </ActionIcon>
-                  </Tooltip>
-                  <Tooltip label={voc("Bénéficiaires liés")}>
-                    <ActionIcon size="sm" variant="subtle" onClick={() => onBeneficiairesSousActivite(sa.id)}>
-                      <Users size={12} />
-                    </ActionIcon>
-                  </Tooltip>
+                  {!estMasque("/documents") && (
+                    <Tooltip label={voc("Documents liés")}>
+                      <ActionIcon size="sm" variant="subtle" onClick={() => onDocumentsSousActivite(sa.id)}>
+                        <Paperclip size={12} />
+                      </ActionIcon>
+                    </Tooltip>
+                  )}
+                  {!estMasque("/beneficiaires") && (
+                    <Tooltip label={voc("Bénéficiaires liés")}>
+                      <ActionIcon size="sm" variant="subtle" onClick={() => onBeneficiairesSousActivite(sa.id)}>
+                        <Users size={12} />
+                      </ActionIcon>
+                    </Tooltip>
+                  )}
                   {editionActive && (
                     <Tooltip label="Supprimer la sous-activité">
                       <ActionIcon size="sm" variant="subtle" color="red" onClick={() => onSupprimerSousActivite(sa)}>
@@ -455,9 +468,13 @@ export function ProjetDetailPage() {
   const [avancementForId, setAvancementForId] = useState<number | null>(null);
   const setAvancementFor = (act: Activite) => setAvancementForId(act.id);
   const { user } = useAuth();
-  const peutModifier = !!user && (user.role === "ADMIN" || user.niveau_acces === "LECTURE_ECRITURE");
+  const { estMasque, peutEcrire } = useAccesModules();
+  const peutModifier = peutEcrire("/projets");
   // Projet clôturé : lecture seule (voir BandeauProjetCloture), mode édition indisponible.
   const cloture = projet?.statut === "CLOTURE";
+  // Lecture seule : projet clôturé, ou fermé en entier hors période de rapportage (sauf administrateur).
+  const lectureSeule = cloture || saisieBloquee(projet, user?.role).tout;
+  const realisationsFermees = cloture || saisieBloquee(projet, user?.role).realisations;
   const [documentsActiviteId, setDocumentsActiviteId] = useState<number | null>(null);
   const [documentsSousActiviteId, setDocumentsSousActiviteId] = useState<number | null>(null);
   const [beneficiairesActiviteId, setBeneficiairesActiviteId] = useState<number | null>(null);
@@ -465,7 +482,7 @@ export function ProjetDetailPage() {
   const [modalEditionOuvert, setModalEditionOuvert] = useState(false);
   const [recherchePlan, setRecherchePlan] = useState("");
   const [editionDemandee, setEditionActive] = useState(false);
-  const editionActive = editionDemandee && !cloture;
+  const editionActive = editionDemandee && !lectureSeule;
 
   const elementsFiltres = useMemo(() => {
     const racines = projet?.activites ?? [];
@@ -575,7 +592,7 @@ export function ProjetDetailPage() {
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
-          {!cloture && <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />}
+          {!lectureSeule && <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />}
           {editionActive && (
           <Group gap="lg">
             <Tooltip label={voc("Modifier le projet")}>
@@ -593,25 +610,26 @@ export function ProjetDetailPage() {
         </Group>
       </Group>
 
-      {cloture && <BandeauProjetCloture projetId={projetId} />}
+      {cloture ? <BandeauProjetCloture projetId={projetId} /> : <BandeauSaisieFermee projet={projet} />}
 
       <Tabs defaultValue="hierarchie">
         <Tabs.List>
-          <Tabs.Tab value="niveaux">Configuration des niveaux</Tabs.Tab>
+          {!estMasque("projet:niveaux") && <Tabs.Tab value="niveaux">Configuration des niveaux</Tabs.Tab>}
           <Tabs.Tab value="hierarchie">{voc("Planification")}</Tabs.Tab>
-          <Tabs.Tab value="periode">{voc("Planification par période")}</Tabs.Tab>
-          <Tabs.Tab value="equipe">{voc("Équipe de projet")}</Tabs.Tab>
-          <Tabs.Tab value="indicateurs">{voc("Indicateurs")}</Tabs.Tab>
-          <Tabs.Tab value="financement">Financement</Tabs.Tab>
-          <Tabs.Tab value="documents">{voc("Documents")}</Tabs.Tab>
-          <Tabs.Tab value="historique">Historique</Tabs.Tab>
+          {!estMasque("projet:periode") && <Tabs.Tab value="periode">{voc("Planification par période")}</Tabs.Tab>}
+          {!estMasque("projet:equipe") && <Tabs.Tab value="equipe">{voc("Équipe de projet")}</Tabs.Tab>}
+          {!estMasque("projet:indicateurs") && <Tabs.Tab value="indicateurs">{voc("Indicateurs")}</Tabs.Tab>}
+          {!estMasque("projet:financement") && <Tabs.Tab value="financement">Financement</Tabs.Tab>}
+          {!estMasque("projet:documents") && <Tabs.Tab value="documents">{voc("Documents")}</Tabs.Tab>}
+          {!estMasque("projet:coherence") && <Tabs.Tab value="coherence">{voc("Contrôle de cohérence")}</Tabs.Tab>}
+          {!estMasque("projet:historique") && <Tabs.Tab value="historique">Historique</Tabs.Tab>}
         </Tabs.List>
 
         <Tabs.Panel value="hierarchie" pt="md">
           <Card withBorder padding="md">
             <Text size="sm" c="dimmed">
               {voc("Les niveaux sont libres : leur nom et leur nombre sont propres à ce projet. Clique sur l'étiquette d'un élément pour nommer ou renommer son niveau ; le bouton + ajoute un élément au niveau en dessous.")}</Text>
-            {!cloture && (
+            {!lectureSeule && (
               <AjoutInline
                 placeholder={0 in niveauxNoms ? `Nouveau « ${nomPremierNiveau} »…` : "Libellé du premier élément…"}
                 demanderNomNiveau={!(0 in niveauxNoms)}
@@ -646,8 +664,8 @@ export function ProjetDetailPage() {
                   onDocuments={setDocumentsActiviteId}
                   onBeneficiaires={setBeneficiairesActiviteId}
                   onEditer={setModalActiviteEdition}
-                  onAjouterEnfant={cloture ? undefined : (parent, profondeur) => setModalActiviteEnfantFor({ parent, profondeur })}
-                  onAjouterSousActivite={cloture ? undefined : setModalSousActiviteFor}
+                  onAjouterEnfant={lectureSeule ? undefined : (parent, profondeur) => setModalActiviteEnfantFor({ parent, profondeur })}
+                  onAjouterSousActivite={lectureSeule ? undefined : setModalSousActiviteFor}
                   onAvancement={setAvancementFor}
                   onSupprimer={(a, profondeur) =>
                     supprimerAvecConfirmation(
@@ -656,7 +674,7 @@ export function ProjetDetailPage() {
                       "Élément supprimé",
                     )
                   }
-                  onDupliquer={cloture || !peutModifier ? undefined : (a) =>
+                  onDupliquer={lectureSeule || !peutModifier ? undefined : (a) =>
                     dupliquerActivite.mutate(a.id, {
                       onSuccess: (copie) => notifications.show({ message: `« ${copie.libelle} » créé`, color: "green" }),
                       onError: (error) =>
@@ -678,26 +696,33 @@ export function ProjetDetailPage() {
           </Card>
         </Tabs.Panel>
 
-        <Tabs.Panel value="periode" pt="md">
-          <PlanificationPeriodeTab projet={projet} niveauxNoms={niveauxNoms} editionActive={editionActive} />
-        </Tabs.Panel>
+        {!estMasque("projet:periode") && (
+          <Tabs.Panel value="periode" pt="md">
+            <PlanificationPeriodeTab projet={projet} niveauxNoms={niveauxNoms} editionActive={editionActive} />
+          </Tabs.Panel>
+        )}
 
-        <Tabs.Panel value="niveaux" pt="md">
-          <NiveauxActiviteTab projetId={projetId} />
-        </Tabs.Panel>
+        {!estMasque("projet:niveaux") && (
+          <Tabs.Panel value="niveaux" pt="md">
+            <NiveauxActiviteTab projetId={projetId} />
+          </Tabs.Panel>
+        )}
 
-        <Tabs.Panel value="equipe" pt="md">
-          <EquipeTab projetId={projetId} />
-        </Tabs.Panel>
+        {!estMasque("projet:equipe") && (
+          <Tabs.Panel value="equipe" pt="md">
+            <EquipeTab projetId={projetId} />
+          </Tabs.Panel>
+        )}
 
-        <Tabs.Panel value="indicateurs" pt="md">
-          {dashboard && dashboard.indicateurs.length > 0 && (
-            <Card withBorder padding="md" radius="md" mb="md">
-              <Text size="xs" c="dimmed" fw={600} tt="uppercase" mb="sm" style={{ letterSpacing: 0.4 }}>
-                {voc("Taux de réalisation par indicateur")}</Text>
-              <TauxParIndicateurChart indicateurs={dashboard.indicateurs} />
-            </Card>
-          )}
+        {!estMasque("projet:indicateurs") && (
+          <Tabs.Panel value="indicateurs" pt="md">
+            {dashboard && dashboard.indicateurs.length > 0 && (
+              <Card withBorder padding="md" radius="md" mb="md">
+                <Text size="xs" c="dimmed" fw={600} tt="uppercase" mb="sm" style={{ letterSpacing: 0.4 }}>
+                  {voc("Taux de réalisation par indicateur")}</Text>
+                <TauxParIndicateurChart indicateurs={dashboard.indicateurs} />
+              </Card>
+        )}
           <Table striped>
             <Table.Thead>
               <Table.Tr>
@@ -717,18 +742,31 @@ export function ProjetDetailPage() {
             </Table.Tbody>
           </Table>
         </Tabs.Panel>
+        )}
 
-        <Tabs.Panel value="financement" pt="md">
-          <FinancementsTab projetId={projetId} />
-        </Tabs.Panel>
+        {!estMasque("projet:financement") && (
+          <Tabs.Panel value="financement" pt="md">
+            <FinancementsTab projetId={projetId} />
+          </Tabs.Panel>
+        )}
 
-        <Tabs.Panel value="documents" pt="md">
-          <DocumentsTab projetId={projetId} />
-        </Tabs.Panel>
+        {!estMasque("projet:documents") && (
+          <Tabs.Panel value="documents" pt="md">
+            <DocumentsTab projetId={projetId} />
+          </Tabs.Panel>
+        )}
 
-        <Tabs.Panel value="historique" pt="md">
-          <HistoriqueModification appLabel="projects" modelName="projet" objectId={projetId} />
-        </Tabs.Panel>
+        {!estMasque("projet:coherence") && (
+          <Tabs.Panel value="coherence" pt="md">
+            <CoherenceTab projetId={projetId} />
+          </Tabs.Panel>
+        )}
+
+        {!estMasque("projet:historique") && (
+          <Tabs.Panel value="historique" pt="md">
+            <HistoriqueModification appLabel="projects" modelName="projet" objectId={projetId} />
+          </Tabs.Panel>
+        )}
       </Tabs>
 
       <Modal opened={modalActiviteEdition !== null} onClose={() => setModalActiviteEdition(null)} title="Modifier l'élément" size="lg">
@@ -786,7 +824,7 @@ export function ProjetDetailPage() {
         title={`${voc("Avancement")} — ${elementAvancement?.libelle ?? ""}`}
         size="lg"
       >
-        {elementAvancement && <AvancementModal element={elementAvancement} modifiable={peutModifier} />}
+        {elementAvancement && <AvancementModal element={elementAvancement} modifiable={peutModifier && !realisationsFermees} />}
       </Modal>
 
       <Modal opened={modalEditionOuvert} onClose={() => setModalEditionOuvert(false)} title={voc("Modifier le projet")} size="lg">

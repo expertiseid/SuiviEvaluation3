@@ -11,7 +11,7 @@ exports, rapports).
 """
 from decimal import Decimal
 
-from django.db.models import Max, Min, Sum
+from django.db.models import Max, Min, Q, Sum
 
 
 def valeur_attendue_a(date, debut, fin, depart, arrivee):
@@ -70,13 +70,18 @@ def construire_dashboard_suivi(projet) -> dict:
             return None
         return {"id": palier.id, "libelle": palier.libelle, "couleur": palier.couleur, "borne_min": palier.borne_min}
 
+    from apps.core.models import EtatApprobation
+    from apps.indicators.models import ValeurIndicateur
+
     indicateurs_detail = []
     for indicateur in indicateurs_pour_projet(projet.id).select_related("activite"):
         taux = taux_realisation(valeur_realisee_totale(indicateur), indicateur.valeur_cible)
         historique = []
         cumul = Decimal("0")
-        for v in indicateur.valeurs.order_by("periode_fin"):
-            cumul += v.valeur_realisee
+        # Toutes les valeurs, y compris en attente ou rejetées (signalées) ; seules les approuvées cumulent.
+        for v in ValeurIndicateur.tous.filter(indicateur=indicateur).order_by("periode_fin"):
+            if v.etat_approbation == EtatApprobation.APPROUVEE:
+                cumul += v.valeur_realisee
             historique.append(
                 {
                     "id": v.id,
@@ -86,6 +91,8 @@ def construire_dashboard_suivi(projet) -> dict:
                     "valeur_cumulee": cumul,
                     "commentaire": v.commentaire,
                     "taux": taux_realisation(cumul, indicateur.valeur_cible),
+                    "etat_approbation": v.etat_approbation,
+                    "motif_rejet": v.motif_rejet,
                 }
             )
         if indicateur.activite_id and indicateur.activite.date_debut and indicateur.activite.date_fin:
@@ -113,18 +120,47 @@ def construire_dashboard_suivi(projet) -> dict:
     activites_detail = []
     activites = (
         Activite.objects.filter(projet=projet)
-        .prefetch_related("sous_activites", "points_suivi", "sous_activites__points_suivi")
+        .prefetch_related("sous_activites")
     )
     from apps.projects.taux import ArbreTaux
 
     arbre_taux = ArbreTaux(projet)
+    # Saisies pas encore approuvées (projets avec approbation) : elles ne comptent pas, mais on
+    # les signale sur chaque activité pour qu'elles ne semblent pas perdues.
+    from django.db.models import Count
+
+    from apps.core.models import EtatApprobation
+
+    from .models import PointSuivi
+
+    hors_approbation = {}
+    for ligne in (
+        PointSuivi.tous.filter(activite__projet=projet)
+        .exclude(etat_approbation=EtatApprobation.APPROUVEE)
+        .values("activite_id", "etat_approbation")
+        .annotate(n=Count("id"))
+    ):
+        hors_approbation.setdefault(ligne["activite_id"], {})[ligne["etat_approbation"]] = ligne["n"]
+    # Historique : toutes les saisies, y compris en attente ou rejetées (signalées, pour pouvoir
+    # les corriger) ; seuls les points approuvés s'ajoutent aux cumuls.
+    points_par_element = {}
+    for p in PointSuivi.tous.filter(
+        Q(activite__projet=projet) | Q(sous_activite__activite__projet=projet)
+    ).order_by("periode_fin", "id"):
+        cle = ("A", p.activite_id) if p.activite_id else ("S", p.sous_activite_id)
+        points_par_element.setdefault(cle, []).append(p)
+
+    def etat_saisie(p):
+        return {"etat_approbation": p.etat_approbation, "motif_rejet": p.motif_rejet}
+
     for activite in activites:
         historique = []
         cumul_quantite = Decimal("0")
         cumul_budget = Decimal("0")
-        for p in activite.points_suivi.order_by("periode_fin"):
-            cumul_quantite += p.quantite_realisee or Decimal("0")
-            cumul_budget += p.budget_realise or Decimal("0")
+        for p in points_par_element.get(("A", activite.id), []):
+            if p.etat_approbation == EtatApprobation.APPROUVEE:
+                cumul_quantite += p.quantite_realisee or Decimal("0")
+                cumul_budget += p.budget_realise or Decimal("0")
             historique.append(
                 {
                     "id": p.id,
@@ -136,14 +172,16 @@ def construire_dashboard_suivi(projet) -> dict:
                     "budget_cumule": cumul_budget,
                     "statut": p.statut,
                     "commentaire": p.commentaire,
+                    **etat_saisie(p),
                 }
             )
         sous_activites_detail = []
         for sous_activite in activite.sous_activites.all():
             sous_historique = []
             cumul_sous = Decimal("0")
-            for p in sous_activite.points_suivi.order_by("periode_fin"):
-                cumul_sous += p.quantite_realisee or Decimal("0")
+            for p in points_par_element.get(("S", sous_activite.id), []):
+                if p.etat_approbation == EtatApprobation.APPROUVEE:
+                    cumul_sous += p.quantite_realisee or Decimal("0")
                 sous_historique.append(
                     {
                         "id": p.id,
@@ -153,6 +191,7 @@ def construire_dashboard_suivi(projet) -> dict:
                         "quantite_cumulee": cumul_sous,
                         "statut": p.statut,
                         "commentaire": p.commentaire,
+                        **etat_saisie(p),
                     }
                 )
             sous_activites_detail.append(
@@ -187,6 +226,8 @@ def construire_dashboard_suivi(projet) -> dict:
                 "methode_calcul": activite.methode_calcul,
                 "methode_calcul_effective": resultat_taux.methode,
                 "taux_avertissements": resultat_taux.avertissements,
+                "saisies_en_attente": hors_approbation.get(activite.id, {}).get(EtatApprobation.EN_ATTENTE, 0),
+                "saisies_rejetees": hors_approbation.get(activite.id, {}).get(EtatApprobation.REJETEE, 0),
                 "taux_execution_financiere": activite.taux_execution_financiere,
                 "palier_actuel": _serialiser_palier(palier_activite),
                 "sous_activites": sous_activites_detail,

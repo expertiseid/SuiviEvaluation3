@@ -96,6 +96,8 @@ def supprimer_indicateur_cascade(indicateur):
     """
     from django.db import transaction
 
+    from .models import ValeurIndicateur
+
     with transaction.atomic():
-        indicateur.valeurs.all().delete()
+        ValeurIndicateur.tous.filter(indicateur=indicateur).delete()
         indicateur.delete()

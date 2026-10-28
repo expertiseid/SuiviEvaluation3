@@ -4,7 +4,7 @@ import { Alert, Badge, Button, Card, Group, Menu, Modal, Select, SimpleGrid, Sta
 import { notifications } from "@mantine/notifications";
 import { Link } from "react-router-dom";
 import { useDeleteValeurIndicateur } from "../../api/indicators";
-import { useAuth } from "../../auth/useAuth";
+import { useAccesModules } from "../../utils/modules";
 import {
   telechargerExportSuiviPeriode,
   useDeletePointSuivi,
@@ -258,12 +258,15 @@ export function SuiviPeriodeTab({
   projetId,
   data,
   editionActive,
+  saisieImpossible = false,
   statutsActivite,
   statutsSousActivite,
 }: {
   projetId: number;
   data: SuiviDashboard;
   editionActive: boolean;
+  /** Projet clôturé ou saisie fermée hors période de rapportage : pas de bouton de saisie. */
+  saisieImpossible?: boolean;
   statutsActivite: Statuts;
   statutsSousActivite: Statuts;
 }) {
@@ -275,9 +278,9 @@ export function SuiviPeriodeTab({
   const deleteValeur = useDeleteValeurIndicateur();
   const [saisie, setSaisie] = useState<Saisie | null>(null);
   const [recherche, setRecherche] = useState("");
-  const { user } = useAuth();
-  const cloture = data.projet.statut === "CLOTURE";
-  const peutSaisir = !!user && (user.role === "ADMIN" || user.niveau_acces === "LECTURE_ECRITURE") && !cloture;
+  const { peutEcrire } = useAccesModules();
+  const cloture = data.projet.statut === "CLOTURE" || saisieImpossible;
+  const peutSaisir = peutEcrire("/suivi") && !cloture;
 
   useEffect(() => {
     if (!periodes || periodes.length === 0) {

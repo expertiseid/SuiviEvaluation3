@@ -3,10 +3,10 @@ from django.db import models
 from django.db.models import CheckConstraint, Q, UniqueConstraint
 from simple_history.models import HistoricalRecords
 
-from apps.core.models import TimestampedModel
+from apps.core.models import SaisieApprouvable, TimestampedModel
 
 
-class PointSuivi(TimestampedModel):
+class PointSuivi(TimestampedModel, SaisieApprouvable):
     """
     Saisie périodique de suivi pour une activité OU une sous-activité
     (jamais les deux) — la quantité et le budget réalisés sont ce qui a été

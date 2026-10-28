@@ -24,6 +24,12 @@ class User(AbstractUser):
         "son périmètre. Un Administrateur a toujours un accès complet, indépendamment de ce champ.",
     )
     telephone = models.CharField(max_length=30, blank=True)
+    acces_modules = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Droits de cet utilisateur module par module ({clé: MASQUE, LECTURE ou ECRITURE}, voir "
+        "apps.core.modules) ; un module absent suit le niveau d'accès. Sans effet pour un Administrateur.",
+    )
     zones_affectees = models.ManyToManyField(
         "geo.Zone",
         blank=True,
@@ -55,6 +61,11 @@ class Role(models.Model):
     peut_personnaliser_tableau_de_bord = models.BooleanField(
         default=False,
         help_text="Peut choisir les blocs et types de graphiques du tableau de bord, pour tous les utilisateurs "
+        "(toujours vrai pour l'Administrateur).",
+    )
+    peut_approuver = models.BooleanField(
+        default=False,
+        help_text="Peut approuver ou rejeter les saisies et demandes de modification des projets qui l'exigent "
         "(toujours vrai pour l'Administrateur).",
     )
     systeme = models.BooleanField(default=False, editable=False)

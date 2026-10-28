@@ -16,7 +16,8 @@ class RoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
         fields = (
-            "id", "code", "libelle", "visibilite_globale", "peut_personnaliser_tableau_de_bord", "systeme", "nb_utilisateurs",
+            "id", "code", "libelle", "visibilite_globale", "peut_personnaliser_tableau_de_bord", "peut_approuver",
+            "systeme", "nb_utilisateurs",
         )
         read_only_fields = ("id", "systeme", "nb_utilisateurs")
         # Code facultatif à la création (déduit du libellé), jamais modifiable ensuite.
@@ -31,6 +32,7 @@ class RoleSerializer(serializers.ModelSerializer):
             if self.instance.code == ROLE_ADMIN:
                 attrs.pop("visibilite_globale", None)  # l'Administrateur voit toujours tout
                 attrs.pop("peut_personnaliser_tableau_de_bord", None)  # … et peut toujours tout configurer
+                attrs.pop("peut_approuver", None)  # … et approuver
             return attrs
 
         code = attrs.get("code") or attrs.get("libelle", "")
@@ -47,6 +49,12 @@ class RoleSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     role_libelle = serializers.SerializerMethodField()
     peut_personnaliser_tableau_de_bord = serializers.SerializerMethodField()
+    peut_approuver = serializers.SerializerMethodField()
+
+    def get_peut_approuver(self, obj):
+        from apps.core.permissions import peut_approuver
+
+        return peut_approuver(obj)
 
     def get_role_libelle(self, obj):
         return _libelle_role(obj.role)
@@ -67,6 +75,8 @@ class UserSerializer(serializers.ModelSerializer):
             "role",
             "role_libelle",
             "peut_personnaliser_tableau_de_bord",
+            "peut_approuver",
+            "acces_modules",
             "niveau_acces",
             "telephone",
             "zones_affectees",
@@ -90,10 +100,18 @@ class UserWriteSerializer(serializers.ModelSerializer):
             "niveau_acces",
             "telephone",
             "zones_affectees",
+            "acces_modules",
             "is_active",
             "password",
         )
         read_only_fields = ("id",)
+
+    def validate_acces_modules(self, value):
+        from apps.core.modules import NIVEAUX
+
+        if not isinstance(value, dict) or any(niveau not in NIVEAUX for niveau in value.values()):
+            raise serializers.ValidationError("Droits par module invalides.")
+        return value
 
     def validate_role(self, value):
         if not Role.objects.filter(code=value).exists():

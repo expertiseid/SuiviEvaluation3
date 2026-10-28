@@ -366,7 +366,7 @@ def analyser_canevas(fichier, projet, mode=MODE_AJOUT, utilisateur=None):
                 if not identifiant_unique(ligne, ("point", identifiant, debut, fin)):
                     continue
                 filtre = {"activite": cible} if est_element else {"sous_activite": cible}
-                existant = PointSuivi.objects.filter(**filtre, periode_debut=debut, periode_fin=fin).first()
+                existant = PointSuivi.tous.filter(**filtre, periode_debut=debut, periode_fin=fin).first()
                 periode = f"{debut:%d/%m/%Y} → {fin:%d/%m/%Y}"
                 champs = {"quantite_realisee": qte, "budget_realise": budget, "statut": statut or "", "commentaire": commentaire}
 
@@ -395,7 +395,7 @@ def analyser_canevas(fichier, projet, mode=MODE_AJOUT, utilisateur=None):
 
             if taux is not None:
                 date_taux = fin or aujourdhui
-                existant = TauxManuel.objects.filter(activite=cible, date=date_taux).first()
+                existant = TauxManuel.tous.filter(activite=cible, date=date_taux).first()
 
                 def enregistrer_taux(cible=cible, existant=existant, taux=taux, date_taux=date_taux, commentaire=commentaire):
                     objet = existant or TauxManuel(activite=cible, date=date_taux, saisi_par=utilisateur)
@@ -509,7 +509,7 @@ def analyser_canevas(fichier, projet, mode=MODE_AJOUT, utilisateur=None):
             if ligne.erreurs or not identifiant_unique(ligne, ("indicateur", identifiant, debut, fin)):
                 continue
             ligne.libelle = indicateur.libelle
-            existant = ValeurIndicateur.objects.filter(indicateur=indicateur, periode_debut=debut, periode_fin=fin).first()
+            existant = ValeurIndicateur.tous.filter(indicateur=indicateur, periode_debut=debut, periode_fin=fin).first()
             commentaire = str(v.get(COL_COMMENTAIRE) or "").strip()
 
             def enregistrer_valeur(indicateur=indicateur, existant=existant, debut=debut, fin=fin, valeur=valeur, commentaire=commentaire):

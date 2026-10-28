@@ -3,7 +3,7 @@ from django.db import models
 from django.db.models import Q
 from simple_history.models import HistoricalRecords
 
-from apps.core.models import TimestampedModel
+from apps.core.models import SaisieApprouvable, TimestampedModel
 
 
 class Indicateur(TimestampedModel):
@@ -69,7 +69,7 @@ class Indicateur(TimestampedModel):
         return None
 
 
-class ValeurIndicateur(TimestampedModel):
+class ValeurIndicateur(TimestampedModel, SaisieApprouvable):
     indicateur = models.ForeignKey(Indicateur, on_delete=models.PROTECT, related_name="valeurs")
     periode_debut = models.DateField()
     periode_fin = models.DateField()

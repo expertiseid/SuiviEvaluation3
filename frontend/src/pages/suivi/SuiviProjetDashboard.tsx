@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { AlertTriangle, Download, FileSpreadsheet, FileText, RefreshCw, Search } from "lucide-react";
 import { ActionIcon, Alert, Badge, Button, Card, Group, Menu, Modal, SimpleGrid, Stack, Tabs, Text, TextInput, Title, Tooltip } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
@@ -15,7 +15,10 @@ import { SaisiePointSuiviForm } from "../../components/suivi/SaisiePointSuiviFor
 import { SuiviPeriodeTab } from "./SuiviPeriodeTab";
 import { HistoriqueSuiviTable } from "../../components/suivi/HistoriqueSuiviTable";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
+import { useProjet } from "../../api/projects";
 import { BandeauProjetCloture } from "../../components/common/BandeauProjetCloture";
+import { BandeauSaisieFermee } from "../../components/common/BandeauSaisieFermee";
+import { saisieBloquee } from "../../utils/rapportage";
 import { BoutonModeEdition } from "../../components/common/BoutonModeEdition";
 import { correspond } from "../../utils/recherche";
 import {
@@ -30,9 +33,26 @@ import { ecartTexte, tauxDe, valeurAttendueA, type FenetreAttendue } from "../..
 import { voc } from "../../utils/vocabulaire";
 import { ImportCanevasSuiviModal } from "../../components/suivi/ImportCanevasSuiviModal";
 import { useAuth } from "../../auth/useAuth";
+import { useAccesModules } from "../../utils/modules";
 import { MethodeCalculLigne } from "../../components/suivi/MethodeCalculLigne";
 import { SaisieSuiviMethode } from "../../components/suivi/SaisieSuiviMethode";
 import { libelleMethodeEffective } from "../../utils/methodesCalcul";
+
+/** Saisie comptée dans les barres, courbes et cumuls (les autres attendent une approbation ou ont été rejetées). */
+function estApprouve(h: { etat_approbation?: string }) {
+  return !h.etat_approbation || h.etat_approbation === "APPROUVEE";
+}
+
+/** Statut d'une saisie dans l'historique, précédé de son état d'approbation s'il n'est pas approuvé. */
+function libelleEtatSaisie(
+  h: { statut: string; etat_approbation?: string; motif_rejet?: string },
+  labels: Record<string, string>,
+): string | undefined {
+  const statut = libelleStatut(h.statut, labels);
+  if (h.etat_approbation === "EN_ATTENTE") return ["En attente d'approbation (non comptée)", statut].filter(Boolean).join(" — ");
+  if (h.etat_approbation === "REJETEE") return [`Rejetée : ${h.motif_rejet}`, statut].filter(Boolean).join(" — ");
+  return statut;
+}
 
 function libelleStatut(statut: string, labels: Record<string, string>): string | undefined {
   if (!statut) return undefined;
@@ -126,11 +146,15 @@ export function SuiviProjetDashboard() {
   const [recherche, setRecherche] = useState("");
   const [canevasOuvert, setCanevasOuvert] = useState(false);
   const { user } = useAuth();
-  // Projet clôturé : lecture seule (voir BandeauProjetCloture).
+  const { estMasque, peutEcrire } = useAccesModules();
+  // Projet clôturé (BandeauProjetCloture) ou saisie fermée hors période de rapportage
+  // (BandeauSaisieFermee, l'administrateur n'est pas bloqué) : pas de saisie de réalisations.
+  const { data: projetDetail } = useProjet(projetId);
   const cloture = data?.projet.statut === "CLOTURE";
-  const peutSaisir = !!user && (user.role === "ADMIN" || user.niveau_acces === "LECTURE_ECRITURE") && !cloture;
+  const saisieImpossible = cloture || saisieBloquee(projetDetail, user?.role).realisations;
+  const peutSaisir = peutEcrire("/suivi") && !saisieImpossible;
   const [editionDemandee, setEditionActive] = useState(false);
-  const editionActive = editionDemandee && !cloture;
+  const editionActive = editionDemandee && !saisieImpossible;
   const { data: parametresAlerte } = useParametresAlerte();
   const seuilEcheanceJours = parametresAlerte?.seuil_echeance_jours ?? 7;
 
@@ -258,10 +282,11 @@ export function SuiviProjetDashboard() {
               Saisie par Excel
             </Button>
           )}
-          {!cloture && <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />}
+          {!saisieImpossible && <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />}
         </Group>
       </Group>
       {cloture && <BandeauProjetCloture projetId={projetId} />}
+      {!cloture && projetDetail && <BandeauSaisieFermee projet={projetDetail} />}
       <ImportCanevasSuiviModal
         projetId={projetId}
         codeProjet={data.projet.code}
@@ -272,18 +297,21 @@ export function SuiviProjetDashboard() {
       <Tabs defaultValue="global" keepMounted={false} styles={{ tabLabel: { fontSize: "var(--mantine-font-size-md)", fontWeight: 600 } }}>
         <Tabs.List>
           <Tabs.Tab value="global">{voc("Suivi global")}</Tabs.Tab>
-          <Tabs.Tab value="periode">{voc("Suivi par période")}</Tabs.Tab>
+          {!estMasque("suivi:periode") && <Tabs.Tab value="periode">{voc("Suivi par période")}</Tabs.Tab>}
         </Tabs.List>
 
-        <Tabs.Panel value="periode" pt="md">
-          <SuiviPeriodeTab
-            projetId={projetId}
-            data={data}
-            editionActive={editionActive}
-            statutsActivite={STATUTS_ACTIVITE}
-            statutsSousActivite={STATUTS_SOUS_ACTIVITE}
-          />
-        </Tabs.Panel>
+        {!estMasque("suivi:periode") && (
+          <Tabs.Panel value="periode" pt="md">
+            <SuiviPeriodeTab
+              projetId={projetId}
+              data={data}
+              editionActive={editionActive}
+              saisieImpossible={saisieImpossible}
+              statutsActivite={STATUTS_ACTIVITE}
+              statutsSousActivite={STATUTS_SOUS_ACTIVITE}
+            />
+          </Tabs.Panel>
+        )}
 
         <Tabs.Panel value="global" pt="md">
           <Stack gap="lg">
@@ -393,7 +421,7 @@ export function SuiviProjetDashboard() {
                           dateFin={activite.date_fin}
                         />
                       </Group>
-                      {!cloture && (
+                      {!saisieImpossible && (
                         <Button size="sm" variant="light" onClick={() => setModalActivite(activite.id)}>
                           {voc("Saisir un suivi")}
                         </Button>
@@ -403,6 +431,20 @@ export function SuiviProjetDashboard() {
                       <Text size="sm" c="dimmed" mb="xs">
                         Planifié : {fenetreAttendue.debut} → {fenetreAttendue.fin}
                       </Text>
+                    )}
+                    {(activite.saisies_en_attente > 0 || activite.saisies_rejetees > 0) && (
+                      <Group gap={6} mb={6}>
+                        {activite.saisies_en_attente > 0 && (
+                          <Badge component={Link} to="/approbations" variant="light" color="orange" style={{ cursor: "pointer" }}>
+                            {activite.saisies_en_attente} saisie{activite.saisies_en_attente > 1 ? "s" : ""} en attente d'approbation
+                          </Badge>
+                        )}
+                        {activite.saisies_rejetees > 0 && (
+                          <Badge component={Link} to="/approbations" variant="light" color="red" style={{ cursor: "pointer" }}>
+                            {activite.saisies_rejetees} saisie{activite.saisies_rejetees > 1 ? "s" : ""} rejetée{activite.saisies_rejetees > 1 ? "s" : ""}
+                          </Badge>
+                        )}
+                      </Group>
                     )}
                     <MethodeCalculLigne
                       activite={{ ...activite, quantite_realisee: derniereQuantiteCumulee === null ? null : String(derniereQuantiteCumulee) }}
@@ -428,7 +470,7 @@ export function SuiviProjetDashboard() {
                     ) : cible !== null && (
                       <BarreProgression
                         label="Avancement physique"
-                        segments={activite.historique.map((h) => ({
+                        segments={activite.historique.filter(estApprouve).map((h) => ({
                           key: h.id,
                           valeur: Number(h.quantite_realisee ?? 0),
                           titre: `${h.periode_debut} → ${h.periode_fin} : ${h.quantite_realisee ?? 0} ${activite.unite_quantite}`,
@@ -442,7 +484,7 @@ export function SuiviProjetDashboard() {
                     {budgetAlloue !== null && (
                       <BarreProgression
                         label="Avancement financier"
-                        segments={activite.historique.map((h) => ({
+                        segments={activite.historique.filter(estApprouve).map((h) => ({
                           key: h.id,
                           valeur: Number(h.budget_realise ?? 0),
                           titre: `${h.periode_debut} → ${h.periode_fin} : ${(h.budget_realise ? Number(h.budget_realise).toLocaleString("fr-FR") : 0)} FCFA`,
@@ -455,7 +497,7 @@ export function SuiviProjetDashboard() {
                     )}
                     {activite.methode_calcul_effective === "QUANTITE" && (
                       <EvolutionChart
-                        data={activite.historique.map((h) => ({ date: h.periode_fin, valeur: Number(h.quantite_cumulee ?? 0) }))}
+                        data={activite.historique.filter(estApprouve).map((h) => ({ date: h.periode_fin, valeur: Number(h.quantite_cumulee ?? 0) }))}
                         cible={cible ?? undefined}
                         unite={activite.unite_quantite}
                       />
@@ -495,7 +537,7 @@ export function SuiviProjetDashboard() {
                               parQuantite && valeurAttendue !== null
                                 ? `${Math.round(valeurAttendue)} ${activite.unite_quantite} (${tauxAttendu}%)${ecart ? " · " + ecart : ""}`
                                 : undefined,
-                            statut: libelleStatut(h.statut, ACTIVITE_STATUT_LABEL),
+                            statut: libelleEtatSaisie(h, ACTIVITE_STATUT_LABEL),
                           };
                         })
                         .reverse()}
@@ -545,7 +587,7 @@ export function SuiviProjetDashboard() {
                                     dateFin={sousActivite.date_fin}
                                   />
                                 </Group>
-                                {!cloture && (
+                                {!saisieImpossible && (
                                   <Button size="sm" variant="subtle" onClick={() => setModalSousActivite(sousActivite.id)}>
                                     {voc("Saisir un suivi")}
                                   </Button>
@@ -558,7 +600,7 @@ export function SuiviProjetDashboard() {
                                       ? `Planifié : ${sousActivite.date_debut} → ${sousActivite.date_fin}`
                                       : undefined
                                   }
-                                  segments={sousActivite.historique.map((h) => ({
+                                  segments={sousActivite.historique.filter(estApprouve).map((h) => ({
                                     key: h.id,
                                     valeur: Number(h.quantite_realisee ?? 0),
                                     titre: `${h.periode_debut} → ${h.periode_fin} : ${h.quantite_realisee ?? 0} ${sousActivite.unite_quantite}`,
@@ -570,7 +612,7 @@ export function SuiviProjetDashboard() {
                                 />
                               )}
                               <EvolutionChart
-                                data={sousActivite.historique.map((h) => ({
+                                data={sousActivite.historique.filter(estApprouve).map((h) => ({
                                   date: h.periode_fin,
                                   valeur: Number(h.quantite_cumulee ?? 0),
                                 }))}
@@ -601,7 +643,7 @@ export function SuiviProjetDashboard() {
                                         valeurAttendue !== null
                                           ? `${Math.round(valeurAttendue)} ${sousActivite.unite_quantite} (${tauxAttendu}%)${ecart ? " · " + ecart : ""}`
                                           : undefined,
-                                      statut: libelleStatut(h.statut, SOUS_ACTIVITE_STATUT_LABEL),
+                                      statut: libelleEtatSaisie(h, SOUS_ACTIVITE_STATUT_LABEL),
                                     };
                                   })
                                   .reverse()}
@@ -647,7 +689,7 @@ export function SuiviProjetDashboard() {
                         <Text size="lg" fw={700}>{indicateur.libelle}</Text>
                         <Group gap="xs" wrap="nowrap">
                           <AlerteBadge palier={indicateur.palier_actuel} taux={indicateur.taux_actuel} />
-                          {!cloture && (
+                          {!saisieImpossible && (
                             <Button size="sm" variant="light" onClick={() => setModalIndicateur(indicateur.id)}>
                               Saisir une valeur
                             </Button>
@@ -658,7 +700,7 @@ export function SuiviProjetDashboard() {
                         label={
                           fenetreAttendue ? `Planifié : ${fenetreAttendue.debut} → ${fenetreAttendue.fin}` : undefined
                         }
-                        segments={indicateur.historique.map((h) => ({
+                        segments={indicateur.historique.filter(estApprouve).map((h) => ({
                           key: h.id,
                           valeur: Number(h.valeur_realisee),
                           titre: `${h.periode_debut} → ${h.periode_fin} : ${h.valeur_realisee} ${indicateur.unite}`,
@@ -669,7 +711,7 @@ export function SuiviProjetDashboard() {
                         couleur={indicateur.palier_actuel?.couleur}
                       />
                       <EvolutionChart
-                        data={indicateur.historique.map((h) => ({ date: h.periode_fin, valeur: Number(h.valeur_cumulee) }))}
+                        data={indicateur.historique.filter(estApprouve).map((h) => ({ date: h.periode_fin, valeur: Number(h.valeur_cumulee) }))}
                         cible={cible}
                         unite={indicateur.unite}
                       />
@@ -685,6 +727,7 @@ export function SuiviProjetDashboard() {
                               periode: `${h.periode_debut} → ${h.periode_fin}`,
                               valeur: `${h.valeur_realisee} ${indicateur.unite}`,
                               cumule: `${h.valeur_cumulee} ${indicateur.unite} (${h.taux}%)`,
+                              statut: libelleEtatSaisie({ statut: "", ...h }, {}),
                               attendu:
                                 valeurAttendue !== null
                                   ? `${Math.round(valeurAttendue)} ${indicateur.unite} (${tauxAttendu}%)${ecart ? " · " + ecart : ""}`

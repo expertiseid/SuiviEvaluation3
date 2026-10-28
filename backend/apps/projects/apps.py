@@ -7,6 +7,7 @@ class ProjectsConfig(AppConfig):
     label = "projects"
 
     def ready(self):
-        from .verrou import connecter
+        from . import approbation, verrou
 
-        connecter()
+        verrou.connecter()
+        approbation.connecter()

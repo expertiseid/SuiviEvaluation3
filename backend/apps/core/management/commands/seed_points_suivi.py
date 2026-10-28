@@ -95,7 +95,7 @@ class Command(BaseCommand):
             self.stderr.write("Aucun utilisateur demo_charge_se/demo_admin trouvé — abandon.")
             return
 
-        PointSuivi.objects.all().delete()
+        PointSuivi.tous.all().delete()
 
         for activite in Activite.objects.filter(code_activite__in=POINTS_ACTIVITE.keys()):
             for periode_debut, periode_fin, quantite, budget, statut in POINTS_ACTIVITE[activite.code_activite]:

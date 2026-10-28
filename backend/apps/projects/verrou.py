@@ -1,4 +1,7 @@
 """
+Verrous d'enregistrement : projet clôturé, et saisie fermée hors période de rapportage
+(voir apps.projects.rapportage).
+
 Projet clôturé = lecture seule.
 
 Tant qu'un projet est « Clôturé », rien de ce qui lui appartient ne peut être créé, modifié ni
@@ -62,17 +65,41 @@ def _projet_id(instance):
     return None
 
 
+class SaisieFermeeError(PermissionDenied):
+    pass
+
+
+def utilisateur_courant():
+    """Utilisateur de la requête en cours (requête gardée par le middleware de simple_history)."""
+    from simple_history.models import HistoricalRecords
+
+    utilisateur = getattr(getattr(HistoricalRecords.context, "request", None), "user", None)
+    return utilisateur if utilisateur is not None and utilisateur.is_authenticated else None
+
+
 def _verifier(instance):
-    from .models import Projet
+    from apps.accounts.constants import ROLE_ADMIN
+
+    from .models import PerimetreFermeture, Projet
+    from .rapportage import est_une_realisation, etat_saisie
 
     if _desactive.get():
         return
     projet_id = _projet_id(instance)
     if projet_id is None:
         return
-    projet = Projet.objects.filter(id=projet_id, statut=Projet.Statut.CLOTURE).first()
-    if projet is not None:
+    projet = Projet.objects.filter(id=projet_id).first()
+    if projet is None:
+        return
+    if projet.statut == Projet.Statut.CLOTURE:
         raise ProjetClotureError(projet)
+
+    utilisateur = utilisateur_courant()
+    if utilisateur is not None and utilisateur.role == ROLE_ADMIN:
+        return  # l'administrateur peut toujours corriger
+    etat = etat_saisie(projet)
+    if not etat.ouverte and (etat.perimetre == PerimetreFermeture.TOUT or est_une_realisation(instance)):
+        raise SaisieFermeeError(f"Projet « {projet.code} » : {etat.message}")
 
 
 def _avant_enregistrement(sender, instance, **kwargs):

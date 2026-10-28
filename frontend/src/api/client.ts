@@ -1,4 +1,5 @@
 import axios from "axios";
+import { notifications } from "@mantine/notifications";
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
 
@@ -45,7 +46,24 @@ async function refreshAccessToken(): Promise<string | null> {
 }
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // 202 : changement envoyé pour approbation (projets qui l'exigent) — dit clairement qu'il
+    // n'est pas encore appliqué, quel que soit l'écran d'où il part.
+    if (response.status === 202 && response.data?.message) {
+      notifications.show({ title: "Envoyé pour approbation", message: response.data.message, color: "orange", autoClose: 8000 });
+    }
+    // Incohérences repérées dans une saisie qu'on vient d'enregistrer (non bloquant).
+    if (Array.isArray(response.data?.avertissements) && response.data.avertissements.length > 0) {
+      notifications.show({
+        title: "Saisie enregistrée — à vérifier",
+        message: response.data.avertissements.join("\n"),
+        color: "orange",
+        autoClose: 12000,
+        style: { whiteSpace: "pre-line" },
+      });
+    }
+    return response;
+  },
   async (error) => {
     const original = error.config;
     if (error.response?.status === 401 && !original._retry) {

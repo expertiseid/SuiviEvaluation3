@@ -53,7 +53,7 @@ class PointSuiviSerializer(serializers.ModelSerializer):
 
         periode_debut = attrs.get("periode_debut") or getattr(self.instance, "periode_debut", None)
         periode_fin = attrs.get("periode_fin") or getattr(self.instance, "periode_fin", None)
-        doublon = PointSuivi.objects.filter(
+        doublon = PointSuivi.tous.filter(
             activite=activite, sous_activite=sous_activite, periode_debut=periode_debut, periode_fin=periode_fin
         )
         if self.instance:

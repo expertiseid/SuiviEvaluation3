@@ -3,11 +3,13 @@ import { apiClient } from "./client";
 import type {
   Activite,
   Equipe,
+  FenetreRapportage,
   ImportProjetResultat,
   JalonLivrable,
   NiveauActivite,
   Paginated,
   ParametresCalcul,
+  ParametresRapportage,
   Projet,
   ProjetInput,
   TauxManuel,
@@ -369,5 +371,72 @@ export function useUpdateParametresCalcul() {
       queryClient.setQueryData(["parametres-calcul"], data);
       invaliderTaux(queryClient);
     },
+  });
+}
+
+// ------------------------------------------------------------------ périodes de rapportage
+
+export function useParametresRapportage() {
+  return useQuery({
+    queryKey: ["parametres-rapportage"],
+    queryFn: async () => (await apiClient.get<ParametresRapportage>("/parametres-rapportage/")).data,
+  });
+}
+
+/** Tout changement d'ouverture de la saisie se répercute sur l'état affiché des projets. */
+function invaliderRapportage(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: ["parametres-rapportage"] });
+  queryClient.invalidateQueries({ queryKey: ["periodes-rapportage"] });
+  queryClient.invalidateQueries({ queryKey: ["projets"] });
+}
+
+export function useUpdateParametresRapportage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: Partial<ParametresRapportage>) =>
+      (await apiClient.patch<ParametresRapportage>("/parametres-rapportage/", payload)).data,
+    onSuccess: () => invaliderRapportage(queryClient),
+  });
+}
+
+export function useFenetresRapportage() {
+  return useQuery({
+    queryKey: ["periodes-rapportage"],
+    queryFn: async () => (await apiClient.get<FenetreRapportage[]>("/periodes-rapportage/")).data,
+  });
+}
+
+export function useCreateFenetreRapportage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: Omit<FenetreRapportage, "id" | "projet_code">) =>
+      (await apiClient.post<FenetreRapportage>("/periodes-rapportage/", payload)).data,
+    onSuccess: () => invaliderRapportage(queryClient),
+  });
+}
+
+export function useDeleteFenetreRapportage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => apiClient.delete(`/periodes-rapportage/${id}/`),
+    onSuccess: () => invaliderRapportage(queryClient),
+  });
+}
+
+
+// ------------------------------------------------------------------ contrôle de cohérence
+
+export interface Incoherence {
+  gravite: "erreur" | "attention";
+  categorie: string;
+  element: string;
+  message: string;
+  lien: string;
+}
+
+export function useCoherenceProjet(projetId: number) {
+  return useQuery({
+    queryKey: ["projets", projetId, "coherence"],
+    queryFn: async () => (await apiClient.get<Incoherence[]>(`/projets/${projetId}/coherence/`)).data,
   });
 }

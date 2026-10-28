@@ -10,11 +10,16 @@ export interface RoleUtilisateur {
   visibilite_globale: boolean;
   /** Peut choisir les blocs et graphiques du tableau de bord pour tous les utilisateurs. */
   peut_personnaliser_tableau_de_bord: boolean;
+  /** Approuve les saisies et changements des projets qui l'exigent. */
+  peut_approuver: boolean;
   systeme: boolean;
   nb_utilisateurs: number;
 }
 
 export type NiveauAcces = "LECTURE_SEULE" | "LECTURE_ECRITURE";
+
+/** Droit sur un module : masqué, consultation, ou création et modification. */
+export type NiveauModule = "MASQUE" | "LECTURE" | "ECRITURE";
 
 export interface User {
   id: number;
@@ -26,6 +31,10 @@ export interface User {
   role_libelle: string;
   /** Calculé côté serveur (Administrateur, ou rôle ayant ce droit) — lecture seule. */
   peut_personnaliser_tableau_de_bord?: boolean;
+  /** Calculé côté serveur (Administrateur, ou rôle ayant ce droit) — lecture seule. */
+  peut_approuver?: boolean;
+  /** Droits par module ({clé: niveau}) ; un module absent suit niveau_acces (voir utils/modules.ts). */
+  acces_modules?: Record<string, NiveauModule>;
   niveau_acces: NiveauAcces;
   telephone: string;
   zones_affectees: number[];
@@ -243,6 +252,26 @@ export interface ParametresCalcul {
   plafonner_agregation: boolean;
 }
 
+/** Ce qui est fermé hors période de rapportage. */
+export type PerimetreFermeture = "REALISATIONS" | "TOUT";
+
+export interface ParametresRapportage {
+  controle_actif: boolean;
+  perimetre: PerimetreFermeture;
+}
+
+/** Période pendant laquelle la saisie est ouverte : tous les projets (projet null) ou un seul. */
+export interface FenetreRapportage {
+  id: number;
+  projet: number | null;
+  projet_code: string | null;
+  libelle: string;
+  date_debut: string;
+  date_fin: string;
+}
+
+export type SaisieProjet = "HERITE" | "OUVERTE" | "FERMEE";
+
 export interface Equipe {
   id: number;
   nom: string;
@@ -332,6 +361,14 @@ export interface Projet {
   zones: number[];
   /** Intervention sur tout le territoire du ou des pays : pas de zones détaillées. */
   tout_le_pays: boolean;
+  /** Ouverture de la saisie (périodes de rapportage), réglée par l'administrateur. */
+  saisie: SaisieProjet;
+  perimetre_fermeture: PerimetreFermeture | "";
+  /** Circuit d'approbation du projet (réglé par l'administrateur). */
+  approbation_realisations: boolean;
+  approbation_planification: boolean;
+  /** Saisie ouverte ou fermée aujourd'hui, avec l'explication à afficher. */
+  etat_saisie: { ouverte: boolean; perimetre: PerimetreFermeture; message: string };
   cadre_strategique: number | null;
   cadre_strategique_nom: string | null;
   /** Élément du cadre dont relève le projet (programme, axe, pilier...), à n'importe quel niveau. */
@@ -361,6 +398,7 @@ export type ProjetInput = Omit<
   | "financement_bailleurs_total"
   | "cadre_strategique_nom"
   | "element_strategique_libelle"
+  | "etat_saisie"
 >;
 
 export interface ParametresAlerte {
@@ -832,6 +870,9 @@ export interface SuiviHistoriquePoint {
   budget_cumule?: string | null;
   statut: string;
   commentaire: string;
+  /** Projets avec approbation : une saisie non approuvée est listée mais ne compte pas. */
+  etat_approbation?: "APPROUVEE" | "EN_ATTENTE" | "REJETEE";
+  motif_rejet?: string;
 }
 
 export interface SuiviHistoriqueValeurIndicateur {
@@ -842,6 +883,8 @@ export interface SuiviHistoriqueValeurIndicateur {
   valeur_cumulee: string;
   commentaire: string;
   taux: number;
+  etat_approbation?: "APPROUVEE" | "EN_ATTENTE" | "REJETEE";
+  motif_rejet?: string;
 }
 
 export interface SuiviDashboardIndicateur {
@@ -884,6 +927,9 @@ export interface SuiviDashboardActivite {
   methode_calcul: MethodeCalcul | "";
   methode_calcul_effective: MethodeCalcul | "AGREGATION";
   taux_avertissements: string[];
+  /** Saisies non encore comptées : en attente d'approbation, ou rejetées. */
+  saisies_en_attente: number;
+  saisies_rejetees: number;
   taux_execution_financiere: number | null;
   palier_actuel: { id: number; libelle: string; couleur: string; borne_min: number } | null;
   sous_activites: SuiviDashboardSousActivite[];
@@ -912,3 +958,48 @@ export interface Paginated<T> {
   previous: string | null;
   results: T[];
 }
+
+// ------------------------------------------------------------------ approbations
+
+export type EtatApprobation = "APPROUVEE" | "EN_ATTENTE" | "REJETEE";
+
+export interface SaisieAApprouver {
+  type: "point" | "valeur" | "taux";
+  id: number;
+  projet_id: number | null;
+  projet_code: string;
+  element: string;
+  periode: string;
+  valeur: string;
+  budget: string | null;
+  statut: string;
+  commentaire: string;
+  saisi_par_nom: string;
+  date: string;
+  etat: EtatApprobation;
+  motif_rejet: string;
+}
+
+export interface DemandeModification {
+  id: number;
+  projet_id: number;
+  projet_code: string;
+  cible: string;
+  action: "CREATION" | "MODIFICATION" | "SUPPRESSION";
+  action_libelle: string;
+  libelle: string;
+  changements: { champ: string; avant: unknown; apres: unknown }[];
+  /** Ajout : valeurs demandées. */
+  valeurs: { champ: string; valeur: unknown }[];
+  etat: EtatApprobation;
+  motif_rejet: string;
+  demandeur_nom: string;
+  date: string;
+}
+
+export interface Approbations {
+  peut_approuver: boolean;
+  saisies: SaisieAApprouver[];
+  demandes: DemandeModification[];
+}
+

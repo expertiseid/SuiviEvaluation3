@@ -28,7 +28,9 @@ import { SelectOrCreate } from "../../components/common/SelectOrCreate";
 import { BeneficiairesProjetSection } from "./BeneficiairesProjetSection";
 import { PROJET_STATUT_LABEL } from "../../utils/statusTones";
 import { PAYS_MONDE } from "../../utils/pays";
-import type { Projet, StatutProjet } from "../../types";
+import type { PerimetreFermeture, Projet, SaisieProjet, StatutProjet } from "../../types";
+import { useAuth } from "../../auth/useAuth";
+import { LIBELLES_PERIMETRE } from "../../utils/rapportage";
 import { voc } from "../../utils/vocabulaire";
 
 const schema = z.object({
@@ -108,6 +110,12 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
   const [zonesAjoutees, setZonesAjoutees] = useState<{ id: number; label: string }[]>([]);
   const [zonesInitialisees, setZonesInitialisees] = useState(false);
   const [toutLePays, setToutLePays] = useState(projet?.tout_le_pays ?? false);
+  // Ouverture de la saisie (périodes de rapportage) : réglée par l'administrateur.
+  const { user } = useAuth();
+  const [saisie, setSaisie] = useState<SaisieProjet>(projet?.saisie ?? "HERITE");
+  const [perimetreFermeture, setPerimetreFermeture] = useState<PerimetreFermeture | "">(projet?.perimetre_fermeture ?? "");
+  const [approbationRealisations, setApprobationRealisations] = useState(projet?.approbation_realisations ?? false);
+  const [approbationPlanification, setApprobationPlanification] = useState(projet?.approbation_planification ?? false);
   const [partenairesConsortium, setPartenairesConsortium] = useState<{ id: number; label: string }[]>([]);
   const [partenaireConsortiumChoisi, setPartenaireConsortiumChoisi] = useState<string | null>(null);
   const [consortiumInitialise, setConsortiumInitialise] = useState(false);
@@ -228,6 +236,10 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
       utilisateurs_affectes: (values.utilisateurs_affectes ?? []).map(Number),
       zones: toutLePays ? [] : zonesAjoutees.map((z) => z.id),
       tout_le_pays: toutLePays,
+      saisie,
+      perimetre_fermeture: perimetreFermeture,
+      approbation_realisations: approbationRealisations,
+      approbation_planification: approbationPlanification,
       cadre_strategique: values.cadre_strategique ? Number(values.cadre_strategique) : null,
       element_strategique: values.element_strategique ? Number(values.element_strategique) : null,
       methode_calcul: values.methode_calcul ?? "",
@@ -700,6 +712,49 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
                 )}
               />
             </Group>
+            {user?.role === "ADMIN" && (
+              <Group grow align="flex-start">
+                <Select
+                  label={voc("Ouverture de la saisie du projet")}
+                  description={voc("Périodes de rapportage : voir Paramètres. « Fermée » : seules les périodes propres au projet l'ouvrent.")}
+                  data={[
+                    { value: "HERITE", label: "Selon le réglage général" },
+                    { value: "OUVERTE", label: "Toujours ouverte" },
+                    { value: "FERMEE", label: "Fermée, sauf pendant les périodes propres au projet" },
+                  ]}
+                  value={saisie}
+                  onChange={(v) => v && setSaisie(v as SaisieProjet)}
+                  allowDeselect={false}
+                />
+                <Select
+                  label="Hors période de rapportage, fermer"
+                  data={[
+                    { value: "", label: "Selon le réglage général" },
+                    ...Object.entries(LIBELLES_PERIMETRE).map(([value, label]) => ({ value, label })),
+                  ]}
+                  value={perimetreFermeture}
+                  onChange={(v) => setPerimetreFermeture((v ?? "") as PerimetreFermeture | "")}
+                  allowDeselect={false}
+                />
+              </Group>
+            )}
+            {user?.role === "ADMIN" && (
+              <Stack gap={6}>
+                <Text size="sm" fw={500}>Approbations</Text>
+                <Checkbox
+                  label={voc("Les saisies de réalisations doivent être approuvées")}
+                  description={voc("Suivis, valeurs d'indicateurs et taux manuels ne comptent qu'une fois approuvés (écran Approbations).")}
+                  checked={approbationRealisations}
+                  onChange={(e) => setApprobationRealisations(e.currentTarget.checked)}
+                />
+                <Checkbox
+                  label={voc("Les changements de planification doivent être approuvés")}
+                  description={voc("Ajouts, modifications et suppressions d'éléments et de sous-activités passent par une demande, appliquée une fois approuvée.")}
+                  checked={approbationPlanification}
+                  onChange={(e) => setApprobationPlanification(e.currentTarget.checked)}
+                />
+              </Stack>
+            )}
             <Textarea
               label="Éléments de capitalisation"
               description={voc("À compléter en fin de projet : leçons apprises, bonnes pratiques.")}

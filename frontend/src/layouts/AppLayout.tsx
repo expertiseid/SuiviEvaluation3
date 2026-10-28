@@ -5,6 +5,7 @@ import {
   FolderKanban,
   Gauge,
   Activity,
+  ClipboardCheck,
   Users,
   Copy,
   UserCog,
@@ -38,6 +39,7 @@ import {
   TextInput,
   Tooltip,
   Button,
+  Alert,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useDisclosure } from "@mantine/hooks";
@@ -47,6 +49,7 @@ import { NotificationBell } from "../components/notifications/NotificationBell";
 import { ICONES_MENU } from "../utils/iconesMenu";
 import { TERMES, definirVocabulaire, voc, type Vocabulaire } from "../utils/vocabulaire";
 import { EcheancesBanner } from "../components/notifications/EcheancesBanner";
+import { useAccesModules } from "../utils/modules";
 
 type NavItem = { to: string; label: string; icon: LucideIcon };
 
@@ -58,6 +61,7 @@ const ITEMS_PRINCIPAUX: NavItem[] = [
   { to: "/projets", label: "Projets", icon: FolderKanban },
   { to: "/indicateurs", label: "Indicateurs", icon: Gauge },
   { to: "/suivi", label: "Suivi", icon: Activity },
+  { to: "/approbations", label: "Approbations", icon: ClipboardCheck },
   { to: "/beneficiaires", label: "Bénéficiaires", icon: Users },
   { to: "/doublons", label: "Doublons d'enregistrement", icon: Copy },
   { to: "/zones-administratives", label: "Zones administratives", icon: MapPin },
@@ -299,6 +303,9 @@ export function AppLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  // Modules cachés à cet utilisateur (rôle ou compte, voir utils/modules.ts).
+  const { estMasque } = useAccesModules();
+  const moduleMasque = ITEMS_PRINCIPAUX.some((item) => estMasque(item.to) && pathname.startsWith(item.to));
   const { data: echeances } = useEcheances();
   const { data: configurationMenu, isLoading: chargementMenu } = useConfigurationMenu();
   // Le vocabulaire doit être connu avant d'afficher les pages (leurs textes l'utilisent).
@@ -359,7 +366,7 @@ export function AppLayout() {
         <ScrollArea>
           {renderNavLink(avecLibelle(ITEM_ACCUEIL), pathname)}
           <Divider my={4} />
-          {ITEMS_PRINCIPAUX.map((item) => renderNavLink(avecLibelle(item), pathname))}
+          {ITEMS_PRINCIPAUX.filter((item) => !estMasque(item.to)).map((item) => renderNavLink(avecLibelle(item), pathname))}
           {user?.role === "ADMIN" && (
             <>
               {ITEMS_ADMIN.map((item) => renderNavLink(avecLibelle(item), pathname))}
@@ -376,7 +383,15 @@ export function AppLayout() {
       </AppShell.Navbar>
 
       <AppShell.Main bg="gray.0">
-        {chargementMenu ? <Loader size="sm" /> : <Outlet />}
+        {chargementMenu ? (
+          <Loader size="sm" />
+        ) : moduleMasque ? (
+          <Alert color="gray" title="Module non accessible">
+            {voc("Ce module n'est pas accessible avec votre compte. Adressez-vous à l'administrateur si vous en avez besoin.")}
+          </Alert>
+        ) : (
+          <Outlet />
+        )}
       </AppShell.Main>
 
       <Modal

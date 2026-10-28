@@ -360,6 +360,51 @@ Fonctionnement :
 - Les constantes de module (noms de colonnes, champs) restent aux noms par défaut : elles
   servent de référence à l'import.
 
+### 5.10 Contrôle de la saisie
+
+Verrous d'enregistrement : signaux `pre_save` / `pre_delete` (`apps/projects/verrou.py`) sur
+tous les modèles rattachés à un projet. Ils s'appliquent quel que soit le chemin (API,
+import, canevas). `verrou_desactive()` les suspend (suppression d'un projet en cascade).
+L'utilisateur courant vient de la requête (middleware de `simple_history`,
+`utilisateur_courant()`) ; sans requête (commandes, migrations), rien n'est bloqué.
+
+- **Projet clôturé** : lecture seule pour tous (`ProjetClotureError`, HTTP 403) ; seul
+  l'Administrateur peut le rouvrir (changer son statut).
+- **Périodes de rapportage** (`apps/projects/rapportage.py`, tests `test_rapportage.py`) :
+  - `ParametresRapportage` (singleton) : contrôle actif ou non, et périmètre fermé hors
+    période : réalisations seulement (`REALISATIONS`) ou tout le projet (`TOUT`).
+  - `FenetreRapportage` : période d'ouverture générale (`projet` vide) ou propre à un projet.
+  - Par projet (Administrateur) : `saisie` (`HERITE` selon le réglage général, `OUVERTE`
+    toujours, `FERMEE` sauf ses propres périodes) et `perimetre_fermeture`.
+  - `etat_saisie(projet)` dit si la saisie est ouverte, pourquoi, et la prochaine période.
+    Saisie fermée : `SaisieFermeeError` (403) pour une réalisation (`est_une_realisation` :
+    point de suivi, valeur d'indicateur, taux manuel, avancement ou quantité réalisée d'une
+    sous-activité, achèvement d'un jalon), ou pour tout si le périmètre est `TOUT`.
+    L'Administrateur n'est jamais bloqué.
+- **Approbations**, activables par projet (`apps/projects/approbation.py`, tests
+  `test_approbation.py`). Droit d'approuver : Administrateur, ou rôle avec `peut_approuver`
+  (`core.permissions.peut_approuver`).
+  - `Projet.approbation_realisations` : une saisie (modèles `SaisieApprouvable` :
+    `PointSuivi`, `ValeurIndicateur`, `TauxManuel`) d'un non-approbateur est `EN_ATTENTE`.
+    Le gestionnaire `objects` ne renvoie que les saisies approuvées : tous les calculs
+    ignorent donc les saisies en attente ou rejetées. `tous` renvoie tout (suppression,
+    modification, contrôles de doublon, historique du suivi). Une saisie modifiée repart en
+    attente ; une saisie approuvée ne peut être supprimée que par un approbateur.
+  - `Projet.approbation_planification` : ajout, modification ou suppression d'un élément de
+    planification ou d'une sous-activité par un non-approbateur → `DemandeModification`
+    (HTTP 202, rien n'est changé). Les données sont validées tout de suite ; l'approbation
+    applique le changement avec les sérialiseurs habituels. La duplication est réservée aux
+    approbateurs.
+  - Un rejet exige un motif, montré à l'auteur.
+- **Contrôle de cohérence** (`apps/projects/coherence.py`, tests `test_coherence.py`) : rien
+  n'est bloqué.
+  - À la saisie d'un point de suivi ou d'une valeur d'indicateur, la réponse contient
+    `avertissements` (période future ou à l'envers, chevauchement, hors des dates de
+    l'activité ou du projet, dépassement de la quantité prévue ou du budget, plus de 100 en %,
+    valeur négative), affichés en notification par `api/client.ts`.
+  - `controler_projet(projet)` : rapport complet (planification, suivi, indicateurs, budgets),
+    chaque point avec sa gravité (`erreur` ou `attention`), les erreurs d'abord.
+
 ## 6. Utilisateurs, rôles et permissions
 
 Deux notions indépendantes définissent les droits d'un utilisateur :
@@ -383,7 +428,29 @@ Rôles système (créés par migration, dans `apps/accounts/constants.py`) :
 | `ANIMATEUR_TERRAIN` | Animateur de terrain |
 
 L'Administrateur peut créer d'autres rôles et régler leur visibilité depuis l'écran
-Utilisateurs > Rôles.
+Utilisateurs > Rôles. Un rôle peut aussi **approuver** (`Role.peut_approuver`, voir § 5.10).
+
+**Droits par module, utilisateur par utilisateur** (`User.acces_modules`, fiche de
+l'utilisateur dans l'écran Utilisateurs ; `apps/core/modules.py`, tests
+`apps/accounts/test_modules.py`) :
+
+- Pour chaque module : **Masqué**, **Consultation** ou **Création et modification**. Les
+  onglets (`projet:…`, `suivi:…`) peuvent seulement être masqués. Liste des modules et
+  onglets : `frontend/src/utils/modules.ts` (mêmes clés que `API_PAR_MODULE`).
+- Un module non réglé suit le **niveau d'accès par défaut** de l'utilisateur (par défaut :
+  tout). Seuls les écarts sont enregistrés ({clé: `MASQUE` | `LECTURE` | `ECRITURE`}).
+  L'Administrateur a toujours tout.
+- Côté serveur, `ModulesMasquesMiddleware` relie chaque préfixe d'API à son module :
+  - écriture refusée (403) dans un module qui n'est pas en création / modification ;
+  - dans un module en écriture, l'utilisateur peut écrire même si son niveau par défaut est
+    « lecture seule » (`peut_modifier` lit le module de la requête, `module_courant`) ;
+  - Bénéficiaires, Documents et Financement masqués sont refusés même en lecture ; les
+    autres modules masqués (projets, zones…) restent lisibles, car ils alimentent les
+    formulaires communs.
+- Côté navigateur (`useAccesModules` : `estMasque`, `peutEcrire`) : menu, onglets et icônes
+  liées cachés, page masquée remplacée par « Module non accessible », boutons de création et
+  de modification masqués en consultation. Masquer Documents masque aussi l'onglet Documents
+  des projets ; masquer Bénéficiaires masque aussi les doublons.
 
 Classes de permission DRF (`apps/core/permissions.py`) :
 
@@ -464,6 +531,11 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 | GET / PUT | `interface/menu/` | Noms et icônes des rubriques du menu, vocabulaire de l'organisation (modification : Administrateur) |
 | GET / POST | `planification/modele-import/`, `planification/importer/` | Import combiné « planification complète » |
 | GET | `audit/{app}/{modele}/{id}/historique/` | Historique des modifications d'un objet |
+| GET / PUT / PATCH | `parametres-rapportage/` | Contrôle des périodes de rapportage et périmètre fermé (modification : Administrateur) |
+| CRUD | `periodes-rapportage/` | Périodes d'ouverture de la saisie, générales ou par projet (`?projet=`) |
+| GET | `projets/{id}/coherence/` | Rapport de cohérence du projet |
+| GET | `approbations/` | Saisies et demandes en attente (approbateur : toutes ; autres : les siennes, avec les rejets) |
+| POST | `approbations/saisies/{point\|valeur\|taux}/{id}/`, `approbations/demandes/{id}/` | Approuver ou rejeter : `{approuver, motif}` (motif obligatoire pour un rejet) |
 
 ## 8. Imports et exports
 
@@ -522,15 +594,16 @@ mutualisées) puis rejoue la requête, ou renvoie vers la page de connexion.
 | `/` | Tableau de bord consolidé |
 | `/planification` | Import « planification complète » |
 | `/strategie`, `/strategie/:id` | Cadres stratégiques ; onglets Configuration des niveaux, Arborescence et saisie, Axes et budgets, Projets et budgets |
-| `/projets`, `/projets/:id` | Projets ; onglets Configuration des niveaux, Planification, Planification par période, Équipe de projet, Indicateurs, Financement, Documents, Historique |
+| `/projets`, `/projets/:id` | Projets ; onglets Configuration des niveaux, Planification, Planification par période, Équipe de projet, Indicateurs, Financement, Documents, Contrôle de cohérence, Historique |
 | `/indicateurs`, `/indicateurs/:id` | Indicateurs et saisie des valeurs |
 | `/suivi`, `/suivi/:id` | Suivi des projets et tableau de suivi d'un projet |
 | `/beneficiaires`, `/beneficiaires/:id` | Bénéficiaires |
+| `/approbations` | Saisies et changements de planification à approuver, ou suivi de ses demandes |
 | `/doublons` | Doublons signalés |
 | `/zones-administratives` | Référentiel administratif |
 | `/documents` | Bibliothèque documentaire |
 | `/utilisateurs` | Utilisateurs et rôles (Administrateur) |
-| `/parametres-alerte` | Grilles d'alerte et délai d'échéance (Administrateur) |
+| `/parametres-alerte` | Grilles d'alerte, délai d'échéance et périodes de rapportage (Administrateur) |
 
 ### 10.4 Points d'attention
 

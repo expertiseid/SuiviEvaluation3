@@ -11,6 +11,8 @@ import { voc } from "../../utils/vocabulaire";
 const LIBELLE_VISIBILITE = voc("Voit tous les projets");
 const LIBELLE_TABLEAU_DE_BORD = voc("Peut personnaliser le tableau de bord");
 const AIDE_TABLEAU_DE_BORD = voc("Choisir les blocs affichés et les types de graphiques, pour tous les utilisateurs.");
+const LIBELLE_APPROUVER = "Peut approuver";
+const AIDE_APPROUVER = voc("Approuve ou rejette les saisies et les changements de planification des projets qui exigent une approbation (écran Approbations).");
 const AIDE_VISIBILITE =
   voc("Sinon, l'utilisateur ne voit que les projets (et zones) auxquels il est affecté. Ce qu'il peut faire ") +
   voc("(voir seulement, ou créer et modifier) se règle par utilisateur, avec son niveau d'accès.");
@@ -20,12 +22,14 @@ export function ModifierRoleModal({ role, onClose }: { role: RoleUtilisateur | n
   const [libelle, setLibelle] = useState("");
   const [visibiliteGlobale, setVisibiliteGlobale] = useState(false);
   const [tableauDeBord, setTableauDeBord] = useState(false);
+  const [approuver, setApprouver] = useState(false);
 
   useEffect(() => {
     if (!role) return;
     setLibelle(role.libelle);
     setVisibiliteGlobale(role.visibilite_globale);
     setTableauDeBord(role.peut_personnaliser_tableau_de_bord);
+    setApprouver(role.peut_approuver);
   }, [role]);
 
   const estAdmin = role?.code === "ADMIN";
@@ -39,6 +43,7 @@ export function ModifierRoleModal({ role, onClose }: { role: RoleUtilisateur | n
           libelle: libelle.trim(),
           visibilite_globale: visibiliteGlobale,
           peut_personnaliser_tableau_de_bord: tableauDeBord,
+          peut_approuver: approuver,
         },
       });
       notifications.show({ message: "Rôle modifié", color: "green" });
@@ -66,6 +71,13 @@ export function ModifierRoleModal({ role, onClose }: { role: RoleUtilisateur | n
           disabled={estAdmin}
           onChange={(e) => setTableauDeBord(e.currentTarget.checked)}
         />
+        <Switch
+          label={LIBELLE_APPROUVER}
+          description={estAdmin ? "Toujours actif pour l'Administrateur" : AIDE_APPROUVER}
+          checked={estAdmin || approuver}
+          disabled={estAdmin}
+          onChange={(e) => setApprouver(e.currentTarget.checked)}
+        />
         <Group justify="flex-end" mt="sm">
           <Button onClick={handleEnregistrer} loading={updateRole.isPending}>Enregistrer</Button>
         </Group>
@@ -82,6 +94,7 @@ export function RolesTab() {
   const [libelle, setLibelle] = useState("");
   const [visibiliteGlobale, setVisibiliteGlobale] = useState(false);
   const [tableauDeBord, setTableauDeBord] = useState(false);
+  const [approuver, setApprouver] = useState(false);
   const [roleEnEdition, setRoleEnEdition] = useState<RoleUtilisateur | null>(null);
 
   async function handleCreer() {
@@ -94,10 +107,12 @@ export function RolesTab() {
         libelle: libelle.trim(),
         visibilite_globale: visibiliteGlobale,
         peut_personnaliser_tableau_de_bord: tableauDeBord,
+        peut_approuver: approuver,
       });
       setLibelle("");
       setVisibiliteGlobale(false);
       setTableauDeBord(false);
+      setApprouver(false);
       notifications.show({ message: "Rôle créé", color: "green" });
     } catch (error) {
       notifications.show({ message: messageErreurApi(error, "Erreur lors de la création du rôle"), color: "red" });
@@ -144,6 +159,7 @@ export function RolesTab() {
           onChange={(e) => setTableauDeBord(e.currentTarget.checked)}
           mb={8}
         />
+        <Switch label={LIBELLE_APPROUVER} checked={approuver} onChange={(e) => setApprouver(e.currentTarget.checked)} mb={8} />
         <Button onClick={handleCreer} loading={createRole.isPending}>Ajouter</Button>
       </Group>
 
@@ -157,6 +173,7 @@ export function RolesTab() {
               <Table.Th>Code</Table.Th>
               <Table.Th>Visibilité</Table.Th>
               <Table.Th>{voc("Tableau de bord")}</Table.Th>
+              <Table.Th>Approbations</Table.Th>
               <Table.Th>{voc("Utilisateurs")}</Table.Th>
               <Table.Th w={40} />
             </Table.Tr>
@@ -184,6 +201,11 @@ export function RolesTab() {
                   <Badge variant="light" color={r.code === "ADMIN" || r.peut_personnaliser_tableau_de_bord ? "indigo" : "gray"}>
                     {r.code === "ADMIN" || r.peut_personnaliser_tableau_de_bord ? "Peut personnaliser" : "Consultation"}
                   </Badge>
+                </Table.Td>
+                <Table.Td>
+                  {(r.code === "ADMIN" || r.peut_approuver) && (
+                    <Badge variant="light" color="grape">Approuve</Badge>
+                  )}
                 </Table.Td>
                 <Table.Td>{r.nb_utilisateurs}</Table.Td>
                 <Table.Td>
