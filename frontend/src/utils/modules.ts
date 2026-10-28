@@ -37,6 +37,7 @@ export function modulesReglables(): { group: string; items: ModuleReglable[] }[]
       items: [
         { cle: "projet:equipe", label: voc("Équipe de projet"), ecriture: true },
         { cle: "projet:financement", label: "Financement", ecriture: true },
+        { cle: "projet:partenaires", label: voc("Partenaires"), ecriture: false },
         { cle: "projet:niveaux", label: "Configuration des niveaux", ecriture: false },
         { cle: "projet:periode", label: voc("Planification par période"), ecriture: false },
         { cle: "projet:indicateurs", label: voc("Indicateurs"), ecriture: false },

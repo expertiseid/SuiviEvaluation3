@@ -51,6 +51,16 @@ class UserSerializer(serializers.ModelSerializer):
     peut_personnaliser_tableau_de_bord = serializers.SerializerMethodField()
     peut_approuver = serializers.SerializerMethodField()
 
+    structure_libelle = serializers.SerializerMethodField()
+
+    def get_structure_libelle(self, obj):
+        """Structure de l'utilisateur en clair : « Partenaire de consortium — ONG X », « Organisation — Service S&E »…"""
+        if not obj.type_structure:
+            return ""
+        detail = obj.structure_interne or obj.partenaire or obj.partie_prenante
+        type_libelle = obj.get_type_structure_display()
+        return f"{type_libelle} — {detail}" if detail else type_libelle
+
     def get_peut_approuver(self, obj):
         from apps.core.permissions import peut_approuver
 
@@ -77,6 +87,11 @@ class UserSerializer(serializers.ModelSerializer):
             "peut_personnaliser_tableau_de_bord",
             "peut_approuver",
             "acces_modules",
+            "type_structure",
+            "structure_interne",
+            "partenaire",
+            "partie_prenante",
+            "structure_libelle",
             "niveau_acces",
             "telephone",
             "zones_affectees",
@@ -101,10 +116,31 @@ class UserWriteSerializer(serializers.ModelSerializer):
             "telephone",
             "zones_affectees",
             "acces_modules",
+            "type_structure",
+            "structure_interne",
+            "partenaire",
+            "partie_prenante",
             "is_active",
             "password",
         )
         read_only_fields = ("id",)
+
+    def validate(self, attrs):
+        """Seul le lien correspondant au type de structure est gardé (les autres sont vidés)."""
+        attrs = super().validate(attrs)
+        type_structure = attrs.get("type_structure", getattr(self.instance, "type_structure", ""))
+        garde = {
+            "INTERNE": "structure_interne",
+            "CONSORTIUM": "partenaire",
+            "MISE_EN_OEUVRE": "partenaire",
+            "BAILLEUR": "partenaire",
+            "PARTIE_PRENANTE": "partie_prenante",
+        }.get(type_structure)
+        if "type_structure" in attrs or any(c in attrs for c in ("structure_interne", "partenaire", "partie_prenante")):
+            for champ in ("structure_interne", "partenaire", "partie_prenante"):
+                if champ != garde:
+                    attrs[champ] = None
+        return attrs
 
     def validate_acces_modules(self, value):
         from apps.core.modules import NIVEAUX

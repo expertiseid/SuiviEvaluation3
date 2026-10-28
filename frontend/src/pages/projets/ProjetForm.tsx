@@ -15,7 +15,9 @@ import {
   optionsAgregation,
   optionsMethode,
 } from "../../utils/methodesCalcul";
-import { usePartenaires, useCreatePartenaire } from "../../api/referentiels";
+import { useCreatePartenaire } from "../../api/referentiels";
+import { useEnregistrerPartiePrenante, usePartiesPrenantes, useStructures, useTousPartenaires } from "../../api/organisation";
+import { optionsStructures } from "../../utils/organisation";
 import { useNiveauxAdministratifs, useZones } from "../../api/geo";
 import { useCadresStrategiques, useElementsStrategiques } from "../../api/strategy";
 import {
@@ -50,6 +52,9 @@ const schema = z.object({
   utilisateurs_affectes: z.array(z.string()).optional(),
   cadre_strategique: z.string().optional(),
   element_strategique: z.string().optional(),
+  elements_strategiques_secondaires: z.array(z.string()).optional(),
+  structures: z.array(z.string()).optional(),
+  parties_prenantes: z.array(z.string()).optional(),
   methode_calcul: z.string().optional(),
   methode_agregation: z.string().optional(),
   cible_totale: z.number().nullable().optional(),
@@ -77,12 +82,15 @@ const ONGLET_PAR_CHAMP: Record<string, string> = {
 
 export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => void }) {
   const enEdition = !!projet;
-  const { data: partenaires } = usePartenaires();
+  const { data: partenaires } = useTousPartenaires();
   const partenairesBailleurs = useMemo(() => (partenaires ?? []).filter((p) => p.type === "BAILLEUR"), [partenaires]);
-  const partenairesMiseEnOeuvre = useMemo(
-    () => (partenaires ?? []).filter((p) => p.type === "MISE_EN_OEUVRE"),
-    [partenaires],
-  );
+  // Une même organisation peut être de mise en œuvre sur un projet et du consortium sur un autre :
+  // les deux listes proposent tous les partenaires (hors bailleurs), ceux du type attendu d'abord.
+  const partenairesDuType = (type: "MISE_EN_OEUVRE" | "CONSORTIUM") =>
+    (partenaires ?? [])
+      .filter((p) => p.type !== "BAILLEUR")
+      .sort((a, b) => Number(b.type === type) - Number(a.type === type))
+      .map((p) => ({ value: String(p.id), label: p.nom }));
   const { data: cadres } = useCadresStrategiques();
   const { data: parametresCalcul } = useParametresCalcul();
   const { data: utilisateurs } = useUtilisateurs();
@@ -105,6 +113,10 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
   const createProjet = useCreateProjet();
   const updateProjet = useUpdateProjet();
   const createPartenaire = useCreatePartenaire();
+  const { data: structures } = useStructures();
+  const { data: partiesPrenantes } = usePartiesPrenantes();
+  const creerPartie = useEnregistrerPartiePrenante();
+  const [recherchePartie, setRecherchePartie] = useState("");
 
   const [zoneCascade, setZoneCascade] = useState<ZoneCascadeValue>(ZONE_CASCADE_VIDE);
   const [zonesAjoutees, setZonesAjoutees] = useState<{ id: number; label: string }[]>([]);
@@ -166,6 +178,9 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
           utilisateurs_affectes: projet.utilisateurs_affectes.map(String),
           cadre_strategique: projet.cadre_strategique ? String(projet.cadre_strategique) : "",
           element_strategique: projet.element_strategique ? String(projet.element_strategique) : "",
+          elements_strategiques_secondaires: (projet.elements_strategiques_secondaires ?? []).map(String),
+          structures: (projet.structures ?? []).map(String),
+          parties_prenantes: (projet.parties_prenantes ?? []).map(String),
           methode_calcul: projet.methode_calcul ?? "",
           methode_agregation: projet.methode_agregation ?? "",
           cible_totale: projet.cible_totale,
@@ -183,6 +198,9 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
           type_mise_en_oeuvre: "DIRECT",
           cadre_strategique: "",
           element_strategique: "",
+          elements_strategiques_secondaires: [],
+          structures: [],
+          parties_prenantes: [],
           methode_calcul: "",
           methode_agregation: "",
           elements_capitalisation: "",
@@ -217,6 +235,20 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
     return [...groupes.entries()].map(([group, items]) => ({ group, items }));
   }, [cadreChoisi, elementsDuCadre]);
 
+  // « Contribue aussi à » : n'importe quel élément de n'importe quel cadre, regroupé par niveau.
+  const { data: tousElements } = useElementsStrategiques();
+  const elementPrincipal = watch("element_strategique");
+  const optionsLiensSecondaires = useMemo(() => {
+    const groupes = new Map<string, { value: string; label: string }[]>();
+    for (const el of tousElements ?? []) {
+      if (String(el.id) === elementPrincipal) continue;
+      const liste = groupes.get(el.type_niveau_nom) ?? [];
+      liste.push({ value: String(el.id), label: `${el.code ? el.code + " — " : ""}${el.nom}` });
+      groupes.set(el.type_niveau_nom, liste);
+    }
+    return [...groupes.entries()].map(([group, items]) => ({ group, items }));
+  }, [tousElements, elementPrincipal]);
+
   async function enregistrer(values: FormValues) {
     const payload = {
       nom: values.nom,
@@ -242,6 +274,11 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
       approbation_planification: approbationPlanification,
       cadre_strategique: values.cadre_strategique ? Number(values.cadre_strategique) : null,
       element_strategique: values.element_strategique ? Number(values.element_strategique) : null,
+      elements_strategiques_secondaires: (values.elements_strategiques_secondaires ?? [])
+        .filter((id) => id !== values.element_strategique)
+        .map(Number),
+      structures: (values.structures ?? []).map(Number),
+      parties_prenantes: (values.parties_prenantes ?? []).map(Number),
       methode_calcul: values.methode_calcul ?? "",
       methode_agregation: values.methode_agregation ?? "",
       cible_totale: values.cible_totale ?? null,
@@ -307,6 +344,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
           <Tabs.Tab value="general">Général</Tabs.Tab>
           <Tabs.Tab value="cibles">{voc("Cibles bénéficiaires")}</Tabs.Tab>
           <Tabs.Tab value="strategie">Stratégie & capitalisation</Tabs.Tab>
+          <Tabs.Tab value="organisation">Organisation</Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="general" pt="sm">
@@ -441,7 +479,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
               render={({ field }) => (
                 <SelectOrCreate
                   label="Partenaire de mise en œuvre"
-                  data={partenairesMiseEnOeuvre.map((p) => ({ value: String(p.id), label: p.nom }))}
+                  data={partenairesDuType("MISE_EN_OEUVRE")}
                   value={field.value ?? null}
                   onChange={field.onChange}
                   clearable
@@ -461,14 +499,14 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
               <div>
                 <SelectOrCreate
                   label="Partenaires du consortium"
-                  data={partenairesMiseEnOeuvre.map((p) => ({ value: String(p.id), label: p.nom }))}
+                  data={partenairesDuType("CONSORTIUM")}
                   value={partenaireConsortiumChoisi}
                   onChange={setPartenaireConsortiumChoisi}
                   clearable
                   creating={createPartenaire.isPending}
                   onCreate={async (nom) => {
                     try {
-                      const cree = await createPartenaire.mutateAsync({ nom, type: "MISE_EN_OEUVRE" });
+                      const cree = await createPartenaire.mutateAsync({ nom, type: "CONSORTIUM" });
                       if (!partenairesConsortium.some((p) => p.id === cree.id)) {
                         setPartenairesConsortium((prev) => [...prev, { id: cree.id, label: cree.nom }]);
                       }
@@ -629,6 +667,64 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
           </Stack>
         </Tabs.Panel>
 
+        <Tabs.Panel value="organisation" pt="sm">
+          <Stack gap="sm">
+            <Controller
+              control={control}
+              name="structures"
+              render={({ field }) => (
+                <MultiSelect
+                  label={voc("Services chargés du projet")}
+                  description={voc("Directions, services… de l'organisation (paramétrés dans Organisation). Une partie du projet peut être confiée à un autre service depuis sa planification.")}
+                  placeholder="Aucun"
+                  data={optionsStructures(structures ?? [])}
+                  value={field.value ?? []}
+                  onChange={field.onChange}
+                  searchable
+                  clearable
+                />
+              )}
+            />
+            <Controller
+              control={control}
+              name="parties_prenantes"
+              render={({ field }) => (
+                <MultiSelect
+                  label="Parties prenantes"
+                  description={voc("Choisies dans le répertoire des parties prenantes ; taper un nom absent pour l'ajouter.")}
+                  placeholder="Aucune"
+                  data={(partiesPrenantes ?? []).map((p) => ({
+                    value: String(p.id),
+                    label: p.categorie_nom ? `${p.nom} (${p.categorie_nom})` : p.nom,
+                  }))}
+                  value={field.value ?? []}
+                  onChange={field.onChange}
+                  searchable
+                  clearable
+                  searchValue={recherchePartie}
+                  onSearchChange={setRecherchePartie}
+                  nothingFoundMessage={
+                    recherchePartie.trim() ? (
+                      <Button
+                        size="xs"
+                        variant="light"
+                        loading={creerPartie.isPending}
+                        onClick={async () => {
+                          const cree = await creerPartie.mutateAsync({ nom: recherchePartie.trim() });
+                          field.onChange([...(field.value ?? []), String(cree.id)]);
+                          setRecherchePartie("");
+                        }}
+                      >
+                        Ajouter « {recherchePartie.trim()} »
+                      </Button>
+                    ) : undefined
+                  }
+                />
+              )}
+            />
+          </Stack>
+        </Tabs.Panel>
+
         <Tabs.Panel value="strategie" pt="sm">
           <Stack gap="sm">
             <Controller
@@ -669,6 +765,22 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
                   value={field.value || null}
                   onChange={(v) => field.onChange(v ?? "")}
                   disabled={!cadreChoisi}
+                  searchable
+                  clearable
+                />
+              )}
+            />
+            <Controller
+              control={control}
+              name="elements_strategiques_secondaires"
+              render={({ field }) => (
+                <MultiSelect
+                  label="Contribue aussi à"
+                  description={voc("Autres éléments stratégiques (de ce cadre ou d'un autre document) auxquels le projet contribue. Seul le rattachement ci-dessus compte dans les budgets et les taux : ces liens sont informatifs, pour éviter le double compte.")}
+                  placeholder="Aucun"
+                  data={optionsLiensSecondaires}
+                  value={field.value ?? []}
+                  onChange={field.onChange}
                   searchable
                   clearable
                 />

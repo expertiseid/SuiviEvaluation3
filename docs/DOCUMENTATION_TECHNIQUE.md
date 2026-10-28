@@ -405,6 +405,44 @@ L'utilisateur courant vient de la requête (middleware de `simple_history`,
   - `controler_projet(projet)` : rapport complet (planification, suivi, indicateurs, budgets),
     chaque point avec sa gravité (`erreur` ou `attention`), les erreurs d'abord.
 
+### 5.11 Organisation, partenaires et liens multiples
+
+Modèles dans `apps/partners` (tests : `apps/partners/test_organisation.py`) :
+
+- **Structure de l'organisation** (`StructureOrganisation`) : une ou plusieurs organisations
+  (structures de premier niveau), chacune avec ses services, directions, secteurs… en arbre
+  de profondeur libre (`parent`, `type` libre, nouveaux types tapés à la volée). Paramétrée
+  par l'Administrateur (écran Organisation : organigramme avec, pour chaque structure, ses
+  projets et ses membres, et vue « par projet »). Projets et membres d'une structure se
+  règlent aussi en une fois : `structures-organisation/{id}/affectations/` (un membre devient
+  « Organisation (interne) » de cette structure). Les services qui travaillent sur un projet
+  et leurs membres : `Projet.services_detail`. Affectation à une ou plusieurs structures :
+  `Projet.structures`, `Activite.structures` (une partie du projet), `CadreStrategique.structures`,
+  `ElementStrategique.structures`.
+- **Parties prenantes** (`PartiePrenante`, catégories `CategoriePartiePrenante`) : répertoire
+  unique, puis sélection sur les projets, cadres et éléments stratégiques (`parties_prenantes`).
+  Créables à la volée par un utilisateur qui peut écrire ; modifiées par l'Administrateur.
+- **Types de partenaires** : mise en œuvre, consortium, bailleur. Le type n'est qu'une valeur
+  par défaut : une même organisation peut être de mise en œuvre sur un projet et du consortium
+  sur un autre ; c'est son rôle dans chaque projet qui compte (`projets_mise_en_oeuvre_codes`,
+  `projets_consortium_codes`).
+- **Rôle des partenaires dans un projet** (`projects.PartenaireProjet`) : partenaire, nature
+  (consortium ou mise en œuvre), chef de file, rôle, et `elements` = éléments de la
+  planification qu'il réalise. Créer un rôle ajoute le partenaire au projet (consortium, ou
+  mise en œuvre si le projet n'en a pas). Les partenaires du projet sans rôle sont affichés
+  « rôle non précisé » dans l'onglet Partenaires.
+- **Structure des utilisateurs** (`User.type_structure` : interne, consortium, mise en œuvre,
+  partie prenante, bailleur) avec le lien correspondant (`structure_interne`, `partenaire` ou
+  `partie_prenante`) ; les autres liens sont vidés à l'enregistrement.
+
+**Liens multiples entre niveaux** : un élément peut contribuer à plusieurs éléments d'un
+niveau supérieur, du même cadre ou d'un autre document (`ElementStrategique.parents_secondaires`,
+`Projet.elements_strategiques_secondaires`, `Activite.axes_strategiques_secondaires`). Le lien
+principal (`element_parent`, `element_strategique`, `axe_strategique`) reste le seul qui
+structure l'arbre et compte dans les budgets et les taux : les autres liens sont informatifs
+(« contribue aussi à »), pour éviter le double compte. Dans un même cadre, un lien
+secondaire ne peut viser qu'un niveau supérieur, jamais le parent principal ni un descendant.
+
 ## 6. Utilisateurs, rôles et permissions
 
 Deux notions indépendantes définissent les droits d'un utilisateur :
@@ -531,6 +569,9 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 | GET / PUT | `interface/menu/` | Noms et icônes des rubriques du menu, vocabulaire de l'organisation (modification : Administrateur) |
 | GET / POST | `planification/modele-import/`, `planification/importer/` | Import combiné « planification complète » |
 | GET | `audit/{app}/{modele}/{id}/historique/` | Historique des modifications d'un objet |
+| CRUD | `structures-organisation/` | Structure de l'organisation (modification : Administrateur) |
+| CRUD | `parties-prenantes/`, `categories-parties-prenantes/` | Parties prenantes et leurs catégories |
+| CRUD | `partenaires-projet/` | Rôle des partenaires dans un projet (`?projet=`) |
 | GET / PUT / PATCH | `parametres-rapportage/` | Contrôle des périodes de rapportage et périmètre fermé (modification : Administrateur) |
 | CRUD | `periodes-rapportage/` | Périodes d'ouverture de la saisie, générales ou par projet (`?projet=`) |
 | GET | `projets/{id}/coherence/` | Rapport de cohérence du projet |
@@ -594,7 +635,7 @@ mutualisées) puis rejoue la requête, ou renvoie vers la page de connexion.
 | `/` | Tableau de bord consolidé |
 | `/planification` | Import « planification complète » |
 | `/strategie`, `/strategie/:id` | Cadres stratégiques ; onglets Configuration des niveaux, Arborescence et saisie, Axes et budgets, Projets et budgets |
-| `/projets`, `/projets/:id` | Projets ; onglets Configuration des niveaux, Planification, Planification par période, Équipe de projet, Indicateurs, Financement, Documents, Contrôle de cohérence, Historique |
+| `/projets`, `/projets/:id` | Projets ; onglets Configuration des niveaux, Planification, Planification par période, Équipe de projet, Partenaires, Indicateurs, Financement, Documents, Contrôle de cohérence, Historique |
 | `/indicateurs`, `/indicateurs/:id` | Indicateurs et saisie des valeurs |
 | `/suivi`, `/suivi/:id` | Suivi des projets et tableau de suivi d'un projet |
 | `/beneficiaires`, `/beneficiaires/:id` | Bénéficiaires |
@@ -603,6 +644,7 @@ mutualisées) puis rejoue la requête, ou renvoie vers la page de connexion.
 | `/zones-administratives` | Référentiel administratif |
 | `/documents` | Bibliothèque documentaire |
 | `/utilisateurs` | Utilisateurs et rôles (Administrateur) |
+| `/organisation` | Structure de l'organisation, parties prenantes, partenaires (Administrateur) |
 | `/parametres-alerte` | Grilles d'alerte, délai d'échéance et périodes de rapportage (Administrateur) |
 
 ### 10.4 Points d'attention

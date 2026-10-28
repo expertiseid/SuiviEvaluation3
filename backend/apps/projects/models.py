@@ -161,6 +161,18 @@ class Projet(TimestampedModel):
         help_text="Élément du cadre stratégique dont relève ce projet (ex : « Programme 2 », « Pilier 3 ») — "
         "n'importe quel niveau du cadre, aucun n'est imposé. Permet de regrouper les projets par élément.",
     )
+    elements_strategiques_secondaires = models.ManyToManyField(
+        "strategy.ElementStrategique",
+        blank=True,
+        related_name="projets_secondaires",
+        help_text="Autres éléments stratégiques auxquels le projet contribue aussi. Seul element_strategique "
+        "compte dans les budgets et les taux (pas de double compte) ; ces liens sont informatifs.",
+    )
+    structures = models.ManyToManyField(
+        "partners.StructureOrganisation", blank=True, related_name="projets",
+        help_text="Directions / services de l'organisation chargés du projet.",
+    )
+    parties_prenantes = models.ManyToManyField("partners.PartiePrenante", blank=True, related_name="projets")
     budget_total = models.DecimalField(
         max_digits=14, decimal_places=2, default=0, help_text="Coût total = fonds propres + financements bailleurs."
     )
@@ -313,6 +325,14 @@ class Activite(TimestampedModel):
     )
     axe_strategique = models.ForeignKey(
         "strategy.ElementStrategique", null=True, blank=True, on_delete=models.SET_NULL, related_name="activites"
+    )
+    axes_strategiques_secondaires = models.ManyToManyField(
+        "strategy.ElementStrategique", blank=True, related_name="activites_secondaires",
+        help_text="Autres éléments stratégiques auxquels cet élément contribue aussi (informatif, non compté).",
+    )
+    structures = models.ManyToManyField(
+        "partners.StructureOrganisation", blank=True, related_name="activites",
+        help_text="Services de l'organisation chargés de cette partie du projet.",
     )
 
     budget_alloue = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
@@ -597,3 +617,32 @@ class DemandeModification(TimestampedModel):
     def __str__(self):
         return f"{self.get_action_display()} — {self.libelle}"
 
+
+class PartenaireProjet(TimestampedModel):
+    """
+    Rôle d'un partenaire (consortium ou mise en œuvre) dans un projet et éléments de la
+    planification (objectifs, résultats, activités…) qu'il doit réaliser.
+    """
+
+    class Nature(models.TextChoices):
+        MISE_EN_OEUVRE = "MISE_EN_OEUVRE", "Mise en œuvre"
+        CONSORTIUM = "CONSORTIUM", "Consortium"
+
+    projet = models.ForeignKey(Projet, on_delete=models.CASCADE, related_name="roles_partenaires")
+    partenaire = models.ForeignKey("partners.Partenaire", on_delete=models.PROTECT, related_name="roles_projets")
+    nature = models.CharField(max_length=20, choices=Nature.choices, default=Nature.CONSORTIUM)
+    chef_de_file = models.BooleanField(default=False)
+    role = models.TextField(blank=True, help_text="Rôle et responsabilités du partenaire dans le projet.")
+    elements = models.ManyToManyField(
+        Activite, blank=True, related_name="partenaires_charges",
+        help_text="Éléments de la planification que ce partenaire réalise (tout ce qui est en dessous en fait partie).",
+    )
+
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ("-chef_de_file", "partenaire__nom")
+        constraints = [models.UniqueConstraint(fields=("projet", "partenaire"), name="partenaire_projet_unique")]
+
+    def __str__(self):
+        return f"{self.partenaire} — {self.projet.code}"

@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
-import { Alert, Autocomplete, Button, Divider, Group, NumberInput, Select, Stack, Text, Textarea, TextInput } from "@mantine/core";
+import { Alert, Autocomplete, Button, Divider, Group, MultiSelect, NumberInput, Select, Stack, Text, Textarea, TextInput } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import { useCreateActivite, useCreateEquipe, useEquipes, useNommerNiveau, useUpdateActivite } from "../../api/projects";
 import { useCreateIntervenant, useIntervenants } from "../../api/intervenants";
 import { useElementsStrategiques, useTypesNiveaux } from "../../api/strategy";
+import { useStructures } from "../../api/organisation";
+import { optionsStructures } from "../../utils/organisation";
 import { IntervenantsMultiples } from "../../components/common/IntervenantsMultiples";
 import { DocumentsTab } from "../../components/documents/DocumentsTab";
 import { messageErreurApi } from "../../utils/erreurs";
@@ -71,6 +73,9 @@ export function ActiviteForm({
     activite?.axe_strategique ? String(activite.axe_strategique) : null,
   );
   const [responsablesIds, setResponsablesIds] = useState<number[]>(activite?.responsables ?? []);
+  const [axesSecondaires, setAxesSecondaires] = useState<string[]>((activite?.axes_strategiques_secondaires ?? []).map(String));
+  const [structuresIds, setStructuresIds] = useState<string[]>((activite?.structures ?? []).map(String));
+  const { data: structures } = useStructures();
   const [equipeResponsable, setEquipeResponsable] = useState<string | null>(
     activite?.equipe_responsable ? String(activite.equipe_responsable) : null,
   );
@@ -143,6 +148,8 @@ export function ActiviteForm({
       code_activite: codeActivite,
       libelle: libelle.trim(),
       axe_strategique: axeStrategique ? Number(axeStrategique) : null,
+      axes_strategiques_secondaires: axesSecondaires.filter((id) => id !== axeStrategique).map(Number),
+      structures: structuresIds.map(Number),
       responsables: responsablesIds,
       equipe_responsable: equipeResponsable ? Number(equipeResponsable) : null,
       budget_alloue: budgetAlloue === "" ? null : Number(budgetAlloue),
@@ -306,6 +313,28 @@ export function ActiviteForm({
         data={axes?.map((a) => ({ value: String(a.id), label: `${a.type_niveau_nom} · ${a.code ? a.code + " — " : ""}${a.nom}` })) ?? []}
         value={axeStrategique}
         onChange={setAxeStrategique}
+        clearable
+        searchable
+      />
+      <MultiSelect
+        label="Contribue aussi à"
+        description={voc("Autres éléments stratégiques auxquels cet élément contribue. Seul l'élément stratégique ci-dessus compte dans les budgets et les taux ; ces liens sont informatifs.")}
+        placeholder="Aucun"
+        data={(axes ?? [])
+          .filter((a) => String(a.id) !== axeStrategique)
+          .map((a) => ({ value: String(a.id), label: `${a.type_niveau_nom} · ${a.code ? a.code + " — " : ""}${a.nom}` }))}
+        value={axesSecondaires}
+        onChange={setAxesSecondaires}
+        clearable
+        searchable
+      />
+      <MultiSelect
+        label={voc("Services chargés")}
+        description={voc("Services de l'organisation chargés de cette partie du projet (paramétrés dans Organisation).")}
+        placeholder="Aucun"
+        data={optionsStructures(structures ?? [])}
+        value={structuresIds}
+        onChange={setStructuresIds}
         clearable
         searchable
       />

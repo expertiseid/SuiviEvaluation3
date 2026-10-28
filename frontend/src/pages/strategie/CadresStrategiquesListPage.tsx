@@ -7,6 +7,7 @@ import {
   Card,
   Group,
   Modal,
+  MultiSelect,
   SimpleGrid,
   Stack,
   Text,
@@ -28,6 +29,8 @@ import { correspond } from "../../utils/recherche";
 import type { CadreStrategique } from "../../types";
 import { TitreRubrique } from "../../components/common/TitreRubrique";
 import { voc } from "../../utils/vocabulaire";
+import { usePartiesPrenantes, useStructures } from "../../api/organisation";
+import { optionsStructures } from "../../utils/organisation";
 
 function CadreModal({
   opened,
@@ -42,11 +45,18 @@ function CadreModal({
   const updateCadre = useUpdateCadreStrategique();
   const [nom, setNom] = useState(cadreExistant?.nom ?? "");
   const [description, setDescription] = useState(cadreExistant?.description ?? "");
+  const [structuresIds, setStructuresIds] = useState<string[]>((cadreExistant?.structures ?? []).map(String));
+  const [partiesIds, setPartiesIds] = useState<string[]>((cadreExistant?.parties_prenantes ?? []).map(String));
+  const { data: structures } = useStructures();
+  const { data: partiesPrenantes } = usePartiesPrenantes();
 
   function reinitialiser() {
     setNom(cadreExistant?.nom ?? "");
     setDescription(cadreExistant?.description ?? "");
+    setStructuresIds((cadreExistant?.structures ?? []).map(String));
+    setPartiesIds((cadreExistant?.parties_prenantes ?? []).map(String));
   }
+  const liens = { structures: structuresIds.map(Number), parties_prenantes: partiesIds.map(Number) };
 
   async function handleSave() {
     if (!nom.trim()) {
@@ -55,10 +65,10 @@ function CadreModal({
     }
     try {
       if (cadreExistant) {
-        await updateCadre.mutateAsync({ id: cadreExistant.id, payload: { nom: nom.trim(), description } });
+        await updateCadre.mutateAsync({ id: cadreExistant.id, payload: { nom: nom.trim(), description, ...liens } });
         notifications.show({ message: voc("Cadre stratégique modifié"), color: "green" });
       } else {
-        await createCadre.mutateAsync({ nom: nom.trim(), description });
+        await createCadre.mutateAsync({ nom: nom.trim(), description, ...liens });
         notifications.show({ message: voc("Cadre stratégique créé"), color: "green" });
       }
       onClose();
@@ -83,6 +93,24 @@ function CadreModal({
           required
         />
         <Textarea label="Description" minRows={2} value={description} onChange={(e) => setDescription(e.currentTarget.value)} />
+        <MultiSelect
+          label={voc("Services chargés")}
+          placeholder="Aucun"
+          data={optionsStructures(structures ?? [])}
+          value={structuresIds}
+          onChange={setStructuresIds}
+          searchable
+          clearable
+        />
+        <MultiSelect
+          label="Parties prenantes"
+          placeholder="Aucune"
+          data={(partiesPrenantes ?? []).map((p) => ({ value: String(p.id), label: p.nom }))}
+          value={partiesIds}
+          onChange={setPartiesIds}
+          searchable
+          clearable
+        />
         <Group justify="flex-end">
           <Button onClick={handleSave} loading={createCadre.isPending || updateCadre.isPending}>
             {cadreExistant ? "Enregistrer" : "Créer"}
@@ -178,6 +206,9 @@ export function CadresStrategiquesListPage() {
                 <Text size="sm" c="dimmed" mt={4}>
                   {cadre.description}
                 </Text>
+              )}
+              {(cadre.structures_noms?.length ?? 0) > 0 && (
+                <Text size="xs" c="dimmed" mt={4}>{voc("Services")} : {cadre.structures_noms?.join(", ")}</Text>
               )}
               <Button component={Link} to={`/strategie/${cadre.id}`} variant="light" size="xs" mt="sm" fullWidth>
                 Ouvrir

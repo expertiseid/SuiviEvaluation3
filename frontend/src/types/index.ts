@@ -18,6 +18,8 @@ export interface RoleUtilisateur {
 
 export type NiveauAcces = "LECTURE_SEULE" | "LECTURE_ECRITURE";
 
+export type TypeStructureUtilisateur = "INTERNE" | "CONSORTIUM" | "MISE_EN_OEUVRE" | "PARTIE_PRENANTE" | "BAILLEUR";
+
 /** Droit sur un module : masqué, consultation, ou création et modification. */
 export type NiveauModule = "MASQUE" | "LECTURE" | "ECRITURE";
 
@@ -35,6 +37,13 @@ export interface User {
   peut_approuver?: boolean;
   /** Droits par module ({clé: niveau}) ; un module absent suit niveau_acces (voir utils/modules.ts). */
   acces_modules?: Record<string, NiveauModule>;
+  /** Structure de l'utilisateur ; seul le lien correspondant au type est renseigné. */
+  type_structure?: TypeStructureUtilisateur | "";
+  structure_interne?: number | null;
+  partenaire?: number | null;
+  partie_prenante?: number | null;
+  /** En clair, ex : « Partenaire de consortium — ONG X » (lecture seule). */
+  structure_libelle?: string;
   niveau_acces: NiveauAcces;
   telephone: string;
   zones_affectees: number[];
@@ -66,10 +75,58 @@ export interface Zone {
 export interface Partenaire {
   id: number;
   nom: string;
-  type: "BAILLEUR" | "MISE_EN_OEUVRE";
+  type: "BAILLEUR" | "MISE_EN_OEUVRE" | "CONSORTIUM";
   contact: string;
   email: string;
   telephone: string;
+  /** Codes des projets où il est partenaire de mise en œuvre / du consortium (lecture seule). */
+  projets_mise_en_oeuvre_codes?: string[];
+  projets_consortium_codes?: string[];
+  projets_bailleur_codes?: string[];
+}
+
+/** Direction, service, secteur… de l'organisation (arbre de profondeur libre). */
+export interface StructureOrganisation {
+  id: number;
+  nom: string;
+  sigle: string;
+  type: string;
+  parent: number | null;
+  responsable: string;
+  nb_projets: number;
+  nb_utilisateurs: number;
+  projets_resume: { id: number; code: string; nom: string; statut: string }[];
+  utilisateurs_resume: { id: number; nom: string; role: string }[];
+}
+
+export interface CategoriePartiePrenante {
+  id: number;
+  nom: string;
+}
+
+export interface PartiePrenante {
+  id: number;
+  nom: string;
+  categorie: number | null;
+  categorie_nom: string | null;
+  contact: string;
+  email: string;
+  telephone: string;
+  description: string;
+  nb_projets: number;
+}
+
+/** Rôle d'un partenaire dans un projet et éléments de la planification qu'il réalise. */
+export interface PartenaireProjet {
+  id: number;
+  projet: number;
+  partenaire: number;
+  partenaire_nom: string;
+  nature: "MISE_EN_OEUVRE" | "CONSORTIUM";
+  chef_de_file: boolean;
+  role: string;
+  elements: number[];
+  elements_libelles: string[];
 }
 
 export interface Bailleur {
@@ -92,6 +149,10 @@ export interface CadreStrategique {
   nom: string;
   description: string;
   created_at: string;
+  structures?: number[];
+  structures_noms?: string[];
+  parties_prenantes?: number[];
+  parties_prenantes_noms?: string[];
 }
 
 export interface RecapCadreStrategique {
@@ -183,6 +244,13 @@ export interface ElementStrategique {
   code: string;
   nom: string;
   description: string;
+  /** Autres éléments du niveau supérieur auxquels celui-ci contribue aussi (informatif, non compté). */
+  parents_secondaires?: number[];
+  parents_secondaires_noms?: string[];
+  structures?: number[];
+  structures_noms?: string[];
+  parties_prenantes?: number[];
+  parties_prenantes_noms?: string[];
 }
 
 export interface Intervenant {
@@ -297,6 +365,14 @@ export interface Activite {
   commentaire: string;
   axe_strategique: number | null;
   axe_strategique_libelle: string | null;
+  /** Autres éléments stratégiques auxquels cet élément contribue aussi (informatif, non compté). */
+  axes_strategiques_secondaires?: number[];
+  axes_strategiques_secondaires_noms?: string[];
+  /** Services de l'organisation chargés de cette partie du projet. */
+  structures?: number[];
+  structures_noms?: string[];
+  /** Partenaires chargés de cet élément (onglet Partenaires du projet). */
+  partenaires_charges_noms?: string[];
   budget_alloue: string | null;
   budget_realise: string | null;
   valeur_reference: string | null;
@@ -374,6 +450,22 @@ export interface Projet {
   /** Élément du cadre dont relève le projet (programme, axe, pilier...), à n'importe quel niveau. */
   element_strategique: number | null;
   element_strategique_libelle: string | null;
+  /** Autres éléments stratégiques auxquels le projet contribue aussi (informatif, non compté). */
+  elements_strategiques_secondaires: number[];
+  elements_strategiques_secondaires_noms: string[];
+  structures: number[];
+  structures_noms: string[];
+  parties_prenantes: number[];
+  parties_prenantes_noms: string[];
+  /** Services qui travaillent sur le projet (en entier ou sur une partie) et leurs membres. */
+  services_detail?: {
+    id: number;
+    nom: string;
+    type: string;
+    tout_le_projet: boolean;
+    parties: string[];
+    membres: string[];
+  }[];
   chef_de_projet_nom: string;
   utilisateurs_affectes: number[];
   cible_totale: number | null;
@@ -399,6 +491,10 @@ export type ProjetInput = Omit<
   | "cadre_strategique_nom"
   | "element_strategique_libelle"
   | "etat_saisie"
+  | "elements_strategiques_secondaires_noms"
+  | "structures_noms"
+  | "parties_prenantes_noms"
+  | "services_detail"
 >;
 
 export interface ParametresAlerte {

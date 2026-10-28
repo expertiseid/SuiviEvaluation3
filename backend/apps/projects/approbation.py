@@ -108,6 +108,7 @@ LIBELLES_CHAMPS = {
     "poids": "Poids", "avancement": "Avancement", "statut": "Statut", "responsables": "Responsables",
     "responsable": "Responsable", "equipe_responsable": "Équipe responsable", "axe_strategique": "Élément stratégique",
     "activite_parent": "Élément parent", "activite": "Élément", "projet": "Projet",
+    "structures": "Services chargés", "axes_strategiques_secondaires": "Contribue aussi à",
 }
 
 

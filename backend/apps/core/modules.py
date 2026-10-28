@@ -28,6 +28,7 @@ API_PAR_MODULE = {
     "/projets": [
         "/api/v1/projets", "/api/v1/activites", "/api/v1/sous-activites", "/api/v1/niveaux-activite",
         "/api/v1/jalons-livrables", "/api/v1/tranches-planifiees", "/api/v1/periodes-planification",
+        "/api/v1/partenaires-projet",
     ],
     "/indicateurs": ["/api/v1/indicateurs", "/api/v1/valeurs-indicateurs"],
     "/suivi": ["/api/v1/points-suivi", "/api/v1/taux-manuels", "/api/v1/suivi/"],

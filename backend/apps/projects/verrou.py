@@ -122,11 +122,12 @@ def connecter():
     from apps.partners.models import Financement
     from apps.suivi.models import PeriodePlanification, PointSuivi, TranchePlanifiee
 
-    from .models import Activite, JalonLivrable, NiveauActivite, Projet, SousActivite, TauxManuel
+    from .models import Activite, JalonLivrable, NiveauActivite, PartenaireProjet, Projet, SousActivite, TauxManuel
 
     modeles = (
         Activite, NiveauActivite, SousActivite, JalonLivrable, TauxManuel, PointSuivi, PeriodePlanification,
         TranchePlanifiee, Indicateur, ValeurIndicateur, ParticipationProjet, Financement, Document, Dossier,
+        PartenaireProjet,
     )
     for modele in modeles:
         pre_save.connect(_avant_enregistrement, sender=modele, dispatch_uid=f"verrou_save_{modele.__name__}")

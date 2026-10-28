@@ -6,6 +6,7 @@ from .views import (
     EquipeViewSet,
     FenetreRapportageViewSet,
     JalonLivrableViewSet,
+    PartenaireProjetViewSet,
     NiveauActiviteViewSet,
     ProjetViewSet,
     SousActiviteViewSet,
@@ -24,6 +25,7 @@ router.register("sous-activites", SousActiviteViewSet, basename="sous-activite")
 router.register("niveaux-activite", NiveauActiviteViewSet, basename="niveau-activite")
 router.register("equipes", EquipeViewSet, basename="equipe")
 router.register("jalons-livrables", JalonLivrableViewSet, basename="jalon-livrable")
+router.register("partenaires-projet", PartenaireProjetViewSet, basename="partenaire-projet")
 router.register("taux-manuels", TauxManuelViewSet, basename="taux-manuel")
 router.register("periodes-rapportage", FenetreRapportageViewSet, basename="periode-rapportage")
 

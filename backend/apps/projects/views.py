@@ -33,6 +33,7 @@ from .models import (
     NiveauActivite,
     ParametresCalcul,
     ParametresRapportage,
+    PartenaireProjet,
     Projet,
     SousActivite,
     TauxManuel,
@@ -50,6 +51,7 @@ from .serializers import (
     ProjetWriteSerializer,
     SousActiviteSerializer,
     TauxManuelSerializer,
+    PartenaireProjetSerializer,
 )
 from .services import (
     dupliquer_activite,
@@ -290,6 +292,32 @@ class SousActiviteViewSet(DemandeApprobationMixin, viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         supprimer_sous_activite_cascade(instance)
+
+
+class PartenaireProjetViewSet(SuppressionAtomiqueMixin, viewsets.ModelViewSet):
+    """
+    Rôle de chaque partenaire dans un projet et éléments qu'il réalise. Ajouter un partenaire ici
+    l'ajoute aussi au projet (consortium, ou mise en œuvre si le projet n'en a pas encore).
+    """
+
+    serializer_class = PartenaireProjetSerializer
+    permission_classes = (HasGlobalVisibilityOrAssigned,)
+    filterset_fields = ("projet", "partenaire")
+
+    def get_queryset(self):
+        return PartenaireProjet.objects.filter(projet__id__in=visible_projets_ids(self.request.user)).select_related(
+            "partenaire"
+        ).prefetch_related("elements")
+
+    def perform_create(self, serializer):
+        role = serializer.save()
+        projet = role.projet
+        if role.nature == PartenaireProjet.Nature.MISE_EN_OEUVRE:
+            if projet.partenaire_mise_en_oeuvre_id is None:
+                projet.partenaire_mise_en_oeuvre = role.partenaire
+                projet.save(update_fields=["partenaire_mise_en_oeuvre"])
+        else:
+            projet.partenaires_consortium.add(role.partenaire)
 
 
 class JalonLivrableViewSet(viewsets.ModelViewSet):

@@ -53,6 +53,7 @@ import { SousActiviteForm } from "./SousActiviteForm";
 import { FinancementsTab } from "./FinancementsTab";
 import { EquipeTab } from "./EquipeTab";
 import { CoherenceTab } from "./CoherenceTab";
+import { PartenairesProjetTab } from "./PartenairesProjetTab";
 import { ProjetForm } from "./ProjetForm";
 import { TauxParIndicateurChart } from "../../components/charts/TauxParIndicateurChart";
 import { PAYS_MONDE } from "../../utils/pays";
@@ -290,6 +291,21 @@ function CarteActivite({
           {act.commentaire && (
             <Text size="xs" c="dimmed" fs="italic" mt={2}>
               {act.commentaire}
+            </Text>
+          )}
+          {((act.structures_noms?.length ?? 0) > 0 || (act.partenaires_charges_noms?.length ?? 0) > 0) && (
+            <Group gap={4} mt={4}>
+              {act.structures_noms?.map((nom) => (
+                <Badge key={`s-${nom}`} size="xs" variant="light" color="indigo">{nom}</Badge>
+              ))}
+              {act.partenaires_charges_noms?.map((nom) => (
+                <Badge key={`p-${nom}`} size="xs" variant="light" color="teal">{nom}</Badge>
+              ))}
+            </Group>
+          )}
+          {(act.axes_strategiques_secondaires_noms?.length ?? 0) > 0 && (
+            <Text size="xs" c="dimmed" mt={2}>
+              Contribue aussi à : {act.axes_strategiques_secondaires_noms?.join(" · ")}
             </Text>
           )}
           {act.budget_avertissements.map((message) => (
@@ -618,6 +634,7 @@ export function ProjetDetailPage() {
           <Tabs.Tab value="hierarchie">{voc("Planification")}</Tabs.Tab>
           {!estMasque("projet:periode") && <Tabs.Tab value="periode">{voc("Planification par période")}</Tabs.Tab>}
           {!estMasque("projet:equipe") && <Tabs.Tab value="equipe">{voc("Équipe de projet")}</Tabs.Tab>}
+          {!estMasque("projet:partenaires") && <Tabs.Tab value="partenaires">{voc("Partenaires")}</Tabs.Tab>}
           {!estMasque("projet:indicateurs") && <Tabs.Tab value="indicateurs">{voc("Indicateurs")}</Tabs.Tab>}
           {!estMasque("projet:financement") && <Tabs.Tab value="financement">Financement</Tabs.Tab>}
           {!estMasque("projet:documents") && <Tabs.Tab value="documents">{voc("Documents")}</Tabs.Tab>}
@@ -705,6 +722,12 @@ export function ProjetDetailPage() {
         {!estMasque("projet:niveaux") && (
           <Tabs.Panel value="niveaux" pt="md">
             <NiveauxActiviteTab projetId={projetId} />
+          </Tabs.Panel>
+        )}
+
+        {!estMasque("projet:partenaires") && (
+          <Tabs.Panel value="partenaires" pt="md">
+            <PartenairesProjetTab projet={projet} editable={peutModifier && !lectureSeule} />
           </Tabs.Panel>
         )}
 

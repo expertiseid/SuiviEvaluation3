@@ -14,6 +14,8 @@ class CadreStrategique(TimestampedModel):
 
     nom = models.CharField(max_length=200)
     description = models.TextField(blank=True)
+    structures = models.ManyToManyField("partners.StructureOrganisation", blank=True, related_name="cadres_strategiques")
+    parties_prenantes = models.ManyToManyField("partners.PartiePrenante", blank=True, related_name="cadres_strategiques")
 
     class Meta:
         ordering = ("-created_at",)
@@ -88,6 +90,13 @@ class ElementStrategique(TimestampedModel):
     code = models.CharField(max_length=50, blank=True)
     nom = models.CharField(max_length=300)
     description = models.TextField(blank=True)
+    parents_secondaires = models.ManyToManyField(
+        "self", symmetrical=False, blank=True, related_name="enfants_secondaires",
+        help_text="Autres éléments du niveau supérieur auxquels celui-ci contribue aussi. Seul element_parent "
+        "structure l'arbre et compte dans les totaux ; ces liens sont informatifs.",
+    )
+    structures = models.ManyToManyField("partners.StructureOrganisation", blank=True, related_name="elements_strategiques")
+    parties_prenantes = models.ManyToManyField("partners.PartiePrenante", blank=True, related_name="elements_strategiques")
 
     class Meta:
         # Tri par id (= ordre de création) et non par code/nom : un import

@@ -14,6 +14,7 @@ import { BeneficiaireDetailPage } from "./pages/beneficiaires/BeneficiaireDetail
 import { DoublonsPage } from "./pages/beneficiaires/DoublonsPage";
 import { UtilisateursPage } from "./pages/utilisateurs/UtilisateursPage";
 import { CadresStrategiquesListPage } from "./pages/strategie/CadresStrategiquesListPage";
+import { OrganisationPage } from "./pages/organisation/OrganisationPage";
 import { ApprobationsPage } from "./pages/approbations/ApprobationsPage";
 import { CadreStrategiqueDetailPage } from "./pages/strategie/CadreStrategiqueDetailPage";
 import { ZonesAdministrativesPage } from "./pages/geo/ZonesAdministrativesPage";
@@ -48,6 +49,14 @@ export default function App() {
         <Route path="/zones-administratives" element={<ZonesAdministrativesPage />} />
         <Route path="/planification" element={<PlanificationImportPage />} />
         <Route path="/documents" element={<DocumentsGlobauxPage />} />
+        <Route
+          path="/organisation"
+          element={
+            <RequireAuth roles={["ADMIN"]}>
+              <OrganisationPage />
+            </RequireAuth>
+          }
+        />
         <Route
           path="/utilisateurs"
           element={

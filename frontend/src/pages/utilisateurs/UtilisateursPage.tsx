@@ -29,13 +29,80 @@ import {
 } from "../../api/accounts";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
 import { messageErreurApi } from "../../utils/erreurs";
-import type { NiveauModule, RoleUtilisateur, User } from "../../types";
+import type { NiveauModule, RoleUtilisateur, TypeStructureUtilisateur, User } from "../../types";
 import { ModifierRoleModal, RolesTab } from "./RolesTab";
 import { DroitsModules } from "./DroitsModules";
+import { usePartiesPrenantes, useStructures, useTousPartenaires } from "../../api/organisation";
+import { optionsStructures } from "../../utils/organisation";
 import { TitreRubrique } from "../../components/common/TitreRubrique";
 import { voc } from "../../utils/vocabulaire";
 
 const PREFIXE_CREATION = "__creer__";
+
+const TYPES_STRUCTURE: { value: TypeStructureUtilisateur; label: string }[] = [
+  { value: "INTERNE", label: "Organisation (interne)" },
+  { value: "CONSORTIUM", label: "Partenaire de consortium" },
+  { value: "MISE_EN_OEUVRE", label: "Partenaire de mise en œuvre" },
+  { value: "PARTIE_PRENANTE", label: "Partie prenante" },
+  { value: "BAILLEUR", label: "Bailleur" },
+];
+
+type StructureUtilisateur = Pick<User, "type_structure" | "structure_interne" | "partenaire" | "partie_prenante">;
+
+/** Structure de l'utilisateur : son type, puis le service, le partenaire ou la partie prenante concerné. */
+function ChoixStructure({ value, onChange }: { value: StructureUtilisateur; onChange: (v: StructureUtilisateur) => void }) {
+  const { data: structures } = useStructures();
+  const { data: partenaires } = useTousPartenaires();
+  const { data: parties } = usePartiesPrenantes();
+  const type = value.type_structure || null;
+  const vider = { structure_interne: null, partenaire: null, partie_prenante: null };
+  const lien =
+    type === "INTERNE"
+      ? {
+          label: voc("Direction / service"),
+          data: optionsStructures(structures ?? []),
+          champ: "structure_interne" as const,
+        }
+      : type === "PARTIE_PRENANTE"
+        ? {
+            label: "Partie prenante",
+            data: (parties ?? []).map((p) => ({ value: String(p.id), label: p.nom })),
+            champ: "partie_prenante" as const,
+          }
+        : type
+          ? {
+              label: type === "BAILLEUR" ? "Bailleur" : "Partenaire",
+              data: (partenaires ?? [])
+                .filter((p) => (type === "BAILLEUR" ? p.type === "BAILLEUR" : p.type !== "BAILLEUR"))
+                .map((p) => ({ value: String(p.id), label: p.nom })),
+              champ: "partenaire" as const,
+            }
+          : null;
+  return (
+    <Group grow align="flex-start">
+      <Select
+        label="Structure de l'utilisateur"
+        placeholder="Non précisée"
+        data={TYPES_STRUCTURE}
+        value={type}
+        onChange={(v) => onChange({ ...vider, type_structure: (v ?? "") as TypeStructureUtilisateur | "" })}
+        clearable
+      />
+      {lien && (
+        <Select
+          label={lien.label}
+          placeholder="Choisir…"
+          data={lien.data}
+          value={value[lien.champ] ? String(value[lien.champ]) : null}
+          onChange={(v) => onChange({ ...value, ...vider, [lien.champ]: v ? Number(v) : null })}
+          searchable
+          clearable
+          nothingFoundMessage="À ajouter dans l'écran Organisation"
+        />
+      )}
+    </Group>
+  );
+}
 
 /**
  * Liste « Rôle » (référentiel géré dans l'onglet « Rôles ») : taper un
@@ -188,6 +255,7 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
   const [actif, setActif] = useState(true);
   const [password, setPassword] = useState("");
   const [droits, setDroits] = useState<Record<string, NiveauModule>>({});
+  const [structure, setStructure] = useState<StructureUtilisateur>({});
 
   // Le modal reste monté en permanence (seul `utilisateur` change à chaque
   // clic sur "Modifier") — un useEffect est donc nécessaire pour resynchroniser
@@ -202,6 +270,12 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
     setActif(utilisateur.is_active);
     setPassword("");
     setDroits(utilisateur.acces_modules ?? {});
+    setStructure({
+      type_structure: utilisateur.type_structure ?? "",
+      structure_interne: utilisateur.structure_interne ?? null,
+      partenaire: utilisateur.partenaire ?? null,
+      partie_prenante: utilisateur.partie_prenante ?? null,
+    });
   }, [utilisateur]);
 
   const estAdmin = role === "ADMIN";
@@ -219,6 +293,7 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
           niveau_acces: (estAdmin ? "LECTURE_ECRITURE" : niveauAcces) as never,
           is_active: actif,
           acces_modules: estAdmin ? {} : droits,
+          ...structure,
           ...(password ? { password } : {}),
         },
       });
@@ -238,6 +313,7 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
         </Group>
         <TextInput label="Email" value={email} onChange={(e) => setEmail(e.currentTarget.value)} />
         <RoleSelect value={role} onChange={setRole} />
+        <ChoixStructure value={structure} onChange={setStructure} />
         <Select
           label="Niveau d'accès par défaut"
           data={NIVEAUX_ACCES}
@@ -378,6 +454,7 @@ export function UtilisateursPage() {
                     <Table.Th>Nom</Table.Th>
                     <Table.Th>Email</Table.Th>
                     <Table.Th>Rôle</Table.Th>
+                    <Table.Th>Structure</Table.Th>
                     <Table.Th>Accès</Table.Th>
                     <Table.Th>Actif</Table.Th>
                     <Table.Th w={40} />
@@ -390,6 +467,7 @@ export function UtilisateursPage() {
                       <Table.Td>{u.first_name} {u.last_name}</Table.Td>
                       <Table.Td>{u.email}</Table.Td>
                       <Table.Td><Badge variant="light">{u.role_libelle || u.role}</Badge></Table.Td>
+                      <Table.Td><Text size="sm">{u.structure_libelle || "—"}</Text></Table.Td>
                       <Table.Td>
                         <Badge variant="light" color={u.role === "ADMIN" || u.niveau_acces === "LECTURE_ECRITURE" ? "teal" : "gray"}>
                           {u.role === "ADMIN" ? "Complet" : LIBELLES_NIVEAU_ACCES[u.niveau_acces] ?? u.niveau_acces}

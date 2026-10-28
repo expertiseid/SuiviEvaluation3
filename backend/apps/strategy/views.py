@@ -254,7 +254,9 @@ class ElementStrategiqueViewSet(viewsets.ModelViewSet):
     filterset_fields = ("type_niveau", "element_parent")
 
     def get_queryset(self):
-        qs = ElementStrategique.objects.select_related("type_niveau", "element_parent")
+        qs = ElementStrategique.objects.select_related("type_niveau", "element_parent").prefetch_related(
+            "parents_secondaires", "structures", "parties_prenantes"
+        )
         cadre_id = self.request.query_params.get("cadre_strategique")
         if cadre_id:
             qs = qs.filter(type_niveau__cadre_strategique_id=cadre_id)

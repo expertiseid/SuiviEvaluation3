@@ -1,21 +1,22 @@
 import { useState } from "react";
 import { NavLink as RouterNavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard,
-  FolderKanban,
-  Gauge,
   Activity,
+  Building2,
   ClipboardCheck,
-  Users,
   Copy,
-  UserCog,
-  Target,
-  MapPin,
   FileSpreadsheet,
   FileText,
-  Sliders,
+  FolderKanban,
+  Gauge,
+  LayoutDashboard,
+  MapPin,
   PenLine,
   RotateCcw,
+  Sliders,
+  Target,
+  UserCog,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -70,6 +71,7 @@ const ITEMS_PRINCIPAUX: NavItem[] = [
 
 const ITEMS_ADMIN: NavItem[] = [
   { to: "/utilisateurs", label: "Utilisateurs", icon: UserCog },
+  { to: "/organisation", label: "Organisation", icon: Building2 },
   { to: "/parametres-alerte", label: "Paramètres d'alerte", icon: Sliders },
 ];
 

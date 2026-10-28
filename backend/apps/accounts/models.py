@@ -24,6 +24,27 @@ class User(AbstractUser):
         "son périmètre. Un Administrateur a toujours un accès complet, indépendamment de ce champ.",
     )
     telephone = models.CharField(max_length=30, blank=True)
+    class TypeStructure(models.TextChoices):
+        INTERNE = "INTERNE", "Organisation (interne)"
+        CONSORTIUM = "CONSORTIUM", "Partenaire de consortium"
+        MISE_EN_OEUVRE = "MISE_EN_OEUVRE", "Partenaire de mise en œuvre"
+        PARTIE_PRENANTE = "PARTIE_PRENANTE", "Partie prenante"
+        BAILLEUR = "BAILLEUR", "Bailleur"
+
+    type_structure = models.CharField(
+        max_length=20, choices=TypeStructure.choices, blank=True, help_text="Structure à laquelle appartient l'utilisateur."
+    )
+    structure_interne = models.ForeignKey(
+        "partners.StructureOrganisation", null=True, blank=True, on_delete=models.SET_NULL, related_name="utilisateurs",
+        help_text="Direction / service, pour un utilisateur de l'organisation.",
+    )
+    partenaire = models.ForeignKey(
+        "partners.Partenaire", null=True, blank=True, on_delete=models.SET_NULL, related_name="utilisateurs",
+        help_text="Partenaire (consortium, mise en œuvre) ou bailleur dont relève l'utilisateur.",
+    )
+    partie_prenante = models.ForeignKey(
+        "partners.PartiePrenante", null=True, blank=True, on_delete=models.SET_NULL, related_name="utilisateurs"
+    )
     acces_modules = models.JSONField(
         default=dict,
         blank=True,

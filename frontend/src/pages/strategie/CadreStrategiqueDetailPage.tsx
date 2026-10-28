@@ -10,6 +10,7 @@ import {
   Collapse,
   Group,
   Modal,
+  MultiSelect,
   Progress,
   Select,
   SimpleGrid,
@@ -48,6 +49,9 @@ import { AxesBudgetsTab } from "./AxesBudgetsTab";
 import { ImportStructurationModal } from "./ImportStructurationModal";
 import type { ElementStrategique, RecapCadreStrategique, TypeNiveau } from "../../types";
 import { voc } from "../../utils/vocabulaire";
+import { messageErreurApi } from "../../utils/erreurs";
+import { usePartiesPrenantes, useStructures } from "../../api/organisation";
+import { optionsStructures } from "../../utils/organisation";
 
 // Une couleur par rang de niveau (pas par nom) — fixe et cohérente sur tout
 // l'écran, pour distinguer visuellement "à quel niveau appartient ce nœud"
@@ -334,8 +338,17 @@ function ElementModal({
   const [parentId, setParentId] = useState<string | null>(
     elementExistant?.element_parent ? String(elementExistant.element_parent) : null,
   );
+  const [parentsSecondaires, setParentsSecondaires] = useState<string[]>((elementExistant?.parents_secondaires ?? []).map(String));
+  const [structuresIds, setStructuresIds] = useState<string[]>((elementExistant?.structures ?? []).map(String));
+  const [partiesIds, setPartiesIds] = useState<string[]>((elementExistant?.parties_prenantes ?? []).map(String));
+  const { data: structures } = useStructures();
+  const { data: partiesPrenantes } = usePartiesPrenantes();
+  const { data: tousElements } = useElementsStrategiques();
 
   function reinitialiser() {
+    setParentsSecondaires((elementExistant?.parents_secondaires ?? []).map(String));
+    setStructuresIds((elementExistant?.structures ?? []).map(String));
+    setPartiesIds((elementExistant?.parties_prenantes ?? []).map(String));
     setCode(elementExistant?.code ?? "");
     setNom(elementExistant?.nom ?? "");
     setDescription(elementExistant?.description ?? "");
@@ -356,6 +369,31 @@ function ElementModal({
         .map((e) => ({ value: String(e.id), label: e.code ? `${e.code} — ${e.nom}` : e.nom }))
     : [];
 
+  // « Contribue aussi à » : éléments d'un niveau supérieur de ce cadre, ou de n'importe quel autre document.
+  const idsDuCadre = new Set(elements.map((e) => e.id));
+  const ordreDuNiveau = niveauDeLElement?.ordre ?? 0;
+  const parentPrincipal = elementExistant ? parentId : elementParent ? String(elementParent.id) : null;
+  const optionsSecondaires = (() => {
+    const groupes = new Map<string, { value: string; label: string }[]>();
+    for (const e of tousElements ?? []) {
+      if (String(e.id) === parentPrincipal || e.id === elementExistant?.id) continue;
+      if (idsDuCadre.has(e.id)) {
+        const niveau = niveaux.find((n) => n.id === e.type_niveau);
+        if (!niveau || niveau.ordre >= ordreDuNiveau) continue;
+      }
+      const groupe = idsDuCadre.has(e.id) ? e.type_niveau_nom : `${e.type_niveau_nom} (autre cadre)`;
+      const liste = groupes.get(groupe) ?? [];
+      liste.push({ value: String(e.id), label: e.code ? `${e.code} — ${e.nom}` : e.nom });
+      groupes.set(groupe, liste);
+    }
+    return [...groupes.entries()].map(([group, items]) => ({ group, items }));
+  })();
+  const liensOrganisation = {
+    parents_secondaires: parentsSecondaires.filter((id) => id !== parentPrincipal).map(Number),
+    structures: structuresIds.map(Number),
+    parties_prenantes: partiesIds.map(Number),
+  };
+
   async function handleSave() {
     if (!nom.trim()) {
       notifications.show({ message: "Le nom est requis.", color: "orange" });
@@ -374,6 +412,7 @@ function ElementModal({
             nom: nom.trim(),
             description,
             element_parent: parentId ? Number(parentId) : null,
+            ...liensOrganisation,
           },
         });
         notifications.show({ message: "Élément modifié", color: "green" });
@@ -384,12 +423,13 @@ function ElementModal({
           code: code.trim(),
           nom: nom.trim(),
           description,
+          ...liensOrganisation,
         });
         notifications.show({ message: "Élément ajouté", color: "green" });
       }
       onClose();
-    } catch {
-      notifications.show({ message: "Erreur lors de l'enregistrement", color: "red" });
+    } catch (error) {
+      notifications.show({ message: messageErreurApi(error, "Erreur lors de l'enregistrement"), color: "red" });
     }
   }
 
@@ -421,6 +461,34 @@ function ElementModal({
             required
           />
         )}
+        <MultiSelect
+          label="Contribue aussi à"
+          description={voc("Autres éléments d'un niveau supérieur (de ce cadre ou d'un autre document) auxquels celui-ci contribue. Seul le rattachement principal compte dans les totaux.")}
+          placeholder="Aucun"
+          data={optionsSecondaires}
+          value={parentsSecondaires}
+          onChange={setParentsSecondaires}
+          searchable
+          clearable
+        />
+        <MultiSelect
+          label={voc("Services chargés")}
+          placeholder="Aucun"
+          data={optionsStructures(structures ?? [])}
+          value={structuresIds}
+          onChange={setStructuresIds}
+          searchable
+          clearable
+        />
+        <MultiSelect
+          label="Parties prenantes"
+          placeholder="Aucune"
+          data={(partiesPrenantes ?? []).map((p) => ({ value: String(p.id), label: p.nom }))}
+          value={partiesIds}
+          onChange={setPartiesIds}
+          searchable
+          clearable
+        />
         <Group justify="flex-end">
           <Button onClick={handleSave} loading={createElement.isPending || updateElement.isPending}>
             {elementExistant ? "Enregistrer" : "Ajouter"}
@@ -507,10 +575,25 @@ function NoeudElement({
             </ActionIcon>
           )}
           <Badge color={couleur} variant={estRacine ? "filled" : "light"} size="sm">{element.type_niveau_nom}</Badge>
-          <Text size={estRacine ? "md" : "sm"} fw={estRacine ? 700 : 400}>
-            {element.code && <Text span fw={700}>{element.code} — </Text>}
-            {element.nom}
-          </Text>
+          <div>
+            <Text size={estRacine ? "md" : "sm"} fw={estRacine ? 700 : 400}>
+              {element.code && <Text span fw={700}>{element.code} — </Text>}
+              {element.nom}
+            </Text>
+            {(element.parents_secondaires_noms?.length ?? 0) > 0 && (
+              <Text size="xs" c="dimmed">Contribue aussi à : {element.parents_secondaires_noms?.join(" · ")}</Text>
+            )}
+            {((element.structures_noms?.length ?? 0) > 0 || (element.parties_prenantes_noms?.length ?? 0) > 0) && (
+              <Group gap={4} mt={2}>
+                {element.structures_noms?.map((n) => (
+                  <Badge key={`s-${n}`} size="xs" variant="light" color="indigo">{n}</Badge>
+                ))}
+                {element.parties_prenantes_noms?.map((n) => (
+                  <Badge key={`p-${n}`} size="xs" variant="outline" color="gray">{n}</Badge>
+                ))}
+              </Group>
+            )}
+          </div>
         </Group>
         {editionActive && (
         <Group gap={4} wrap="nowrap">

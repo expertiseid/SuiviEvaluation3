@@ -1,3 +1,4 @@
+from django.db import models
 from rest_framework import serializers
 
 from apps.core.vocabulaire import v
@@ -11,6 +12,7 @@ from .models import (
     NiveauActivite,
     ParametresCalcul,
     ParametresRapportage,
+    PartenaireProjet,
     Projet,
     SousActivite,
     TauxManuel,
@@ -92,6 +94,11 @@ class ActiviteSerializer(serializers.ModelSerializer):
     responsables_noms = serializers.StringRelatedField(source="responsables", many=True, read_only=True)
     equipe_responsable_nom = serializers.StringRelatedField(source="equipe_responsable", read_only=True)
     axe_strategique_libelle = serializers.StringRelatedField(source="axe_strategique", read_only=True)
+    axes_strategiques_secondaires_noms = serializers.StringRelatedField(
+        source="axes_strategiques_secondaires", many=True, read_only=True
+    )
+    structures_noms = serializers.StringRelatedField(source="structures", many=True, read_only=True)
+    partenaires_charges_noms = serializers.SerializerMethodField()
     sous_activites = SousActiviteSerializer(many=True, read_only=True)
     jalons_livrables = serializers.SerializerMethodField()
     enfants = serializers.SerializerMethodField()
@@ -115,6 +122,11 @@ class ActiviteSerializer(serializers.ModelSerializer):
             "commentaire",
             "axe_strategique",
             "axe_strategique_libelle",
+            "axes_strategiques_secondaires",
+            "axes_strategiques_secondaires_noms",
+            "structures",
+            "structures_noms",
+            "partenaires_charges_noms",
             "budget_alloue",
             "budget_realise",
             "valeur_reference",
@@ -213,23 +225,33 @@ class ActiviteSerializer(serializers.ModelSerializer):
         # (comme le fait ModelSerializer.create() par défaut) — on reproduit
         # ce comportement à la main puisqu'on a besoin d'appeler clean() juste
         # avant le save() pour valider activite_parent.
-        responsables = validated_data.pop("responsables", None)
+        relations = {champ: validated_data.pop(champ, None) for champ in self.RELATIONS_MULTIPLES}
         instance = Activite(**validated_data)
         instance.clean()
         instance.save()
-        if responsables is not None:
-            instance.responsables.set(responsables)
+        self._enregistrer_relations(instance, relations)
         return instance
 
     def update(self, instance, validated_data):
-        responsables = validated_data.pop("responsables", None)
+        relations = {champ: validated_data.pop(champ, None) for champ in self.RELATIONS_MULTIPLES}
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.clean()
         instance.save()
-        if responsables is not None:
-            instance.responsables.set(responsables)
+        self._enregistrer_relations(instance, relations)
         return instance
+
+    RELATIONS_MULTIPLES = ("responsables", "axes_strategiques_secondaires", "structures")
+
+    @staticmethod
+    def _enregistrer_relations(instance, relations):
+        for champ, valeurs in relations.items():
+            if valeurs is not None:
+                getattr(instance, champ).set(valeurs)
+
+    def get_partenaires_charges_noms(self, obj):
+        """Partenaires chargés de cet élément (rôle des partenaires dans le projet)."""
+        return [r.partenaire.nom for r in obj.partenaires_charges.select_related("partenaire")]
 
 
 class JalonLivrableSerializer(serializers.ModelSerializer):
@@ -294,7 +316,37 @@ class ProjetSerializer(serializers.ModelSerializer):
     partenaires_consortium_noms = serializers.StringRelatedField(source="partenaires_consortium", many=True, read_only=True)
     cadre_strategique_nom = serializers.StringRelatedField(source="cadre_strategique", read_only=True)
     element_strategique_libelle = serializers.SerializerMethodField()
+    elements_strategiques_secondaires_noms = serializers.StringRelatedField(
+        source="elements_strategiques_secondaires", many=True, read_only=True
+    )
+    structures_noms = serializers.StringRelatedField(source="structures", many=True, read_only=True)
+    parties_prenantes_noms = serializers.StringRelatedField(source="parties_prenantes", many=True, read_only=True)
+    services_detail = serializers.SerializerMethodField()
     activites = serializers.SerializerMethodField()
+
+    def get_services_detail(self, obj):
+        """
+        Services qui travaillent sur le projet (affectés au projet ou à une de ses parties), avec
+        leurs membres : qui participe au projet.
+        """
+        from apps.partners.models import StructureOrganisation
+
+        sur_le_projet = set(obj.structures.values_list("id", flat=True))
+        services = StructureOrganisation.objects.filter(
+            models.Q(projets=obj) | models.Q(activites__projet=obj)
+        ).distinct().prefetch_related("utilisateurs")
+        resultat = []
+        for s in services:
+            parties = list(obj.activites.filter(structures=s).values_list("libelle", flat=True))
+            resultat.append({
+                "id": s.id,
+                "nom": str(s),
+                "type": s.type,
+                "tout_le_projet": s.id in sur_le_projet,
+                "parties": parties,
+                "membres": [u.get_full_name() or u.username for u in s.utilisateurs.all()],
+            })
+        return sorted(resultat, key=lambda x: (not x["tout_le_projet"], x["nom"]))
     financement_bailleurs_total = serializers.ReadOnlyField()
 
     etat_saisie = serializers.SerializerMethodField()
@@ -336,6 +388,13 @@ class ProjetSerializer(serializers.ModelSerializer):
             "cadre_strategique_nom",
             "element_strategique",
             "element_strategique_libelle",
+            "elements_strategiques_secondaires",
+            "elements_strategiques_secondaires_noms",
+            "structures",
+            "structures_noms",
+            "parties_prenantes",
+            "parties_prenantes_noms",
+            "services_detail",
             "chef_de_projet_nom",
             "utilisateurs_affectes",
             "cible_totale",
@@ -388,6 +447,9 @@ class ProjetWriteSerializer(serializers.ModelSerializer):
             "approbation_planification",
             "cadre_strategique",
             "element_strategique",
+            "elements_strategiques_secondaires",
+            "structures",
+            "parties_prenantes",
             "chef_de_projet_nom",
             "utilisateurs_affectes",
             "cible_totale",
@@ -411,4 +473,30 @@ class ProjetWriteSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {"element_strategique": v("Cet élément n'appartient pas au cadre stratégique du projet.")}
                 )
+        if element is not None and element in attrs.get("elements_strategiques_secondaires", []):
+            raise serializers.ValidationError(
+                {"elements_strategiques_secondaires": "L'élément principal n'a pas à être repris dans les autres liens."}
+            )
+        return attrs
+
+
+class PartenaireProjetSerializer(serializers.ModelSerializer):
+    partenaire_nom = serializers.StringRelatedField(source="partenaire", read_only=True)
+    elements_libelles = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PartenaireProjet
+        fields = (
+            "id", "projet", "partenaire", "partenaire_nom", "nature", "chef_de_file", "role",
+            "elements", "elements_libelles",
+        )
+
+    def get_elements_libelles(self, obj):
+        return [f"{a.code_activite} {a.libelle}".strip() for a in obj.elements.all()]
+
+    def validate(self, attrs):
+        projet = attrs.get("projet", getattr(self.instance, "projet", None))
+        etrangers = [a for a in attrs.get("elements", []) if a.projet_id != projet.id]
+        if etrangers:
+            raise serializers.ValidationError({"elements": v("Ces éléments n'appartiennent pas à ce projet.")})
         return attrs
