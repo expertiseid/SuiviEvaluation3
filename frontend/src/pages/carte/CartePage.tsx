@@ -1,13 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
-import { Alert, Badge, Button, Card, Chip, Group, SegmentedControl, Select, SimpleGrid, Stack, Text, Title } from "@mantine/core";
+import { FileDown, Layers, Upload } from "lucide-react";
+import { Alert, Badge, Button, Card, Chip, Group, SegmentedControl, Select, SimpleGrid, Stack, Text } from "@mantine/core";
 import { CircleMarker, GeoJSON, MapContainer, Marker, Popup, TileLayer, Tooltip, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useCarteBeneficiaires, useChoixProjetsVariables } from "../../api/beneficiaries";
-import { useCoucheCarte, useLimitesAdministratives, useLocalites, type LocaliteCarte } from "../../api/geo";
+import {
+  useCoucheCarte,
+  useCouchesImportees,
+  useGeojsonCouche,
+  useLimitesAdministratives,
+  useLocalites,
+  useZones,
+  type CoucheImportee,
+  type LocaliteCarte,
+} from "../../api/geo";
+import { TitreRubrique } from "../../components/common/TitreRubrique";
+import { useAccesModules } from "../../utils/modules";
 import { voc } from "../../utils/vocabulaire";
+import { GererCouchesModal, ImportCoucheModal, TelechargerCarteModal } from "./FenetresCarte";
 
 const CENTRE_PAR_DEFAUT: [number, number] = [12.3, -1.6]; // Burkina Faso
 
@@ -169,19 +181,52 @@ function Villages({ pays, bbox, zoom, noms }: { pays: string | undefined; bbox: 
   );
 }
 
+/** Couche importée (shapefile…) : sa couleur, ses noms au survol et ses attributs au clic. */
+function CoucheImporteeCarte({ couche }: { couche: CoucheImportee }) {
+  const { data } = useGeojsonCouche(couche.id, true);
+  if (!data) return null;
+  return (
+    <GeoJSON
+      key={`${couche.id}-${couche.couleur}-${couche.champ_etiquette}`}
+      data={data}
+      style={{ color: couche.couleur, weight: couche.geometrie === "LIGNE" ? 3 : 1.6, fillOpacity: 0.15 }}
+      pointToLayer={(_f, position) => L.circleMarker(position, { radius: 5, color: "#fff", weight: 1, fillColor: couche.couleur, fillOpacity: 1 })}
+      onEachFeature={(f, calque) => {
+        const p = f.properties ?? {};
+        const nom = couche.champ_etiquette ? p[couche.champ_etiquette] : null;
+        if (nom) calque.bindTooltip(String(nom), { sticky: true });
+        const lignes = Object.entries(p).filter(([, v]) => v !== null && v !== "").map(([k, v]) => `<b>${k}</b> : ${String(v).replace(/</g, "&lt;")}`);
+        calque.bindPopup(`<div style="font-size:12px"><div style="font-weight:600;margin-bottom:4px">${couche.nom.replace(/</g, "&lt;")}</div>${lignes.join("<br>")}</div>`);
+      }}
+    />
+  );
+}
+
 /**
- * Carte des bénéficiaires : couches au choix (limites administratives, routes, villes et
- * villages, noms), bénéficiaires positionnés par GPS (points orange) et, pour les autres,
- * regroupés au centre de leur localité (cercles verts, taille selon le nombre).
+ * Carte (rubrique du menu) : bénéficiaires positionnés par GPS (points orange) ou regroupés au
+ * centre de leur localité (cercles verts), filtrés par projet et par zone ; couches de fond au
+ * choix, couches importées (shapefile…) et carte imprimable à télécharger.
  */
-export function CarteBeneficiairesPage() {
+export function CartePage() {
   const [projet, setProjet] = useState<string | null>(null);
+  const [zone, setZone] = useState<string | null>(null);
+  const [importeesVisibles, setImporteesVisibles] = useState<string[]>([]);
+  const [fenetre, setFenetre] = useState<"import" | "gerer" | "telecharger" | null>(null);
+  const { data: couchesImportees = [] } = useCouchesImportees();
+  const { peutEcrire } = useAccesModules();
   const [couches, setCouches] = useState<Couche[]>(["regions", "provinces", "routes", "villages", "noms"]);
   const [fond, setFond] = useState<string | null>(null);
   const [vue, setVue] = useState<{ zoom: number; bbox: string | null }>({ zoom: 6, bbox: null });
   const { data: projets = [] } = useChoixProjetsVariables(true);
-  const { data, isLoading } = useCarteBeneficiaires(projet ? Number(projet) : null);
+  const { data, isLoading } = useCarteBeneficiaires(projet ? Number(projet) : null, zone ? Number(zone) : null);
   const pays = data?.pays;
+  const { data: zones = [] } = useZones({ pays: pays ?? null });
+  // Zones regroupées par niveau (Région, Province…) pour le filtre.
+  const choixZones = useMemo(() => {
+    const groupes = new Map<string, { value: string; label: string }[]>();
+    zones.forEach((z) => groupes.set(z.niveau_administratif_nom, [...(groupes.get(z.niveau_administratif_nom) ?? []), { value: String(z.id), label: z.nom }]));
+    return [...groupes.entries()].map(([group, items]) => ({ group, items: items.sort((a, b) => a.label.localeCompare(b.label)) }));
+  }, [zones]);
   const { data: regions, isError: limitesIndisponibles } = useLimitesAdministratives(pays, 1);
   const { data: routes } = useCoucheCarte(pays, "routes", couches.includes("routes"));
   const active = (c: Couche) => couches.includes(c);
@@ -190,8 +235,13 @@ export function CarteBeneficiairesPage() {
   const tuiles = FONDS[fondChoisi];
   const noms = active("noms");
 
-  // Vue cadrée sur les bénéficiaires (avec une marge), sinon sur le pays par défaut.
+  // Vue cadrée sur la zone choisie, sinon sur les bénéficiaires (avec une marge), sinon sur le pays.
+  const contourZone = data?.zone_filtre?.contour ?? null;
   const cadre = useMemo<[[number, number], [number, number]] | null>(() => {
+    if (contourZone) {
+      const b = L.geoJSON(contourZone as GeoJSON.Geometry).getBounds();
+      return [[b.getSouth(), b.getWest()], [b.getNorth(), b.getEast()]];
+    }
     const positions = [...(data?.points ?? []), ...(data?.zones ?? [])];
     if (positions.length === 0) return null;
     const lats = positions.map((p) => p.lat);
@@ -200,34 +250,39 @@ export function CarteBeneficiairesPage() {
       [Math.min(...lats) - 0.6, Math.min(...lngs) - 0.6],
       [Math.max(...lats) + 0.6, Math.max(...lngs) + 0.6],
     ];
-  }, [data]);
+  }, [data, contourZone]);
   const maxZone = Math.max(1, ...(data?.zones ?? []).map((z) => z.nombre));
 
   return (
     <Stack gap="md">
       <style>{STYLE_ETIQUETTES}</style>
       <Group justify="space-between">
+        <TitreRubrique route="/carte" defaut="Carte" />
         <Group gap="xs">
-          <Button component={Link} to="/beneficiaires" variant="subtle" leftSection={<ArrowLeft size={16} />} px={6}>
-            {voc("Bénéficiaires")}
-          </Button>
-          <Title order={2}>{voc("Carte des bénéficiaires")}</Title>
+          {peutEcrire("/carte") && (
+            <Button variant="light" color="grape" leftSection={<Upload size={16} />} onClick={() => setFenetre("import")}>Importer une couche</Button>
+          )}
+          <Button leftSection={<FileDown size={16} />} onClick={() => setFenetre("telecharger")}>Télécharger la carte</Button>
         </Group>
+      </Group>
+
+      <SimpleGrid cols={{ base: 1, sm: 2 }}>
+        <Select placeholder={voc("Tous les projets")} data={projets} value={projet} onChange={setProjet} clearable searchable />
         <Select
-          placeholder={voc("Tous les projets")}
-          data={projets}
-          value={projet}
-          onChange={setProjet}
+          placeholder="Toutes les zones (région, province, commune…)"
+          data={choixZones}
+          value={zone}
+          onChange={setZone}
           clearable
           searchable
-          w={{ base: "100%", sm: 320 }}
+          nothingFoundMessage="Aucune zone"
         />
-      </Group>
+      </SimpleGrid>
 
       {data && (
         <Card withBorder padding="sm">
           <SimpleGrid cols={{ base: 2, sm: 4 }}>
-            <Chiffre valeur={data.total} libelle={voc("bénéficiaires")} />
+            <Chiffre valeur={data.total} libelle={`${voc("bénéficiaires")} (${data.femmes} F, ${data.hommes} H)`} />
             <Chiffre valeur={data.points.length} libelle="positionnés par GPS" couleur="orange.7" />
             <Chiffre valeur={data.zones.reduce((s, z) => s + z.nombre, 0)} libelle="placés selon leur localité" couleur="teal.7" />
             <Chiffre valeur={data.non_localises} libelle="sans localisation" couleur={data.non_localises ? "red.7" : undefined} />
@@ -251,6 +306,19 @@ export function CarteBeneficiairesPage() {
             </Chip>
           ))}
         </Chip.Group>
+        {couchesImportees.length > 0 && (
+          <Chip.Group multiple value={importeesVisibles} onChange={setImporteesVisibles}>
+            {couchesImportees.map((c) => (
+              <Chip key={c.id} value={String(c.id)} size="xs" variant="light" color="grape">
+                <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: c.couleur, marginRight: 5 }} />
+                {c.nom}
+              </Chip>
+            ))}
+          </Chip.Group>
+        )}
+        {couchesImportees.length > 0 && peutEcrire("/carte") && (
+          <Button size="compact-xs" variant="subtle" leftSection={<Layers size={12} />} onClick={() => setFenetre("gerer")}>Gérer</Button>
+        )}
       </Group>
       <Group gap="xs">
         <Text size="sm" fw={500}>Fond :</Text>
@@ -263,7 +331,8 @@ export function CarteBeneficiairesPage() {
       </Group>
       </Group>
 
-      <Card withBorder padding={0} radius="md" style={{ overflow: "hidden" }}>
+      {/* « isolate » : les calques Leaflet (z-index 400+) restent sous les fenêtres et menus. */}
+      <Card withBorder padding={0} radius="md" style={{ overflow: "hidden", isolation: "isolate" }}>
         {isLoading ? (
           <Text p="md">Chargement…</Text>
         ) : (
@@ -283,6 +352,10 @@ export function CarteBeneficiairesPage() {
             {active("regions") && <Limites pays={pays} niveau={1} zoom={vue.zoom} noms={noms} />}
             {active("routes") && <Routes pays={pays} />}
             {active("villages") && <Villages pays={pays} bbox={vue.bbox} zoom={vue.zoom} noms={noms} />}
+            {contourZone && (
+              <GeoJSON key={`zone-${data?.zone_filtre?.id}`} data={contourZone as GeoJSON.Geometry} style={{ color: "#0c8a5f", weight: 3, fillColor: "#12b886", fillOpacity: 0.06 }} interactive={false} />
+            )}
+            {couchesImportees.filter((c) => importeesVisibles.includes(String(c.id))).map((c) => <CoucheImporteeCarte key={c.id} couche={c} />)}
             {data?.zones.map((z) => (
               <CircleMarker
                 key={`z-${z.zone}`}
@@ -325,6 +398,15 @@ export function CarteBeneficiairesPage() {
         <Text size="xs" c="dimmed">
           {`Contours : geoBoundaries (${regions.annee}) — un découpage plus récent que la source n'y figure pas encore ; ses zones sont placées au centre de leurs zones rattachées.`}
         </Text>
+      )}
+      {fenetre === "import" && <ImportCoucheModal onClose={() => setFenetre(null)} />}
+      {fenetre === "gerer" && <GererCouchesModal couches={couchesImportees} onClose={() => setFenetre(null)} />}
+      {fenetre === "telecharger" && (
+        <TelechargerCarteModal
+          options={{ projet: projet ? Number(projet) : null, zone: zone ? Number(zone) : null, couches, importees: importeesVisibles.map(Number) }}
+          couchesImportees={couchesImportees}
+          onClose={() => setFenetre(null)}
+        />
       )}
     </Stack>
   );

@@ -284,12 +284,47 @@ export interface CarteBeneficiaires {
   /** Les autres, regroupés au centre de leur localité (ou de la zone parente placée la plus proche). */
   zones: { zone: number; nom: string; lat: number; lng: number; nombre: number; femmes: number; hommes: number }[];
   non_localises: number;
+  femmes: number;
+  hommes: number;
+  /** Zone choisie comme filtre (région, province…) et son contour. */
+  zone_filtre: { id: number; nom: string; niveau: string; ordre: number; contour: GeoJSON.Geometry | null } | null;
 }
 
-export function useCarteBeneficiaires(projet: number | null) {
+export function useCarteBeneficiaires(projet: number | null, zone: number | null = null) {
   return useQuery({
-    queryKey: ["beneficiaires", "carte", projet],
+    queryKey: ["beneficiaires", "carte", projet, zone],
     queryFn: async () =>
-      (await apiClient.get<CarteBeneficiaires>("/beneficiaires/carte/", { params: projet ? { projet } : {} })).data,
+      (await apiClient.get<CarteBeneficiaires>("/beneficiaires/carte/", { params: { projet: projet ?? undefined, zone: zone ?? undefined } })).data,
+    placeholderData: (precedent) => precedent,
   });
+}
+
+export interface OptionsCarteImprimable {
+  projet: number | null;
+  zone: number | null;
+  sortie: "pdf" | "png";
+  papier: "A0" | "A1" | "A3" | "A4";
+  orientation: "auto" | "portrait" | "paysage";
+  couches: string[];
+  importees: number[];
+}
+
+/** Carte imprimable (modèle des cartes officielles) produite par le serveur. */
+export async function telechargerCarteImprimable(o: OptionsCarteImprimable) {
+  const response = await apiClient.get("/beneficiaires/carte/export/", {
+    params: {
+      projet: o.projet ?? undefined, zone: o.zone ?? undefined, sortie: o.sortie, papier: o.papier, orientation: o.orientation,
+      couches: o.couches.join(","), importees: o.importees.join(","),
+    },
+    responseType: "blob",
+    timeout: 300000,
+  });
+  const nom = /filename="?([^"]+)"?/.exec(response.headers["content-disposition"] ?? "")?.[1] ?? `carte.${o.sortie}`;
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const lien = document.createElement("a");
+  lien.href = url;
+  lien.download = nom;
+  document.body.appendChild(lien);
+  lien.click();
+  lien.remove();
 }

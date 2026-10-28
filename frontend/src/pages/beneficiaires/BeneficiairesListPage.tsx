@@ -244,7 +244,7 @@ export function BeneficiairesListPage() {
               {voc("Variables à collecter")}
             </Button>
           )}
-          <Button component={Link} to="/beneficiaires/carte" variant="light" color="teal" leftSection={<MapIcon size={16} />}>
+          <Button component={Link} to="/carte" variant="light" color="teal" leftSection={<MapIcon size={16} />}>
             Carte
           </Button>
           <Button variant="light" leftSection={<Download size={16} />} onClick={() => setModalExportOpen(true)}>

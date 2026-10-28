@@ -1,12 +1,15 @@
+import os
+
 from rest_framework import viewsets
-from rest_framework.decorators import api_view
+from rest_framework.decorators import action, api_view
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
-from apps.core.permissions import IsAdminOrCreateForAuthenticated, IsAdminOrReadOnly
+from apps.core.permissions import HasGlobalVisibilityOrAssigned, IsAdminOrCreateForAuthenticated, IsAdminOrReadOnly
 
-from .models import CoucheCarte, LimiteAdministrative, Localite, NiveauAdministratif, Zone
-from .serializers import NiveauAdministratifSerializer, ZoneSerializer
+from .models import CoucheCarte, CoucheImportee, LimiteAdministrative, Localite, NiveauAdministratif, Zone
+from .serializers import CoucheImporteeSerializer, NiveauAdministratifSerializer, ZoneSerializer
 
 
 class NiveauAdministratifViewSet(viewsets.ModelViewSet):
@@ -92,3 +95,39 @@ def localites(request):
         "total": total,
         "localites": [{"nom": n, "statut": s, "commune": c, "lat": la, "lng": lo} for n, s, c, la, lo in lignes],
     })
+
+
+class CoucheImporteeViewSet(viewsets.ModelViewSet):
+    """
+    Couches SIG importées pour la carte : création par envoi d'un fichier (champ « fichier » :
+    .zip de shapefile, .gpkg, .geojson ou .kml, plus « nom » et « couleur »), puis nom, couleur
+    et attribut des étiquettes modifiables.
+    """
+
+    queryset = CoucheImportee.objects.select_related("cree_par").defer("geojson")
+    serializer_class = CoucheImporteeSerializer
+    permission_classes = (HasGlobalVisibilityOrAssigned,)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
+
+    def create(self, request, *args, **kwargs):
+        from rest_framework.exceptions import ValidationError
+
+        from .services.import_sig import ImportSigImpossible, lire_couche
+
+        fichier = request.FILES.get("fichier")
+        if fichier is None:
+            raise ValidationError({"fichier": "Choisissez un fichier."})
+        try:
+            lue = lire_couche(fichier)
+        except ImportSigImpossible as exc:
+            raise ValidationError({"fichier": str(exc)})
+        nom = (request.data.get("nom") or os.path.splitext(os.path.basename(fichier.name))[0]).strip()[:150]
+        serializer = self.get_serializer(data={"nom": nom, "couleur": request.data.get("couleur") or "#7048e8"})
+        serializer.is_valid(raise_exception=True)
+        couche = serializer.save(fichier_source=fichier.name[:255], cree_par=request.user, **lue)
+        return Response(self.get_serializer(couche).data, status=201)
+
+    @action(detail=True, methods=["get"])
+    def geojson(self, request, pk=None):
+        couche = CoucheImportee.objects.only("geojson").get(pk=self.get_object().pk)
+        return Response(couche.geojson)

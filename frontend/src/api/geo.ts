@@ -140,3 +140,66 @@ export function useLocalites(pays: string | undefined, bbox: string | null) {
     retry: false,
   });
 }
+
+export interface CoucheImportee {
+  id: number;
+  nom: string;
+  couleur: string;
+  geometrie: "POINT" | "LIGNE" | "POLYGONE";
+  fichier_source: string;
+  projection_source: string;
+  colonnes: string[];
+  champ_etiquette: string;
+  nombre_objets: number;
+  emprise: [number, number, number, number];
+  cree_par_nom: string;
+  created_at: string;
+}
+
+export function useCouchesImportees() {
+  return useQuery({
+    queryKey: ["couches-importees"],
+    queryFn: async () => (await apiClient.get<Paginated<CoucheImportee>>("/couches-importees/", { params: { page_size: 200 } })).data.results,
+  });
+}
+
+export function useGeojsonCouche(id: number, active: boolean) {
+  return useQuery({
+    queryKey: ["couches-importees", id, "geojson"],
+    queryFn: async () => (await apiClient.get<GeoJSON.FeatureCollection>(`/couches-importees/${id}/geojson/`)).data,
+    enabled: active,
+    staleTime: Infinity,
+  });
+}
+
+/** Import d'un fichier SIG (.zip de shapefile, .gpkg, .geojson, .kml). */
+export function useImporterCouche() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ fichier, nom, couleur }: { fichier: File; nom: string; couleur: string }) => {
+      const donnees = new FormData();
+      donnees.append("fichier", fichier);
+      donnees.append("nom", nom);
+      donnees.append("couleur", couleur);
+      return (await apiClient.post<CoucheImportee>("/couches-importees/", donnees, { timeout: 300000 })).data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["couches-importees"] }),
+  });
+}
+
+export function useModifierCouche() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...payload }: Partial<CoucheImportee> & { id: number }) =>
+      (await apiClient.patch<CoucheImportee>(`/couches-importees/${id}/`, payload)).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["couches-importees"] }),
+  });
+}
+
+export function useSupprimerCouche() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => apiClient.delete(`/couches-importees/${id}/`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["couches-importees"] }),
+  });
+}

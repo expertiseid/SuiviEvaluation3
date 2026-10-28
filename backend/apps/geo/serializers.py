@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
-from .models import NiveauAdministratif, Zone
+from .models import CoucheImportee, NiveauAdministratif, Zone
 
 
 class NiveauAdministratifSerializer(serializers.ModelSerializer):
@@ -54,3 +54,33 @@ class ZoneSerializer(serializers.ModelSerializer):
         except DjangoValidationError as exc:
             raise serializers.ValidationError(exc.messages)
         return attrs
+
+
+class CoucheImporteeSerializer(serializers.ModelSerializer):
+    """Description d'une couche importée (le GeoJSON se lit à part : couches-importees/{id}/geojson/)."""
+
+    cree_par_nom = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CoucheImportee
+        fields = (
+            "id", "nom", "couleur", "geometrie", "fichier_source", "projection_source", "colonnes", "champ_etiquette",
+            "nombre_objets", "emprise", "cree_par_nom", "created_at",
+        )
+        read_only_fields = ("geometrie", "fichier_source", "projection_source", "colonnes", "nombre_objets", "emprise")
+
+    def get_cree_par_nom(self, obj):
+        u = obj.cree_par
+        return (u.get_full_name() or u.username) if u else ""
+
+    def validate_couleur(self, valeur):
+        import re
+
+        if not re.fullmatch(r"#[0-9a-fA-F]{6}", valeur):
+            raise serializers.ValidationError("Couleur attendue au format #RRGGBB.")
+        return valeur
+
+    def validate_champ_etiquette(self, valeur):
+        if valeur and self.instance is not None and valeur not in self.instance.colonnes:
+            raise serializers.ValidationError("Attribut inconnu dans cette couche.")
+        return valeur

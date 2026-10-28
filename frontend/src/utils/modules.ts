@@ -27,6 +27,7 @@ export function modulesReglables(): { group: string; items: ModuleReglable[] }[]
         { cle: "/indicateurs", label: voc("Indicateurs"), ecriture: true },
         { cle: "/suivi", label: voc("Suivi"), ecriture: true },
         { cle: "/beneficiaires", label: voc("Bénéficiaires"), ecriture: true },
+        { cle: "/carte", label: "Carte", ecriture: true },
         { cle: "/documents", label: voc("Documents"), ecriture: true },
         { cle: "/zones-administratives", label: voc("Zones administratives"), ecriture: true },
         { cle: "/approbations", label: "Approbations", ecriture: false },

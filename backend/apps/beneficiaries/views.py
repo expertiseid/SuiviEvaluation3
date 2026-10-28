@@ -1,3 +1,5 @@
+import threading
+
 from django.db.models import F, Min
 from django.http import HttpResponse
 from django.utils import timezone
@@ -49,6 +51,8 @@ class TypeActiviteBeneficiaireViewSet(viewsets.ModelViewSet):
 
 
 class BeneficiaireViewSet(viewsets.ModelViewSet):
+    # Cartes imprimables : gourmandes (surtout en A0), deux à la fois au plus.
+    _GENERATIONS = threading.BoundedSemaphore(2)
     queryset = Beneficiaire.objects.select_related("zone").prefetch_related(
         "statuts_particuliers", "participations__projet"
     )
@@ -192,54 +196,68 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
         reponse["Content-Disposition"] = 'attachment; filename="cartes_beneficiaires.pdf"'
         return reponse
 
+    def _zone_filtre(self):
+        from apps.geo.models import Zone
+
+        zone_id = self.request.query_params.get("zone")
+        if not zone_id:
+            return None
+        zone = Zone.objects.select_related("niveau_administratif").filter(id=zone_id).first()
+        if zone is None:
+            raise NotFound("Zone inconnue.")
+        return zone
+
     @action(detail=False, methods=["get"])
     def carte(self, request):
         """
-        Carte des bénéficiaires (?projet= pour un projet) : ceux qui ont une position GPS
-        (points), les autres regroupés au centre de leur localité ou, à défaut, de la zone
-        parente placée la plus proche ; plus le nombre de bénéficiaires sans localisation.
+        Carte des bénéficiaires (?projet= pour un projet, ?zone= pour une région, province…) :
+        ceux qui ont une position GPS (points), les autres regroupés au centre de leur localité
+        ou, à défaut, de la zone parente placée la plus proche ; plus le nombre sans localisation.
         """
-        from collections import Counter
+        from .services.carte_donnees import donnees_carte
 
-        beneficiaires = list(self.get_queryset().select_related("zone"))
-        points, par_zone, non_localises = [], {}, 0
-        positions = {}
+        return Response(donnees_carte(self.get_queryset(), self._zone_filtre()))
 
-        def position(zone):
-            depart = zone
-            while zone is not None:
-                if zone.latitude is not None:
-                    positions[depart.id] = zone
-                    return zone
-                zone = zone.parent
-            positions[depart.id] = None
-            return None
+    @action(detail=False, methods=["get"], url_path="carte/export")
+    def carte_export(self, request):
+        """
+        Carte imprimable (modèle des cartes officielles HIMO) : mêmes filtres que la carte
+        (?projet=, ?zone=), plus sortie=pdf|png, papier=A0|A1|A3|A4,
+        orientation=auto|portrait|paysage, couches=regions,provinces,communes,routes,villages,noms
+        et importees=1,2 (couches importées).
+        """
+        from apps.geo.models import CoucheImportee
+        from apps.projects.models import Projet
 
-        for b in beneficiaires:
-            if b.latitude is not None and b.longitude is not None:
-                points.append({
-                    "id": b.id, "nom": str(b), "identifiant": b.identifiant, "sexe": b.sexe,
-                    "lat": float(b.latitude), "lng": float(b.longitude),
-                })
-                continue
-            zone = positions[b.zone_id] if b.zone_id in positions else (position(b.zone) if b.zone else None)
-            if zone is None:
-                non_localises += 1
-                continue
-            groupe = par_zone.setdefault(zone.id, {
-                "zone": zone.id, "nom": zone.nom, "lat": float(zone.latitude), "lng": float(zone.longitude),
-                "nombre": 0, "femmes": 0, "hommes": 0,
-            })
-            groupe["nombre"] += 1
-            groupe["femmes" if b.sexe == "F" else "hommes"] += 1
-        pays = Counter(b.pays for b in beneficiaires if b.pays).most_common(1)
-        return Response({
-            "pays": pays[0][0] if pays else "BF",
-            "total": len(beneficiaires),
-            "points": points,
-            "zones": sorted(par_zone.values(), key=lambda g: -g["nombre"]),
-            "non_localises": non_localises,
-        })
+        from .services.carte_donnees import donnees_carte
+        from .services.carte_officielle import COUCHES, PAPIERS, rendre_carte
+
+        p = request.query_params
+        sortie, papier, orientation = p.get("sortie", "pdf"), p.get("papier", "A3").upper(), p.get("orientation", "auto")
+        if sortie not in ("pdf", "png") or papier not in PAPIERS or orientation not in ("auto", "portrait", "paysage"):
+            raise ValidationError({"detail": "Paramètres invalides (sortie, papier ou orientation)."})
+        couches = {c: True for c in p.get("couches", "regions,provinces,routes,noms").split(",") if c in COUCHES}
+        ids = [i for i in p.get("importees", "").split(",") if i.isdigit()]
+        couches["importees"] = list(CoucheImportee.objects.filter(id__in=ids))
+        zone = self._zone_filtre()
+        donnees = donnees_carte(self.get_queryset(), zone)
+        projet = Projet.objects.filter(id=p.get("projet")).first() if p.get("projet") else None
+        portee = " — ".join(x for x in [projet.code if projet else "", zone.nom if zone else ""] if x)
+
+        verrou = BeneficiaireViewSet._GENERATIONS
+        if not verrou.acquire(timeout=5):
+            return Response({"detail": "Des cartes sont en cours de génération, réessayez dans une minute."}, status=503)
+        try:
+            contenu = rendre_carte(donnees, couches, papier=papier, orientation=orientation, sortie=sortie, titre_portee=portee)
+        except ValueError as exc:
+            raise ValidationError({"detail": str(exc)})
+        finally:
+            verrou.release()
+        nom = "_".join(x for x in ["carte_beneficiaires", projet.code if projet else "", zone.nom if zone else "", papier] if x)
+        nom = "".join(c if c.isalnum() or c in "-_" else "_" for c in nom)
+        reponse = HttpResponse(contenu, content_type="image/png" if sortie == "png" else "application/pdf")
+        reponse["Content-Disposition"] = f'attachment; filename="{nom}.{sortie}"'
+        return reponse
 
     @action(detail=False, methods=["get"], url_path=r"identifiant/(?P<identifiant>[\w-]+)")
     def par_identifiant(self, request, identifiant=None):

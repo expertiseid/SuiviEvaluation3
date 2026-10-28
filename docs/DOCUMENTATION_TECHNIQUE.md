@@ -326,6 +326,20 @@ en attente avec ces règles et retire ceux qui ne tiennent plus.
   routes sont simplifiés (Douglas-Peucker) ; les localités sont servies par zone visible
   (`localites/?bbox=`, 3 000 au plus, villes d'abord). Les fichiers sources ne sont pas
   versionnés.
+- **Rubrique « Carte »** (`/carte`, module `/carte` dans les droits ; l'ancienne adresse
+  `/beneficiaires/carte` y renvoie) : filtres par projet et par zone (`?zone=` : la zone et
+  celles en dessous, plus les points GPS sans localité tombant dans son contour ;
+  `beneficiaries/services/carte_donnees.py`).
+- **Couches importées** (`geo.CoucheImportee`, `geo/services/import_sig.py`) : shapefile en
+  .zip (avec .prj), GeoPackage, GeoJSON ou KML, lus avec geopandas, reprojetés en WGS 84,
+  simplifiés et réparés ; colonnes techniques écartées, attribut des noms reconnu (modifiable),
+  20 000 objets au plus. Affichées en couches à cocher (survol : nom, clic : attributs).
+- **Carte imprimable** (`beneficiaries/services/carte_officielle.py`,
+  `beneficiaires/carte/export/`) : modèle des cartes officielles de la plateforme HIMO —
+  mise en page A0 mise à l'échelle pour A1/A3/A4, orientation la plus lisible ou imposée,
+  échelle réelle, grille degrés-minutes, nord, situation, chiffres clés, légende, tableau des
+  localités, cartouche ; projection UTM de la zone ; PDF vectoriel ou PNG ; deux générations
+  à la fois au plus.
 - **Couches de la carte** au choix : régions, provinces, communes, routes, villes et villages
   (à partir du zoom 10), noms (selon le zoom : régions, puis provinces, communes, villages à
   partir du zoom 12) ; fond neutre sans noms (Esri, par défaut quand une base nationale est
@@ -648,6 +662,8 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 | GET | `limites-administratives/` | Contours GeoJSON d'un niveau (`?pays=BF&niveau=2`) et leur source |
 | GET | `couches-carte/` | Couche d'habillage importée (`?pays=BF&cle=routes`) |
 | GET | `localites/` | Villes et villages d'une zone (`?pays=BF&bbox=sud,ouest,nord,est`) |
+| GET / POST / PATCH / DELETE | `couches-importees/`, `couches-importees/{id}/geojson/` | Couches SIG importées (création : envoi multipart du fichier) et leurs objets |
+| GET | `beneficiaires/carte/export/` | Carte imprimable : `?projet=&zone=&sortie=pdf` ou `png`, `papier=A0` à `A4`, `orientation=auto`, `portrait` ou `paysage`, `couches=…`, `importees=1,2` |
 | GET | `rapports/financier/{projet}/` | Rapport financier : `?fichier=pdf, docx ou xlsx&sections=sources,rallonges,execution,detail,trimestres&debut=&fin=` |
 | GET | `rapports/cadre-logique/{projet}/` | Cadre logique (JSON), ou `?fichier=pdf` ou `docx` |
 | GET | `rapports/risques/{projet}/` | Registre des risques : `?fichier=pdf` ou `docx` |
@@ -748,7 +764,7 @@ mutualisées) puis rejoue la requête, ou renvoie vers la page de connexion.
 | `/indicateurs`, `/indicateurs/:id` | Indicateurs et saisie des valeurs |
 | `/suivi`, `/suivi/:id` | Suivi des projets et tableau de suivi d'un projet |
 | `/beneficiaires`, `/beneficiaires/:id` | Bénéficiaires (identifiant, QR code, carte à imprimer, variables) |
-| `/beneficiaires/carte` | Carte des bénéficiaires |
+| `/carte` | Carte : bénéficiaires filtrés par projet et zone, couches de fond et importées, carte imprimable |
 | `/beneficiaires/identifiant/:identifiant` | Lien du QR code : ouvre la fiche |
 | `/approbations` | Saisies et changements de planification à approuver, ou suivi de ses demandes |
 | `/doublons` | Doublons signalés |

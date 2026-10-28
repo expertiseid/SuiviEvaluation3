@@ -169,3 +169,33 @@ class Localite(models.Model):
 
     def __str__(self):
         return self.nom
+
+
+class CoucheImportee(TimestampedModel):
+    """
+    Couche SIG importée par un utilisateur (shapefile en .zip, GeoPackage, GeoJSON) pour la carte
+    des bénéficiaires et ses cartes imprimables : reprojetée en WGS 84 et simplifiée à l'import.
+    """
+
+    class Geometrie(models.TextChoices):
+        POINT = "POINT", "Points"
+        LIGNE = "LIGNE", "Lignes"
+        POLYGONE = "POLYGONE", "Polygones"
+
+    nom = models.CharField(max_length=150)
+    couleur = models.CharField(max_length=7, default="#7048e8")
+    geometrie = models.CharField(max_length=10, choices=Geometrie.choices)
+    fichier_source = models.CharField(max_length=255, blank=True)
+    projection_source = models.CharField(max_length=200, blank=True)
+    colonnes = models.JSONField(default=list, blank=True, help_text="Attributs conservés (affichés au survol).")
+    champ_etiquette = models.CharField(max_length=100, blank=True, help_text="Attribut écrit sur la carte (nom…).")
+    nombre_objets = models.PositiveIntegerField(default=0)
+    emprise = models.JSONField(default=list, blank=True, help_text="[ouest, sud, est, nord] en degrés.")
+    geojson = models.JSONField()
+    cree_par = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="couches_importees")
+
+    class Meta:
+        ordering = ("nom",)
+
+    def __str__(self):
+        return self.nom

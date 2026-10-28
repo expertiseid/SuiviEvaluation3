@@ -146,6 +146,8 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS", default=["http://localhost:5173"]
 )
+# Nom des fichiers téléchargés (cartes, rapports) lisible par le navigateur.
+CORS_EXPOSE_HEADERS = ["Content-Disposition"]
 
 # --- Email (notifications) ---
 # Backend "console" par défaut : les emails sont écrits dans les logs du
