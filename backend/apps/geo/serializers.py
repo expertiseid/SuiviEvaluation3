@@ -37,6 +37,8 @@ class ZoneSerializer(serializers.ModelSerializer):
             "parent_nom",
             "code",
             "nom",
+            "latitude",
+            "longitude",
         )
 
     def validate(self, attrs):

@@ -1,9 +1,17 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { FolderKanban, Pencil, Trash2 } from "lucide-react";
-import { ActionIcon, Badge, Button, Card, Group, Modal, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
+import { FolderKanban, IdCard, MapPin, Pencil, Trash2 } from "lucide-react";
+import { ActionIcon, Badge, Button, Card, Group, Modal, SimpleGrid, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { useBeneficiaire, useDeleteBeneficiaire } from "../../api/beneficiaries";
+import {
+  telechargerCartesBeneficiaires,
+  useBeneficiaire,
+  useDeleteBeneficiaire,
+  useQrBeneficiaire,
+  useVariablesBeneficiaires,
+} from "../../api/beneficiaries";
+import { concerne, reponseLisible } from "../../utils/variablesBeneficiaires";
+import type { Beneficiaire } from "../../types";
 import { useStatutsParticuliers, useTypesActiviteBeneficiaire } from "../../api/referentiels";
 import { EmptyState } from "../../components/common/EmptyState";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
@@ -11,6 +19,63 @@ import { messageErreurApi } from "../../utils/erreurs";
 import { PAYS_MONDE } from "../../utils/pays";
 import { BeneficiaireForm } from "./BeneficiaireForm";
 import { voc } from "../../utils/vocabulaire";
+
+/** Réponses aux variables qui concernent les projets du bénéficiaire. */
+function InformationsComplementaires({ beneficiaire }: { beneficiaire: Beneficiaire }) {
+  const { data: variables = [] } = useVariablesBeneficiaires();
+  const projetIds = beneficiaire.participations.map((p) => p.projet);
+  const affichees = variables.filter((v) => concerne(v, projetIds) || beneficiaire.reponses?.[String(v.id)] !== undefined);
+  if (affichees.length === 0) return null;
+  return (
+    <Card withBorder padding="md" radius="md">
+      <Text size="xs" c="dimmed" fw={600} tt="uppercase" mb="sm" style={{ letterSpacing: 0.4 }}>
+        {voc("Informations complémentaires")}
+      </Text>
+      <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="xs">
+        {affichees.map((v) => (
+          <div key={v.id}>
+            <Text size="xs" c="dimmed">{v.libelle}</Text>
+            <Text size="sm" fw={500}>
+              {concerne(v, projetIds) ? reponseLisible(v, beneficiaire.reponses?.[String(v.id)]) : "NA"}
+            </Text>
+          </div>
+        ))}
+      </SimpleGrid>
+    </Card>
+  );
+}
+
+/** QR code de la fiche et impression de la carte bénéficiaire. */
+function CarteQr({ id, identifiant }: { id: number; identifiant: string }) {
+  const { data: svg } = useQrBeneficiaire(id);
+  const [impression, setImpression] = useState(false);
+  return (
+    <Stack gap={4} align="center" miw={150}>
+      {svg ? (
+        <div style={{ width: 132, height: 132 }} dangerouslySetInnerHTML={{ __html: svg.replace("<svg ", '<svg width="132" height="132" ') }} />
+      ) : (
+        <div style={{ width: 132, height: 132 }} />
+      )}
+      <Text size="xs" c="dimmed" ta="center">{voc("Scanner pour ouvrir cette fiche")}</Text>
+      <Button
+        size="xs"
+        variant="light"
+        leftSection={<IdCard size={14} />}
+        loading={impression}
+        onClick={async () => {
+          setImpression(true);
+          try {
+            await telechargerCartesBeneficiaires({ ids: [id] }, `carte_${identifiant}`);
+          } finally {
+            setImpression(false);
+          }
+        }}
+      >
+        {voc("Imprimer la carte")}
+      </Button>
+    </Stack>
+  );
+}
 
 export function BeneficiaireDetailPage() {
   const { id } = useParams();
@@ -53,7 +118,10 @@ export function BeneficiaireDetailPage() {
     <Stack gap="lg">
       <Group justify="space-between" align="flex-start">
         <div>
-          <Title order={2}>{beneficiaire.nom} {beneficiaire.prenom}</Title>
+          <Group gap="xs">
+            <Title order={2}>{beneficiaire.nom} {beneficiaire.prenom}</Title>
+            <Badge size="lg" variant="outline" color="teal" ff="monospace">{beneficiaire.identifiant}</Badge>
+          </Group>
           <Text c="dimmed">
             {beneficiaire.sexe === "F" ? "Féminin" : "Masculin"}
             {beneficiaire.date_naissance && ` · Né(e) le ${beneficiaire.date_naissance}`}
@@ -74,6 +142,8 @@ export function BeneficiaireDetailPage() {
       </Group>
 
       <Card withBorder padding="md" radius="md">
+        <Group justify="space-between" align="flex-start" wrap="nowrap">
+        <div>
         <Text size="xs" c="dimmed" fw={600} tt="uppercase" mb="sm" style={{ letterSpacing: 0.4 }}>
           Informations
         </Text>
@@ -98,8 +168,18 @@ export function BeneficiaireDetailPage() {
               ))}
             </Group>
           )}
+          {beneficiaire.latitude && beneficiaire.longitude && (
+            <Text size="sm">
+              <MapPin size={13} style={{ verticalAlign: -2 }} /> <strong>Position GPS :</strong> {beneficiaire.latitude}, {beneficiaire.longitude}
+            </Text>
+          )}
         </Stack>
+        </div>
+        <CarteQr id={beneficiaire.id} identifiant={beneficiaire.identifiant} />
+        </Group>
       </Card>
+
+      <InformationsComplementaires beneficiaire={beneficiaire} />
 
       <Card withBorder padding="md" radius="md">
         <Group gap="xs" mb="sm">

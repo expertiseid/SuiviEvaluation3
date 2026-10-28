@@ -70,6 +70,9 @@ export interface Zone {
   pays: string;
   parent: number | null;
   parent_nom: string | null;
+  /** Centre de la zone (carte des bénéficiaires) : calculé depuis les limites administratives, ou saisi. */
+  latitude?: string | null;
+  longitude?: string | null;
 }
 
 export interface Partenaire {
@@ -693,6 +696,8 @@ export interface ParticipationProjet {
 
 export interface Beneficiaire {
   id: number;
+  /** Identifiant unique attribué automatiquement (BEN-000123), repris dans le QR code. */
+  identifiant: string;
   nom: string;
   prenom: string;
   sexe: "F" | "M";
@@ -705,9 +710,30 @@ export interface Beneficiaire {
   pays: string;
   zone: number | null;
   zone_nom: string | null;
+  latitude: string | null;
+  longitude: string | null;
+  /** Réponses aux variables personnalisées : {id de la variable: valeur}. */
+  reponses: Record<string, string | number | boolean | string[]>;
   statuts_particuliers: number[];
   types_activite: number[];
   participations: ParticipationProjet[];
+}
+
+export type TypeVariableBeneficiaire = "TEXTE" | "NOMBRE" | "DATE" | "OUI_NON" | "CHOIX" | "CHOIX_MULTIPLE";
+
+/** Information à collecter sur les bénéficiaires, pour tous les projets ou certains (sinon « NA »). */
+export interface VariableBeneficiaire {
+  id: number;
+  libelle: string;
+  type: TypeVariableBeneficiaire;
+  choix: string[];
+  unite: string;
+  aide: string;
+  tous_les_projets: boolean;
+  projets: number[];
+  projets_codes: string[];
+  ordre: number;
+  nb_reponses: number;
 }
 
 export interface ImportBeneficiairesResultat {
@@ -768,6 +794,8 @@ export interface SignalementDoublon {
   beneficiaire_2_nom: string;
   score: number | null;
   methode: "PIECE_IDENTITE" | "SIMILARITE";
+  /** Pourquoi la paire est signalée (« Même téléphone »…). */
+  motifs?: string[];
   statut: "SIGNALE" | "ECARTE" | "FUSIONNE";
   traite_par: number | null;
   date_traitement: string | null;

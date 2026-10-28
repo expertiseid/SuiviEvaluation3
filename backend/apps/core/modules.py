@@ -32,7 +32,10 @@ API_PAR_MODULE = {
     ],
     "/indicateurs": ["/api/v1/indicateurs", "/api/v1/valeurs-indicateurs"],
     "/suivi": ["/api/v1/points-suivi", "/api/v1/taux-manuels", "/api/v1/suivi/"],
-    "/beneficiaires": ["/api/v1/beneficiaires", "/api/v1/participations-projet", "/api/v1/signalements-doublons"],
+    "/beneficiaires": [
+        "/api/v1/beneficiaires", "/api/v1/participations-projet", "/api/v1/signalements-doublons",
+        "/api/v1/variables-beneficiaires",
+    ],
     "/documents": ["/api/v1/documents", "/api/v1/dossiers", "/api/v1/pieces-justificatives"],
     "/zones-administratives": ["/api/v1/zones", "/api/v1/niveaux-administratifs"],
     "projet:equipe": ["/api/v1/equipes"],

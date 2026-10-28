@@ -3,26 +3,35 @@ from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.accounts.constants import ROLE_CHARGE_SE
-from apps.core.permissions import HasGlobalVisibilityOrAssigned
+from apps.core.permissions import HasGlobalVisibilityOrAssigned, IsAdminOrReadOnly, peut_modifier
 from apps.core.vocabulaire import v
 from apps.notifications.models import Notification
 from apps.notifications.services import notifier_par_role
 
-from .models import Beneficiaire, ParticipationProjet, SignalementDoublon, StatutParticulier, TypeActiviteBeneficiaire
+from .models import (
+    Beneficiaire,
+    ParticipationProjet,
+    SignalementDoublon,
+    StatutParticulier,
+    TypeActiviteBeneficiaire,
+    VariableBeneficiaire,
+)
 from .serializers import (
     BeneficiaireSerializer,
     ParticipationProjetSerializer,
     SignalementDoublonSerializer,
     StatutParticulierSerializer,
     TypeActiviteBeneficiaireSerializer,
+    VariableBeneficiaireSerializer,
 )
+from .services.carte import cartes_pdf, qr_svg
 from .services.deletion import supprimer_beneficiaire_cascade
-from .services.duplicate_detection import rechercher_doublons
+from .services.duplicate_detection import enregistrer_signalements, reverifier_signalements
 from .services.export_excel import exporter_beneficiaires, exporter_beneficiaires_pdf
 from .services.import_excel import generer_modele_import, importer_beneficiaires
 
@@ -49,6 +58,7 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
     # Code et nom du projet inclus : taper « PRAN » ou « eau potable » retrouve
     # les bénéficiaires inscrits à ce projet.
     search_fields = (
+        "identifiant",
         "nom",
         "prenom",
         "telephone",
@@ -80,7 +90,12 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="modele-import")
     def modele_import(self, request):
-        contenu = generer_modele_import()
+        # Colonnes de localisation aux niveaux administratifs du pays choisi (?pays=BF par défaut).
+        # Avec ?projet= : variables personnalisées de ce projet seulement.
+        from apps.projects.models import Projet
+
+        projet = Projet.objects.filter(id=request.query_params.get("projet") or 0).first()
+        contenu = generer_modele_import((request.query_params.get("pays") or "BF").upper()[:2], projet=projet)
         response = HttpResponse(
             contenu, content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
@@ -151,26 +166,103 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
             raise ValidationError({"fichier": f"Impossible de lire ce fichier : {exc}"})
         return Response(resultat)
 
+    def _origine(self):
+        """Adresse de la plateforme vue par l'utilisateur (pour le lien du QR code)."""
+        origine = self.request.query_params.get("origine", "")
+        if not origine.startswith(("http://", "https://")):
+            origine = self.request.headers.get("Origin") or self.request.build_absolute_uri("/")
+        return origine
+
+    @action(detail=True, methods=["get"])
+    def qr(self, request, pk=None):
+        """QR code (SVG) de la fiche du bénéficiaire."""
+        return HttpResponse(qr_svg(self.get_object(), self._origine(), echelle=6), content_type="image/svg+xml")
+
+    @action(detail=False, methods=["get"])
+    def cartes(self, request):
+        """Cartes à imprimer (PDF) : `?ids=1,2,3`, ou `?projet=` pour tous les inscrits d'un projet."""
+        queryset = self.get_queryset()
+        ids = [i for i in request.query_params.get("ids", "").split(",") if i.isdigit()]
+        if ids:
+            queryset = queryset.filter(id__in=ids)
+        elif not request.query_params.get("projet"):
+            raise ValidationError({"ids": v("Choisir les bénéficiaires ou un projet.")})
+        beneficiaires = list(queryset.select_related("zone__parent__parent").prefetch_related("participations__projet").order_by("nom", "prenom"))
+        reponse = HttpResponse(cartes_pdf(beneficiaires, self._origine()), content_type="application/pdf")
+        reponse["Content-Disposition"] = 'attachment; filename="cartes_beneficiaires.pdf"'
+        return reponse
+
+    @action(detail=False, methods=["get"])
+    def carte(self, request):
+        """
+        Carte des bénéficiaires (?projet= pour un projet) : ceux qui ont une position GPS
+        (points), les autres regroupés au centre de leur localité ou, à défaut, de la zone
+        parente placée la plus proche ; plus le nombre de bénéficiaires sans localisation.
+        """
+        from collections import Counter
+
+        beneficiaires = list(self.get_queryset().select_related("zone"))
+        points, par_zone, non_localises = [], {}, 0
+        positions = {}
+
+        def position(zone):
+            depart = zone
+            while zone is not None:
+                if zone.latitude is not None:
+                    positions[depart.id] = zone
+                    return zone
+                zone = zone.parent
+            positions[depart.id] = None
+            return None
+
+        for b in beneficiaires:
+            if b.latitude is not None and b.longitude is not None:
+                points.append({
+                    "id": b.id, "nom": str(b), "identifiant": b.identifiant, "sexe": b.sexe,
+                    "lat": float(b.latitude), "lng": float(b.longitude),
+                })
+                continue
+            zone = positions[b.zone_id] if b.zone_id in positions else (position(b.zone) if b.zone else None)
+            if zone is None:
+                non_localises += 1
+                continue
+            groupe = par_zone.setdefault(zone.id, {
+                "zone": zone.id, "nom": zone.nom, "lat": float(zone.latitude), "lng": float(zone.longitude),
+                "nombre": 0, "femmes": 0, "hommes": 0,
+            })
+            groupe["nombre"] += 1
+            groupe["femmes" if b.sexe == "F" else "hommes"] += 1
+        pays = Counter(b.pays for b in beneficiaires if b.pays).most_common(1)
+        return Response({
+            "pays": pays[0][0] if pays else "BF",
+            "total": len(beneficiaires),
+            "points": points,
+            "zones": sorted(par_zone.values(), key=lambda g: -g["nombre"]),
+            "non_localises": non_localises,
+        })
+
+    @action(detail=False, methods=["get"], url_path=r"identifiant/(?P<identifiant>[\w-]+)")
+    def par_identifiant(self, request, identifiant=None):
+        """Retrouve un bénéficiaire par son identifiant (lien du QR code)."""
+        beneficiaire = self.get_queryset().filter(identifiant__iexact=identifiant).first()
+        if beneficiaire is None:
+            raise NotFound(v("Aucun bénéficiaire avec cet identifiant (ou vous n'y avez pas accès)."))
+        return Response({"id": beneficiaire.id})
+
     @action(detail=True, methods=["post"], url_path="verifier-doublons")
     def verifier_doublons(self, request, pk=None):
         beneficiaire = self.get_object()
-        candidats = rechercher_doublons(beneficiaire)
 
         signalements = []
-        for item in candidats:
-            b1, b2 = sorted([beneficiaire, item["candidat"]], key=lambda b: b.pk)
-            signalement, cree = SignalementDoublon.objects.get_or_create(
-                beneficiaire_1=b1,
-                beneficiaire_2=b2,
-                defaults={"score": item["score"], "methode": item["methode"]},
-            )
+        for signalement, cree in enregistrer_signalements(beneficiaire):
+            b1, b2 = signalement.beneficiaire_1, signalement.beneficiaire_2
             signalements.append(signalement)
             if cree:
                 notifier_par_role(
                     [ROLE_CHARGE_SE],
                     Notification.Type.DOUBLON_SIGNALE,
                     f"{v('Doublon bénéficiaire potentiel : ')}{b1} / {b2}",
-                    message=f"Détecté via {signalement.get_methode_display()} (score {signalement.score}).",
+                    message=f"Motifs : {', '.join(signalement.motifs)}.",
                     lien="/doublons",
                 )
 
@@ -202,3 +294,36 @@ class SignalementDoublonViewSet(viewsets.ModelViewSet):
             serializer.save(traite_par=self.request.user, date_traitement=timezone.now())
         else:
             serializer.save()
+
+    @action(detail=False, methods=["post"])
+    def reverifier(self, request):
+        """Repasse les signalements en attente avec les règles actuelles (retire les faux positifs)."""
+        if not peut_modifier(request.user):
+            raise PermissionDenied()
+        return Response(reverifier_signalements())
+
+
+class VariableBeneficiaireViewSet(viewsets.ModelViewSet):
+    """Variables personnalisées à collecter sur les bénéficiaires (paramétrées par l'Administrateur)."""
+
+    queryset = VariableBeneficiaire.objects.prefetch_related("projets")
+    serializer_class = VariableBeneficiaireSerializer
+    permission_classes = (IsAdminOrReadOnly,)
+    pagination_class = None
+
+    @action(detail=False, methods=["get"], url_path="choix-projets")
+    def choix_projets(self, request):
+        """Projets proposés pour une variable (liste complète et légère)."""
+        from apps.projects.models import Projet
+        from apps.projects.queryset_filters import visible_projets_ids
+
+        projets = Projet.objects.filter(id__in=visible_projets_ids(request.user)).order_by("code")
+        return Response([{"value": str(p.id), "label": f"{p.code} — {p.nom}"} for p in projets])
+
+    def perform_destroy(self, instance):
+        # Les réponses déjà saisies à cette variable sont retirées des fiches.
+        cle = str(instance.id)
+        for b in Beneficiaire.objects.filter(reponses__has_key=cle):
+            b.reponses.pop(cle, None)
+            Beneficiaire.objects.filter(pk=b.pk).update(reponses=b.reponses)
+        instance.delete()

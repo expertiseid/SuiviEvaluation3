@@ -21,6 +21,7 @@ import {
   Collapse,
   Group,
   Modal,
+  NumberInput,
   Select,
   Stack,
   Switch,
@@ -304,8 +305,12 @@ function ZoneModal({
   const [parentId, setParentId] = useState<string | null>(
     zoneExistante?.parent ? String(zoneExistante.parent) : null,
   );
+  const [latitude, setLatitude] = useState<number | string>(zoneExistante?.latitude ?? "");
+  const [longitude, setLongitude] = useState<number | string>(zoneExistante?.longitude ?? "");
 
   function reinitialiser() {
+    setLatitude(zoneExistante?.latitude ?? "");
+    setLongitude(zoneExistante?.longitude ?? "");
     setCode(zoneExistante?.code ?? "");
     setNom(zoneExistante?.nom ?? "");
     setParentId(zoneExistante?.parent ? String(zoneExistante.parent) : null);
@@ -328,7 +333,13 @@ function ZoneModal({
       if (zoneExistante) {
         await updateZone.mutateAsync({
           id: zoneExistante.id,
-          payload: { code: code.trim(), nom: nom.trim(), parent: parentId ? Number(parentId) : null },
+          payload: {
+            code: code.trim(),
+            nom: nom.trim(),
+            parent: parentId ? Number(parentId) : null,
+            latitude: latitude === "" ? null : String(latitude),
+            longitude: longitude === "" ? null : String(longitude),
+          },
         });
         notifications.show({ message: "Zone modifiée", color: "green" });
       } else if (niveauAdministratif) {
@@ -373,6 +384,12 @@ function ZoneModal({
             searchable
             clearable={niveauDeLaZone?.saut_niveau_autorise}
           />
+        )}
+        {zoneExistante && (
+          <Group grow>
+            <NumberInput label="Latitude du centre" description="Carte des bénéficiaires" decimalScale={6} min={-90} max={90} value={latitude} onChange={setLatitude} />
+            <NumberInput label="Longitude du centre" description="Facultatif" decimalScale={6} min={-180} max={180} value={longitude} onChange={setLongitude} />
+          </Group>
         )}
         <Group justify="flex-end">
           <Button onClick={handleSave} loading={createZone.isPending || updateZone.isPending}>

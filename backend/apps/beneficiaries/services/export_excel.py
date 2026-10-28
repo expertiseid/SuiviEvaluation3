@@ -5,6 +5,7 @@ projet »). Les premières colonnes reprennent exactement celles du modèle
 d'import : un export peut être corrigé puis réimporté.
 """
 import io
+from collections import Counter
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
@@ -13,29 +14,36 @@ from openpyxl.utils import get_column_letter
 from apps.core.excel_utils import figer_entete, quadriller
 from apps.core.vocabulaire import v
 
-from .import_excel import COLONNES as COLONNES_IMPORT
+from ..models import VariableBeneficiaire
+
+from .import_excel import colonnes as colonnes_import
+from .import_excel import niveaux_du_pays
+from .variables import cellule
 
 COULEUR_ENTETE = "1F4E78"
 COLONNES_PARTICIPATION = ["Activité", "Sous-activité", "Date d'inscription", "Rôle dans le projet"]
-LARGEURS = [18, 18, 10, 16, 16, 18, 16, 10, 18, 18, 22, 28, 28, 16, 34, 30, 16, 22]
 
 
 def _niveaux_zone(zone):
-    """Région / Province / Commune-Village d'une zone, d'après le nom des niveaux de ses ancêtres."""
-    trouves = {}
+    """Noms de la localisation par niveau administratif (ordre 1 = le plus haut)."""
+    par_ordre = {}
     while zone is not None:
-        trouves[zone.niveau_administratif.nom_niveau.lower()] = zone.nom
+        par_ordre[zone.niveau_administratif.ordre] = zone.nom
         zone = zone.parent
-    return (
-        trouves.get("région", ""),
-        trouves.get("province", ""),
-        trouves.get("village") or trouves.get("commune", ""),
-    )
+    return par_ordre
 
 
-def _colonnes_beneficiaire(b, codes_projets):
-    region, province, village = _niveaux_zone(b.zone)
+def _localisation_ordonnee(zone, nb_niveaux):
+    """Localisation sur nb_niveaux colonnes (Région, Province, Commune…), du plus haut au plus bas."""
+    par_ordre = _niveaux_zone(zone)
+    return [par_ordre.get(ordre, "") for ordre in range(1, nb_niveaux + 1)]
+
+
+def _colonnes_beneficiaire(b, codes_projets, nb_niveaux):
+    """Valeurs d'un bénéficiaire, dans l'ordre des colonnes du modèle d'import (réimportable)."""
     return [
+        b.pays,
+        *_localisation_ordonnee(b.zone, nb_niveaux),
         b.nom,
         b.prenom,
         b.sexe,
@@ -43,12 +51,10 @@ def _colonnes_beneficiaire(b, codes_projets):
         b.telephone,
         b.numero_piece_identite,
         b.type_piece,
-        b.pays,
-        region,
-        province,
-        village,
         "; ".join(s.libelle for s in b.statuts_particuliers.all()),
         "; ".join(t.libelle for t in b.types_activite.all()),
+        float(b.latitude) if b.latitude is not None else None,
+        float(b.longitude) if b.longitude is not None else None,
         codes_projets,
     ]
 
@@ -65,29 +71,33 @@ def _feuille(wb, titre, colonnes, lignes, premiere=False):
         cellule.alignment = Alignment(vertical="center", wrap_text=True)
     for ligne in lignes:
         feuille.append(ligne)
-    for cellule in feuille["D"][1:]:
-        cellule.number_format = "DD/MM/YYYY"
+    if "Date de naissance (AAAA-MM-JJ)" in colonnes:
+        lettre = get_column_letter(colonnes.index("Date de naissance (AAAA-MM-JJ)") + 1)
+        for cellule in feuille[lettre][1:]:
+            cellule.number_format = "DD/MM/YYYY"
     quadriller(feuille, max_col=len(colonnes))
     figer_entete(feuille)
     feuille.auto_filter.ref = f"A1:{get_column_letter(len(colonnes))}{max(feuille.max_row, 1)}"
-    for i, largeur in enumerate(LARGEURS[: len(colonnes)], start=1):
-        feuille.column_dimensions[get_column_letter(i)].width = largeur
+    for i, entete in enumerate(colonnes, start=1):
+        feuille.column_dimensions[get_column_letter(i)].width = max(12, min(30, len(str(entete)) + 4))
     return feuille
 
 
-def _lignes_projet(beneficiaires, projet):
+def _lignes_projet(beneficiaires, projet, nb_niveaux, variables):
     lignes = []
     for b in beneficiaires:
         participations = [p for p in b.participations.all() if p.projet_id == projet.id]
         for p in participations or [None]:
             lignes.append(
-                _colonnes_beneficiaire(b, projet.code)
+                _colonnes_beneficiaire(b, projet.code, nb_niveaux)
+                + [b.identifiant]
                 + [
                     p.activite.libelle if p and p.activite else "",
                     p.sous_activite.libelle if p and p.sous_activite else "",
                     p.date_inscription if p else None,
                     p.role_dans_projet if p else "",
                 ]
+                + [cellule(variable, b, [projet.id]) for variable in variables]
             )
     return lignes
 
@@ -118,30 +128,43 @@ def exporter_beneficiaires(queryset, projets, inclure_sans_projet=False) -> byte
     bénéficiaires, y compris ceux qui ne sont inscrits à aucun projet.
     """
     beneficiaires = _charger(queryset)
-    colonnes_projet = COLONNES_IMPORT + COLONNES_PARTICIPATION
+    # Localisation aux niveaux du pays le plus représenté (Région, Province, Commune au Burkina Faso).
+    pays_principal = Counter(b.pays for b in beneficiaires if b.pays).most_common(1)
+    pays_principal = pays_principal[0][0] if pays_principal else "BF"
+    nb_niveaux = len(niveaux_du_pays(pays_principal))
+    colonnes = colonnes_import(pays_principal)
+    # Variables personnalisées : une colonne chacune, « NA » si elle ne concerne pas le projet.
+    variables = list(VariableBeneficiaire.objects.prefetch_related("projets"))
+    noms_variables = [variable.libelle for variable in variables]
+    colonnes_projet = colonnes + ["Identifiant"] + COLONNES_PARTICIPATION + noms_variables
     wb = Workbook()
 
     if len(projets) == 1 and not inclure_sans_projet:
         projet = projets[0]
-        _feuille(wb, projet.code, colonnes_projet, _lignes_projet(beneficiaires, projet), premiere=True)
+        _feuille(wb, projet.code, colonnes_projet, _lignes_projet(beneficiaires, projet, nb_niveaux, variables), premiere=True)
     else:
-        colonnes_global = COLONNES_IMPORT[:-1] + [v('Projets (codes)'), v('Projets (noms)')]
+        colonnes_global = colonnes[:-1] + [v('Projets (codes)'), v('Projets (noms)'), "Identifiant"] + noms_variables
         lignes = []
         for b in beneficiaires:
             projets_b = sorted({p.projet for p in b.participations.all()}, key=lambda p: p.code)
             lignes.append(
-                _colonnes_beneficiaire(b, "")[:-1]
-                + ["; ".join(p.code for p in projets_b), "; ".join(p.nom for p in projets_b)]
+                _colonnes_beneficiaire(b, "", nb_niveaux)[:-1]
+                + ["; ".join(p.code for p in projets_b), "; ".join(p.nom for p in projets_b), b.identifiant]
+                + [cellule(variable, b, [p.id for p in projets_b]) for variable in variables]
             )
         _feuille(wb, v('Tous les bénéficiaires'), colonnes_global, lignes, premiere=True)
         for projet in projets:
             inscrits = _inscrits(beneficiaires, projet)
             if inscrits:
-                _feuille(wb, projet.code, colonnes_projet, _lignes_projet(inscrits, projet))
+                _feuille(wb, projet.code, colonnes_projet, _lignes_projet(inscrits, projet, nb_niveaux, variables))
         sans_projet = [b for b in beneficiaires if not b.participations.all()] if inclure_sans_projet else []
         if sans_projet:
             _feuille(
-                wb, v('Sans projet'), COLONNES_IMPORT, [_colonnes_beneficiaire(b, "") for b in sans_projet]
+                wb, v('Sans projet'), colonnes + ["Identifiant"] + noms_variables,
+                [
+                    _colonnes_beneficiaire(b, "", nb_niveaux) + [b.identifiant] + [cellule(variable, b, []) for variable in variables]
+                    for b in sans_projet
+                ],
             )
 
     buffer = io.BytesIO()
@@ -170,8 +193,8 @@ def exporter_beneficiaires_pdf(queryset, projets, inclure_sans_projet=False) -> 
         )
 
     def ligne(numero, b, participation):
-        region, province, village = _niveaux_zone(b.zone)
-        localite = ", ".join(x for x in (village, province, region) if x)
+        par_ordre = _niveaux_zone(b.zone)
+        localite = ", ".join(par_ordre[o] for o in sorted(par_ordre, reverse=True))
         piece = " ".join(x for x in (b.type_piece, b.numero_piece_identite) if x)
         activite = ""
         if participation:

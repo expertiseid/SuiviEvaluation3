@@ -60,6 +60,10 @@ class Zone(TimestampedModel):
     parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT, related_name="enfants")
     code = models.CharField(max_length=20, blank=True, db_index=True, help_text="Code administratif (pcode), si connu.")
     nom = models.CharField(max_length=150)
+    # Centre de la zone (carte des bénéficiaires) : calculé depuis les limites administratives
+    # chargées (geo.limites), ou saisi à la main.
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 
     class Meta:
         verbose_name = "Zone d'intervention"
@@ -104,3 +108,24 @@ class Zone(TimestampedModel):
             f"« {niveau_attendu.nom_niveau} »"
             + (" (ou d'un niveau supérieur, saut de niveau autorisé)." if self.niveau_administratif.saut_niveau_autorise else ".")
         )
+
+
+class LimiteAdministrative(TimestampedModel):
+    """
+    Contours des zones d'un niveau administratif d'un pays (GeoJSON simplifié, source
+    geoBoundaries, licence ouverte), gardés en cache après le premier téléchargement.
+    Niveau 1 = premier découpage (régions), 2 = le suivant (provinces)…
+    """
+
+    pays = models.CharField(max_length=2)
+    niveau = models.PositiveSmallIntegerField()
+    nom_niveau = models.CharField(max_length=60, blank=True, help_text="Nom donné par la source (Region, Province…).")
+    annee = models.CharField(max_length=10, blank=True)
+    source = models.URLField(max_length=500, blank=True)
+    geojson = models.JSONField()
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("pays", "niveau"), name="limite_pays_niveau_unique")]
+
+    def __str__(self):
+        return f"{self.pays} niveau {self.niveau}"

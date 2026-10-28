@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Alert, Badge, Button, Card, Divider, Group, Select, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Alert, Badge, Button, Card, Divider, Group, NumberInput, Select, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Crosshair } from "lucide-react";
 import { DateInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import { useCreateBeneficiaire, useUpdateBeneficiaire, useVerifierDoublons } from "../../api/beneficiaries";
@@ -23,6 +24,7 @@ import { codeDepuisLibelle } from "../../utils/texte";
 import { PAYS_MONDE } from "../../utils/pays";
 import type { Beneficiaire, SignalementDoublon } from "../../types";
 import { voc } from "../../utils/vocabulaire";
+import { ChampsVariables } from "./ChampsVariables";
 
 const CHAMPS_VIDES = {
   nom: "",
@@ -56,9 +58,34 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
   const [pays, setPays] = useState<string | null>(beneficiaire?.pays || CHAMPS_VIDES.pays);
   const [zoneCascade, setZoneCascade] = useState<ZoneCascadeValue>(CHAMPS_VIDES.zoneCascade);
   const [zoneCascadeInitialisee, setZoneCascadeInitialisee] = useState(false);
+  const [latitude, setLatitude] = useState<number | string>(beneficiaire?.latitude ?? "");
+  const [longitude, setLongitude] = useState<number | string>(beneficiaire?.longitude ?? "");
+  const [localisationEnCours, setLocalisationEnCours] = useState(false);
+
+  /** Position actuelle de l'appareil (téléphone sur le terrain), via le navigateur. */
+  function positionActuelle() {
+    if (!navigator.geolocation) {
+      notifications.show({ message: "Ce navigateur ne donne pas accès à la position.", color: "orange" });
+      return;
+    }
+    setLocalisationEnCours(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLatitude(Number(position.coords.latitude.toFixed(6)));
+        setLongitude(Number(position.coords.longitude.toFixed(6)));
+        setLocalisationEnCours(false);
+      },
+      () => {
+        notifications.show({ message: "Position indisponible (autorisation refusée ?).", color: "orange" });
+        setLocalisationEnCours(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000 },
+    );
+  }
   const [statutsSelectionnes, setStatutsSelectionnes] = useState<string[]>(
     beneficiaire?.statuts_particuliers.map(String) ?? CHAMPS_VIDES.statutsSelectionnes,
   );
+  const [reponses, setReponses] = useState<Beneficiaire["reponses"]>(beneficiaire?.reponses ?? {});
   const [typesActiviteSelectionnes, setTypesActiviteSelectionnes] = useState<string[]>(
     beneficiaire?.types_activite.map(String) ?? CHAMPS_VIDES.typesActiviteSelectionnes,
   );
@@ -86,8 +113,11 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
     setNumeroPiece(CHAMPS_VIDES.numeroPiece);
     setPays(CHAMPS_VIDES.pays);
     setZoneCascade(CHAMPS_VIDES.zoneCascade);
+    setLatitude("");
+    setLongitude("");
     setStatutsSelectionnes(CHAMPS_VIDES.statutsSelectionnes);
     setTypesActiviteSelectionnes(CHAMPS_VIDES.typesActiviteSelectionnes);
+    setReponses({});
     setDoublonsDetectes(null);
     setBeneficiaireCree(null);
   }
@@ -127,8 +157,11 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
       numero_piece_identite: numeroPiece,
       pays: pays ?? "",
       zone,
+      latitude: latitude === "" ? null : String(latitude),
+      longitude: longitude === "" ? null : String(longitude),
       statuts_particuliers: statutsSelectionnes.map(Number),
       types_activite: typesActiviteSelectionnes.map(Number),
+      reponses,
     };
 
     if (enEdition) {
@@ -225,6 +258,13 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
         maw={300}
       />
       <ZoneCascadeFields pays={pays} value={zoneCascade} onChange={setZoneCascade} />
+      <Group align="flex-end" wrap="nowrap">
+        <NumberInput style={{ flex: 1 }} label="Latitude" description="Facultatif (carte)" placeholder="12.3714" decimalScale={6} min={-90} max={90} value={latitude} onChange={setLatitude} />
+        <NumberInput style={{ flex: 1 }} label="Longitude" description="Facultatif (carte)" placeholder="-1.5197" decimalScale={6} min={-180} max={180} value={longitude} onChange={setLongitude} />
+        <Button variant="light" leftSection={<Crosshair size={15} />} loading={localisationEnCours} onClick={positionActuelle}>
+          Ma position actuelle
+        </Button>
+      </Group>
       <Divider label="Identité" labelPosition="left" />
       <Group grow>
         <TextInput label="Nom" value={nom} onChange={(e) => setNom(e.currentTarget.value)} required />
@@ -255,6 +295,11 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
         onChange={setTypesActiviteSelectionnes}
         onCreate={handleCreerTypeActivite}
         creating={createTypeActivite.isPending}
+      />
+      <ChampsVariables
+        projetIds={[...new Set((beneficiaire?.participations ?? []).map((p) => p.projet))]}
+        value={reponses}
+        onChange={setReponses}
       />
       <Group justify="flex-end">
         <Button

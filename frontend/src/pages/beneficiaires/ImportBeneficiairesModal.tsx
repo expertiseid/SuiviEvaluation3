@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Download, Upload } from "lucide-react";
-import { Alert, Button, FileInput, Group, List, Modal, Stack, Text } from "@mantine/core";
+import { Alert, Button, FileInput, Group, List, Modal, Select, Stack, Text } from "@mantine/core";
+import { usePaysAvecNiveaux } from "../../api/geo";
+import { PAYS_MONDE } from "../../utils/pays";
 import { notifications } from "@mantine/notifications";
 import { useImporterBeneficiaires, telechargerModeleImportBeneficiaires } from "../../api/beneficiaries";
 import type { ImportBeneficiairesResultat } from "../../types";
@@ -16,6 +18,8 @@ export function ImportBeneficiairesModal({
   // Import depuis la fiche projet : chaque bénéficiaire importé est inscrit à ce projet.
   projet?: { id: number; nom: string };
 }) {
+  const { data: paysAvecNiveaux } = usePaysAvecNiveaux();
+  const [paysModele, setPaysModele] = useState("BF");
   const importer = useImporterBeneficiaires();
   const [fichier, setFichier] = useState<File | null>(null);
   const [resultat, setResultat] = useState<ImportBeneficiairesResultat | null>(null);
@@ -59,13 +63,26 @@ export function ImportBeneficiairesModal({
           )}
         </Alert>
 
-        <Button
-          variant="light"
-          leftSection={<Download size={16} />}
-          onClick={() => telechargerModeleImportBeneficiaires()}
-        >
-          Télécharger le modèle Excel
-        </Button>
+        <Group align="flex-end">
+          {(paysAvecNiveaux?.length ?? 0) > 1 && (
+            <Select
+              label="Pays du modèle"
+              description="Les colonnes de localisation suivent son découpage administratif"
+              data={(paysAvecNiveaux ?? []).map((code) => ({ value: code, label: PAYS_MONDE.find((p) => p.code === code)?.nom ?? code }))}
+              value={paysModele}
+              onChange={(v) => setPaysModele(v ?? "BF")}
+              allowDeselect={false}
+              w={240}
+            />
+          )}
+          <Button
+            variant="light"
+            leftSection={<Download size={16} />}
+            onClick={() => telechargerModeleImportBeneficiaires(paysModele, projet?.id)}
+          >
+            Télécharger le modèle Excel
+          </Button>
+        </Group>
 
         <Group align="flex-end">
           <FileInput

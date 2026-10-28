@@ -277,11 +277,46 @@ accident. Une suppression volontaire passe par les fonctions `supprimer_*_cascad
 ### 5.6 Doublons de bénéficiaires
 
 La plateforme ne fusionne jamais automatiquement deux bénéficiaires. Elle **signale** les
-doublons probables, qui sont ensuite traités à la main (écran « Doublons signalés ») :
+doublons probables, traités à la main (écran « Doublons d'enregistrement »,
+`services/duplicate_detection.py`), avec leurs motifs (`SignalementDoublon.motifs`) :
 
-1. même numéro de pièce d'identité : doublon quasi certain ;
-2. noms et prénoms proches (similarité trigramme PostgreSQL `pg_trgm`) croisés avec le
-   numéro de téléphone.
+1. même numéro de pièce d'identité (espaces, tirets et casse ignorés) : doublon quasi certain ;
+2. sinon, nom **et** prénom très proches (accents ignorés, éventuellement inversés ;
+   présélection trigramme `pg_trgm`, puis ressemblance ≥ 0,8) **et** au moins une
+   confirmation : même téléphone (sans indicatif), même date de naissance ou même localité ;
+3. jamais signalés : sexe différent, année de naissance différente, ou deux pièces
+   d'identité différentes.
+
+« Revérifier les signalements » (`signalements-doublons/reverifier/`) repasse les signalements
+en attente avec ces règles et retire ceux qui ne tiennent plus.
+
+### 5.6 bis Fiche bénéficiaire : identifiant, variables, localisation, carte
+
+- **Identifiant unique** `BEN-000123` attribué à la création (`Beneficiaire.identifiant`).
+  Le QR code (`segno`, SVG) contient le lien `<plateforme>/beneficiaires/identifiant/BEN-…`,
+  qui ouvre la fiche après connexion. Cartes imprimables (PDF, 8 par page A4) :
+  `beneficiaires/cartes/?ids=` ou `?projet=` (`services/carte.py`).
+- **Variables personnalisées** (`VariableBeneficiaire`, `services/variables.py`) : texte,
+  nombre, date, oui/non, choix unique ou multiple ; pour tous les projets ou certains.
+  Réponses gardées une fois par bénéficiaire (`Beneficiaire.reponses`, `{id: valeur}`,
+  contrôlées selon le type). Le formulaire ne propose que celles des projets du bénéficiaire ;
+  dans les exports Excel, une variable qui ne concerne pas le projet vaut « NA ». Le modèle
+  d'import d'un projet (`?projet=`) reprend ses variables en colonnes (« NA » accepté).
+- **Localisation aux niveaux du pays** : le modèle d'import a une colonne par niveau
+  administratif configuré pour le pays (`?pays=`, ex. Région › Province › Commune) ; l'import
+  lit les colonnes entre « Pays » et « Nom » dans l'ordre (anciens fichiers acceptés), crée
+  le dernier niveau s'il manque. Export et import font l'aller-retour à l'identique.
+- **Position GPS** facultative (latitude, longitude ; bouton « Ma position actuelle »).
+- **Carte** (`/beneficiaires/carte`, `beneficiaires/carte/`, Leaflet + OpenStreetMap) :
+  bénéficiaires positionnés par GPS, les autres regroupés au centre de leur localité (ou de
+  la zone parente placée la plus proche), filtre par projet. Contours : geoBoundaries
+  (`apps/geo/services/limites.py`, cache `LimiteAdministrative`, `limites-administratives/`),
+  téléchargés au premier affichage ou par `charger_limites`. Le centre des zones
+  (`Zone.latitude/longitude`) est trouvé par le nom (orthographe voisine acceptée) et
+  **refusé s'il ne tombe pas dans le contour de la zone parente** (certaines sources nomment
+  mal leurs contours, ex. les communes du Burkina en 2007) ; les zones absentes de la source
+  (découpage plus récent) prennent le centre de leurs zones enfants, ou se placent à la main
+  (Zones administratives).
 
 ### 5.7 Imports « au mieux »
 
@@ -549,6 +584,12 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 | GET / PUT / PATCH | `parametres-alerte/` | Délai d'alerte avant échéance |
 | GET / PUT | `paliers-alerte/` | Grilles d'alerte (globale ou par portée) |
 | GET / POST | `beneficiaires/modele-import/`, `beneficiaires/importer/` | Modèle et import Excel des bénéficiaires |
+| GET | `beneficiaires/{id}/qr/`, `beneficiaires/cartes/` | QR code (SVG) d'une fiche ; cartes à imprimer (PDF, `?ids=` ou `?projet=`) |
+| GET | `beneficiaires/identifiant/{BEN-…}/` | Fiche retrouvée par son identifiant (lien du QR code) |
+| GET | `beneficiaires/carte/` | Données de la carte des bénéficiaires (`?projet=`) |
+| CRUD | `variables-beneficiaires/` | Variables personnalisées (modification : Administrateur) |
+| POST | `signalements-doublons/reverifier/` | Repasse les signalements en attente avec les règles actuelles |
+| GET | `limites-administratives/` | Contours GeoJSON d'un niveau (`?pays=BF&niveau=2`) |
 | GET | `beneficiaires/exporter/` | Export des bénéficiaires : `?fichier=excel` ou `pdf`, `?projets=1,3` pour choisir les projets |
 | POST | `beneficiaires/{id}/verifier-doublons/` | Recherche des doublons d'un bénéficiaire |
 | GET / POST | `documents/{id}/versions/`, `documents/{id}/nouvelle-version/` | Versions d'un document |
@@ -638,7 +679,9 @@ mutualisées) puis rejoue la requête, ou renvoie vers la page de connexion.
 | `/projets`, `/projets/:id` | Projets ; onglets Configuration des niveaux, Planification, Planification par période, Équipe de projet, Partenaires, Indicateurs, Financement, Documents, Contrôle de cohérence, Historique |
 | `/indicateurs`, `/indicateurs/:id` | Indicateurs et saisie des valeurs |
 | `/suivi`, `/suivi/:id` | Suivi des projets et tableau de suivi d'un projet |
-| `/beneficiaires`, `/beneficiaires/:id` | Bénéficiaires |
+| `/beneficiaires`, `/beneficiaires/:id` | Bénéficiaires (identifiant, QR code, carte à imprimer, variables) |
+| `/beneficiaires/carte` | Carte des bénéficiaires |
+| `/beneficiaires/identifiant/:identifiant` | Lien du QR code : ouvre la fiche |
 | `/approbations` | Saisies et changements de planification à approuver, ou suivi de ses demandes |
 | `/doublons` | Doublons signalés |
 | `/zones-administratives` | Référentiel administratif |
@@ -667,6 +710,7 @@ mutualisées) puis rejoue la requête, ou renvoie vers la page de connexion.
 | `seed_projets_complementaires` | Ajoute 4 projets de démonstration, sans rien supprimer |
 | `seed_projets_filtres` | Ajoute (ou supprime avec `--supprimer`) des projets `TEST-…` pour tester les filtres |
 | `seed_points_suivi` | Ajoute des points de suivi de démonstration |
+| `charger_limites BF [--niveaux 1 2 3] [--recalculer]` | Télécharge les limites administratives d'un pays (geoBoundaries) et place les zones sur la carte |
 
 Exécution : `docker compose exec backend python manage.py <commande>`.
 

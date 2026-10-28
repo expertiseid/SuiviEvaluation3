@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Download, Pencil, Trash2, Upload } from "lucide-react";
+import { Download, IdCard, ListChecks, Map as MapIcon, Pencil, Trash2, Upload } from "lucide-react";
 import { Accordion, ActionIcon, Badge, Button, Group, Modal, Pagination, Stack, Table, Text, TextInput, Tooltip } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
-import { useBeneficiaires, useDeleteBeneficiaire } from "../../api/beneficiaries";
+import { telechargerCartesBeneficiaires, useBeneficiaires, useDeleteBeneficiaire } from "../../api/beneficiaries";
 import { useProjets } from "../../api/projects";
 import { useStatutsParticuliers } from "../../api/referentiels";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
 import { messageErreurApi } from "../../utils/erreurs";
 import { BeneficiaireForm } from "./BeneficiaireForm";
+import { VariablesBeneficiairesModal } from "./VariablesBeneficiairesModal";
+import { useAuth } from "../../auth/useAuth";
 import { ExportBeneficiairesModal } from "./ExportBeneficiairesModal";
 import { ImportBeneficiairesModal } from "./ImportBeneficiairesModal";
 import type { Beneficiaire, StatutParticulier } from "../../types";
@@ -45,6 +47,7 @@ function GroupeBeneficiaires({
   actions: ActionsLigne;
 }) {
   const [page, setPage] = useState(1);
+  const [impression, setImpression] = useState(false);
   const { data, isLoading } = useBeneficiaires(
     search || undefined,
     page,
@@ -78,6 +81,26 @@ function GroupeBeneficiaires({
         </Group>
       </Accordion.Control>
       <Accordion.Panel>
+        {projetId && (data?.count ?? 0) > 0 && (
+          <Group justify="flex-end" mb="xs">
+            <Button
+              size="xs"
+              variant="light"
+              leftSection={<IdCard size={14} />}
+              loading={impression}
+              onClick={async () => {
+                setImpression(true);
+                try {
+                  await telechargerCartesBeneficiaires({ projet: projetId }, `cartes_${titre.split(" — ")[0]}`);
+                } finally {
+                  setImpression(false);
+                }
+              }}
+            >
+              {voc("Imprimer les cartes de ce projet")}
+            </Button>
+          </Group>
+        )}
         {isLoading ? (
           <Text size="sm" c="dimmed">Chargement…</Text>
         ) : data?.count === 0 ? (
@@ -86,6 +109,7 @@ function GroupeBeneficiaires({
           <Table striped highlightOnHover>
             <Table.Thead>
               <Table.Tr>
+                <Table.Th>Identifiant</Table.Th>
                 <Table.Th>Nom</Table.Th>
                 <Table.Th>Sexe</Table.Th>
                 <Table.Th>Tranche d'âge</Table.Th>
@@ -103,6 +127,9 @@ function GroupeBeneficiaires({
                 ];
                 return (
                   <Table.Tr key={b.id}>
+                    <Table.Td>
+                      <Text size="xs" ff="monospace" c="dimmed">{b.identifiant}</Text>
+                    </Table.Td>
                     <Table.Td>
                       <Text component={Link} to={`/beneficiaires/${b.id}`} size="sm" fw={500} c="teal.8">
                         {b.nom} {b.prenom}
@@ -170,6 +197,8 @@ export function BeneficiairesListPage() {
   const deleteBeneficiaire = useDeleteBeneficiaire();
   const [modalOpen, setModalOpen] = useState(false);
   const [modalImportOpen, setModalImportOpen] = useState(false);
+  const [modalVariablesOpen, setModalVariablesOpen] = useState(false);
+  const { user } = useAuth();
   const [beneficiaireEnEdition, setBeneficiaireEnEdition] = useState<Beneficiaire | null>(null);
 
   const projetsTries = [...(projets ?? [])].sort((a, b) => a.code.localeCompare(b.code));
@@ -208,6 +237,14 @@ export function BeneficiairesListPage() {
       <Group justify="space-between">
         <TitreRubrique route="/beneficiaires" defaut="Bénéficiaires" />
         <Group gap="xs">
+          {user?.role === "ADMIN" && (
+            <Button variant="light" color="grape" leftSection={<ListChecks size={16} />} onClick={() => setModalVariablesOpen(true)}>
+              {voc("Variables à collecter")}
+            </Button>
+          )}
+          <Button component={Link} to="/beneficiaires/carte" variant="light" color="teal" leftSection={<MapIcon size={16} />}>
+            Carte
+          </Button>
           <Button variant="light" leftSection={<Download size={16} />} onClick={() => setModalExportOpen(true)}>
             Exporter
           </Button>
@@ -273,6 +310,7 @@ export function BeneficiairesListPage() {
       </Modal>
 
       <ImportBeneficiairesModal opened={modalImportOpen} onClose={() => setModalImportOpen(false)} />
+      <VariablesBeneficiairesModal opened={modalVariablesOpen} onClose={() => setModalVariablesOpen(false)} />
     </Stack>
   );
 }

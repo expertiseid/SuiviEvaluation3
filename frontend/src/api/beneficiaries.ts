@@ -6,6 +6,7 @@ import type {
   Paginated,
   ParticipationProjet,
   SignalementDoublon,
+  VariableBeneficiaire,
 } from "../types";
 
 const TAILLE_PAGE_BENEFICIAIRES = 25;
@@ -105,8 +106,12 @@ export function useDeleteParticipation() {
   });
 }
 
-export async function telechargerModeleImportBeneficiaires() {
-  const response = await apiClient.get("/beneficiaires/modele-import/", { responseType: "blob" });
+/** Modèle d'import ; ses colonnes de localisation suivent les niveaux administratifs du pays choisi. */
+export async function telechargerModeleImportBeneficiaires(pays = "BF", projet?: number) {
+  const response = await apiClient.get("/beneficiaires/modele-import/", {
+    params: { pays, ...(projet ? { projet } : {}) },
+    responseType: "blob",
+  });
   const url = window.URL.createObjectURL(new Blob([response.data]));
   const link = document.createElement("a");
   link.href = url;
@@ -181,5 +186,110 @@ export function useTraiterSignalement() {
     mutationFn: async ({ id, statut }: { id: number; statut: "ECARTE" | "FUSIONNE" }) =>
       (await apiClient.patch<SignalementDoublon>(`/signalements-doublons/${id}/`, { statut })).data,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["signalements-doublons"] }),
+  });
+}
+
+/** Repasse les signalements en attente avec les règles actuelles (retire les faux positifs). */
+export function useReverifierDoublons() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () =>
+      (await apiClient.post<{ retires: number; maintenus: number }>("/signalements-doublons/reverifier/")).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["signalements-doublons"] }),
+  });
+}
+
+/** QR code (SVG) de la fiche d'un bénéficiaire : il contient le lien vers sa fiche sur cette plateforme. */
+export function useQrBeneficiaire(id: number) {
+  return useQuery({
+    queryKey: ["beneficiaires", id, "qr"],
+    queryFn: async () =>
+      (
+        await apiClient.get<string>(`/beneficiaires/${id}/qr/`, {
+          params: { origine: window.location.origin },
+          responseType: "text",
+        })
+      ).data,
+  });
+}
+
+/** Cartes bénéficiaires à imprimer (PDF) : bénéficiaires choisis, ou tous les inscrits d'un projet. */
+export async function telechargerCartesBeneficiaires(choix: { ids?: number[]; projet?: number }, nomFichier: string) {
+  const response = await apiClient.get("/beneficiaires/cartes/", {
+    params: {
+      origine: window.location.origin,
+      ...(choix.ids ? { ids: choix.ids.join(",") } : {}),
+      ...(choix.projet ? { projet: choix.projet } : {}),
+    },
+    responseType: "blob",
+  });
+  const url = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", `${nomFichier}.pdf`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+/** Identifiant (lien du QR code) → id du bénéficiaire. */
+export async function rechercherBeneficiaireParIdentifiant(identifiant: string) {
+  return (await apiClient.get<{ id: number }>(`/beneficiaires/identifiant/${encodeURIComponent(identifiant)}/`)).data.id;
+}
+
+export function useVariablesBeneficiaires() {
+  return useQuery({
+    queryKey: ["variables-beneficiaires"],
+    queryFn: async () => (await apiClient.get<VariableBeneficiaire[]>("/variables-beneficiaires/")).data,
+  });
+}
+
+export function useChoixProjetsVariables(actif: boolean) {
+  return useQuery({
+    queryKey: ["variables-beneficiaires", "choix-projets"],
+    queryFn: async () =>
+      (await apiClient.get<{ value: string; label: string }[]>("/variables-beneficiaires/choix-projets/")).data,
+    enabled: actif,
+  });
+}
+
+export function useEnregistrerVariableBeneficiaire() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...payload }: Partial<VariableBeneficiaire> & { id?: number }) =>
+      id
+        ? (await apiClient.patch<VariableBeneficiaire>(`/variables-beneficiaires/${id}/`, payload)).data
+        : (await apiClient.post<VariableBeneficiaire>("/variables-beneficiaires/", payload)).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["variables-beneficiaires"] }),
+  });
+}
+
+export function useSupprimerVariableBeneficiaire() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => apiClient.delete(`/variables-beneficiaires/${id}/`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["variables-beneficiaires"] });
+      queryClient.invalidateQueries({ queryKey: ["beneficiaires"] });
+    },
+  });
+}
+
+export interface CarteBeneficiaires {
+  pays: string;
+  total: number;
+  /** Bénéficiaires avec position GPS. */
+  points: { id: number; nom: string; identifiant: string; sexe: string; lat: number; lng: number }[];
+  /** Les autres, regroupés au centre de leur localité (ou de la zone parente placée la plus proche). */
+  zones: { zone: number; nom: string; lat: number; lng: number; nombre: number; femmes: number; hommes: number }[];
+  non_localises: number;
+}
+
+export function useCarteBeneficiaires(projet: number | null) {
+  return useQuery({
+    queryKey: ["beneficiaires", "carte", projet],
+    queryFn: async () =>
+      (await apiClient.get<CarteBeneficiaires>("/beneficiaires/carte/", { params: projet ? { projet } : {} })).data,
   });
 }

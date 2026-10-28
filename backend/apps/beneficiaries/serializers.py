@@ -1,7 +1,14 @@
 from django.utils import timezone
 from rest_framework import serializers
 
-from .models import Beneficiaire, ParticipationProjet, SignalementDoublon, StatutParticulier, TypeActiviteBeneficiaire
+from .models import (
+    Beneficiaire,
+    ParticipationProjet,
+    SignalementDoublon,
+    StatutParticulier,
+    TypeActiviteBeneficiaire,
+    VariableBeneficiaire,
+)
 
 
 class StatutParticulierSerializer(serializers.ModelSerializer):
@@ -65,6 +72,37 @@ class ParticipationProjetSerializer(serializers.ModelSerializer):
         )
 
 
+class VariableBeneficiaireSerializer(serializers.ModelSerializer):
+    projets_codes = serializers.SerializerMethodField()
+    nb_reponses = serializers.SerializerMethodField()
+
+    class Meta:
+        model = VariableBeneficiaire
+        fields = (
+            "id", "libelle", "type", "choix", "unite", "aide", "tous_les_projets", "projets", "projets_codes",
+            "ordre", "nb_reponses",
+        )
+
+    def get_projets_codes(self, obj):
+        return sorted(p.code for p in obj.projets.all())
+
+    def get_nb_reponses(self, obj):
+        return Beneficiaire.objects.filter(reponses__has_key=str(obj.id)).count()
+
+    def validate(self, attrs):
+        type_variable = attrs.get("type", getattr(self.instance, "type", None))
+        choix = [str(c).strip() for c in attrs.get("choix", getattr(self.instance, "choix", [])) if str(c).strip()]
+        if type_variable in (VariableBeneficiaire.Type.CHOIX, VariableBeneficiaire.Type.CHOIX_MULTIPLE) and len(choix) < 2:
+            raise serializers.ValidationError({"choix": "Indiquer au moins deux réponses possibles."})
+        if "choix" in attrs:
+            attrs["choix"] = list(dict.fromkeys(choix))
+        tous = attrs.get("tous_les_projets", getattr(self.instance, "tous_les_projets", True))
+        projets = attrs.get("projets", None if self.instance is None else list(self.instance.projets.all()))
+        if not tous and not projets:
+            raise serializers.ValidationError({"projets": "Choisir les projets concernés, ou « tous les projets »."})
+        return attrs
+
+
 class BeneficiaireSerializer(serializers.ModelSerializer):
     zone_nom = serializers.StringRelatedField(source="zone", read_only=True)
     participations = ParticipationProjetSerializer(many=True, read_only=True)
@@ -75,6 +113,7 @@ class BeneficiaireSerializer(serializers.ModelSerializer):
         model = Beneficiaire
         fields = (
             "id",
+            "identifiant",
             "nom",
             "prenom",
             "sexe",
@@ -87,10 +126,33 @@ class BeneficiaireSerializer(serializers.ModelSerializer):
             "pays",
             "zone",
             "zone_nom",
+            "latitude",
+            "longitude",
+            "reponses",
             "statuts_particuliers",
             "types_activite",
             "participations",
         )
+
+    def validate_reponses(self, valeur):
+        from .services.variables import normaliser_reponses
+
+        if not isinstance(valeur, dict):
+            raise serializers.ValidationError("Réponses invalides.")
+        try:
+            return normaliser_reponses(valeur)
+        except ValueError as exc:
+            raise serializers.ValidationError(str(exc))
+
+    def validate_latitude(self, valeur):
+        if valeur is not None and not -90 <= valeur <= 90:
+            raise serializers.ValidationError("La latitude doit être comprise entre -90 et 90.")
+        return valeur
+
+    def validate_longitude(self, valeur):
+        if valeur is not None and not -180 <= valeur <= 180:
+            raise serializers.ValidationError("La longitude doit être comprise entre -180 et 180.")
+        return valeur
 
     def get_age(self, obj):
         return calculer_age(obj.date_naissance)
@@ -112,6 +174,7 @@ class SignalementDoublonSerializer(serializers.ModelSerializer):
             "beneficiaire_2",
             "beneficiaire_2_nom",
             "score",
+            "motifs",
             "methode",
             "statut",
             "traite_par",
