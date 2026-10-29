@@ -40,6 +40,7 @@ import { MethodeCalculLigne } from "../../components/suivi/MethodeCalculLigne";
 import { SaisieSuiviMethode } from "../../components/suivi/SaisieSuiviMethode";
 import { libelleMethodeEffective } from "../../utils/methodesCalcul";
 
+import { locale } from "../../utils/i18n";
 /** Saisie comptée dans les barres, courbes et cumuls (les autres attendent une approbation ou ont été rejetées). */
 function estApprouve(h: { etat_approbation?: string }) {
   return !h.etat_approbation || h.etat_approbation === "APPROUVEE";
@@ -51,8 +52,8 @@ function libelleEtatSaisie(
   labels: Record<string, string>,
 ): string | undefined {
   const statut = libelleStatut(h.statut, labels);
-  if (h.etat_approbation === "EN_ATTENTE") return ["En attente d'approbation (non comptée)", statut].filter(Boolean).join(" — ");
-  if (h.etat_approbation === "REJETEE") return [`Rejetée : ${h.motif_rejet}`, statut].filter(Boolean).join(" — ");
+  if (h.etat_approbation === "EN_ATTENTE") return [voc("En attente d'approbation (non comptée)"), statut].filter(Boolean).join(" — ");
+  if (h.etat_approbation === "REJETEE") return [voc`Rejetée : ${h.motif_rejet}`, statut].filter(Boolean).join(" — ");
   return statut;
 }
 
@@ -64,8 +65,7 @@ function libelleStatut(statut: string, labels: Record<string, string>): string |
 function LegendeGraphique() {
   return (
     <Text size="sm" c="dimmed">
-      Chaque segment coloré de la barre = ce qui a été réalisé pendant une période · trait gris = où on devrait
-      être aujourd'hui · trait teal en bout de barre = cible. La courbe en dessous trace le cumul dans le temps.
+      {voc("Chaque segment coloré de la barre = ce qui a été réalisé pendant une période · trait gris = où on devrait être aujourd'hui · trait teal en bout de barre = cible. La courbe en dessous trace le cumul dans le temps.")}
     </Text>
   );
 }
@@ -92,8 +92,8 @@ function EcheanceBadge({ statut, dateFin }: { statut: StatutEcheance; dateFin?: 
     <Tooltip
       label={
         statut === "RETARD"
-          ? `Échéance dépassée le ${dateFin}`
-          : `Échéance prévue le ${dateFin} — approche`
+          ? voc`Échéance dépassée le ${dateFin}`
+          : voc`Échéance prévue le ${dateFin} — approche`
       }
     >
       <Badge
@@ -103,22 +103,22 @@ function EcheanceBadge({ statut, dateFin }: { statut: StatutEcheance; dateFin?: 
         leftSection={<AlertTriangle size={12} />}
         styles={{ root: { textTransform: "none" } }}
       >
-        {statut === "RETARD" ? "En retard" : "Échéance proche"}
+        {statut === "RETARD" ? voc("En retard") : voc("Échéance proche")}
       </Badge>
     </Tooltip>
   );
 }
 
 const STATUTS_ACTIVITE = [
-  { value: "NON_REALISEE", label: "Non réalisée" },
-  { value: "EN_COURS", label: "En cours" },
-  { value: "REALISEE", label: "Réalisée" },
+  { value: "NON_REALISEE", label: voc("Non réalisée") },
+  { value: "EN_COURS", label: voc("En cours") },
+  { value: "REALISEE", label: voc("Réalisée") },
 ];
 
 const STATUTS_SOUS_ACTIVITE = [
-  { value: "PLANIFIEE", label: "Planifiée" },
-  { value: "EN_COURS", label: "En cours" },
-  { value: "TERMINEE", label: "Terminée" },
+  { value: "PLANIFIEE", label: voc("Planifiée") },
+  { value: "EN_COURS", label: voc("En cours") },
+  { value: "TERMINEE", label: voc("Terminée") },
 ];
 
 export function SuiviProjetDashboard() {
@@ -216,7 +216,7 @@ export function SuiviProjetDashboard() {
     };
   }, [data, location.hash]);
 
-  if (isLoading || !data) return <Text>Chargement…</Text>;
+  if (isLoading || !data) return <Text>{voc("Chargement…")}</Text>;
 
   function handleSupprimerValeur(id: number) {
     confirmerSuppression({
@@ -224,9 +224,9 @@ export function SuiviProjetDashboard() {
       onConfirm: async () => {
         try {
           await deleteValeur.mutateAsync(id);
-          notifications.show({ message: "Saisie supprimée", color: "green" });
+          notifications.show({ message: voc("Saisie supprimée"), color: "green" });
         } catch {
-          notifications.show({ message: "Erreur lors de la suppression", color: "red" });
+          notifications.show({ message: voc("Erreur lors de la suppression"), color: "red" });
         }
       },
     });
@@ -240,7 +240,7 @@ export function SuiviProjetDashboard() {
           await deletePoint.mutateAsync(id);
           notifications.show({ message: voc("Point de suivi supprimé"), color: "green" });
         } catch {
-          notifications.show({ message: "Erreur lors de la suppression", color: "red" });
+          notifications.show({ message: voc("Erreur lors de la suppression"), color: "red" });
         }
       },
     });
@@ -257,7 +257,7 @@ export function SuiviProjetDashboard() {
           <StatusBadge tone={SUIVI_STATUT_GLOBAL_TONE[data.statut_global]}>
             {SUIVI_STATUT_GLOBAL_LABEL[data.statut_global]}
           </StatusBadge>
-          <Tooltip label="Actualiser">
+          <Tooltip label={voc("Actualiser")}>
             <ActionIcon variant="light" size="lg" onClick={() => refetch()} loading={isFetching}>
               <RefreshCw size={18} />
             </ActionIcon>
@@ -267,7 +267,7 @@ export function SuiviProjetDashboard() {
           <Menu position="bottom-end">
             <Menu.Target>
               <Button variant="light" leftSection={<Download size={16} />}>
-                Exporter
+                {voc("Exporter")}
               </Button>
             </Menu.Target>
             <Menu.Dropdown>
@@ -275,26 +275,26 @@ export function SuiviProjetDashboard() {
                 leftSection={<Download size={14} />}
                 onClick={() => telechargerExportSuiviExcel(projetId, data.projet.code)}
               >
-                Excel (.xlsx)
+                {voc("Excel (.xlsx)")}
               </Menu.Item>
               <Menu.Item
                 leftSection={<FileText size={14} />}
                 onClick={() => telechargerExportSuiviPdf(projetId, data.projet.code)}
               >
-                PDF
+                {voc("PDF")}
               </Menu.Item>
               <Menu.Item
                 leftSection={<FileText size={14} />}
                 onClick={() => telechargerExportSuiviWord(projetId, data.projet.code)}
               >
-                Word (.docx)
+                {voc("Word (.docx)")}
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
           )}
           {peutSaisir && (
             <Button variant="light" leftSection={<FileSpreadsheet size={16} />} onClick={() => setCanevasOuvert(true)}>
-              Saisie par Excel
+              {voc("Saisie par Excel")}
             </Button>
           )}
           {!saisieImpossible && <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />}
@@ -333,7 +333,7 @@ export function SuiviProjetDashboard() {
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
                 <Card withBorder padding="md" radius="md">
                   <Text size="sm" c="dimmed" fw={600} tt="uppercase" style={{ letterSpacing: 0.4 }}>
-                    Exécution physique globale
+                    {voc("Exécution physique globale")}
                   </Text>
                   <Text fz={28} fw={700}>
                     {data.taux_execution_physique_global !== null ? `${data.taux_execution_physique_global}%` : "—"}
@@ -341,7 +341,7 @@ export function SuiviProjetDashboard() {
                 </Card>
                 <Card withBorder padding="md" radius="md">
                   <Text size="sm" c="dimmed" fw={600} tt="uppercase" style={{ letterSpacing: 0.4 }}>
-                    Exécution financière globale
+                    {voc("Exécution financière globale")}
                   </Text>
                   <Text fz={28} fw={700}>
                     {data.taux_execution_financiere_global !== null ? `${data.taux_execution_financiere_global}%` : "—"}
@@ -353,14 +353,16 @@ export function SuiviProjetDashboard() {
                 <Alert color={echeances.retard > 0 ? "red" : "orange"} icon={<AlertTriangle size={18} />} variant="light">
                   {echeances.retard > 0 && (
                     <Text size="sm" fw={600}>
-                      {echeances.retard} activité{echeances.retard > 1 ? "s" : ""}/sous-activité
-                      {echeances.retard > 1 ? "s" : ""} en retard
+                      {echeances.retard > 1
+                        ? voc`${echeances.retard} activités/sous-activités en retard`
+                        : voc`${echeances.retard} activité/sous-activité en retard`}
                     </Text>
                   )}
                   {echeances.proche > 0 && (
                     <Text size="sm" c={echeances.retard > 0 ? "dimmed" : undefined} fw={echeances.retard > 0 ? 400 : 600}>
-                      {echeances.proche} échéance{echeances.proche > 1 ? "s" : ""} proche
-                      {echeances.proche > 1 ? "s" : ""} (dans les {seuilEcheanceJours} prochains jours)
+                      {echeances.proche > 1
+                        ? voc`${echeances.proche} échéances proches (dans les ${seuilEcheanceJours} prochains jours)`
+                        : voc`${echeances.proche} échéance proche (dans les ${seuilEcheanceJours} prochains jours)`}
                     </Text>
                   )}
                 </Alert>
@@ -378,14 +380,14 @@ export function SuiviProjetDashboard() {
 
               {afficherActivites && (
               <>
-              <Title order={3}>Activités</Title>
+              <Title order={3}>{voc("Activités")}</Title>
               {data.activites.length > 0 && <LegendeGraphique />}
               <Stack gap="sm">
                 {data.activites.length === 0 && (
                   <Text c="dimmed">{voc("Aucune activité planifiée pour ce projet.")}</Text>
                 )}
                 {data.activites.length > 0 && activitesFiltrees.length === 0 && (
-                  <Text c="dimmed">Aucune activité ne correspond à la recherche.</Text>
+                  <Text c="dimmed">{voc("Aucune activité ne correspond à la recherche.")}</Text>
                 )}
                 {activitesFiltrees.map((activite) => {
                   const parQuantite = activite.methode_calcul_effective === "QUANTITE";
@@ -446,19 +448,23 @@ export function SuiviProjetDashboard() {
                     </Group>
                     {fenetreAttendue && (
                       <Text size="sm" c="dimmed" mb="xs">
-                        Planifié : {fenetreAttendue.debut} → {fenetreAttendue.fin}
+                        {voc("Planifié :")} {fenetreAttendue.debut} → {fenetreAttendue.fin}
                       </Text>
                     )}
                     {(activite.saisies_en_attente > 0 || activite.saisies_rejetees > 0) && (
                       <Group gap={6} mb={6}>
                         {activite.saisies_en_attente > 0 && (
                           <Badge component={Link} to="/approbations" variant="light" color="orange" style={{ cursor: "pointer" }}>
-                            {activite.saisies_en_attente} saisie{activite.saisies_en_attente > 1 ? "s" : ""} en attente d'approbation
+                            {activite.saisies_en_attente > 1
+                              ? voc`${activite.saisies_en_attente} saisies en attente d'approbation`
+                              : voc`${activite.saisies_en_attente} saisie en attente d'approbation`}
                           </Badge>
                         )}
                         {activite.saisies_rejetees > 0 && (
                           <Badge component={Link} to="/approbations" variant="light" color="red" style={{ cursor: "pointer" }}>
-                            {activite.saisies_rejetees} saisie{activite.saisies_rejetees > 1 ? "s" : ""} rejetée{activite.saisies_rejetees > 1 ? "s" : ""}
+                            {activite.saisies_rejetees > 1
+                              ? voc`${activite.saisies_rejetees} saisies rejetées`
+                              : voc`${activite.saisies_rejetees} saisie rejetée`}
                           </Badge>
                         )}
                       </Group>
@@ -471,7 +477,7 @@ export function SuiviProjetDashboard() {
                         méthode, elle montre le taux calculé selon cette méthode (le même que le badge). */}
                     {activite.methode_calcul_effective !== "QUANTITE" ? (
                       <BarreProgression
-                        label="Avancement physique"
+                        label={voc("Avancement physique")}
                         segments={[
                           {
                             key: "taux",
@@ -486,7 +492,7 @@ export function SuiviProjetDashboard() {
                       />
                     ) : cible !== null && (
                       <BarreProgression
-                        label="Avancement physique"
+                        label={voc("Avancement physique")}
                         segments={activite.historique.filter(estApprouve).map((h) => ({
                           key: h.id,
                           valeur: Number(h.quantite_realisee ?? 0),
@@ -500,11 +506,11 @@ export function SuiviProjetDashboard() {
                     )}
                     {budgetAlloue !== null && (
                       <BarreProgression
-                        label="Avancement financier"
+                        label={voc("Avancement financier")}
                         segments={activite.historique.filter(estApprouve).map((h) => ({
                           key: h.id,
                           valeur: Number(h.budget_realise ?? 0),
-                          titre: `${h.periode_debut} → ${h.periode_fin} : ${(h.budget_realise ? Number(h.budget_realise).toLocaleString("fr-FR") : 0)} FCFA`,
+                          titre: voc`${h.periode_debut} → ${h.periode_fin} : ${(h.budget_realise ? Number(h.budget_realise).toLocaleString(locale()) : 0)} FCFA`,
                         }))}
                         cible={budgetAlloue}
                         attendu={fenetreAttendueBudget ? valeurAttendueA(aujourdHui(), fenetreAttendueBudget) : null}
@@ -545,9 +551,9 @@ export function SuiviProjetDashboard() {
                                 ? `${cumule} ${activite.unite_quantite}${tauxCumule !== null ? ` (${tauxCumule}%)` : ""}`
                                 : undefined,
                             detail: h.budget_realise
-                              ? `${Number(h.budget_realise).toLocaleString("fr-FR")} FCFA` +
+                              ? `${Number(h.budget_realise).toLocaleString(locale())} FCFA` +
                                 (budgetCumule !== null
-                                  ? ` — cumul ${budgetCumule.toLocaleString("fr-FR")}${tauxBudgetCumule !== null ? ` (${tauxBudgetCumule}%)` : ""}${ecartBudget ? " · " + ecartBudget : ""}`
+                                  ? ` — cumul ${budgetCumule.toLocaleString(locale())}${tauxBudgetCumule !== null ? ` (${tauxBudgetCumule}%)` : ""}${ecartBudget ? " · " + ecartBudget : ""}`
                                   : "")
                               : undefined,
                             attendu:
@@ -614,7 +620,7 @@ export function SuiviProjetDashboard() {
                                 <BarreProgression
                                   label={
                                     sousActivite.date_debut && sousActivite.date_fin
-                                      ? `Planifié : ${sousActivite.date_debut} → ${sousActivite.date_fin}`
+                                      ? voc`Planifié : ${sousActivite.date_debut} → ${sousActivite.date_fin}`
                                       : undefined
                                   }
                                   segments={sousActivite.historique.filter(estApprouve).map((h) => ({
@@ -712,14 +718,14 @@ export function SuiviProjetDashboard() {
                           <AlerteBadge palier={indicateur.palier_actuel} taux={indicateur.taux_actuel} />
                           {!saisieImpossible && (
                             <Button size="sm" variant="light" onClick={() => setModalIndicateur(indicateur.id)}>
-                              Saisir une valeur
+                              {voc("Saisir une valeur")}
                             </Button>
                           )}
                         </Group>
                       </Group>
                       <BarreProgression
                         label={
-                          fenetreAttendue ? `Planifié : ${fenetreAttendue.debut} → ${fenetreAttendue.fin}` : undefined
+                          fenetreAttendue ? voc`Planifié : ${fenetreAttendue.debut} → ${fenetreAttendue.fin}` : undefined
                         }
                         segments={indicateur.historique.filter(estApprouve).map((h) => ({
                           key: h.id,

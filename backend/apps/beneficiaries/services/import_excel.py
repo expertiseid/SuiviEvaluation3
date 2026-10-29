@@ -10,6 +10,7 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
 
 from apps.core.excel_utils import figer_entete, quadriller
+from apps.core.langues import vers_francais
 from apps.core.vocabulaire import adapter_classeur, ramener_classeur, v
 
 # Localisation d'abord, puis identité (ordre de collecte sur le terrain). Les colonnes de
@@ -125,7 +126,8 @@ def generer_modele_import(pays: str = "BF", projet=None) -> bytes:
 def _normaliser_sexe(valeur) -> str | None:
     if not valeur:
         return None
-    v = str(valeur).strip().lower()
+    # Saisie dans une autre langue (« Female », « Weiblich »…) : ramenée au français.
+    v = vers_francais(str(valeur).strip()).lower()
     if v in ("f", "féminin", "feminin", "femme"):
         return "F"
     if v in ("m", "masculin", "homme"):
@@ -199,9 +201,12 @@ def _resoudre_statuts(valeur):
     trouves = []
     inconnus = []
     for nom in noms:
-        statut = StatutParticulier.objects.filter(libelle__iexact=nom).first() or StatutParticulier.objects.filter(
-            code__iexact=nom
-        ).first()
+        # Saisi dans une autre langue (« Woman ») : nom français du catalogue en second essai.
+        statut = (
+            StatutParticulier.objects.filter(libelle__iexact=nom).first()
+            or StatutParticulier.objects.filter(code__iexact=nom).first()
+            or StatutParticulier.objects.filter(libelle__iexact=vers_francais(nom)).first()
+        )
         if statut:
             trouves.append(statut)
         else:
@@ -219,9 +224,11 @@ def _resoudre_types_activite(valeur):
     trouves = []
     inconnus = []
     for nom in noms:
-        type_activite = TypeActiviteBeneficiaire.objects.filter(
-            libelle__iexact=nom
-        ).first() or TypeActiviteBeneficiaire.objects.filter(code__iexact=nom).first()
+        type_activite = (
+            TypeActiviteBeneficiaire.objects.filter(libelle__iexact=nom).first()
+            or TypeActiviteBeneficiaire.objects.filter(code__iexact=nom).first()
+            or TypeActiviteBeneficiaire.objects.filter(libelle__iexact=vers_francais(nom)).first()
+        )
         if type_activite:
             trouves.append(type_activite)
         else:

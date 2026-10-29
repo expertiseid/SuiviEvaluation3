@@ -135,13 +135,13 @@ function CarteSuiviPeriode({
             {defini ? (
               <Badge size="md" variant="light" color={COULEUR_STATUT[v.statut] ?? "gray"}>{v.statut}</Badge>
             ) : (
-              <Badge size="md" variant="light" color="orange">Objectif non défini</Badge>
+              <Badge size="md" variant="light" color="orange">{voc("Objectif non défini")}</Badge>
             )}
           </Group>
           <Text size="sm" c="dimmed" mt={2}>{globale}</Text>
           {defini && (
             <Text size="sm" c="dimmed">
-              Prévu sur la période : {fmtDate(debut)} → {fmtDate(fin)}
+              {voc("Prévu sur la période :")} {fmtDate(debut)} → {fmtDate(fin)}
             </Text>
           )}
         </div>
@@ -155,8 +155,8 @@ function CarteSuiviPeriode({
       {avancement ? (
         cible !== null ? (
           <BarreProgression
-            label={`Avancement atteint à la fin de la période (visé : ${fmt(cible)} %)`}
-            segments={[{ key: 0, valeur: nombre(v.realise_quantite) ?? 0, titre: `Atteint : ${fmt(v.realise_quantite)} %` }]}
+            label={voc`Avancement atteint à la fin de la période (visé : ${fmt(cible)} %)`}
+            segments={[{ key: 0, valeur: nombre(v.realise_quantite) ?? 0, titre: voc`Atteint : ${fmt(v.realise_quantite)} %` }]}
             cible={cible}
             attendu={null}
             unite="%"
@@ -164,13 +164,13 @@ function CarteSuiviPeriode({
           />
         ) : (
           <Text size="md">
-            Avancement atteint à la fin de la période : <Text span fw={700}>{fmt(v.realise_quantite)} %</Text>
-            {avecBudget && ` · ${fmt(v.budget_realise)} FCFA`}
+            {voc("Avancement atteint à la fin de la période :")} <Text span fw={700}>{fmt(v.realise_quantite)} %</Text>
+            {avecBudget && voc` · ${fmt(v.budget_realise)} FCFA`}
           </Text>
         )
       ) : cible !== null ? (
         <BarreProgression
-          label="Avancement physique sur la période"
+          label={voc("Avancement physique sur la période")}
           segments={historique.map((h) => ({
             key: h.id,
             valeur: nombre(h.quantite) ?? 0,
@@ -183,17 +183,17 @@ function CarteSuiviPeriode({
         />
       ) : (
         <Text size="md">
-          Réalisé sur la période : <Text span fw={700}>{fmt(v.realise_quantite)} {unite}</Text>
-          {avecBudget && ` · ${fmt(v.budget_realise)} FCFA`}
+          {voc("Réalisé sur la période :")} <Text span fw={700}>{fmt(v.realise_quantite)} {unite}</Text>
+          {avecBudget && voc` · ${fmt(v.budget_realise)} FCFA`}
         </Text>
       )}
       {budgetPrevu !== null && (
         <BarreProgression
-          label="Avancement financier sur la période"
+          label={voc("Avancement financier sur la période")}
           segments={historique.map((h) => ({
             key: h.id,
             valeur: nombre(h.budget) ?? 0,
-            titre: `${fmtDate(h.periode_debut)} → ${fmtDate(h.periode_fin)} : ${fmt(h.budget)} FCFA`,
+            titre: voc`${fmtDate(h.periode_debut)} → ${fmtDate(h.periode_fin)} : ${fmt(h.budget)} FCFA`,
           }))}
           cible={budgetPrevu}
           attendu={fenetreBudget ? valeurAttendueA(aujourdHui(), fenetreBudget) : null}
@@ -239,7 +239,7 @@ function CarteSuiviPeriode({
           })
           .reverse()}
         libelleStatut={avancement ? "Statut / commentaire" : "Commentaire"}
-        messageVide="Aucune saisie sur cette période."
+        messageVide={voc("Aucune saisie sur cette période.")}
         onEdit={onModifier}
         onDelete={onSupprimer}
       />
@@ -309,9 +309,9 @@ export function SuiviPeriodeTab({
       onConfirm: async () => {
         try {
           await deletePoint.mutateAsync(id);
-          notifications.show({ message: "Saisie supprimée", color: "green" });
+          notifications.show({ message: voc("Saisie supprimée"), color: "green" });
         } catch (error) {
-          notifications.show({ message: messageErreurApi(error, "Erreur lors de la suppression"), color: "red" });
+          notifications.show({ message: messageErreurApi(error, voc("Erreur lors de la suppression")), color: "red" });
         }
       },
     });
@@ -323,15 +323,15 @@ export function SuiviPeriodeTab({
       onConfirm: async () => {
         try {
           await deleteValeur.mutateAsync(id);
-          notifications.show({ message: "Valeur supprimée", color: "green" });
+          notifications.show({ message: voc("Valeur supprimée"), color: "green" });
         } catch (error) {
-          notifications.show({ message: messageErreurApi(error, "Erreur lors de la suppression"), color: "red" });
+          notifications.show({ message: messageErreurApi(error, voc("Erreur lors de la suppression")), color: "red" });
         }
       },
     });
   }
 
-  if (isLoading) return <Text c="dimmed">Chargement…</Text>;
+  if (isLoading) return <Text c="dimmed">{voc("Chargement…")}</Text>;
 
   if (!periodes || periodes.length === 0) {
     return (
@@ -357,7 +357,7 @@ export function SuiviPeriodeTab({
           label={voc("Période de planification")}
           size="md"
           leftSection={<CalendarRange size={18} />}
-          data={periodes.map((p) => ({ value: String(p.id), label: p.libelle || "Période sans nom" }))}
+          data={periodes.map((p) => ({ value: String(p.id), label: p.libelle || voc("Période sans nom") }))}
           value={periodeId ? String(periodeId) : null}
           onChange={(v) => setPeriodeId(v ? Number(v) : null)}
           allowDeselect={false}
@@ -375,25 +375,25 @@ export function SuiviPeriodeTab({
                   leftSection={<Download size={14} />}
                   onClick={() => telechargerExportSuiviPeriode(periode, data.projet.code, "excel")}
                 >
-                  Excel (.xlsx)
+                  {voc("Excel (.xlsx)")}
                 </Menu.Item>
                 <Menu.Item
                   leftSection={<FileText size={14} />}
                   onClick={() => telechargerExportSuiviPeriode(periode, data.projet.code, "pdf")}
                 >
-                  PDF
+                  {voc("PDF")}
                 </Menu.Item>
                 <Menu.Item
                   leftSection={<FileText size={14} />}
                   onClick={() => telechargerExportSuiviPeriode(periode, data.projet.code, "word")}
                 >
-                  Word (.docx)
+                  {voc("Word (.docx)")}
                 </Menu.Item>
               </Menu.Dropdown>
             </Menu>
           )}
           <Button component={Link} to={`/projets/${projetId}`} variant="subtle">
-            Gérer les périodes et leurs objectifs
+            {voc("Gérer les périodes et leurs objectifs")}
           </Button>
         </Group>
       </Group>
@@ -404,19 +404,19 @@ export function SuiviPeriodeTab({
 
           <SimpleGrid cols={{ base: 1, sm: 3 }}>
             <CarteExecution
-              titre="Exécution physique de la période"
+              titre={voc("Exécution physique de la période")}
               valeur={valeurs.totaux.taux_physique !== null ? `${valeurs.totaux.taux_physique}%` : "—"}
-              detail="Moyenne des activités dont l'objectif est défini"
+              detail={voc("Moyenne des activités dont l'objectif est défini")}
             />
             <CarteExecution
-              titre="Exécution financière de la période"
+              titre={voc("Exécution financière de la période")}
               valeur={valeurs.totaux.taux_financier !== null ? `${valeurs.totaux.taux_financier}%` : "—"}
-              detail={`${fmt(valeurs.totaux.budget_realise)} FCFA dépensés sur ${fmt(valeurs.totaux.budget_prevu)} FCFA prévus`}
+              detail={voc`${fmt(valeurs.totaux.budget_realise)} FCFA dépensés sur ${fmt(valeurs.totaux.budget_prevu)} FCFA prévus`}
             />
             <CarteExecution
-              titre="Objectifs définis"
+              titre={voc("Objectifs définis")}
               valeur={`${valeurs.totaux.nb_definis} / ${valeurs.totaux.nb_elements}`}
-              detail="Éléments ayant un objectif fixé pour la période"
+              detail={voc("Éléments ayant un objectif fixé pour la période")}
             />
           </SimpleGrid>
 
@@ -434,10 +434,9 @@ export function SuiviPeriodeTab({
             maw={420}
           />
 
-          <Title order={3}>Activités</Title>
+          <Title order={3}>{voc("Activités")}</Title>
           <Text size="sm" c="dimmed">
-            Chaque segment coloré de la barre = une saisie faite pendant la période · trait gris = où on devrait être
-            aujourd'hui · trait teal = objectif de la période. La courbe trace le cumul sur la période.
+            {voc("Chaque segment coloré de la barre = une saisie faite pendant la période · trait gris = où on devrait être aujourd'hui · trait teal = objectif de la période. La courbe trace le cumul sur la période.")}
           </Text>
           <Stack gap="md">
             {lignesFiltrees.map((l) => {
@@ -460,7 +459,7 @@ export function SuiviPeriodeTab({
                   }
                   globale={
                     (ligne.mode === "avancement"
-                      ? `Méthode : ${libelleMethodeEffective(ligne.methode)} · objectif en avancement (%)`
+                      ? voc`Méthode : ${libelleMethodeEffective(ligne.methode)} · objectif en avancement (%)`
                       : `Global : ${fmt(ligne.global_quantite)} ${ligne.unite}`) +
                     (estActivite ? ` · ${fmt(ligne.global_budget)} FCFA` : "")
                   }
@@ -497,7 +496,7 @@ export function SuiviPeriodeTab({
                   unite={i.unite}
                   avecBudget={false}
                   editionActive={editionActive}
-                  libelleBouton="Saisir une valeur"
+                  libelleBouton={voc("Saisir une valeur")}
                   onSaisir={cloture ? undefined : () => setSaisie({ type: "indicateur", id: i.id })}
                   onModifier={(id) =>
                     setSaisie({
@@ -517,7 +516,7 @@ export function SuiviPeriodeTab({
       <Modal
         opened={saisie !== null}
         onClose={() => setSaisie(null)}
-        title={`${periode?.libelle ?? "Période"} — ${saisie?.type === "indicateur" ? voc("valeur d'indicateur") : voc("saisir un suivi")}`}
+        title={`${periode?.libelle ?? voc("Période")} — ${saisie?.type === "indicateur" ? voc("valeur d'indicateur") : voc("saisir un suivi")}`}
         size="lg"
       >
         {saisie?.type === "indicateur" ? (

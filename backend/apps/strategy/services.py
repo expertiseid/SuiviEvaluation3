@@ -29,6 +29,7 @@ from openpyxl.comments import Comment
 from openpyxl.styles import Alignment, Font, PatternFill
 
 from apps.core.excel_utils import figer_entete, quadriller
+from apps.core.langues import langue_active, vers_francais
 from apps.core.vocabulaire import adapter_classeur
 
 # Reconnaît le format "CODE — Nom" tel que généré par exporter_structuration
@@ -50,8 +51,9 @@ NOMS_NIVEAUX_EXEMPLE = ["Orientation stratégique", "Axe d'intervention"]
 # Repère visuel des colonnes de niveau (noms libres), comme la feuille « Planification ».
 COULEUR_NIVEAU = "FFF2CC"
 DEBUT_LEGENDE = "En jaune :"
+# Texte entier (pas de f-string) : il se traduit d'un bloc dans les modèles en d'autres langues.
 LEGENDE_STRUCTURATION = (
-    f"{DEBUT_LEGENDE} les niveaux de votre structuration, de gauche à droite. Leurs noms et leur nombre sont "
+    "En jaune : les niveaux de votre structuration, de gauche à droite. Leurs noms et leur nombre sont "
     "libres (ex : Plan → Programme → Résultat → Pilier) — renommez, ajoutez ou supprimez des colonnes."
 )
 COMMENTAIRE_NIVEAU = (
@@ -123,7 +125,9 @@ def generer_modele_import(cadre_strategique) -> bytes:
     instructions.append(["  position) au lieu de les dupliquer."])
 
     buffer = io.BytesIO()
-    adapter_classeur(wb, feuilles={"Instructions"})
+    # Dans une autre langue, la légende et le nom de la feuille « Structuration » sont aussi traduits
+    # (pas les en-têtes : ce sont les noms des niveaux du cadre).
+    adapter_classeur(wb, feuilles=None if langue_active() != "fr" else {"Instructions"})
     wb.save(buffer)
     return buffer.getvalue()
 
@@ -245,7 +249,8 @@ def importer_structuration_depuis_feuille(feuille, cadre_strategique) -> dict:
     lignes = list(feuille.iter_rows(min_row=1, values_only=True))
     # Ligne de légende du modèle (au-dessus des en-têtes) : ignorée.
     premiere_ligne = 1
-    if lignes and lignes[0] and str(lignes[0][0] or "").startswith(DEBUT_LEGENDE):
+    # (éventuellement traduite : un modèle téléchargé dans une autre langue)
+    if lignes and lignes[0] and str(vers_francais(str(lignes[0][0] or ""))).startswith(DEBUT_LEGENDE):
         lignes, premiere_ligne = lignes[1:], 2
     if not lignes:
         return {"niveaux_crees": 0, "elements_crees": 0, "elements_mis_a_jour": 0, "erreurs": [], "avertissements": []}

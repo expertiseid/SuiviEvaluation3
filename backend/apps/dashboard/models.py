@@ -38,6 +38,8 @@ class ConfigurationMenu(models.Model):
     # exports : { "projet": {"singulier": "action", "pluriel": "actions", "feminin": true} }
     # (clés : apps.core.vocabulaire.TERMES).
     vocabulaire = models.JSONField(default=dict, blank=True)
+    # Langue de l'interface par défaut (chaque utilisateur peut choisir la sienne).
+    langue_defaut = models.CharField(max_length=5, default="fr")
     modifie_par = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     modifie_le = models.DateTimeField(auto_now=True)
 

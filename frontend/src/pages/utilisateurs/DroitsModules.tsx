@@ -1,15 +1,16 @@
 import { Button, Group, SegmentedControl, Stack, Table, Text } from "@mantine/core";
 import { DEPENDANCES, modulesReglables, niveauParDefaut } from "../../utils/modules";
 import type { NiveauModule } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 const CHOIX_ECRITURE = [
-  { value: "MASQUE", label: "Masqué" },
-  { value: "LECTURE", label: "Consultation" },
-  { value: "ECRITURE", label: "Création et modification" },
+  { value: "MASQUE", label: voc("Masqué") },
+  { value: "LECTURE", label: voc("Consultation") },
+  { value: "ECRITURE", label: voc("Création et modification") },
 ];
 const CHOIX_VISIBILITE = [
-  { value: "MASQUE", label: "Masqué" },
-  { value: "VISIBLE", label: "Visible" },
+  { value: "MASQUE", label: voc("Masqué") },
+  { value: "VISIBLE", label: voc("Visible") },
 ];
 const COULEURS: Record<string, string> = { MASQUE: "red", LECTURE: "blue", ECRITURE: "teal", VISIBLE: "teal" };
 
@@ -44,13 +45,13 @@ export function DroitsModules({
     <Stack gap={4}>
       <Group justify="space-between" align="flex-end">
         <div>
-          <Text size="sm" fw={500}>Droits par module</Text>
+          <Text size="sm" fw={500}>{voc("Droits par module")}</Text>
           <Text size="xs" c="dimmed">
-            Par défaut, chaque module suit le niveau d'accès ci-dessus. Les onglets peuvent seulement être masqués.
+            {voc("Par défaut, chaque module suit le niveau d'accès ci-dessus. Les onglets peuvent seulement être masqués.")}
           </Text>
         </div>
         <Button size="compact-xs" variant="subtle" disabled={Object.keys(value).length === 0} onClick={() => onChange({})}>
-          Tout remettre par défaut
+          {voc("Tout remettre par défaut")}
         </Button>
       </Group>
       <Table verticalSpacing={4} fz="sm">
@@ -70,9 +71,9 @@ export function DroitsModules({
                   <Table.Td>
                     {m.label}
                     {source ? (
-                      <Text span size="xs" c="dimmed"> · masqué avec « {libelles[source]} »</Text>
+                      <Text span size="xs" c="dimmed"> {voc("· masqué avec «")} {libelles[source]} »</Text>
                     ) : (
-                      regle && <Text span size="xs" c="dimmed"> · personnalisé</Text>
+                      regle && <Text span size="xs" c="dimmed"> {voc("· personnalisé")}</Text>
                     )}
                   </Table.Td>
                   <Table.Td align="right">

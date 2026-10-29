@@ -36,7 +36,7 @@ function InformationsComplementaires({ beneficiaire }: { beneficiaire: Beneficia
           <div key={v.id}>
             <Text size="xs" c="dimmed">{v.libelle}</Text>
             <Text size="sm" fw={500}>
-              {concerne(v, projetIds) ? reponseLisible(v, beneficiaire.reponses?.[String(v.id)]) : "NA"}
+              {concerne(v, projetIds) ? reponseLisible(v, beneficiaire.reponses?.[String(v.id)]) : voc("NA")}
             </Text>
           </div>
         ))}
@@ -87,7 +87,7 @@ export function BeneficiaireDetailPage() {
   const deleteBeneficiaire = useDeleteBeneficiaire();
   const [modalEditionOuvert, setModalEditionOuvert] = useState(false);
 
-  if (isLoading || !beneficiaire) return <Text>Chargement…</Text>;
+  if (isLoading || !beneficiaire) return <Text>{voc("Chargement…")}</Text>;
 
   const libellesStatuts = beneficiaire.statuts_particuliers
     .map((sid) => statuts?.find((s) => s.id === sid)?.libelle)
@@ -123,15 +123,15 @@ export function BeneficiaireDetailPage() {
             <Badge size="lg" variant="outline" color="teal" ff="monospace">{beneficiaire.identifiant}</Badge>
           </Group>
           <Text c="dimmed">
-            {beneficiaire.sexe === "F" ? "Féminin" : "Masculin"}
-            {beneficiaire.date_naissance && ` · Né(e) le ${beneficiaire.date_naissance}`}
+            {beneficiaire.sexe === "F" ? voc("Féminin") : voc("Masculin")}
+            {beneficiaire.date_naissance && voc` · Né(e) le ${beneficiaire.date_naissance}`}
             {beneficiaire.tranche_age && ` · ${beneficiaire.tranche_age}`}
             {beneficiaire.telephone && ` · ${beneficiaire.telephone}`}
           </Text>
         </div>
         <Group gap="xs">
           <Button variant="light" leftSection={<Pencil size={15} />} onClick={() => setModalEditionOuvert(true)}>
-            Modifier
+            {voc("Modifier")}
           </Button>
           <Tooltip label={voc("Supprimer le bénéficiaire")}>
             <ActionIcon variant="light" color="red" size="lg" loading={deleteBeneficiaire.isPending} onClick={handleSupprimer}>
@@ -146,12 +146,12 @@ export function BeneficiaireDetailPage() {
         <Flex direction={{ base: "column", xs: "row" }} justify="space-between" align={{ base: "stretch", xs: "flex-start" }} gap="md">
         <div style={{ minWidth: 0 }}>
         <Text size="xs" c="dimmed" fw={600} tt="uppercase" mb="sm" style={{ letterSpacing: 0.4 }}>
-          Informations
+          {voc("Informations")}
         </Text>
         <Stack gap={4}>
-          <Text size="sm"><strong>N° pièce d'identité :</strong> {beneficiaire.numero_piece_identite || "—"} {beneficiaire.type_piece && `(${beneficiaire.type_piece})`}</Text>
+          <Text size="sm"><strong>{voc("N° pièce d'identité :")}</strong> {beneficiaire.numero_piece_identite || "—"} {beneficiaire.type_piece && `(${beneficiaire.type_piece})`}</Text>
           <Text size="sm">
-            <strong>Localisation :</strong>{" "}
+            <strong>{voc("Localisation :")}</strong>{" "}
             {PAYS_MONDE.find((p) => p.code === beneficiaire.pays)?.nom ?? (beneficiaire.pays || "—")}
             {beneficiaire.zone_nom && ` · ${beneficiaire.zone_nom}`}
           </Text>
@@ -171,7 +171,7 @@ export function BeneficiaireDetailPage() {
           )}
           {beneficiaire.latitude && beneficiaire.longitude && (
             <Text size="sm">
-              <MapPin size={13} style={{ verticalAlign: -2 }} /> <strong>Position GPS :</strong> {beneficiaire.latitude}, {beneficiaire.longitude}
+              <MapPin size={13} style={{ verticalAlign: -2 }} /> <strong>{voc("Position GPS :")}</strong> {beneficiaire.latitude}, {beneficiaire.longitude}
             </Text>
           )}
         </Stack>
@@ -199,7 +199,7 @@ export function BeneficiaireDetailPage() {
                   {p.projet_nom}
                 </Text>
                 <Text size="xs" c="dimmed">
-                  Inscrit(e) le {p.date_inscription}
+                  {voc("Inscrit(e) le")} {p.date_inscription}
                   {p.role_dans_projet && ` · ${p.role_dans_projet}`}
                 </Text>
               </div>
@@ -210,8 +210,8 @@ export function BeneficiaireDetailPage() {
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Projet")}</Table.Th>
-                  <Table.Th tt="uppercase" fz="xs" c="dimmed">Date d'inscription</Table.Th>
-                  <Table.Th tt="uppercase" fz="xs" c="dimmed">Rôle</Table.Th>
+                  <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Date d'inscription")}</Table.Th>
+                  <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Rôle")}</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
@@ -240,7 +240,7 @@ export function BeneficiaireDetailPage() {
       <Modal
         opened={modalEditionOuvert}
         onClose={() => setModalEditionOuvert(false)}
-        title={`Modifier — ${beneficiaire.nom} ${beneficiaire.prenom}`}
+        title={voc`Modifier — ${beneficiaire.nom} ${beneficiaire.prenom}`}
         size="lg"
       >
         <BeneficiaireForm beneficiaire={beneficiaire} onDone={() => setModalEditionOuvert(false)} />

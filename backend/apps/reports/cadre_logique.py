@@ -11,7 +11,9 @@ from decimal import Decimal
 from django.db.models import Sum
 from django.utils.html import escape
 
+from apps.core.langues import traduire_modele
 from apps.core.vocabulaire import v
+from apps.projects.attributs import ordonner
 
 
 def _nombre(valeur):
@@ -65,7 +67,7 @@ def construire_cadre_logique(projet) -> dict:
         lignes.append({
             "id": None, "profondeur": 0, "niveau": v("Projet"), "code": projet.code, "libelle": projet.nom,
             "description": "", "indicateurs": indicateurs_projet, "sources_verification": "", "hypotheses": "",
-            "avancement": arbre.taux_projet().taux,
+            "attributs": {}, "avancement": arbre.taux_projet().taux,
         })
 
     def parcourir(activite, profondeur):
@@ -79,6 +81,7 @@ def construire_cadre_logique(projet) -> dict:
             "indicateurs": par_activite.get(activite.id, []),
             "sources_verification": activite.sources_verification,
             "hypotheses": activite.hypotheses,
+            "attributs": {n: activite.attributs[n] for n in ordonner(activite.attributs or {}, projet.ordre_attributs)},
             "avancement": arbre.resultat(activite.id).taux,
         })
         for enfant in enfants.get(activite.id, []):
@@ -113,12 +116,20 @@ def _cellule_indicateurs(indicateurs):
         blocs.append(
             f'<div style="margin-bottom:5px;"><div>{escape(i["libelle"])}</div>'
             f'<div style="color:#555;font-size:10px;">Réf. {_fmt(i["reference"])} · Cible {_fmt(i["cible"])} {escape(i["unite"])} · '
-            f"<strong>Réalisé {_fmt(i['realise'])}</strong>{taux}</div></div>"
+            f"<strong>{traduire_modele('Réalisé {0}', _fmt(i['realise']))}</strong>{taux}</div></div>"
         )
     return "".join(blocs)
 
 
 VIDE = '<span style="color:#aaa;">—</span>'
+
+
+def _attributs(attributs):
+    """Attributs libres de l'élément (« Responsable : … »), sous son libellé."""
+    return "".join(
+        f'<div style="font-size:9px;color:#555;">{escape(nom)} : <strong>{escape(valeur)}</strong></div>'
+        for nom, valeur in (attributs or {}).items()
+    )
 
 
 def html_cadre_logique(data) -> str:
@@ -138,7 +149,8 @@ def html_cadre_logique(data) -> str:
         lignes.append(
             f"<tr><td {style_logique}>"
             f'<div style="font-size:9px;color:{couleur};font-weight:700;text-transform:uppercase;">{escape(l["niveau"])}</div>'
-            f'<div style="font-weight:{700 if l["profondeur"] == 0 else 500};">{code}{escape(l["libelle"])}</div>{avancement}</td>'
+            f'<div style="font-weight:{700 if l["profondeur"] == 0 else 500};">{code}{escape(l["libelle"])}</div>'
+            f"{_attributs(l['attributs'])}{avancement}</td>"
             f"<td {td}>{_cellule_indicateurs(l['indicateurs'])}</td>"
             f"<td {td}>{escape(l['sources_verification']) or VIDE}</td>"
             f"<td {td}>{escape(l['hypotheses']) or VIDE}</td></tr>"

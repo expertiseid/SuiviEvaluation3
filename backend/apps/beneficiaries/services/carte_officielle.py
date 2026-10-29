@@ -12,6 +12,8 @@ import os
 import textwrap
 from datetime import datetime
 
+from apps.core.langues import traduire, traduire_figure, traduire_modele
+
 os.environ.setdefault("MPLBACKEND", "Agg")
 os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
 
@@ -230,13 +232,14 @@ def titre_par_defaut(donnees, couches, par_zone, portee=""):
     """
     zf = donnees.get("zone_filtre")
     if par_zone:
-        titre = f"{par_zone['libelle_court']} par {par_zone['synthese']['niveau']['nom']}"
+        # Nom du niveau (donnée) traduit s'il est connu du catalogue (« Région »), comme dans l'interface.
+        titre = traduire_modele("{0} par {1}", traduire(par_zone["libelle_court"]), traduire(par_zone["synthese"]["niveau"]["nom"]))
     elif donnees.get("projet"):
-        titre = f"Projet {donnees['projet']}"
+        titre = traduire_modele("Projet {0}", donnees["projet"])
     elif couches.get("points") and not couches.get("importees"):
-        titre = "Carte des bénéficiaires"
+        titre = traduire("Carte des bénéficiaires")
     else:
-        titre = "Carte des interventions"
+        titre = traduire("Carte des interventions")
     if portee and not donnees.get("projet"):
         titre += f" — {portee}"
     elements = []
@@ -245,10 +248,10 @@ def titre_par_defaut(donnees, couches, par_zone, portee=""):
     if zf:
         elements.append(f"{zf['niveau']} : {zf['nom']}")
     if couches.get("points"):
-        elements.append(f"{fr(donnees['total'])} bénéficiaire(s)")
+        elements.append(traduire_modele("{0} bénéficiaire(s)", fr(donnees["total"])))
     if par_zone:
         presents = sum(1 for z in par_zone["synthese"]["zones"] if z["projets"])
-        elements.append(f"{presents} {par_zone['synthese']['niveau']['nom'].lower()}(s) avec au moins un projet")
+        elements.append(traduire_modele("{0} {1}(s) avec au moins un projet", presents, traduire(par_zone["synthese"]["niveau"]["nom"]).lower()))
     elements += [c.nom for c in couches.get("importees", [])][:3]
     return titre.upper(), " · ".join(elements)
 
@@ -396,8 +399,8 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
                 ]
                 gdf_pz.plot(ax=ax, color=gdf_pz["couleur"], alpha=0.55 if source_fond else 0.8, edgecolor="#374151", linewidth=LW(1), zorder=1.2)
         for couleur_classe, libelle in zip(DEGRADES[indicateur], libelles_classes(indicateur, bornes)):
-            legende.append(("rect", couleur_classe, f"{par_zone['libelle_court']} : {libelle}", 1))
-        legende.append(("rect", SANS_DONNEE, f"{par_zone['libelle_court']} : aucun", 1))
+            legende.append(("rect", couleur_classe, f"{traduire(par_zone['libelle_court'])} : {libelle}", 1))
+        legende.append(("rect", SANS_DONNEE, traduire_modele("{0} : aucun", traduire(par_zone["libelle_court"])), 1))
 
     if couches.get("routes"):
         couche = CoucheCarte.objects.filter(pays=pays, cle="routes").first()
@@ -553,12 +556,12 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
     titre = titre.upper() if titre else titre_auto
     sous = sous_titre or sous
     ov.add_patch(Rectangle((marge, haut - hh), W - 2 * marge, hh, fc=BLEU, ec="none"))
-    ov.text(marge + 10, haut - 11, (organisation or "Plateforme de suivi-évaluation").upper(), color="#ccfbf1", fontsize=F(17), va="center", ha="left")
+    ov.text(marge + 10, haut - 11, (organisation or traduire("Plateforme de suivi-évaluation")).upper(), color="#ccfbf1", fontsize=F(17), va="center", ha="left")
     fs_titre = 40 if len(titre) <= 62 else 40 * 62 / len(titre)
     ov.text(marge + 10, haut - 29, titre, color="white", fontsize=F(fs_titre), fontweight="bold", va="center", ha="left")
     ov.text(marge + 10, haut - 49, sous, color="#e2e8f0", fontsize=F(22), va="center", ha="left")
     ov.add_patch(Rectangle((W - marge - 64, haut - hh + 8), 56, hh - 16, fc="white", ec="none"))
-    ov.text(W - marge - 36, haut - hh / 2 + 9, "CARTE", ha="center", va="center", fontsize=F(15), color=BLEU)
+    ov.text(W - marge - 36, haut - hh / 2 + 9, traduire("Carte").upper(), ha="center", va="center", fontsize=F(15), color=BLEU)
     ov.text(W - marge - 36, haut - hh / 2 - 6, "S&E", ha="center", va="center", fontsize=F(26), fontweight="bold", color=BLEU)
 
     # --- panneau droit ---------------------------------------------------------------------------
@@ -608,7 +611,7 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
                        edgecolors="#0c8a5f" if sym == "rond" else "white", linewidths=LW(1.2), alpha=0.7 if sym == "rond" else 1)
         else:
             ov.add_patch(Rectangle((px0 + 5, y - 9), 25, 8, fc=col, ec="#555", lw=LW(0.8), alpha=0.6))
-        ov.text(px0 + 36, y - 5, tronc(libelle, 52), va="center", fontsize=F(15))
+        ov.text(px0 + 36, y - 5, tronc(traduire(libelle), 52), va="center", fontsize=F(15))
         cur -= 11.5
     cur -= 4
 
@@ -629,7 +632,7 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
     place = int((cur - fy - 22) / H_LIGNE) - 3
     if par_zone and place > 2:
         indicateur = par_zone["indicateur"]
-        cur = titre_bloc(cur, f"PAR {par_zone['synthese']['niveau']['nom'].upper()}")
+        cur = titre_bloc(cur, traduire_modele("Par {0}", traduire(par_zone["synthese"]["niveau"]["nom"])).upper())
         # 4e colonne : l'indicateur choisi (le budget quand c'est déjà le nombre de projets).
         colonne = "budget" if indicateur == "projets" else indicateur
         cur = ligne_tab(cur, [par_zone["synthese"]["niveau"]["nom"], "Projets", "Bénéf.", "Budget" if indicateur == "projets" else par_zone["entete"]], True, "#334155")
@@ -656,7 +659,8 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
     if donnees["non_localises"] and couches.get("points"):
         notes.append(f"{donnees['non_localises']} bénéficiaire(s) sans localisation ne figurent pas sur la carte.")
     if notes:
-        ov.text(px0, cur - 7, "\n".join(textwrap.fill("• " + n, 62, subsequent_indent="  ") for n in notes),
+        # Traduites avant d'être coupées en lignes (une note coupée ne se retrouve plus au catalogue).
+        ov.text(px0, cur - 7, "\n".join(textwrap.fill("• " + traduire(n), 62, subsequent_indent="  ") for n in notes),
                 va="top", fontsize=F(13), color="#475569", linespacing=1.3)
 
     # --- cartouche -------------------------------------------------------------------------------------
@@ -667,7 +671,7 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
     cases = [
         ("SOURCE DES DONNÉES", f"Plateforme de suivi-évaluation (bénéficiaires)\nLimites : {', '.join(sorted(sources_limites))}{fond_txt}\nÉdition du {date}"),
         ("PROJECTION", f"WGS 84 / UTM zone {zone_utm}{'N' if crs < 32700 else 'S'} (EPSG:{crs})\nGrille : degrés-minutes (WGS 84)\nÉchelle : 1 : {fr(ech)} (format {papier})"),
-        ("RÉALISATION", f"{organisation or 'Plateforme de suivi-évaluation'}\nCarte générée le {date}"),
+        ("RÉALISATION", f"{organisation or traduire('Plateforme de suivi-évaluation')}\nCarte générée le {date}"),
         ("NOTE", "Bénéficiaires sans GPS placés au centre de leur localité ;\nlimites administratives à titre indicatif."),
     ]
     ov.add_patch(Rectangle((marge, marge), W - 2 * marge, fth, fc="#f1f5f9", ec="black", lw=LW(1.5)))
@@ -679,6 +683,7 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
         ov.text(x + 5, marge + fth - 6, t, fontsize=F(13), fontweight="bold", color=BLEU, va="center")
         ov.text(x + 5, marge + fth - 12, c, fontsize=F(12), va="top", linespacing=1.35)
 
+    traduire_figure(fig)
     tampon_sortie = io.BytesIO()
     fig.savefig(tampon_sortie, format="png" if sortie == "png" else "pdf", **({"dpi": DPI_PNG[papier]} if sortie == "png" else {}))
     return tampon_sortie.getvalue()

@@ -12,6 +12,7 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 from apps.core.excel_utils import figer_entete, quadriller
+from apps.core.langues import traduire_classeur, traduire_html
 from apps.core.vocabulaire import v
 
 from ..models import VariableBeneficiaire
@@ -168,6 +169,9 @@ def exporter_beneficiaires(queryset, projets, inclure_sans_projet=False) -> byte
             )
 
     buffer = io.BytesIO()
+    # Export réimportable : seuls les en-têtes et noms de feuilles sont traduits, jamais les données
+    # (un type d'activité « Maraîchage » doit être retrouvé tel quel à l'import).
+    traduire_classeur(wb, garder=lambda feuille, cellule: cellule.row > 1)
     wb.save(buffer)
     return buffer.getvalue()
 
@@ -257,4 +261,4 @@ def exporter_beneficiaires_pdf(queryset, projets, inclure_sans_projet=False) -> 
       {"".join(sections) or v('<p style="color:#888;">Aucun bénéficiaire.</p>')}
     </body></html>
     """
-    return HTML(string=html_content).write_pdf()
+    return HTML(string=traduire_html(html_content)).write_pdf()

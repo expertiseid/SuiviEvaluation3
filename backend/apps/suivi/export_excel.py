@@ -13,7 +13,9 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
+from apps.core.langues import traduire_classeur
 from apps.core.vocabulaire import v
+from apps.projects.attributs import ordonner
 from apps.projects.taux import libelle_methode
 
 from .services import construire_dashboard_suivi, ecart_texte, taux_de, valeur_attendue_a
@@ -170,7 +172,10 @@ def exporter_suivi_excel(projet) -> bytes:
         "Taux financier (%)",
         "Attendu financier aujourd'hui (FCFA)",
     ]
-    _entete(ws_act, colonnes)
+    # Attributs libres (« Responsable », « Lieu »…) : une colonne chacun, en fin de tableau.
+    noms_attributs = list(dict.fromkeys(nom for a in data["activites"] for nom in a.get("attributs") or {}))
+    noms_attributs = ordonner(noms_attributs, projet.ordre_attributs)
+    _entete(ws_act, colonnes + noms_attributs)
     for activite in data["activites"]:
         # Taux hors quantités (tâches, jalons, livrables, binaire, manuel, agrégé) : pas de
         # quantités ni d'attendu en quantité, le taux vient de la méthode.
@@ -202,9 +207,10 @@ def exporter_suivi_excel(projet) -> bytes:
                 float(budget_realise) if budget_realise is not None else None,
                 activite["taux_execution_financiere"],
                 round(attendu_fin, 1) if attendu_fin is not None else None,
+                *[(activite.get("attributs") or {}).get(nom) for nom in noms_attributs],
             ]
         )
-    _largeurs(ws_act, [12, 38, 14, 24, 12, 12, 14, 14, 10, 14, 14, 18, 16, 18, 14, 18])
+    _largeurs(ws_act, [12, 38, 14, 24, 12, 12, 14, 14, 10, 14, 14, 18, 16, 18, 14, 18] + [24] * len(noms_attributs))
 
     # ---------- Activités — historique ----------
     ws_act_hist = wb.create_sheet("Activités — historique")
@@ -324,5 +330,6 @@ def exporter_suivi_excel(projet) -> bytes:
     wb.active = 0
 
     buffer = io.BytesIO()
+    traduire_classeur(wb)
     wb.save(buffer)
     return buffer.getvalue()

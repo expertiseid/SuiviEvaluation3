@@ -24,6 +24,9 @@ class User(AbstractUser):
         "son périmètre. Un Administrateur a toujours un accès complet, indépendamment de ce champ.",
     )
     telephone = models.CharField(max_length=30, blank=True)
+    langue = models.CharField(
+        max_length=5, blank=True, help_text="Langue de l'interface pour cet utilisateur (vide : celle de l'organisation)."
+    )
     class TypeStructure(models.TextChoices):
         INTERNE = "INTERNE", "Organisation (interne)"
         CONSORTIUM = "CONSORTIUM", "Partenaire de consortium"

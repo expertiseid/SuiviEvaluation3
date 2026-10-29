@@ -36,24 +36,26 @@ import { confirmerSuppression } from "../../components/common/confirmerSuppressi
 import { messageErreurApi } from "../../utils/erreurs";
 import type { NiveauRisque, Risque, StatutRisque } from "../../types";
 
+import { locale } from "../../utils/i18n";
+import { voc } from "../../utils/vocabulaire";
 const NIVEAUX_RISQUE: Record<NiveauRisque, { label: string; couleur: string }> = {
-  CRITIQUE: { label: "Critique", couleur: "red" },
-  ELEVE: { label: "Élevé", couleur: "orange" },
-  MOYEN: { label: "Moyen", couleur: "yellow" },
-  FAIBLE: { label: "Faible", couleur: "green" },
+  CRITIQUE: { label: voc("Critique"), couleur: "red" },
+  ELEVE: { label: voc("Élevé"), couleur: "orange" },
+  MOYEN: { label: voc("Moyen"), couleur: "yellow" },
+  FAIBLE: { label: voc("Faible"), couleur: "green" },
 };
 const STATUTS: { value: StatutRisque; label: string; couleur: string }[] = [
-  { value: "ACTIF", label: "Actif", couleur: "blue" },
-  { value: "SURVENU", label: "Survenu", couleur: "red" },
-  { value: "MAITRISE", label: "Maîtrisé", couleur: "teal" },
-  { value: "CLOS", label: "Clos", couleur: "gray" },
+  { value: "ACTIF", label: voc("Actif"), couleur: "blue" },
+  { value: "SURVENU", label: voc("Survenu"), couleur: "red" },
+  { value: "MAITRISE", label: voc("Maîtrisé"), couleur: "teal" },
+  { value: "CLOS", label: voc("Clos"), couleur: "gray" },
 ];
 const CATEGORIES = [
-  "Financier", "Opérationnel", "Sécuritaire", "Politique et institutionnel", "Climatique et environnemental",
-  "Social et communautaire", "Sanitaire", "Juridique", "Fiduciaire", "Autre",
+  "Financier", voc("Opérationnel"), voc("Sécuritaire"), voc("Politique et institutionnel"), voc("Climatique et environnemental"),
+  voc("Social et communautaire"), "Sanitaire", "Juridique", "Fiduciaire", "Autre",
 ];
 const PROBABILITES = ["Rare", "Peu probable", "Possible", "Probable", "Quasi certain"];
-const IMPACTS = ["Négligeable", "Mineur", "Modéré", "Important", "Majeur"];
+const IMPACTS = [voc("Négligeable"), "Mineur", voc("Modéré"), "Important", "Majeur"];
 
 function niveauPour(criticite: number): NiveauRisque {
   if (criticite >= 16) return "CRITIQUE";
@@ -62,7 +64,7 @@ function niveauPour(criticite: number): NiveauRisque {
   return "FAIBLE";
 }
 const ouvert = (r: Risque) => r.statut === "ACTIF" || r.statut === "SURVENU";
-const dateFr = (d: string | null) => (d ? new Date(d).toLocaleDateString("fr-FR") : "—");
+const dateFr = (d: string | null) => (d ? new Date(d).toLocaleDateString(locale()) : "—");
 const aujourdhui = () => new Date().toISOString().slice(0, 10);
 
 function BadgeNiveau({ niveau, criticite }: { niveau: NiveauRisque; criticite?: number }) {
@@ -90,33 +92,33 @@ function RisqueForm({ projetId, risque, onClose }: { projetId: number; risque: P
 
   async function valider() {
     if (!r.libelle?.trim()) {
-      notifications.show({ message: "Indiquez le risque.", color: "orange" });
+      notifications.show({ message: voc("Indiquez le risque."), color: "orange" });
       return;
     }
     try {
       await enregistrer.mutateAsync({ ...r, projet: projetId, libelle: r.libelle.trim(), evaluations: undefined });
-      notifications.show({ message: "Risque enregistré", color: "green" });
+      notifications.show({ message: voc("Risque enregistré"), color: "green" });
       onClose();
     } catch (e) {
-      notifications.show({ message: messageErreurApi(e, "Erreur lors de l'enregistrement"), color: "red" });
+      notifications.show({ message: messageErreurApi(e, voc("Erreur lors de l'enregistrement")), color: "red" });
     }
   }
 
   return (
-    <Modal opened onClose={onClose} title={risque.id ? `Modifier le risque ${risque.code}` : "Nouveau risque"} size="lg">
+    <Modal opened onClose={onClose} title={risque.id ? voc`Modifier le risque ${risque.code}` : voc("Nouveau risque")} size="lg">
       <Stack gap="sm">
-        <TextInput label="Risque" placeholder="Ex : Dégradation de la situation sécuritaire dans la zone" required value={r.libelle ?? ""} onChange={(e) => set({ libelle: e.currentTarget.value })} data-autofocus />
-        <Textarea label="Causes et conséquences" autosize minRows={2} value={r.description ?? ""} onChange={(e) => set({ description: e.currentTarget.value })} />
+        <TextInput label={voc("Risque")} placeholder={voc("Ex : Dégradation de la situation sécuritaire dans la zone")} required value={r.libelle ?? ""} onChange={(e) => set({ libelle: e.currentTarget.value })} data-autofocus />
+        <Textarea label={voc("Causes et conséquences")} autosize minRows={2} value={r.description ?? ""} onChange={(e) => set({ description: e.currentTarget.value })} />
         <SimpleGrid cols={{ base: 1, sm: 2 }}>
           <div>
-            <Text size="sm" fw={500} mb={4}>Nature</Text>
-            <SegmentedControl fullWidth value={r.nature} onChange={(v) => set({ nature: v as Risque["nature"] })} data={[{ value: "INTERNE", label: "Interne" }, { value: "EXTERNE", label: "Externe" }]} />
+            <Text size="sm" fw={500} mb={4}>{voc("Nature")}</Text>
+            <SegmentedControl fullWidth value={r.nature} onChange={(v) => set({ nature: v as Risque["nature"] })} data={[{ value: "INTERNE", label: voc("Interne") }, { value: "EXTERNE", label: voc("Externe") }]} />
           </div>
-          <Autocomplete label="Catégorie" data={CATEGORIES} value={r.categorie ?? ""} onChange={(v) => set({ categorie: v })} />
+          <Autocomplete label={voc("Catégorie")} data={CATEGORIES} value={r.categorie ?? ""} onChange={(v) => set({ categorie: v })} />
         </SimpleGrid>
         <Select
-          label="Élément de la planification le plus exposé"
-          placeholder="Tout le projet"
+          label={voc("Élément de la planification le plus exposé")}
+          placeholder={voc("Tout le projet")}
           data={elements.map((e) => ({ value: String(e.id), label: e.libelle }))}
           value={r.element ? String(r.element) : null}
           onChange={(v) => set({ element: v ? Number(v) : null })}
@@ -125,19 +127,19 @@ function RisqueForm({ projetId, risque, onClose }: { projetId: number; risque: P
         />
         <Card withBorder padding="sm" radius="md">
           <Stack gap="xs">
-            <Cotation label="Probabilité" libelles={PROBABILITES} value={r.probabilite ?? 3} onChange={(probabilite) => set({ probabilite })} />
-            <Cotation label="Impact" libelles={IMPACTS} value={r.impact ?? 3} onChange={(impact) => set({ impact })} />
+            <Cotation label={voc("Probabilité")} libelles={PROBABILITES} value={r.probabilite ?? 3} onChange={(probabilite) => set({ probabilite })} />
+            <Cotation label={voc("Impact")} libelles={IMPACTS} value={r.impact ?? 3} onChange={(impact) => set({ impact })} />
             <Group gap="xs">
-              <Text size="sm">Niveau de risque :</Text>
+              <Text size="sm">{voc("Niveau de risque :")}</Text>
               <BadgeNiveau niveau={niveauPour(criticite)} criticite={criticite} />
             </Group>
           </Stack>
         </Card>
-        <Textarea label="Mesures d'atténuation" description="Ce qui est fait pour réduire la probabilité ou l'impact." autosize minRows={2} value={r.mesures_attenuation ?? ""} onChange={(e) => set({ mesures_attenuation: e.currentTarget.value })} />
-        <Textarea label="Plan de contingence" description="Ce qui sera fait si le risque survient." autosize minRows={2} value={r.plan_contingence ?? ""} onChange={(e) => set({ plan_contingence: e.currentTarget.value })} />
+        <Textarea label={voc("Mesures d'atténuation")} description={voc("Ce qui est fait pour réduire la probabilité ou l'impact.")} autosize minRows={2} value={r.mesures_attenuation ?? ""} onChange={(e) => set({ mesures_attenuation: e.currentTarget.value })} />
+        <Textarea label={voc("Plan de contingence")} description={voc("Ce qui sera fait si le risque survient.")} autosize minRows={2} value={r.plan_contingence ?? ""} onChange={(e) => set({ plan_contingence: e.currentTarget.value })} />
         <SimpleGrid cols={{ base: 1, sm: 2 }}>
           <Select
-            label="Responsable du suivi"
+            label={voc("Responsable du suivi")}
             data={intervenants.map((i) => ({ value: String(i.id), label: `${i.nom} ${i.prenom}`.trim() }))}
             value={r.responsable ? String(r.responsable) : null}
             onChange={(v) => set({ responsable: v ? Number(v) : null })}
@@ -145,15 +147,15 @@ function RisqueForm({ projetId, risque, onClose }: { projetId: number; risque: P
             clearable
           />
           {!risque.id && (
-            <Select label="Statut" data={STATUTS} value={r.statut} onChange={(v) => set({ statut: (v ?? "ACTIF") as StatutRisque })} allowDeselect={false} />
+            <Select label={voc("Statut")} data={STATUTS} value={r.statut} onChange={(v) => set({ statut: (v ?? "ACTIF") as StatutRisque })} allowDeselect={false} />
           )}
-          <DateInput label="Identifié le" valueFormat="DD/MM/YYYY" value={r.date_identification ?? null} onChange={(v) => set({ date_identification: v ?? aujourdhui() })} />
-          <DateInput label="Prochaine revue" valueFormat="DD/MM/YYYY" clearable value={r.date_prochaine_revue ?? null} onChange={(v) => set({ date_prochaine_revue: v })} />
+          <DateInput label={voc("Identifié le")} valueFormat="DD/MM/YYYY" value={r.date_identification ?? null} onChange={(v) => set({ date_identification: v ?? aujourdhui() })} />
+          <DateInput label={voc("Prochaine revue")} valueFormat="DD/MM/YYYY" clearable value={r.date_prochaine_revue ?? null} onChange={(v) => set({ date_prochaine_revue: v })} />
         </SimpleGrid>
-        {risque.id && <Text size="xs" c="dimmed">La cotation et le statut évoluent ensuite par les réévaluations (bouton « Réévaluer »).</Text>}
+        {risque.id && <Text size="xs" c="dimmed">{voc("La cotation et le statut évoluent ensuite par les réévaluations (bouton « Réévaluer »).")}</Text>}
         <Group justify="flex-end">
-          <Button variant="subtle" onClick={onClose}>Annuler</Button>
-          <Button onClick={valider} loading={enregistrer.isPending}>Enregistrer</Button>
+          <Button variant="subtle" onClick={onClose}>{voc("Annuler")}</Button>
+          <Button onClick={valider} loading={enregistrer.isPending}>{voc("Enregistrer")}</Button>
         </Group>
       </Stack>
     </Modal>
@@ -172,33 +174,33 @@ function ReevaluationModal({ risque, onClose }: { risque: Risque; onClose: () =>
   async function valider() {
     try {
       await enregistrer.mutateAsync({ risque: risque.id, date: date ?? aujourdhui(), probabilite, impact, statut, actions_menees: actions.trim(), commentaire: commentaire.trim() });
-      notifications.show({ message: "Réévaluation enregistrée", color: "green" });
+      notifications.show({ message: voc("Réévaluation enregistrée"), color: "green" });
       onClose();
     } catch (e) {
-      notifications.show({ message: messageErreurApi(e, "Erreur lors de l'enregistrement"), color: "red" });
+      notifications.show({ message: messageErreurApi(e, voc("Erreur lors de l'enregistrement")), color: "red" });
     }
   }
 
   return (
-    <Modal opened onClose={onClose} title={`Réévaluer ${risque.code} — ${risque.libelle}`} size="lg">
+    <Modal opened onClose={onClose} title={voc`Réévaluer ${risque.code} — ${risque.libelle}`} size="lg">
       <Stack gap="sm">
         <SimpleGrid cols={{ base: 1, sm: 2 }}>
-          <DateInput label="Date" valueFormat="DD/MM/YYYY" value={date} onChange={setDate} />
-          <Select label="Statut" data={STATUTS} value={statut} onChange={(v) => setStatut((v ?? "ACTIF") as StatutRisque)} allowDeselect={false} />
+          <DateInput label={voc("Date")} valueFormat="DD/MM/YYYY" value={date} onChange={setDate} />
+          <Select label={voc("Statut")} data={STATUTS} value={statut} onChange={(v) => setStatut((v ?? "ACTIF") as StatutRisque)} allowDeselect={false} />
         </SimpleGrid>
-        <Cotation label="Probabilité" libelles={PROBABILITES} value={probabilite} onChange={setProbabilite} />
-        <Cotation label="Impact" libelles={IMPACTS} value={impact} onChange={setImpact} />
+        <Cotation label={voc("Probabilité")} libelles={PROBABILITES} value={probabilite} onChange={setProbabilite} />
+        <Cotation label={voc("Impact")} libelles={IMPACTS} value={impact} onChange={setImpact} />
         <Group gap="xs">
-          <Text size="sm">Niveau :</Text>
+          <Text size="sm">{voc("Niveau :")}</Text>
           <BadgeNiveau niveau={risque.niveau} criticite={risque.criticite} />
           <Text size="sm">→</Text>
           <BadgeNiveau niveau={niveauPour(probabilite * impact)} criticite={probabilite * impact} />
         </Group>
-        <Textarea label="Actions menées depuis la dernière revue" autosize minRows={2} value={actions} onChange={(e) => setActions(e.currentTarget.value)} />
-        <Textarea label="Commentaire" autosize minRows={2} value={commentaire} onChange={(e) => setCommentaire(e.currentTarget.value)} />
+        <Textarea label={voc("Actions menées depuis la dernière revue")} autosize minRows={2} value={actions} onChange={(e) => setActions(e.currentTarget.value)} />
+        <Textarea label={voc("Commentaire")} autosize minRows={2} value={commentaire} onChange={(e) => setCommentaire(e.currentTarget.value)} />
         <Group justify="flex-end">
-          <Button variant="subtle" onClick={onClose}>Annuler</Button>
-          <Button onClick={valider} loading={enregistrer.isPending}>Enregistrer</Button>
+          <Button variant="subtle" onClick={onClose}>{voc("Annuler")}</Button>
+          <Button onClick={valider} loading={enregistrer.isPending}>{voc("Enregistrer")}</Button>
         </Group>
       </Stack>
     </Modal>
@@ -210,7 +212,7 @@ function Matrice({ risques, filtre, onFiltre }: { risques: Risque[]; filtre: [nu
   return (
     <Box>
       <Group gap={6} align="stretch" wrap="nowrap">
-        <Text size="xs" c="dimmed" style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", textAlign: "center" }}>Probabilité</Text>
+        <Text size="xs" c="dimmed" style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", textAlign: "center" }}>{voc("Probabilité")}</Text>
         <Box style={{ flex: 1 }}>
           {[5, 4, 3, 2, 1].map((p) => (
             <Group key={p} gap={3} wrap="nowrap" mb={3}>
@@ -240,7 +242,7 @@ function Matrice({ risques, filtre, onFiltre }: { risques: Risque[]; filtre: [nu
             <Text size="xs" w={14} />
             {[1, 2, 3, 4, 5].map((i) => <Text key={i} size="xs" c="dimmed" ta="center" style={{ flex: 1 }}>{i}</Text>)}
           </Group>
-          <Text size="xs" c="dimmed" ta="center">Impact</Text>
+          <Text size="xs" c="dimmed" ta="center">{voc("Impact")}</Text>
         </Box>
       </Group>
     </Box>
@@ -265,40 +267,40 @@ function CarteRisque({ risque, modifiable, onModifier, onReevaluer }: { risque: 
           <Group gap={6}>
             <BadgeNiveau niveau={risque.niveau} criticite={risque.criticite} />
             <Badge variant="dot" color={statut.couleur}>{statut.label}</Badge>
-            <Badge variant="light" color="gray">{risque.nature === "INTERNE" ? "Interne" : "Externe"}</Badge>
+            <Badge variant="light" color="gray">{risque.nature === "INTERNE" ? voc("Interne") : voc("Externe")}</Badge>
             {risque.categorie && <Badge variant="light" color="gray">{risque.categorie}</Badge>}
             <Text size="xs" c="dimmed">P{risque.probabilite} × I{risque.impact}</Text>
           </Group>
           {risque.description && <Text size="sm" c="dimmed">{risque.description}</Text>}
-          {risque.mesures_attenuation && <Text size="sm"><b>Atténuation :</b> {risque.mesures_attenuation}</Text>}
-          {risque.plan_contingence && <Text size="sm"><b>Si survenu :</b> {risque.plan_contingence}</Text>}
+          {risque.mesures_attenuation && <Text size="sm"><b>{voc("Atténuation :")}</b> {risque.mesures_attenuation}</Text>}
+          {risque.plan_contingence && <Text size="sm"><b>{voc("Si survenu :")}</b> {risque.plan_contingence}</Text>}
           <Group gap="md">
-            {risque.element_libelle && <Text size="xs" c="dimmed">Élément : {risque.element_libelle}</Text>}
-            {risque.responsable_nom && <Text size="xs" c="dimmed">Responsable : {risque.responsable_nom}</Text>}
+            {risque.element_libelle && <Text size="xs" c="dimmed">{voc("Élément :")} {risque.element_libelle}</Text>}
+            {risque.responsable_nom && <Text size="xs" c="dimmed">{voc("Responsable :")} {risque.responsable_nom}</Text>}
             <Text size="xs" c={revueDepassee ? "red" : "dimmed"} fw={revueDepassee ? 600 : undefined}>
-              Prochaine revue : {dateFr(risque.date_prochaine_revue)}{revueDepassee ? " (dépassée)" : ""}
+              {voc("Prochaine revue :")} {dateFr(risque.date_prochaine_revue)}{revueDepassee ? voc(" (dépassée)") : ""}
             </Text>
           </Group>
         </Stack>
         <Group gap={4} wrap="nowrap">
           {modifiable && (
-            <Button size="compact-xs" variant="light" leftSection={<RefreshCw size={12} />} onClick={onReevaluer}>Réévaluer</Button>
+            <Button size="compact-xs" variant="light" leftSection={<RefreshCw size={12} />} onClick={onReevaluer}>{voc("Réévaluer")}</Button>
           )}
           {risque.evaluations.length > 0 && (
-            <Tooltip label="Historique des réévaluations">
-              <ActionIcon variant="subtle" aria-label="Historique des réévaluations" onClick={() => setHistorique((x) => !x)}>
+            <Tooltip label={voc("Historique des réévaluations")}>
+              <ActionIcon variant="subtle" aria-label={voc("Historique des réévaluations")} onClick={() => setHistorique((x) => !x)}>
                 {historique ? <ChevronUp size={15} /> : <History size={15} />}
               </ActionIcon>
             </Tooltip>
           )}
           {modifiable && (
             <>
-              <ActionIcon variant="subtle" onClick={onModifier} aria-label="Modifier"><Pencil size={14} /></ActionIcon>
+              <ActionIcon variant="subtle" onClick={onModifier} aria-label={voc("Modifier")}><Pencil size={14} /></ActionIcon>
               <ActionIcon
                 variant="subtle"
                 color="red"
-                aria-label="Supprimer"
-                onClick={() => confirmerSuppression({ message: `Supprimer le risque ${risque.code} et son historique ?`, onConfirm: () => supprimer.mutate(risque.id) })}
+                aria-label={voc("Supprimer")}
+                onClick={() => confirmerSuppression({ message: voc`Supprimer le risque ${risque.code} et son historique ?`, onConfirm: () => supprimer.mutate(risque.id) })}
               >
                 <Trash2 size={14} />
               </ActionIcon>
@@ -315,14 +317,14 @@ function CarteRisque({ risque, modifiable, onModifier, onReevaluer }: { risque: 
                 <BadgeNiveau niveau={e.niveau} criticite={e.probabilite * e.impact} />
                 <Text size="xs" c="dimmed">{STATUTS.find((s) => s.value === e.statut)?.label} · {e.saisi_par_nom}</Text>
                 {modifiable && (
-                  <ActionIcon size="xs" variant="subtle" color="red" aria-label="Supprimer la réévaluation"
-                    onClick={() => confirmerSuppression({ message: `Supprimer la réévaluation du ${dateFr(e.date)} ?`, onConfirm: () => supprimerEvaluation.mutate(e.id) })}>
+                  <ActionIcon size="xs" variant="subtle" color="red" aria-label={voc("Supprimer la réévaluation")}
+                    onClick={() => confirmerSuppression({ message: voc`Supprimer la réévaluation du ${dateFr(e.date)} ?`, onConfirm: () => supprimerEvaluation.mutate(e.id) })}>
                     <Trash2 size={11} />
                   </ActionIcon>
                 )}
               </Group>
             }>
-              {e.actions_menees && <Text size="xs">Actions : {e.actions_menees}</Text>}
+              {e.actions_menees && <Text size="xs">{voc("Actions :")} {e.actions_menees}</Text>}
               {e.commentaire && <Text size="xs" c="dimmed">{e.commentaire}</Text>}
             </Timeline.Item>
           ))}
@@ -347,7 +349,7 @@ export function RisquesTab({ projetId, codeProjet, modifiable }: { projetId: num
         .sort((a, b) => Number(ouvert(b)) - Number(ouvert(a)) || b.criticite - a.criticite),
     [risques, filtre, voirFermes],
   );
-  if (isLoading) return <Text c="dimmed">Chargement…</Text>;
+  if (isLoading) return <Text c="dimmed">{voc("Chargement…")}</Text>;
   const ouverts = risques.filter(ouvert);
   const fermes = risques.length - ouverts.length;
 
@@ -360,35 +362,35 @@ export function RisquesTab({ projetId, codeProjet, modifiable }: { projetId: num
               {ouverts.filter((r) => r.niveau === n).length} {NIVEAUX_RISQUE[n].label.toLowerCase()}
             </Badge>
           ))}
-          <Text size="sm" c="dimmed">risque(s) ouvert(s)</Text>
+          <Text size="sm" c="dimmed">{voc("risque(s) ouvert(s)")}</Text>
         </Group>
         <Group gap="xs">
           <Menu position="bottom-end">
             <Menu.Target>
-              <Button variant="light" leftSection={<Download size={16} />}>Exporter</Button>
+              <Button variant="light" leftSection={<Download size={16} />}>{voc("Exporter")}</Button>
             </Menu.Target>
             <Menu.Dropdown>
-              <Menu.Item onClick={() => telecharger(`/rapports/risques/${projetId}/?fichier=pdf`, `risques_${codeProjet}.pdf`)}>PDF</Menu.Item>
-              <Menu.Item onClick={() => telecharger(`/rapports/risques/${projetId}/?fichier=docx`, `risques_${codeProjet}.docx`)}>Word</Menu.Item>
+              <Menu.Item onClick={() => telecharger(`/rapports/risques/${projetId}/?fichier=pdf`, `risques_${codeProjet}.pdf`)}>{voc("PDF")}</Menu.Item>
+              <Menu.Item onClick={() => telecharger(`/rapports/risques/${projetId}/?fichier=docx`, `risques_${codeProjet}.docx`)}>{voc("Word")}</Menu.Item>
             </Menu.Dropdown>
           </Menu>
-          {modifiable && <Button leftSection={<Plus size={16} />} onClick={() => setEdition({})}>Nouveau risque</Button>}
+          {modifiable && <Button leftSection={<Plus size={16} />} onClick={() => setEdition({})}>{voc("Nouveau risque")}</Button>}
         </Group>
       </Group>
 
       <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
         <Card withBorder padding="md" radius="md">
-          <Text size="sm" fw={600} mb="xs">Matrice des risques ouverts</Text>
+          <Text size="sm" fw={600} mb="xs">{voc("Matrice des risques ouverts")}</Text>
           <Matrice risques={risques} filtre={filtre} onFiltre={setFiltre} />
           {filtre && (
-            <Button size="compact-xs" variant="subtle" mt="xs" onClick={() => setFiltre(null)}>Afficher tous les risques</Button>
+            <Button size="compact-xs" variant="subtle" mt="xs" onClick={() => setFiltre(null)}>{voc("Afficher tous les risques")}</Button>
           )}
         </Card>
         <Stack gap="sm" style={{ gridColumn: "span 2" }}>
           {risques.length === 0 && (
             <Card withBorder padding="lg" radius="md">
               <Text c="dimmed" ta="center">
-                Aucun risque identifié. Ajoutez les risques internes (organisation, finances…) et externes (sécurité, climat, prix…) qui pourraient compromettre le projet.
+                {voc("Aucun risque identifié. Ajoutez les risques internes (organisation, finances…) et externes (sécurité, climat, prix…) qui pourraient compromettre le projet.")}
               </Text>
             </Card>
           )}
@@ -397,7 +399,7 @@ export function RisquesTab({ projetId, codeProjet, modifiable }: { projetId: num
           ))}
           {!filtre && fermes > 0 && (
             <Button variant="subtle" size="xs" leftSection={voirFermes ? <ChevronUp size={14} /> : <ChevronDown size={14} />} onClick={() => setVoirFermes((x) => !x)} style={{ alignSelf: "flex-start" }}>
-              {voirFermes ? "Masquer" : "Afficher"} les risques maîtrisés ou clos ({fermes})
+              {voirFermes ? voc("Masquer") : voc("Afficher")} {voc("les risques maîtrisés ou clos (")}{fermes})
             </Button>
           )}
         </Stack>

@@ -3,6 +3,7 @@ import { CircleCheck } from "lucide-react";
 import { Badge, Group, Loader, Stack, Table, Text } from "@mantine/core";
 import { useCoherenceProjet } from "../../api/projects";
 import { voc } from "../../utils/vocabulaire";
+import { traduire } from "../../utils/i18n";
 
 /**
  * Onglet « Contrôle de cohérence » de la fiche projet : incohérences repérées dans la
@@ -27,18 +28,18 @@ export function CoherenceTab({ projetId }: { projetId: number }) {
         {voc("Points à vérifier dans les données de ce projet : « Erreur » = donnée certainement fausse (fin avant début, période future, % au-delà de 100…) ; « À vérifier » = possible mais inhabituel (dépassement de cible, dates hors du projet, saisies qui se chevauchent…).")}
       </Text>
       <Group gap="xs">
-        {erreurs > 0 && <Badge color="red" variant="light">{erreurs} erreur{erreurs > 1 ? "s" : ""}</Badge>}
+        {erreurs > 0 && <Badge color="red" variant="light">{erreurs > 1 ? voc`${erreurs} erreurs` : voc`${erreurs} erreur`}</Badge>}
         {data.length - erreurs > 0 && (
-          <Badge color="orange" variant="light">{data.length - erreurs} à vérifier</Badge>
+          <Badge color="orange" variant="light">{data.length - erreurs} {voc("à vérifier")}</Badge>
         )}
       </Group>
       <Table fz="sm" verticalSpacing={6} striped>
         <Table.Thead>
           <Table.Tr>
-            <Table.Th w={110}>Gravité</Table.Th>
-            <Table.Th w={120}>Domaine</Table.Th>
-            <Table.Th>Élément</Table.Th>
-            <Table.Th>Problème</Table.Th>
+            <Table.Th w={110}>{voc("Gravité")}</Table.Th>
+            <Table.Th w={120}>{voc("Domaine")}</Table.Th>
+            <Table.Th>{voc("Élément")}</Table.Th>
+            <Table.Th>{voc("Problème")}</Table.Th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
@@ -46,12 +47,12 @@ export function CoherenceTab({ projetId }: { projetId: number }) {
             <Table.Tr key={n}>
               <Table.Td>
                 <Badge color={i.gravite === "erreur" ? "red" : "orange"} variant="light">
-                  {i.gravite === "erreur" ? "Erreur" : "À vérifier"}
+                  {i.gravite === "erreur" ? voc("Erreur") : voc("À vérifier")}
                 </Badge>
               </Table.Td>
-              <Table.Td>{i.categorie}</Table.Td>
+              <Table.Td>{voc(i.categorie)}</Table.Td>
               <Table.Td>{i.lien ? <Link to={i.lien}>{i.element}</Link> : i.element}</Table.Td>
-              <Table.Td>{i.message}</Table.Td>
+              <Table.Td>{traduire(i.message)}</Table.Td>
             </Table.Tr>
           ))}
         </Table.Tbody>

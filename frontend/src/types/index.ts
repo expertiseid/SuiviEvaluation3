@@ -45,6 +45,8 @@ export interface User {
   /** En clair, ex : « Partenaire de consortium — ONG X » (lecture seule). */
   structure_libelle?: string;
   niveau_acces: NiveauAcces;
+  /** Langue de l'interface choisie (vide : celle de l'organisation). */
+  langue: string;
   telephone: string;
   zones_affectees: number[];
   is_active: boolean;
@@ -237,6 +239,8 @@ export interface RecapAxesCadreStrategique {
     ancetres: number[];
     taux_physique: number | null;
     taux_financier: number | null;
+    date_debut: string | null;
+    date_fin: string | null;
   }[];
 }
 
@@ -300,6 +304,8 @@ export interface SousActivite {
   /** Méthode « tâches pondérées » : poids de la tâche et niveau d'achèvement saisi (0 à 100). */
   poids: string | null;
   avancement: string | null;
+  /** Attributs libres de l'organisation (« Responsable », « Lieu »…). */
+  attributs: Record<string, string>;
 }
 
 export type MethodeCalcul = "QUANTITE" | "TACHES" | "JALONS" | "LIVRABLES" | "BINAIRE" | "MANUELLE";
@@ -376,6 +382,8 @@ export interface Activite {
   activite_parent: number | null;
   code_activite: string;
   libelle: string;
+  /** Attributs libres de l'organisation (« Responsable », « Lieu »…). */
+  attributs: Record<string, string>;
   description: string;
   statut: StatutActivite;
   commentaire: string;
@@ -492,6 +500,8 @@ export interface Projet {
   elements_capitalisation: string;
   methode_calcul: MethodeCalcul | "";
   methode_agregation: MethodeAgregation | "";
+  /** Ordre des attributs libres de la planification (colonnes du fichier importé, puis ajoutés). */
+  ordre_attributs: string[];
   /** Éléments de premier niveau de la planification, chacun avec ses `enfants`. */
   activites: Activite[];
 }

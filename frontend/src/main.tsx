@@ -2,12 +2,16 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createTheme, MantineProvider } from "@mantine/core";
+import { createTheme, DirectionProvider, MantineProvider, Table } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import { ModalsProvider } from "@mantine/modals";
 import { DateInput, DatePickerInput, DatesProvider } from "@mantine/dates";
 import dayjs from "dayjs";
 import "dayjs/locale/fr";
+import "dayjs/locale/en-gb";
+import "dayjs/locale/ar";
+import "dayjs/locale/es";
+import "dayjs/locale/de";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 
 import "@fontsource/inter/400.css";
@@ -19,13 +23,13 @@ import "@mantine/notifications/styles.css";
 import "@mantine/dates/styles.css";
 import "./index.css";
 
-import App from "./App";
 import { AuthProvider } from "./auth/AuthContext";
+import { demarrerLangue, estRtl, langue } from "./utils/i18n";
 
-// Dates en français partout : noms des mois et jours, semaine commençant le lundi,
+// Dates dans la langue de l'interface (noms des mois et jours), semaine commençant le lundi,
 // affichage et saisie au clavier au format JJ/MM/AAAA.
 dayjs.extend(customParseFormat);
-dayjs.locale("fr");
+const LOCALES_DAYJS = { fr: "fr", en: "en-gb", ar: "ar", es: "es", de: "de" } as const;
 
 function lireDateSaisie(texte: string): string | null {
   const date = dayjs(texte.trim(), ["DD/MM/YYYY", "D/M/YYYY", "DD-MM-YYYY", "YYYY-MM-DD"], true);
@@ -54,24 +58,36 @@ const theme = createTheme({
     Button: { defaultProps: { radius: "md" } },
     DateInput: DateInput.extend({ defaultProps: { valueFormat: "DD/MM/YYYY", dateParser: lireDateSaisie } }),
     DatePickerInput: DatePickerInput.extend({ defaultProps: { valueFormat: "DD/MM/YYYY" } }),
+    // Lignes des tableaux bien visibles (par défaut : gris très clair).
+    Table: Table.extend({ vars: () => ({ table: { "--table-border-color": "var(--mantine-color-gray-5)" } }) }),
   },
 });
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <MantineProvider theme={theme} defaultColorScheme="light">
-      <DatesProvider settings={{ locale: "fr", firstDayOfWeek: 1 }}>
-        <Notifications />
-        <ModalsProvider>
-          <QueryClientProvider client={queryClient}>
-            <BrowserRouter>
-              <AuthProvider>
-                <App />
-              </AuthProvider>
-            </BrowserRouter>
-          </QueryClientProvider>
-        </ModalsProvider>
-      </DatesProvider>
-    </MantineProvider>
-  </StrictMode>,
-);
+// La langue est connue avant l'affichage : l'application (et ses textes) est chargée ensuite.
+async function demarrer() {
+  await demarrerLangue();
+  dayjs.locale(LOCALES_DAYJS[langue()]);
+  const { default: App } = await import("./App");
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <DirectionProvider initialDirection={estRtl() ? "rtl" : "ltr"} detectDirection={false}>
+        <MantineProvider theme={theme} defaultColorScheme="light">
+          <DatesProvider settings={{ locale: LOCALES_DAYJS[langue()], firstDayOfWeek: 1 }}>
+            <Notifications />
+            <ModalsProvider>
+              <QueryClientProvider client={queryClient}>
+                <BrowserRouter>
+                  <AuthProvider>
+                    <App />
+                  </AuthProvider>
+                </BrowserRouter>
+              </QueryClientProvider>
+            </ModalsProvider>
+          </DatesProvider>
+        </MantineProvider>
+      </DirectionProvider>
+    </StrictMode>,
+  );
+}
+
+void demarrer();

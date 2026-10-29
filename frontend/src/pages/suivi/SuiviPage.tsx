@@ -23,11 +23,11 @@ export function SuiviPage() {
     <Stack gap="md">
       <Group justify="space-between" align="flex-start">
         <div>
-          <TitreRubrique route="/suivi" defaut="Suivi" />
+          <TitreRubrique route="/suivi" defaut={voc("Suivi")} />
           <Text c="dimmed" size="sm">
             {voc("Choisis un projet pour saisir le réel et suivre son évolution dans le temps.")}</Text>
         </div>
-        <Tooltip label="Actualiser">
+        <Tooltip label={voc("Actualiser")}>
           <ActionIcon variant="light" size="lg" onClick={() => refetch()} loading={isFetching}>
             <RefreshCw size={18} />
           </ActionIcon>
@@ -44,7 +44,7 @@ export function SuiviPage() {
 
       <Card withBorder padding="md" radius="md">
         {isLoading ? (
-          <Text c="dimmed">Chargement…</Text>
+          <Text c="dimmed">{voc("Chargement…")}</Text>
         ) : !projets || projets.length === 0 ? (
           <EmptyState icon={<Activity size={32} strokeWidth={1.5} />} message={voc("Aucun projet pour le moment.")} />
         ) : projetsFiltres.length === 0 ? (
@@ -54,10 +54,10 @@ export function SuiviPage() {
             <Table striped highlightOnHover verticalSpacing="sm">
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th tt="uppercase" fz="xs" c="dimmed">Code</Table.Th>
-                  <Table.Th tt="uppercase" fz="xs" c="dimmed">Nom</Table.Th>
-                  <Table.Th tt="uppercase" fz="xs" c="dimmed">Statut</Table.Th>
-                  <Table.Th tt="uppercase" fz="xs" c="dimmed">Période</Table.Th>
+                  <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Code")}</Table.Th>
+                  <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Nom")}</Table.Th>
+                  <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Statut")}</Table.Th>
+                  <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Période")}</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>

@@ -12,7 +12,7 @@ export function DocumentsGlobauxPage() {
   return (
     <Stack gap="lg">
       <div>
-        <TitreRubrique route="/documents" defaut="Documents" />
+        <TitreRubrique route="/documents" defaut={voc("Documents")} />
         <Text c="dimmed">{voc("Documents libres, sans rattachement à un projet en particulier.")}</Text>
       </div>
       <DocumentsTab />

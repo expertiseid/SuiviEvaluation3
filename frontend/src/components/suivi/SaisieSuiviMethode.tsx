@@ -5,9 +5,9 @@ import { voc } from "../../utils/vocabulaire";
 import { SaisiePointSuiviForm } from "./SaisiePointSuiviForm";
 
 const STATUTS_ACTIVITE = [
-  { value: "NON_REALISEE", label: "Non réalisée" },
-  { value: "EN_COURS", label: "En cours" },
-  { value: "REALISEE", label: "Réalisée" },
+  { value: "NON_REALISEE", label: voc("Non réalisée") },
+  { value: "EN_COURS", label: voc("En cours") },
+  { value: "REALISEE", label: voc("Réalisée") },
 ];
 
 /**

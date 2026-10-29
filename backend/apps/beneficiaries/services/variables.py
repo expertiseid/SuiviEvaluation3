@@ -5,6 +5,8 @@ affichage, et « NA » pour une variable qui ne concerne pas le projet (exports,
 import datetime
 from decimal import Decimal, InvalidOperation
 
+from apps.core.langues import vers_francais
+
 NA = "NA"
 OUI = ("oui", "o", "yes", "y", "1", "true", "vrai")
 NON = ("non", "n", "no", "0", "false", "faux")
@@ -50,7 +52,7 @@ def normaliser(variable, valeur):
     if variable.type == T.OUI_NON:
         if isinstance(valeur, bool):
             return valeur
-        texte = str(valeur).strip().lower()
+        texte = vers_francais(str(valeur).strip()).lower()
         if texte in OUI:
             return True
         if texte in NON:

@@ -47,11 +47,11 @@ export function ProjetsListPage() {
   return (
     <Stack gap="md">
       <Group justify="space-between">
-        <TitreRubrique route="/projets" defaut="Projets" />
+        <TitreRubrique route="/projets" defaut={voc("Projets")} />
         <Group gap="xs">
           <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />
           <Button variant="light" leftSection={<FileSpreadsheet size={16} />} onClick={() => setModalImportOuvert(true)}>
-            Importer depuis Excel
+            {voc("Importer depuis Excel")}
           </Button>
           <Button onClick={() => setModalOpen(true)}>{voc("Nouveau projet")}</Button>
         </Group>
@@ -67,7 +67,7 @@ export function ProjetsListPage() {
 
       <Card withBorder padding="md" radius="md">
         {isLoading ? (
-          <Text c="dimmed">Chargement…</Text>
+          <Text c="dimmed">{voc("Chargement…")}</Text>
         ) : !projets || projets.length === 0 ? (
           <EmptyState icon={<FolderKanban size={32} strokeWidth={1.5} />} message={voc("Aucun projet pour le moment.")} />
         ) : projetsFiltres.length === 0 ? (
@@ -77,10 +77,10 @@ export function ProjetsListPage() {
             <Table striped highlightOnHover verticalSpacing="sm">
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th tt="uppercase" fz="xs" c="dimmed">Code</Table.Th>
-                  <Table.Th tt="uppercase" fz="xs" c="dimmed">Nom</Table.Th>
-                  <Table.Th tt="uppercase" fz="xs" c="dimmed">Statut</Table.Th>
-                  <Table.Th tt="uppercase" fz="xs" c="dimmed">Période</Table.Th>
+                  <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Code")}</Table.Th>
+                  <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Nom")}</Table.Th>
+                  <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Statut")}</Table.Th>
+                  <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Période")}</Table.Th>
                   <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Chef de projet")}</Table.Th>
                   <Table.Th />
                 </Table.Tr>

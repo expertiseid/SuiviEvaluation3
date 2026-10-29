@@ -4,6 +4,7 @@ import { ActionIcon, Loader, Stack, Tooltip as Bulle } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { Circle, CircleMarker, Tooltip, useMap } from "react-leaflet";
 import L from "leaflet";
+import { voc } from "../../utils/vocabulaire";
 
 /**
  * Boutons de la carte, sous le zoom : plein écran (de l'encadré `cible`) et « Ma position »
@@ -40,7 +41,7 @@ export function OutilsCarte({ cible }: { cible: HTMLElement | null }) {
 
   function localiser() {
     if (!navigator.geolocation) {
-      notifications.show({ message: "Votre navigateur ne permet pas la géolocalisation.", color: "orange" });
+      notifications.show({ message: voc("Votre navigateur ne permet pas la géolocalisation."), color: "orange" });
       return;
     }
     setRecherche(true);
@@ -55,8 +56,8 @@ export function OutilsCarte({ cible }: { cible: HTMLElement | null }) {
         setRecherche(false);
         notifications.show({
           message: erreur.code === erreur.PERMISSION_DENIED
-            ? "Position refusée : autorisez la localisation pour ce site dans votre navigateur."
-            : "Position introuvable pour le moment (GPS désactivé ou signal faible).",
+            ? voc("Position refusée : autorisez la localisation pour ce site dans votre navigateur.")
+            : voc("Position introuvable pour le moment (GPS désactivé ou signal faible)."),
           color: "orange",
         });
       },
@@ -68,13 +69,13 @@ export function OutilsCarte({ cible }: { cible: HTMLElement | null }) {
     <>
       <div ref={boutons} style={{ position: "absolute", top: 80, left: 10, zIndex: 1000 }}>
         <Stack gap={4}>
-          <Bulle label={pleinEcran ? "Quitter le plein écran" : "Plein écran"} position="right">
-            <ActionIcon variant="default" size="lg" onClick={basculerPleinEcran} aria-label="Plein écran">
+          <Bulle label={pleinEcran ? voc("Quitter le plein écran") : voc("Plein écran")} position="right">
+            <ActionIcon variant="default" size="lg" onClick={basculerPleinEcran} aria-label={voc("Plein écran")}>
               {pleinEcran ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
             </ActionIcon>
           </Bulle>
-          <Bulle label="Ma position" position="right">
-            <ActionIcon variant="default" size="lg" onClick={localiser} aria-label="Ma position">
+          <Bulle label={voc("Ma position")} position="right">
+            <ActionIcon variant="default" size="lg" onClick={localiser} aria-label={voc("Ma position")}>
               {recherche ? <Loader size={14} /> : <LocateFixed size={16} />}
             </ActionIcon>
           </Bulle>
@@ -84,7 +85,7 @@ export function OutilsCarte({ cible }: { cible: HTMLElement | null }) {
         <>
           <Circle center={[position.lat, position.lng]} radius={position.precision} pathOptions={{ color: "#1c7ed6", weight: 1, fillOpacity: 0.1 }} interactive={false} />
           <CircleMarker center={[position.lat, position.lng]} radius={8} pathOptions={{ color: "#fff", weight: 3, fillColor: "#1c7ed6", fillOpacity: 1 }}>
-            <Tooltip direction="top" permanent>Vous êtes ici (± {Math.round(position.precision)} m)</Tooltip>
+            <Tooltip direction="top" permanent>{voc("Vous êtes ici (±")} {Math.round(position.precision)} m)</Tooltip>
           </CircleMarker>
         </>
       )}

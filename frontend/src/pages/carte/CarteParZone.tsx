@@ -21,8 +21,7 @@ function DetailZone({ z, niveau }: { z: SyntheseZone; niveau: string }) {
     <div style={{ minWidth: 300 }}>
       <Text fw={700} size="sm">{niveau} {z.nom}</Text>
       <Text size="xs" c="dimmed" mb={6}>
-        {z.projets} {voc("projet")}{z.projets > 1 ? "s" : ""} · {z.beneficiaires} {voc("bénéficiaire")}{z.beneficiaires > 1 ? "s" : ""} ({z.femmes} F, {z.hommes} H) ·
-        budget {formatValeur("budget", z.budget)} FCFA
+        {z.projets} {z.projets > 1 ? voc("projets") : voc("projet")} · {z.beneficiaires} {z.beneficiaires > 1 ? voc("bénéficiaires") : voc("bénéficiaire")} ({voc`${z.femmes} F, ${z.hommes} H`}) · {voc("budget")} {formatValeur("budget", z.budget)} {voc("FCFA")}
       </Text>
       {z.liste_projets.length > 0 && (
         <div style={{ maxHeight: 240, overflowY: "auto" }}>
@@ -30,9 +29,9 @@ function DetailZone({ z, niveau }: { z: SyntheseZone; niveau: string }) {
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>{voc("Projet")}</Table.Th>
-                <Table.Th>Physique</Table.Th>
-                <Table.Th>Financier</Table.Th>
-                <Table.Th ta="right">Bénéf.</Table.Th>
+                <Table.Th>{voc("Physique")}</Table.Th>
+                <Table.Th>{voc("Financier")}</Table.Th>
+                <Table.Th ta="right">{voc("Bénéf.")}</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -113,7 +112,7 @@ export function LegendeParZone({ indicateur, libelle, zones }: { indicateur: Ind
     ? [
         bornes[0] - 1 <= 1 ? "1" : `1 – ${bornes[0] - 1}`,
         ...bornes.slice(0, 3).map((b, i) => (bornes[i + 1] - 1 > b ? `${b} – ${bornes[i + 1] - 1}` : `${b}`)),
-        `${bornes[3]} et plus`,
+        voc`${bornes[3]} et plus`,
       ]
     : [
         `< ${formatValeur(indicateur, bornes[0])}`,
@@ -131,7 +130,7 @@ export function LegendeParZone({ indicateur, libelle, zones }: { indicateur: Ind
       ))}
       <Group gap={4}>
         <span style={{ width: 16, height: 11, background: SANS_DONNEE, border: "1px solid #9ca3af", display: "inline-block" }} />
-        <Text size="xs" c="dimmed">aucun</Text>
+        <Text size="xs" c="dimmed">{voc("aucun")}</Text>
       </Group>
     </Group>
   );

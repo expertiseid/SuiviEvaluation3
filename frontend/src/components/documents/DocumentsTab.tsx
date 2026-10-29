@@ -33,6 +33,7 @@ import { EmptyState } from "../common/EmptyState";
 import type { GedDocument } from "../../types";
 import { voc } from "../../utils/vocabulaire";
 
+import { locale } from "../../utils/i18n";
 function NouveauDossierModal({
   projetId,
   opened,
@@ -53,21 +54,21 @@ function NouveauDossierModal({
     if (!nom.trim()) return;
     try {
       const dossier = await createDossier.mutateAsync({ nom: nom.trim(), projet: projetId ?? null });
-      notifications.show({ message: "Dossier créé", color: "green" });
+      notifications.show({ message: voc("Dossier créé"), color: "green" });
       setNom("");
       onCree?.(dossier.id);
       onClose();
     } catch (error) {
-      notifications.show({ message: messageErreurApi(error, "Erreur lors de la création du dossier"), color: "red" });
+      notifications.show({ message: messageErreurApi(error, voc("Erreur lors de la création du dossier")), color: "red" });
     }
   }
 
   return (
-    <Modal opened={opened} onClose={onClose} title="Nouveau dossier">
+    <Modal opened={opened} onClose={onClose} title={voc("Nouveau dossier")}>
       <Stack gap="sm">
-        <TextInput label="Nom du dossier" value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
+        <TextInput label={voc("Nom du dossier")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
         <Group justify="flex-end">
-          <Button onClick={handleCreate} loading={createDossier.isPending}>Créer</Button>
+          <Button onClick={handleCreate} loading={createDossier.isPending}>{voc("Créer")}</Button>
         </Group>
       </Stack>
     </Modal>
@@ -96,7 +97,7 @@ function NouveauDocumentModal({
 
   async function handleCreate() {
     if (!nom.trim() || !fichier) {
-      notifications.show({ message: "Nom et fichier requis.", color: "orange" });
+      notifications.show({ message: voc("Nom et fichier requis."), color: "orange" });
       return;
     }
     const formData = new FormData();
@@ -124,10 +125,10 @@ function NouveauDocumentModal({
     <Modal opened={opened} onClose={onClose} title={voc("Nouveau document")}>
       <Stack gap="sm">
         <TextInput label={voc("Nom du document")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
-        <TextInput label="Type" placeholder="Ex : Note, Contrat, Rapport bailleur…" value={typeDocument} onChange={(e) => setTypeDocument(e.currentTarget.value)} />
-        <FileInput label="Fichier" value={fichier} onChange={setFichier} required />
+        <TextInput label={voc("Type")} placeholder={voc("Ex : Note, Contrat, Rapport bailleur…")} value={typeDocument} onChange={(e) => setTypeDocument(e.currentTarget.value)} />
+        <FileInput label={voc("Fichier")} value={fichier} onChange={setFichier} required />
         <Group justify="flex-end">
-          <Button onClick={handleCreate} loading={createDocument.isPending}>Ajouter</Button>
+          <Button onClick={handleCreate} loading={createDocument.isPending}>{voc("Ajouter")}</Button>
         </Group>
       </Stack>
     </Modal>
@@ -147,38 +148,38 @@ function VersionsModal({ documentId, opened, onClose }: { documentId: number | n
     formData.append("commentaire", commentaire);
     try {
       await nouvelleVersion.mutateAsync({ documentId, formData });
-      notifications.show({ message: "Nouvelle version ajoutée", color: "green" });
+      notifications.show({ message: voc("Nouvelle version ajoutée"), color: "green" });
       setFichier(null);
       setCommentaire("");
     } catch {
-      notifications.show({ message: "Erreur lors de l'ajout de la version", color: "red" });
+      notifications.show({ message: voc("Erreur lors de l'ajout de la version"), color: "red" });
     }
   }
 
   return (
-    <Modal opened={opened} onClose={onClose} title="Historique des versions" size="lg">
+    <Modal opened={opened} onClose={onClose} title={voc("Historique des versions")} size="lg">
       <Stack gap="md">
         <Card withBorder padding="sm">
-          <Text size="sm" fw={600} mb="xs">Ajouter une nouvelle version</Text>
+          <Text size="sm" fw={600} mb="xs">{voc("Ajouter une nouvelle version")}</Text>
           <Group align="flex-end">
-            <FileInput placeholder="Choisir un fichier" value={fichier} onChange={setFichier} style={{ flex: 1 }} />
-            <TextInput placeholder="Commentaire (optionnel)" value={commentaire} onChange={(e) => setCommentaire(e.currentTarget.value)} style={{ flex: 1 }} />
+            <FileInput placeholder={voc("Choisir un fichier")} value={fichier} onChange={setFichier} style={{ flex: 1 }} />
+            <TextInput placeholder={voc("Commentaire (optionnel)")} value={commentaire} onChange={(e) => setCommentaire(e.currentTarget.value)} style={{ flex: 1 }} />
             <Button leftSection={<Upload size={14} />} onClick={handleUpload} loading={nouvelleVersion.isPending}>
-              Envoyer
+              {voc("Envoyer")}
             </Button>
           </Group>
         </Card>
 
         {isLoading ? (
-          <Text c="dimmed">Chargement…</Text>
+          <Text c="dimmed">{voc("Chargement…")}</Text>
         ) : (
           <Timeline active={versions?.length ?? 0}>
             {versions?.map((v) => (
-              <Timeline.Item key={v.id} title={`Version ${v.version}`}>
-                <Text size="xs" c="dimmed">{new Date(v.created_at).toLocaleString("fr-FR")} · {v.uploaded_by_nom}</Text>
+              <Timeline.Item key={v.id} title={voc`Version ${v.version}`}>
+                <Text size="xs" c="dimmed">{new Date(v.created_at).toLocaleString(locale())} · {v.uploaded_by_nom}</Text>
                 {v.commentaire && <Text size="sm">{v.commentaire}</Text>}
                 <Text component="a" href={v.fichier} target="_blank" size="sm" c="teal.8">
-                  Télécharger cette version
+                  {voc("Télécharger cette version")}
                 </Text>
               </Timeline.Item>
             ))}
@@ -231,8 +232,8 @@ export function DocumentsTab({
   const afficherDossiers = projetId !== undefined || (activiteId === undefined && sousActiviteId === undefined);
 
   function rattachementDe(doc: GedDocument) {
-    if (doc.activite_nom) return `Activité — ${doc.activite_nom}`;
-    if (doc.sous_activite_nom) return `Sous-activité — ${doc.sous_activite_nom}`;
+    if (doc.activite_nom) return voc`Activité — ${doc.activite_nom}`;
+    if (doc.sous_activite_nom) return voc`Sous-activité — ${doc.sous_activite_nom}`;
     return voc("Projet");
   }
 
@@ -262,10 +263,10 @@ export function DocumentsTab({
         try {
           await deleteDossier.mutateAsync(Number(dossierActif));
           setDossierActif(null);
-          notifications.show({ message: "Dossier supprimé", color: "green" });
+          notifications.show({ message: voc("Dossier supprimé"), color: "green" });
         } catch (error) {
           notifications.show({
-            message: messageErreurApi(error, "Erreur lors de la suppression du dossier"),
+            message: messageErreurApi(error, voc("Erreur lors de la suppression du dossier")),
             color: "red",
           });
         }
@@ -279,7 +280,7 @@ export function DocumentsTab({
         {afficherDossiers ? (
           <Group gap={6}>
             <Select
-              placeholder="Tous les dossiers"
+              placeholder={voc("Tous les dossiers")}
               data={dossiers?.map((d) => ({ value: String(d.id), label: d.nom })) ?? []}
               value={dossierActif}
               onChange={setDossierActif}
@@ -287,7 +288,7 @@ export function DocumentsTab({
               w={260}
             />
             {dossierActif && (
-              <Tooltip label="Supprimer ce dossier">
+              <Tooltip label={voc("Supprimer ce dossier")}>
                 <ActionIcon variant="subtle" color="red" loading={deleteDossier.isPending} onClick={handleSupprimerDossier}>
                   <Trash2 size={16} />
                 </ActionIcon>
@@ -300,7 +301,7 @@ export function DocumentsTab({
         <Group gap="xs">
           {afficherDossiers && (
             <Button variant="light" leftSection={<FolderPlus size={16} />} onClick={() => setModalDossier(true)}>
-              Nouveau dossier
+              {voc("Nouveau dossier")}
             </Button>
           )}
           <Button leftSection={<Upload size={16} />} onClick={() => setModalDocument(true)}>
@@ -310,7 +311,7 @@ export function DocumentsTab({
 
       <Card withBorder padding="md" radius="md">
         {isLoading ? (
-          <Text c="dimmed">Chargement…</Text>
+          <Text c="dimmed">{voc("Chargement…")}</Text>
         ) : !documents || documents.length === 0 ? (
           <EmptyState
             icon={<FileText size={32} strokeWidth={1.5} />}
@@ -329,11 +330,11 @@ export function DocumentsTab({
             <Table verticalSpacing="sm" striped highlightOnHover>
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th tt="uppercase" fz="xs" c="dimmed">Nom</Table.Th>
-                  {afficherRattachement && <Table.Th tt="uppercase" fz="xs" c="dimmed">Rattaché à</Table.Th>}
-                  <Table.Th tt="uppercase" fz="xs" c="dimmed">Type</Table.Th>
-                  <Table.Th tt="uppercase" fz="xs" c="dimmed">Version</Table.Th>
-                  <Table.Th tt="uppercase" fz="xs" c="dimmed">Ajouté par</Table.Th>
+                  <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Nom")}</Table.Th>
+                  {afficherRattachement && <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Rattaché à")}</Table.Th>}
+                  <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Type")}</Table.Th>
+                  <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Version")}</Table.Th>
+                  <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Ajouté par")}</Table.Th>
                   <Table.Th />
                 </Table.Tr>
               </Table.Thead>
@@ -352,17 +353,17 @@ export function DocumentsTab({
                     {afficherRattachement && <Table.Td>{rattachementDe(doc)}</Table.Td>}
                     <Table.Td>{doc.type_document || "—"}</Table.Td>
                     <Table.Td>
-                      <Badge variant="light" size="sm">v{doc.derniere_version?.version ?? 1} · {doc.nombre_versions} version(s)</Badge>
+                      <Badge variant="light" size="sm">v{doc.derniere_version?.version ?? 1} · {doc.nombre_versions} {voc("version(s)")}</Badge>
                     </Table.Td>
                     <Table.Td>{doc.cree_par_nom}</Table.Td>
                     <Table.Td>
                       <Group gap={4} wrap="nowrap">
-                        <Tooltip label="Historique des versions">
+                        <Tooltip label={voc("Historique des versions")}>
                           <ActionIcon variant="subtle" onClick={() => setDocumentVersionsId(doc.id)}>
                             <History size={16} />
                           </ActionIcon>
                         </Tooltip>
-                        <Tooltip label="Supprimer">
+                        <Tooltip label={voc("Supprimer")}>
                           <ActionIcon variant="subtle" color="red" onClick={() => handleSupprimer(doc)}>
                             <Trash2 size={16} />
                           </ActionIcon>

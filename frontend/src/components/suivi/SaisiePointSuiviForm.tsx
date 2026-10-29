@@ -53,7 +53,7 @@ export function SaisiePointSuiviForm({
 
   async function handleSubmit() {
     if (!periodeDebut || !periodeFin) {
-      notifications.show({ message: "Merci de renseigner la période.", color: "orange" });
+      notifications.show({ message: voc("Merci de renseigner la période."), color: "orange" });
       return;
     }
     try {
@@ -75,7 +75,7 @@ export function SaisiePointSuiviForm({
       notifications.show({ message: enEdition ? voc("Point de suivi modifié") : voc("Point de suivi enregistré"), color: "green" });
       onDone();
     } catch (error) {
-      notifications.show({ message: messageErreurApi(error, "Erreur lors de la saisie"), color: "red" });
+      notifications.show({ message: messageErreurApi(error, voc("Erreur lors de la saisie")), color: "red" });
     }
   }
 
@@ -83,7 +83,7 @@ export function SaisiePointSuiviForm({
     <Stack gap="sm">
       <Group grow>
         <DateInput
-          label="Début de période"
+          label={voc("Début de période")}
           value={periodeDebut}
           onChange={setPeriodeDebut}
           minDate={bornes?.debut}
@@ -91,7 +91,7 @@ export function SaisiePointSuiviForm({
           required
         />
         <DateInput
-          label="Fin de période"
+          label={voc("Fin de période")}
           value={periodeFin}
           onChange={setPeriodeFin}
           minDate={bornes?.debut}
@@ -102,8 +102,8 @@ export function SaisiePointSuiviForm({
       <Group grow>
         {avecQuantite && (
         <NumberInput
-          label="Quantité réalisée pendant cette période"
-          description="Ce qui a été fait entre le début et la fin de cette période précise (pas le total depuis le début)."
+          label={voc("Quantité réalisée pendant cette période")}
+          description={voc("Ce qui a été fait entre le début et la fin de cette période précise (pas le total depuis le début).")}
           value={quantiteRealisee}
           onChange={setQuantiteRealisee}
           min={0}
@@ -111,7 +111,7 @@ export function SaisiePointSuiviForm({
         )}
         {avecBudget && (
           <NumberInput
-            label="Budget dépensé pendant cette période (FCFA)"
+            label={voc("Budget dépensé pendant cette période (FCFA)")}
             value={budgetRealise}
             onChange={setBudgetRealise}
             min={0}
@@ -120,14 +120,14 @@ export function SaisiePointSuiviForm({
       </Group>
       {avecQuantite && nouveauCumul !== null && (
         <Text size="xs" c="dimmed">
-          Total cumulé après cette saisie : {nouveauCumul}
+          {voc("Total cumulé après cette saisie :")} {nouveauCumul}
         </Text>
       )}
-      <Select label="Statut à cette date" data={statutsDisponibles} value={statut} onChange={setStatut} clearable />
-      <Textarea label="Commentaire" value={commentaire} onChange={(e) => setCommentaire(e.currentTarget.value)} />
+      <Select label={voc("Statut à cette date")} data={statutsDisponibles} value={statut} onChange={setStatut} clearable />
+      <Textarea label={voc("Commentaire")} value={commentaire} onChange={(e) => setCommentaire(e.currentTarget.value)} />
       <Group justify="flex-end">
         <Button onClick={handleSubmit} loading={createPoint.isPending || updatePoint.isPending}>
-          {enEdition ? "Enregistrer les modifications" : "Enregistrer"}
+          {enEdition ? voc("Enregistrer les modifications") : voc("Enregistrer")}
         </Button>
       </Group>
 

@@ -8,10 +8,10 @@ import type { Indicateur } from "../../types";
 import { voc } from "../../utils/vocabulaire";
 
 const FREQUENCES = [
-  { value: "MENSUELLE", label: "Mensuelle" },
-  { value: "TRIMESTRIELLE", label: "Trimestrielle" },
-  { value: "SEMESTRIELLE", label: "Semestrielle" },
-  { value: "ANNUELLE", label: "Annuelle" },
+  { value: "MENSUELLE", label: voc("Mensuelle") },
+  { value: "TRIMESTRIELLE", label: voc("Trimestrielle") },
+  { value: "SEMESTRIELLE", label: voc("Semestrielle") },
+  { value: "ANNUELLE", label: voc("Annuelle") },
 ];
 
 // Un indicateur se rattache au projet lui-même, ou à un élément de sa
@@ -80,7 +80,7 @@ export function IndicateurForm({ indicateur, onDone }: { indicateur?: Indicateur
 
   async function handleSubmit() {
     if (!libelle || !unite || !valeurCible || !frequence) {
-      notifications.show({ message: "Merci de compléter tous les champs requis.", color: "orange" });
+      notifications.show({ message: voc("Merci de compléter tous les champs requis."), color: "orange" });
       return;
     }
     const payload = {
@@ -112,18 +112,18 @@ export function IndicateurForm({ indicateur, onDone }: { indicateur?: Indicateur
 
   return (
     <Stack gap="sm">
-      <TextInput label="Libellé" value={libelle} onChange={(e) => setLibelle(e.currentTarget.value)} required />
+      <TextInput label={voc("Libellé")} value={libelle} onChange={(e) => setLibelle(e.currentTarget.value)} required />
       <Group grow>
-        <TextInput label="Unité" value={unite} onChange={(e) => setUnite(e.currentTarget.value)} required />
-        <NumberInput label="Valeur de base" value={valeurReference} onChange={setValeurReference} min={0} />
-        <NumberInput label="Valeur cible" value={valeurCible} onChange={setValeurCible} min={0} required />
+        <TextInput label={voc("Unité")} value={unite} onChange={(e) => setUnite(e.currentTarget.value)} required />
+        <NumberInput label={voc("Valeur de base")} value={valeurReference} onChange={setValeurReference} min={0} />
+        <NumberInput label={voc("Valeur cible")} value={valeurCible} onChange={setValeurCible} min={0} required />
       </Group>
-      <Select label="Fréquence de collecte" data={FREQUENCES} value={frequence} onChange={setFrequence} required />
+      <Select label={voc("Fréquence de collecte")} data={FREQUENCES} value={frequence} onChange={setFrequence} required />
 
       <Select
-        label="Rattaché à"
+        label={voc("Rattaché à")}
         description={voc("Facultatif — cherche et choisis directement le projet ou un élément de sa planification, quel que soit son niveau. L'indicateur suit la grille d'alerte (paliers/libellés/couleurs) du projet, configurable depuis Paramètres d'alerte.")}
-        placeholder="Rechercher…"
+        placeholder={voc("Rechercher…")}
         data={optionsRattachement}
         value={rattachementValue}
         onChange={setRattachementValue}
@@ -132,7 +132,7 @@ export function IndicateurForm({ indicateur, onDone }: { indicateur?: Indicateur
       />
 
       <MultiSelect
-        label="Éléments stratégiques rattachés"
+        label={voc("Éléments stratégiques rattachés")}
         description={
           cadreStrategiqueCourant
             ? voc("Limité au cadre stratégique du projet choisi ci-dessus.")
@@ -150,7 +150,7 @@ export function IndicateurForm({ indicateur, onDone }: { indicateur?: Indicateur
 
       <Group justify="flex-end">
         <Button onClick={handleSubmit} loading={createIndicateur.isPending || updateIndicateur.isPending}>
-          {enEdition ? "Enregistrer" : "Créer"}
+          {enEdition ? voc("Enregistrer") : voc("Créer")}
         </Button>
       </Group>
     </Stack>

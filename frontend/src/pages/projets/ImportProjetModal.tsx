@@ -19,7 +19,7 @@ export function ImportProjetModal({ opened, onClose }: { opened: boolean; onClos
 
   async function handleImporter() {
     if (!fichier) {
-      notifications.show({ message: "Choisis d'abord un fichier Excel.", color: "orange" });
+      notifications.show({ message: voc("Choisis d'abord un fichier Excel."), color: "orange" });
       return;
     }
     const formData = new FormData();
@@ -31,7 +31,7 @@ export function ImportProjetModal({ opened, onClose }: { opened: boolean; onClos
         notifications.show({ message: voc`Projet « ${res.projet_code} » créé`, color: "green" });
       }
     } catch {
-      notifications.show({ message: "Erreur lors de l'import — vérifie le format du fichier.", color: "red" });
+      notifications.show({ message: voc("Erreur lors de l'import — vérifie le format du fichier."), color: "red" });
     }
   }
 
@@ -42,31 +42,31 @@ export function ImportProjetModal({ opened, onClose }: { opened: boolean; onClos
           {voc("La feuille « Projet » du modèle porte sa fiche (nom, code, dates, modalités, bailleur…) en une ligne par champ. La feuille « Planification » porte sa planification : une colonne par niveau (en jaune dans le modèle, avec les noms et le nombre que tu veux, ex : Résultat → Pilier → Activité), puis Sous-activité — une seule colonne de niveau remplie par ligne.")}</Alert>
 
         <Button variant="light" leftSection={<Download size={16} />} onClick={() => telechargerModeleImportProjet()}>
-          Télécharger le modèle Excel
+          {voc("Télécharger le modèle Excel")}
         </Button>
 
         <Group align="flex-end">
           <FileInput
-            label="Fichier à importer"
-            placeholder="Choisir un fichier .xlsx"
+            label={voc("Fichier à importer")}
+            placeholder={voc("Choisir un fichier .xlsx")}
             accept=".xlsx"
             value={fichier}
             onChange={setFichier}
             style={{ flex: 1 }}
           />
           <Button leftSection={<Upload size={16} />} onClick={handleImporter} loading={importer.isPending}>
-            Importer
+            {voc("Importer")}
           </Button>
         </Group>
 
         {resultat && (
           <Stack gap="xs">
-            <Alert color={resultat.projet_id ? "green" : "orange"} title="Résultat de l'import">
+            <Alert color={resultat.projet_id ? "green" : "orange"} title={voc("Résultat de l'import")}>
               {resultat.projet_id ? (
                 <Text size="sm">
-                  {voc("Projet ")}<strong>{resultat.projet_code}</strong> créé — <strong>{resultat.elements_crees}</strong>{" "}
-                  {voc("élément(s) de planification")}{resultat.niveaux.length > 0 && <> (niveaux : {resultat.niveaux.join(" › ")})</>},{" "}
-                  <strong>{resultat.sous_activites_creees}</strong> sous-activité(s).
+                  {voc("Projet ")}<strong>{resultat.projet_code}</strong> {voc("créé —")} <strong>{resultat.elements_crees}</strong>{" "}
+                  {voc("élément(s) de planification")}{resultat.niveaux.length > 0 && <> {voc("(niveaux :")} {resultat.niveaux.join(" › ")})</>},{" "}
+                  <strong>{resultat.sous_activites_creees}</strong> {voc("sous-activité(s).")}
                 </Text>
               ) : (
                 <Text size="sm">{voc("Aucun projet créé — voir les erreurs ci-dessous.")}</Text>
@@ -74,20 +74,20 @@ export function ImportProjetModal({ opened, onClose }: { opened: boolean; onClos
             </Alert>
 
             {resultat.erreurs.length > 0 && (
-              <Alert color="red" title={`${resultat.erreurs.length} erreur(s)`}>
+              <Alert color="red" title={voc`${resultat.erreurs.length} erreur(s)`}>
                 <List size="sm">
                   {resultat.erreurs.map((e, i) => (
-                    <List.Item key={i}>Ligne {e.ligne} : {e.message}</List.Item>
+                    <List.Item key={i}>{voc("Ligne")} {e.ligne} : {e.message}</List.Item>
                   ))}
                 </List>
               </Alert>
             )}
 
             {resultat.avertissements.length > 0 && (
-              <Alert color="yellow" title={`${resultat.avertissements.length} avertissement(s)`}>
+              <Alert color="yellow" title={voc`${resultat.avertissements.length} avertissement(s)`}>
                 <List size="sm">
                   {resultat.avertissements.map((a, i) => (
-                    <List.Item key={i}>Ligne {a.ligne} : {a.message}</List.Item>
+                    <List.Item key={i}>{voc("Ligne")} {a.ligne} : {a.message}</List.Item>
                   ))}
                 </List>
               </Alert>
@@ -96,7 +96,7 @@ export function ImportProjetModal({ opened, onClose }: { opened: boolean; onClos
         )}
 
         <Group justify="flex-end">
-          <Button variant="subtle" onClick={fermer}>Fermer</Button>
+          <Button variant="subtle" onClick={fermer}>{voc("Fermer")}</Button>
         </Group>
       </Stack>
     </Modal>

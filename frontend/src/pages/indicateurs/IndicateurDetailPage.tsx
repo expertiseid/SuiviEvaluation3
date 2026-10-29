@@ -21,7 +21,7 @@ export function IndicateurDetailPage() {
   const [modalEditionOuvert, setModalEditionOuvert] = useState(false);
   const [editionActive, setEditionActive] = useState(false);
 
-  if (isLoading || !indicateur) return <Text>Chargement…</Text>;
+  if (isLoading || !indicateur) return <Text>{voc("Chargement…")}</Text>;
 
   function handleSupprimer() {
     if (!indicateur) return;
@@ -45,8 +45,8 @@ export function IndicateurDetailPage() {
         <div>
           <Title order={2}>{indicateur.libelle}</Title>
           <Text c="dimmed">
-            Unité : {indicateur.unite} · Valeur de base : {indicateur.valeur_reference ?? "—"} · Cible :{" "}
-            {indicateur.valeur_cible} · Fréquence : {indicateur.frequence_collecte}
+            {voc("Unité :")} {indicateur.unite} {voc("· Valeur de base :")} {indicateur.valeur_reference ?? "—"} {voc("· Cible :")}{" "}
+            {indicateur.valeur_cible} {voc("· Fréquence :")} {indicateur.frequence_collecte}
           </Text>
           <Text c="dimmed" size="sm">
             {voc("La saisie des valeurs réalisées et leur évolution dans le temps se font depuis le module Suivi.")}</Text>

@@ -31,20 +31,21 @@ import { messageErreurApi } from "../../utils/erreurs";
 import { voc } from "../../utils/vocabulaire";
 import type { Activite, JalonLivrable } from "../../types";
 
+import { locale } from "../../utils/i18n";
 const nombre = (v: string | number | null | undefined) => (v === null || v === undefined || v === "" ? null : Number(v));
 
 function afficherErreur(error: unknown) {
-  notifications.show({ message: messageErreurApi(error, "Erreur lors de l'enregistrement"), color: "red" });
+  notifications.show({ message: messageErreurApi(error, voc("Erreur lors de l'enregistrement")), color: "red" });
 }
 
 /** Total des poids, signalé s'il ne fait pas 100 %. */
 function TotalPoids({ poids }: { poids: (string | null)[] }) {
   const saisis = poids.filter((p) => p !== null && p !== "");
-  if (saisis.length === 0) return <Text size="xs" c="dimmed">Aucun poids saisi : poids égaux.</Text>;
+  if (saisis.length === 0) return <Text size="xs" c="dimmed">{voc("Aucun poids saisi : poids égaux.")}</Text>;
   const total = saisis.reduce((s, p) => s + Number(p), 0);
   return (
     <Text size="xs" c={Math.abs(total - 100) < 0.01 ? "teal" : "orange"}>
-      Total des poids : {total.toLocaleString("fr-FR")} %{Math.abs(total - 100) < 0.01 ? "" : " (attendu : 100 %)"}
+      {voc("Total des poids :")} {total.toLocaleString(locale())} %{Math.abs(total - 100) < 0.01 ? "" : voc(" (attendu : 100 %)")}
     </Text>
   );
 }
@@ -52,7 +53,7 @@ function TotalPoids({ poids }: { poids: (string | null)[] }) {
 function TachesPonderees({ element, modifiable }: { element: Activite; modifiable: boolean }) {
   const maj = useUpdateSousActivite();
   if (element.sous_activites.length === 0) {
-    return <Text size="sm" c="dimmed">Aucune sous-activité : ajoute-en depuis la planification (bouton ≡+).</Text>;
+    return <Text size="sm" c="dimmed">{voc("Aucune sous-activité : ajoute-en depuis la planification (bouton ≡+).")}</Text>;
   }
   const enregistrer = (id: number, champ: "poids" | "avancement", valeur: string | number) =>
     maj.mutate({ id, payload: { [champ]: valeur === "" ? null : valeur } }, { onError: afficherErreur });
@@ -61,9 +62,9 @@ function TachesPonderees({ element, modifiable }: { element: Activite; modifiabl
       <Table withTableBorder verticalSpacing={4}>
         <Table.Thead>
           <Table.Tr>
-            <Table.Th>Tâche (sous-activité)</Table.Th>
-            <Table.Th w={110}>Poids (%)</Table.Th>
-            <Table.Th w={150}>Avancement (%)</Table.Th>
+            <Table.Th>{voc("Tâche (sous-activité)")}</Table.Th>
+            <Table.Th w={110}>{voc("Poids (%)")}</Table.Th>
+            <Table.Th w={150}>{voc("Avancement (%)")}</Table.Th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
@@ -86,7 +87,7 @@ function TachesPonderees({ element, modifiable }: { element: Activite; modifiabl
                   size="xs"
                   min={0}
                   max={100}
-                  placeholder="Auto"
+                  placeholder={voc("Auto")}
                   defaultValue={nombre(sa.avancement) ?? ""}
                   disabled={!modifiable}
                   onBlur={(e) => enregistrer(sa.id, "avancement", e.currentTarget.value)}
@@ -98,7 +99,7 @@ function TachesPonderees({ element, modifiable }: { element: Activite; modifiabl
       </Table>
       <TotalPoids poids={element.sous_activites.map((s) => s.poids)} />
       <Text size="xs" c="dimmed">
-        Avancement vide : déduit des quantités de la sous-activité, sinon de son statut (Terminée = 100 %).
+        {voc("Avancement vide : déduit des quantités de la sous-activité, sinon de son statut (Terminée = 100 %).")}
       </Text>
     </Stack>
   );
@@ -129,9 +130,9 @@ function JalonsOuLivrables({
         <Table withTableBorder verticalSpacing={4}>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th>{estJalon ? "Jalon" : "Livrable"}</Table.Th>
-              <Table.Th w={100}>Poids (%)</Table.Th>
-              <Table.Th w={140}>{estJalon ? "Achèvement (%)" : "Validé"}</Table.Th>
+              <Table.Th>{estJalon ? voc("Jalon") : voc("Livrable")}</Table.Th>
+              <Table.Th w={100}>{voc("Poids (%)")}</Table.Th>
+              <Table.Th w={140}>{estJalon ? voc("Achèvement (%)") : voc("Validé")}</Table.Th>
               {modifiable && <Table.Th w={40} />}
             </Table.Tr>
           </Table.Thead>
@@ -140,7 +141,7 @@ function JalonsOuLivrables({
               <Table.Tr key={j.id}>
                 <Table.Td>
                   <Text size="sm">{j.libelle}</Text>
-                  {j.date_prevue && <Text size="xs" c="dimmed">Prévu le {dayjs(j.date_prevue).format("DD/MM/YYYY")}</Text>}
+                  {j.date_prevue && <Text size="xs" c="dimmed">{voc("Prévu le")} {dayjs(j.date_prevue).format("DD/MM/YYYY")}</Text>}
                 </Table.Td>
                 <Table.Td>
                   <NumberInput
@@ -167,7 +168,7 @@ function JalonsOuLivrables({
                         checked={j.valide}
                         disabled={!modifiable}
                         onChange={(e) => majChamp(j, { valide: e.currentTarget.checked })}
-                        label={j.valide ? "Validé" : "Non validé"}
+                        label={j.valide ? voc("Validé") : voc("Non validé")}
                       />
                       {j.valide && (
                         <Text size="xs" c="dimmed">
@@ -179,7 +180,7 @@ function JalonsOuLivrables({
                 </Table.Td>
                 {modifiable && (
                   <Table.Td>
-                    <Tooltip label="Supprimer">
+                    <Tooltip label={voc("Supprimer")}>
                       <ActionIcon
                         size="sm"
                         variant="subtle"
@@ -201,12 +202,12 @@ function JalonsOuLivrables({
         <Group gap="xs" align="flex-end">
           <TextInput
             size="xs"
-            label={estJalon ? "Nouveau jalon" : "Nouveau livrable"}
+            label={estJalon ? voc("Nouveau jalon") : voc("Nouveau livrable")}
             value={libelle}
             onChange={(e) => setLibelle(e.currentTarget.value)}
             style={{ flex: 1 }}
           />
-          <NumberInput size="xs" label="Poids (%)" min={0} value={poids} onChange={setPoids} w={100} />
+          <NumberInput size="xs" label={voc("Poids (%)")} min={0} value={poids} onChange={setPoids} w={100} />
           <Button
             size="xs"
             variant="light"
@@ -226,7 +227,7 @@ function JalonsOuLivrables({
               )
             }
           >
-            Ajouter
+            {voc("Ajouter")}
           </Button>
         </Group>
       )}
@@ -244,11 +245,11 @@ function SaisieManuelle({ element, modifiable }: { element: Activite; modifiable
     <Stack gap={6}>
       {modifiable && (
         <Group gap="xs" align="flex-end">
-          <NumberInput size="xs" label="Taux (%)" min={0} max={100} value={taux} onChange={setTaux} w={110} />
-          <DateInput size="xs" label="À la date du" value={date} onChange={setDate} valueFormat="DD/MM/YYYY" w={140} />
+          <NumberInput size="xs" label={voc("Taux (%)")} min={0} max={100} value={taux} onChange={setTaux} w={110} />
+          <DateInput size="xs" label={voc("À la date du")} value={date} onChange={setDate} valueFormat="DD/MM/YYYY" w={140} />
           <Textarea
             size="xs"
-            label="Commentaire"
+            label={voc("Commentaire")}
             autosize
             minRows={1}
             value={commentaire}
@@ -272,15 +273,15 @@ function SaisieManuelle({ element, modifiable }: { element: Activite; modifiable
               )
             }
           >
-            Enregistrer
+            {voc("Enregistrer")}
           </Button>
         </Group>
       )}
       <Text size="xs" fw={600} c="dimmed" mt={4}>
-        Historique des taux saisis
+        {voc("Historique des taux saisis")}
       </Text>
       {(historique ?? []).length === 0 ? (
-        <Text size="sm" c="dimmed">Aucun taux saisi.</Text>
+        <Text size="sm" c="dimmed">{voc("Aucun taux saisi.")}</Text>
       ) : (
         <Table withTableBorder verticalSpacing={4}>
           <Table.Tbody>
@@ -288,7 +289,7 @@ function SaisieManuelle({ element, modifiable }: { element: Activite; modifiable
               <Table.Tr key={t.id}>
                 <Table.Td w={110}>{dayjs(t.date).format("DD/MM/YYYY")}</Table.Td>
                 <Table.Td w={80}>
-                  <Text size="sm" fw={i === 0 ? 700 : 400}>{Number(t.taux).toLocaleString("fr-FR")} %</Text>
+                  <Text size="sm" fw={i === 0 ? 700 : 400}>{Number(t.taux).toLocaleString(locale())} %</Text>
                 </Table.Td>
                 <Table.Td>
                   <Text size="xs" c="dimmed">
@@ -315,7 +316,7 @@ export function AvancementModal({ element, modifiable }: { element: Activite; mo
     <Stack gap="sm">
       <Group gap="sm">
         <Text size="xl" fw={700}>
-          {element.taux_realisation === null ? "—" : `${element.taux_realisation.toLocaleString("fr-FR")} %`}
+          {element.taux_realisation === null ? "—" : `${element.taux_realisation.toLocaleString(locale())} %`}
         </Text>
         <Badge variant="light">{libelleMethodeEffective(methode)}</Badge>
       </Group>
@@ -341,7 +342,7 @@ export function AvancementModal({ element, modifiable }: { element: Activite; mo
       )}
       {methode === "BINAIRE" && (
         <Text size="sm">
-          Statut actuel : <strong>{element.statut === "REALISEE" ? "Réalisée" : element.statut === "EN_COURS" ? "En cours" : "Non réalisée"}</strong>
+          {voc("Statut actuel :")} <strong>{element.statut === "REALISEE" ? voc("Réalisée") : element.statut === "EN_COURS" ? voc("En cours") : voc("Non réalisée")}</strong>
         </Text>
       )}
     </Stack>

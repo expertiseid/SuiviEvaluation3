@@ -1,5 +1,6 @@
 import { Text } from "@mantine/core";
 import { modals } from "@mantine/modals";
+import { voc } from "../../utils/vocabulaire";
 
 /**
  * Remplace window.confirm() par une boîte de dialogue du thème de la
@@ -16,10 +17,10 @@ export function confirmerSuppression({
   labelConfirmer?: string;
 }) {
   modals.openConfirmModal({
-    title: "Confirmer la suppression",
+    title: voc("Confirmer la suppression"),
     centered: true,
     children: <Text size="sm">{message}</Text>,
-    labels: { confirm: labelConfirmer, cancel: "Annuler" },
+    labels: { confirm: labelConfirmer, cancel: voc("Annuler") },
     confirmProps: { color: "red" },
     onConfirm,
   });

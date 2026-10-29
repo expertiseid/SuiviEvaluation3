@@ -10,6 +10,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.accounts.constants import ROLE_CHARGE_SE
+from apps.core.langues import dans_la_langue_demandee
 from apps.core.permissions import HasGlobalVisibilityOrAssigned, IsAdminOrReadOnly, peut_modifier
 from apps.core.vocabulaire import v
 from apps.notifications.models import Notification
@@ -93,6 +94,7 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
         supprimer_beneficiaire_cascade(instance)
 
     @action(detail=False, methods=["get"], url_path="modele-import")
+    @dans_la_langue_demandee
     def modele_import(self, request):
         # Colonnes de localisation aux niveaux administratifs du pays choisi (?pays=BF par défaut).
         # Avec ?projet= : variables personnalisées de ce projet seulement.
@@ -107,6 +109,7 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
         return response
 
     @action(detail=False, methods=["get"], url_path="exporter")
+    @dans_la_langue_demandee
     def exporter(self, request):
         """
         Export Excel ou PDF (?fichier=excel|pdf — « format » est réservé par DRF) : ?projets=1,3 pour un ou
@@ -183,6 +186,7 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
         return HttpResponse(qr_svg(self.get_object(), self._origine(), echelle=6), content_type="image/svg+xml")
 
     @action(detail=False, methods=["get"])
+    @dans_la_langue_demandee
     def cartes(self, request):
         """Cartes à imprimer (PDF) : `?ids=1,2,3`, ou `?projet=` pour tous les inscrits d'un projet."""
         queryset = self.get_queryset()
@@ -225,6 +229,7 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
         return Response(donnees)
 
     @action(detail=False, methods=["get"], url_path="carte/export")
+    @dans_la_langue_demandee
     def carte_export(self, request):
         """
         Carte imprimable (modèle des cartes officielles HIMO) : mêmes filtres que la carte

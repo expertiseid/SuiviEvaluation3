@@ -7,6 +7,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.accounts.constants import ROLE_CHARGE_SE
+from apps.core.langues import dans_la_langue_demandee
 from apps.core.permissions import AvertissementsSaisieMixin, HasGlobalVisibilityOrAssigned, IsAdminOrReadOnly, SuppressionAtomiqueMixin
 from apps.core.vocabulaire import v
 from apps.notifications.models import Notification
@@ -186,6 +187,7 @@ class IndicateurViewSet(viewsets.ModelViewSet):
         return Response([{"id": i.id, "libelle": i.libelle} for i in indicateurs])
 
     @action(detail=False, methods=["get"], url_path="modele-import")
+    @dans_la_langue_demandee
     def modele_import(self, request):
         contenu = generer_modele_import_indicateurs()
         response = HttpResponse(

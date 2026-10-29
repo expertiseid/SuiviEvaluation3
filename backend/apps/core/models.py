@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from simple_history.models import HistoricalRecords
 
 
 class TimestampedModel(models.Model):
@@ -48,3 +49,27 @@ class SaisieApprouvable(models.Model):
     class Meta:
         abstract = True
 
+
+
+# Langues de l'interface (le français est la langue source des textes).
+LANGUES = (("fr", "Français"), ("en", "English"), ("ar", "العربية"), ("es", "Español"), ("de", "Deutsch"))
+CODES_LANGUES = tuple(code for code, _ in LANGUES)
+
+
+class TraductionCorrigee(TimestampedModel):
+    """
+    Traduction d'un texte de l'interface corrigée par l'Administrateur : elle remplace celle
+    fournie avec l'application (`source` : le texte français tel qu'il est dans le code).
+    """
+
+    langue = models.CharField(max_length=5, choices=LANGUES)
+    source = models.TextField()
+    traduction = models.TextField()
+    modifie_par = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    history = HistoricalRecords()
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("langue", "source"), name="traduction_langue_source_unique")]
+
+    def __str__(self):
+        return f"[{self.langue}] {self.source[:40]}"

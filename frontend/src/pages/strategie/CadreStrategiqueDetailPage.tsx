@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowDown, ArrowLeft, ArrowUp, ChevronDown, ChevronRight, Download, FileSpreadsheet, Gauge, Layers, ListTree, Pencil, Plus, Search, Settings2, Trash2, Wallet } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Download, FileSpreadsheet, Gauge, Layers, ListTree, Pencil, Plus, Search, Settings2, Trash2, Wallet } from "lucide-react";
 import {
   ActionIcon,
   Badge,
@@ -12,6 +12,7 @@ import {
   Modal,
   MultiSelect,
   Progress,
+  SegmentedControl,
   Select,
   SimpleGrid,
   Stack,
@@ -40,6 +41,7 @@ import {
 } from "../../api/strategy";
 import { BoutonModeEdition } from "../../components/common/BoutonModeEdition";
 import { EmptyState } from "../../components/common/EmptyState";
+import { CadreTableau } from "./CadreTableau";
 import { StatCard } from "../../components/common/StatCard";
 import { STATUS_HEX } from "../../components/common/statusPalette";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
@@ -54,7 +56,9 @@ import { messageErreurApi } from "../../utils/erreurs";
 import { usePartiesPrenantes, useStructures } from "../../api/organisation";
 import { optionsStructures } from "../../utils/organisation";
 import { useAccesModules } from "../../utils/modules";
+import { type ModeAffichage, useModeAffichage } from "../../utils/affichage";
 
+import { locale } from "../../utils/i18n";
 // Une couleur par rang de niveau (pas par nom) — fixe et cohérente sur tout
 // l'écran, pour distinguer visuellement "à quel niveau appartient ce nœud"
 // d'un coup d'œil, quel que soit le nom que l'organisation lui a donné.
@@ -70,11 +74,11 @@ function useCouleursParNiveau(niveaux: TypeNiveau[]) {
 }
 
 function messageErreurSuppression(defaut: string) {
-  return `${defaut} — vérifie qu'aucun élément n'en dépend encore.`;
+  return voc`${defaut} — vérifie qu'aucun élément n'en dépend encore.`;
 }
 
 function formatNombre(valeur: string | number): string {
-  return Number(valeur).toLocaleString("fr-FR", { maximumFractionDigits: 2 });
+  return Number(valeur).toLocaleString(locale(), { maximumFractionDigits: 2 });
 }
 
 // ================== Onglet 1 : Configuration des niveaux ==================
@@ -111,38 +115,38 @@ function NiveauModal({
         id: niveauExistant.id,
         payload: { nom_niveau: nomNiveau.trim(), saut_niveau_autorise: sautAutorise, aide_code: aideCode },
       });
-      notifications.show({ message: "Niveau modifié", color: "green" });
+      notifications.show({ message: voc("Niveau modifié"), color: "green" });
       onClose();
     } catch {
-      notifications.show({ message: "Erreur lors de la modification du niveau", color: "red" });
+      notifications.show({ message: voc("Erreur lors de la modification du niveau"), color: "red" });
     }
   }
 
   return (
-    <Modal opened={opened} onClose={onClose} onExitTransitionEnd={reinitialiser} title="Modifier le niveau">
+    <Modal opened={opened} onClose={onClose} onExitTransitionEnd={reinitialiser} title={voc("Modifier le niveau")}>
       <Stack gap="sm">
         <TextInput
-          label="Nom du niveau"
-          description="Ex : « Orientation stratégique », « Priorité », « Pilier »..."
+          label={voc("Nom du niveau")}
+          description={voc("Ex : « Orientation stratégique », « Priorité », « Pilier »...")}
           value={nomNiveau}
           onChange={(e) => setNomNiveau(e.currentTarget.value)}
           required
         />
         <TextInput
-          label="Aide à la saisie du code"
-          description="Exemple affiché comme indication (facultatif)"
-          placeholder="Ex : OS1"
+          label={voc("Aide à la saisie du code")}
+          description={voc("Exemple affiché comme indication (facultatif)")}
+          placeholder={voc("Ex : OS1")}
           value={aideCode}
           onChange={(e) => setAideCode(e.currentTarget.value)}
         />
         <Switch
-          label="Autoriser à sauter ce niveau"
-          description="Un élément du niveau suivant pourra alors être rattaché directement à un ancêtre plus haut, sans passer par ce niveau."
+          label={voc("Autoriser à sauter ce niveau")}
+          description={voc("Un élément du niveau suivant pourra alors être rattaché directement à un ancêtre plus haut, sans passer par ce niveau.")}
           checked={sautAutorise}
           onChange={(e) => setSautAutorise(e.currentTarget.checked)}
         />
         <Group justify="flex-end">
-          <Button onClick={handleSave} loading={updateNiveau.isPending}>Enregistrer</Button>
+          <Button onClick={handleSave} loading={updateNiveau.isPending}>{voc("Enregistrer")}</Button>
         </Group>
       </Stack>
     </Modal>
@@ -198,13 +202,13 @@ function ConfigurationNiveaux({
         }),
       );
     } catch {
-      notifications.show({ message: "Erreur lors du réordonnancement", color: "red" });
+      notifications.show({ message: voc("Erreur lors du réordonnancement"), color: "red" });
     }
   }
 
   async function ajouterNiveau() {
     if (!nomNouveauNiveau.trim()) {
-      notifications.show({ message: "Le nom du niveau est requis.", color: "orange" });
+      notifications.show({ message: voc("Le nom du niveau est requis."), color: "orange" });
       return;
     }
     const dernier = tries[tries.length - 1];
@@ -215,23 +219,23 @@ function ConfigurationNiveaux({
         ordre: dernier ? dernier.ordre + 1 : 1,
         niveau_parent: dernier ? dernier.id : null,
       });
-      notifications.show({ message: "Niveau ajouté", color: "green" });
+      notifications.show({ message: voc("Niveau ajouté"), color: "green" });
       setNomNouveauNiveau("");
     } catch {
-      notifications.show({ message: "Erreur lors de l'ajout du niveau", color: "red" });
+      notifications.show({ message: voc("Erreur lors de l'ajout du niveau"), color: "red" });
     }
   }
 
   function supprimerNiveau(niveau: TypeNiveau) {
     confirmerSuppression({
-      message: `Supprimer le niveau « ${niveau.nom_niveau} » ? Cette action est irréversible.`,
+      message: voc`Supprimer le niveau « ${niveau.nom_niveau} » ? Cette action est irréversible.`,
       onConfirm: async () => {
         try {
           await deleteNiveau.mutateAsync(niveau.id);
-          notifications.show({ message: "Niveau supprimé", color: "green" });
+          notifications.show({ message: voc("Niveau supprimé"), color: "green" });
         } catch {
           notifications.show({
-            message: messageErreurSuppression("Impossible de supprimer ce niveau"),
+            message: messageErreurSuppression(voc("Impossible de supprimer ce niveau")),
             color: "red",
           });
         }
@@ -241,12 +245,12 @@ function ConfigurationNiveaux({
 
   return (
     <Card withBorder padding="lg" radius="md">
-      <Text fw={600} mb="xs">Configuration de la structuration</Text>
+      <Text fw={600} mb="xs">{voc("Configuration de la structuration")}</Text>
       <Text size="sm" c="dimmed" mb="sm">
         {voc("Nous définissons ici les niveaux propres à ce cadre stratégique (nombre, noms, ordre) — par exemple « Plan » → « Orientation » → « Axe » → « Activité », ou « Priorité » → « Sous-priorité ». Cette structuration reste propre à ce cadre, sans effet sur les autres.")}</Text>
 
       {tries.length === 0 ? (
-        <EmptyState icon={<ListTree size={32} strokeWidth={1.5} />} message="Aucun niveau défini pour l'instant — commence par en ajouter un ci-dessous." />
+        <EmptyState icon={<ListTree size={32} strokeWidth={1.5} />} message={voc("Aucun niveau défini pour l'instant — commence par en ajouter un ci-dessous.")} />
       ) : (
         <Stack gap={6} mb="sm">
           {tries.map((niveau, index) => (
@@ -256,24 +260,24 @@ function ConfigurationNiveaux({
                 <Text size="sm" fw={500}>{niveau.nom_niveau}</Text>
               </Group>
               <Group gap={2} wrap="nowrap">
-                <Tooltip label="Monter">
+                <Tooltip label={voc("Monter")}>
                   <ActionIcon size="sm" variant="subtle" disabled={index === 0} onClick={() => deplacer(index, -1)}>
                     <ArrowUp size={13} />
                   </ActionIcon>
                 </Tooltip>
-                <Tooltip label="Descendre">
+                <Tooltip label={voc("Descendre")}>
                   <ActionIcon size="sm" variant="subtle" disabled={index === tries.length - 1} onClick={() => deplacer(index, 1)}>
                     <ArrowDown size={13} />
                   </ActionIcon>
                 </Tooltip>
                 {editionActive && (
                 <Group gap={2} wrap="nowrap">
-                  <Tooltip label="Modifier">
+                  <Tooltip label={voc("Modifier")}>
                     <ActionIcon size="sm" variant="subtle" onClick={() => setNiveauEnEdition(niveau)}>
                       <Pencil size={13} />
                     </ActionIcon>
                   </Tooltip>
-                  <Tooltip label="Supprimer">
+                  <Tooltip label={voc("Supprimer")}>
                     <ActionIcon size="sm" variant="subtle" color="red" loading={deleteNiveau.isPending} onClick={() => supprimerNiveau(niveau)}>
                       <Trash2 size={13} />
                     </ActionIcon>
@@ -289,14 +293,14 @@ function ConfigurationNiveaux({
       <Group gap="xs" align="flex-end">
         <TextInput
           size="xs"
-          label="Ajouter un niveau"
-          placeholder="Ex : Orientation stratégique"
+          label={voc("Ajouter un niveau")}
+          placeholder={voc("Ex : Orientation stratégique")}
           value={nomNouveauNiveau}
           onChange={(e) => setNomNouveauNiveau(e.currentTarget.value)}
           style={{ flex: 1 }}
         />
         <Button size="xs" variant="light" onClick={ajouterNiveau} loading={createNiveau.isPending}>
-          Ajouter
+          {voc("Ajouter")}
         </Button>
       </Group>
 
@@ -398,11 +402,11 @@ function ElementModal({
 
   async function handleSave() {
     if (!nom.trim()) {
-      notifications.show({ message: "Le nom est requis.", color: "orange" });
+      notifications.show({ message: voc("Le nom est requis."), color: "orange" });
       return;
     }
     if (elementExistant && niveauParentAttendu && !parentId) {
-      notifications.show({ message: `Choisis un « ${niveauParentAttendu.nom_niveau} » de rattachement.`, color: "orange" });
+      notifications.show({ message: voc`Choisis un « ${niveauParentAttendu.nom_niveau} » de rattachement.`, color: "orange" });
       return;
     }
     try {
@@ -417,7 +421,7 @@ function ElementModal({
             ...liensOrganisation,
           },
         });
-        notifications.show({ message: "Élément modifié", color: "green" });
+        notifications.show({ message: voc("Élément modifié"), color: "green" });
       } else if (typeNiveau) {
         await createElement.mutateAsync({
           type_niveau: typeNiveau.id,
@@ -427,11 +431,11 @@ function ElementModal({
           description,
           ...liensOrganisation,
         });
-        notifications.show({ message: "Élément ajouté", color: "green" });
+        notifications.show({ message: voc("Élément ajouté"), color: "green" });
       }
       onClose();
     } catch (error) {
-      notifications.show({ message: messageErreurApi(error, "Erreur lors de l'enregistrement"), color: "red" });
+      notifications.show({ message: messageErreurApi(error, voc("Erreur lors de l'enregistrement")), color: "red" });
     }
   }
 
@@ -442,20 +446,20 @@ function ElementModal({
       opened={opened}
       onClose={onClose}
       onExitTransitionEnd={reinitialiser}
-      title={elementExistant ? "Modifier l'élément" : niveauActif ? `Ajouter — ${niveauActif.nom_niveau}` : "Ajouter un élément"}
+      title={elementExistant ? voc("Modifier l'élément") : niveauActif ? voc`Ajouter — ${niveauActif.nom_niveau}` : voc("Ajouter un élément")}
     >
       <Stack gap="sm">
         <TextInput
-          label="Code"
-          placeholder={(elementExistant ? undefined : niveauActif?.aide_code) || "Ex : 1.1"}
+          label={voc("Code")}
+          placeholder={(elementExistant ? undefined : niveauActif?.aide_code) || voc("Ex : 1.1")}
           value={code}
           onChange={(e) => setCode(e.currentTarget.value)}
         />
-        <TextInput label="Nom" value={nom} onChange={(e) => setNom(e.currentTarget.value)} required />
-        <Textarea label="Description" minRows={2} value={description} onChange={(e) => setDescription(e.currentTarget.value)} />
+        <TextInput label={voc("Nom")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} required />
+        <Textarea label={voc("Description")} minRows={2} value={description} onChange={(e) => setDescription(e.currentTarget.value)} />
         {elementExistant && niveauParentAttendu && (
           <Select
-            label={`Rattaché à (${niveauParentAttendu.nom_niveau})`}
+            label={voc`Rattaché à (${niveauParentAttendu.nom_niveau})`}
             data={optionsParent}
             value={parentId}
             onChange={setParentId}
@@ -464,9 +468,9 @@ function ElementModal({
           />
         )}
         <MultiSelect
-          label="Contribue aussi à"
+          label={voc("Contribue aussi à")}
           description={voc("Autres éléments d'un niveau supérieur (de ce cadre ou d'un autre document) auxquels celui-ci contribue. Seul le rattachement principal compte dans les totaux.")}
-          placeholder="Aucun"
+          placeholder={voc("Aucun")}
           data={optionsSecondaires}
           value={parentsSecondaires}
           onChange={setParentsSecondaires}
@@ -475,7 +479,7 @@ function ElementModal({
         />
         <MultiSelect
           label={voc("Services chargés")}
-          placeholder="Aucun"
+          placeholder={voc("Aucun")}
           data={optionsStructures(structures ?? [])}
           value={structuresIds}
           onChange={setStructuresIds}
@@ -483,8 +487,8 @@ function ElementModal({
           clearable
         />
         <MultiSelect
-          label="Parties prenantes"
-          placeholder="Aucune"
+          label={voc("Parties prenantes")}
+          placeholder={voc("Aucune")}
           data={(partiesPrenantes ?? []).map((p) => ({ value: String(p.id), label: p.nom }))}
           value={partiesIds}
           onChange={setPartiesIds}
@@ -493,11 +497,68 @@ function ElementModal({
         />
         <Group justify="flex-end">
           <Button onClick={handleSave} loading={createElement.isPending || updateElement.isPending}>
-            {elementExistant ? "Enregistrer" : "Ajouter"}
+            {elementExistant ? voc("Enregistrer") : voc("Ajouter")}
           </Button>
         </Group>
       </Stack>
     </Modal>
+  );
+}
+
+function ActionsElement({ element, onModifier }: { element: ElementStrategique; onModifier: (element: ElementStrategique) => void }) {
+  const deleteElement = useDeleteElementStrategique();
+
+  function supprimer() {
+    confirmerSuppression({
+      message: voc`Supprimer « ${element.nom} » ? Cette action est irréversible.`,
+      onConfirm: async () => {
+        try {
+          await deleteElement.mutateAsync(element.id);
+          notifications.show({ message: voc("Élément supprimé"), color: "green" });
+        } catch {
+          notifications.show({
+            message: messageErreurSuppression(voc("Impossible de supprimer cet élément")),
+            color: "red",
+          });
+        }
+      },
+    });
+  }
+
+  return (
+    <Group gap={4} wrap="nowrap">
+      <Tooltip label={voc("Modifier")}>
+        <ActionIcon size="sm" variant="subtle" onClick={() => onModifier(element)}>
+          <Pencil size={13} />
+        </ActionIcon>
+      </Tooltip>
+      <Tooltip label={voc("Supprimer")}>
+        <ActionIcon size="sm" variant="subtle" color="red" loading={deleteElement.isPending} onClick={supprimer}>
+          <Trash2 size={13} />
+        </ActionIcon>
+      </Tooltip>
+    </Group>
+  );
+}
+
+/** Contribution secondaire, services et parties prenantes d'un élément (arbre et tableau). */
+function DetailsElement({ element }: { element: ElementStrategique }) {
+  return (
+    <>
+      {(element.parents_secondaires_noms?.length ?? 0) > 0 && (
+        <Text size="xs" c="dimmed">{voc("Contribue aussi à :")} {element.parents_secondaires_noms?.join(" · ")}</Text>
+      )}
+      {((element.structures_noms?.length ?? 0) > 0 || (element.parties_prenantes_noms?.length ?? 0) > 0) && (
+        <Group gap={4} mt={2}>
+          {element.structures_noms?.map((n) => (
+            <Badge key={`s-${n}`} size="xs" variant="light" color="indigo">{n}</Badge>
+          ))}
+          {element.parties_prenantes_noms?.map((n) => (
+            <Badge key={`p-${n}`} size="xs" variant="outline" color="gray">{n}</Badge>
+          ))}
+        </Group>
+      )}
+    </>
   );
 }
 
@@ -512,6 +573,8 @@ function NoeudElement({
   onModifier,
   idsVisibles,
   editionActive,
+  replies,
+  onBasculer,
 }: {
   element: ElementStrategique;
   niveaux: TypeNiveau[];
@@ -523,9 +586,11 @@ function NoeudElement({
   onModifier: (element: ElementStrategique) => void;
   idsVisibles: Set<number> | null;
   editionActive: boolean;
+  /** Éléments repliés : leurs éléments en dessous sont masqués. */
+  replies: Set<number>;
+  onBasculer: (id: number) => void;
 }) {
-  const deleteElement = useDeleteElementStrategique();
-  const [ouvert, setOuvert] = useState(true);
+  const ouvert = !replies.has(element.id);
   const enfants = (enfantsParParent.get(element.id) ?? []).filter((e) => !idsVisibles || idsVisibles.has(e.id));
   const enChercheOuvert = idsVisibles ? true : ouvert;
   // Niveau à proposer aux ENFANTS de cet élément pour LEUR propre bouton
@@ -536,23 +601,6 @@ function NoeudElement({
     ? niveaux.find((n) => n.niveau_parent === niveauEnfant.id)
     : undefined;
   const couleur = couleurs.get(element.type_niveau) ?? "gray";
-
-  function supprimer() {
-    confirmerSuppression({
-      message: `Supprimer « ${element.nom} » ? Cette action est irréversible.`,
-      onConfirm: async () => {
-        try {
-          await deleteElement.mutateAsync(element.id);
-          notifications.show({ message: "Élément supprimé", color: "green" });
-        } catch {
-          notifications.show({
-            message: messageErreurSuppression("Impossible de supprimer cet élément"),
-            color: "red",
-          });
-        }
-      },
-    });
-  }
 
   const estRacine = profondeur === 0;
 
@@ -572,7 +620,7 @@ function NoeudElement({
       <Group justify="space-between" gap={6} wrap="nowrap">
         <Group gap={6} wrap="nowrap">
           {enfants.length > 0 && (
-            <ActionIcon size="sm" variant="subtle" color="gray" onClick={() => setOuvert((v) => !v)}>
+            <ActionIcon size="sm" variant="subtle" color="gray" onClick={() => onBasculer(element.id)}>
               {ouvert ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             </ActionIcon>
           )}
@@ -582,40 +630,15 @@ function NoeudElement({
               {element.code && <Text span fw={700}>{element.code} — </Text>}
               {element.nom}
             </Text>
-            {(element.parents_secondaires_noms?.length ?? 0) > 0 && (
-              <Text size="xs" c="dimmed">Contribue aussi à : {element.parents_secondaires_noms?.join(" · ")}</Text>
-            )}
-            {((element.structures_noms?.length ?? 0) > 0 || (element.parties_prenantes_noms?.length ?? 0) > 0) && (
-              <Group gap={4} mt={2}>
-                {element.structures_noms?.map((n) => (
-                  <Badge key={`s-${n}`} size="xs" variant="light" color="indigo">{n}</Badge>
-                ))}
-                {element.parties_prenantes_noms?.map((n) => (
-                  <Badge key={`p-${n}`} size="xs" variant="outline" color="gray">{n}</Badge>
-                ))}
-              </Group>
-            )}
+            <DetailsElement element={element} />
           </div>
         </Group>
-        {editionActive && (
-        <Group gap={4} wrap="nowrap">
-          <Tooltip label="Modifier">
-            <ActionIcon size="sm" variant="subtle" onClick={() => onModifier(element)}>
-              <Pencil size={13} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label="Supprimer">
-            <ActionIcon size="sm" variant="subtle" color="red" loading={deleteElement.isPending} onClick={supprimer}>
-              <Trash2 size={13} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
-        )}
+        {editionActive && <ActionsElement element={element} onModifier={onModifier} />}
       </Group>
 
       {niveauEnfant && (
         <Button size="xs" variant="subtle" leftSection={<Plus size={13} />} mt={6} onClick={() => onAjouter(niveauEnfant, element)}>
-          {`Ajouter ${niveauEnfant.nom_niveau}`}
+          {voc`Ajouter ${niveauEnfant.nom_niveau}`}
         </Button>
       )}
 
@@ -633,6 +656,8 @@ function NoeudElement({
             onModifier={onModifier}
             idsVisibles={idsVisibles}
             editionActive={editionActive}
+            replies={replies}
+            onBasculer={onBasculer}
           />
         ))}
       </Collapse>
@@ -641,10 +666,12 @@ function NoeudElement({
 }
 
 function Arborescence({
+  cadreId,
   niveaux,
   elements,
   editionActive,
 }: {
+  cadreId: number;
   niveaux: TypeNiveau[];
   elements: ElementStrategique[];
   editionActive: boolean;
@@ -652,6 +679,15 @@ function Arborescence({
   const [modalAjout, setModalAjout] = useState<{ typeNiveau: TypeNiveau; parent: ElementStrategique | null } | null>(null);
   const [elementEnEdition, setElementEnEdition] = useState<ElementStrategique | null>(null);
   const [recherche, setRecherche] = useState("");
+  const [affichage, setAffichage] = useModeAffichage("cadre-strategique");
+  // Éléments repliés dans l'arbre (tout est déplié à l'ouverture).
+  const [replies, setReplies] = useState<Set<number>>(new Set());
+  const basculer = (id: number) =>
+    setReplies((avant) => {
+      const apres = new Set(avant);
+      if (!apres.delete(id)) apres.add(id);
+      return apres;
+    });
   const couleurs = useCouleursParNiveau(niveaux);
 
   // Niveau racine = celui sans niveau_parent (rang 1 de la chaîne).
@@ -695,34 +731,77 @@ function Arborescence({
   return (
     <Card withBorder padding="lg" radius="md" mih={480}>
       <Group justify="space-between" mb="sm">
-        <Text fw={600}>Arborescence</Text>
+        <Text fw={600}>{voc("Arborescence")}</Text>
         {niveauRacine && (
           <Button size="sm" leftSection={<Plus size={14} />} onClick={() => setModalAjout({ typeNiveau: niveauRacine, parent: null })}>
-            {arbreVide ? `Créer ${niveauRacine.nom_niveau}` : `Ajouter ${niveauRacine.nom_niveau}`}
+            {arbreVide ? voc`Créer ${niveauRacine.nom_niveau}` : voc`Ajouter ${niveauRacine.nom_niveau}`}
           </Button>
         )}
       </Group>
 
       {!arbreVide && (
-        <TextInput
-          placeholder="Rechercher un élément…"
-          leftSection={<Search size={15} />}
-          value={recherche}
-          onChange={(e) => setRecherche(e.currentTarget.value)}
-          maw={400}
-          mb="sm"
-        />
+        <Group mb="sm" justify="space-between">
+          <TextInput
+            placeholder={voc("Rechercher un élément…")}
+            leftSection={<Search size={15} />}
+            value={recherche}
+            onChange={(e) => setRecherche(e.currentTarget.value)}
+            w={400}
+            maw="100%"
+          />
+          <Group gap="xs">
+            {affichage === "arbre" && !recherche.trim() && (
+              <>
+                <Button
+                  size="compact-xs"
+                  variant="subtle"
+                  leftSection={<ChevronsDownUp size={14} />}
+                  onClick={() => setReplies(new Set(elements.filter((e) => enfantsParParent.has(e.id)).map((e) => e.id)))}
+                >
+                  {voc("Tout replier")}
+                </Button>
+                <Button
+                  size="compact-xs"
+                  variant="subtle"
+                  leftSection={<ChevronsUpDown size={14} />}
+                  onClick={() => setReplies(new Set())}
+                >
+                  {voc("Tout déplier")}
+                </Button>
+              </>
+            )}
+            <SegmentedControl
+              size="xs"
+              value={affichage}
+              onChange={(v) => setAffichage(v as ModeAffichage)}
+              data={[
+                { value: "arbre", label: voc("Arbre") },
+                { value: "tableau", label: voc("Tableau") },
+              ]}
+            />
+          </Group>
+        </Group>
       )}
 
       {!niveauRacine ? (
         <EmptyState
           icon={<ListTree size={32} strokeWidth={1.5} />}
-          message="Aucun niveau n'est configuré — passe d'abord par l'onglet « Configuration des niveaux »."
+          message={voc("Aucun niveau n'est configuré — passe d'abord par l'onglet « Configuration des niveaux ».")}
         />
       ) : arbreVide ? (
-        <EmptyState icon={<ListTree size={32} strokeWidth={1.5} />} message={`Aucun élément « ${niveauRacine.nom_niveau} » pour le moment.`} />
+        <EmptyState icon={<ListTree size={32} strokeWidth={1.5} />} message={voc`Aucun élément « ${niveauRacine.nom_niveau} » pour le moment.`} />
       ) : racinesFiltrees.length === 0 ? (
-        <EmptyState icon={<ListTree size={32} strokeWidth={1.5} />} message="Aucun élément ne correspond à la recherche." />
+        <EmptyState icon={<ListTree size={32} strokeWidth={1.5} />} message={voc("Aucun élément ne correspond à la recherche.")} />
+      ) : affichage === "tableau" ? (
+        <CadreTableau
+          cadreId={cadreId}
+          niveaux={niveaux}
+          racines={racinesFiltrees}
+          enfants={(e) => (enfantsParParent.get(e.id) ?? []).filter((x) => !idsVisibles || idsVisibles.has(x.id))}
+          editionActive={editionActive}
+          onModifier={setElementEnEdition}
+          onAjouter={(typeNiveau, parent) => setModalAjout({ typeNiveau, parent })}
+        />
       ) : (
         <Box style={{ overflowX: "auto" }}>
           <Stack gap="lg">
@@ -739,6 +818,8 @@ function Arborescence({
               onModifier={setElementEnEdition}
               idsVisibles={idsVisibles}
               editionActive={editionActive}
+              replies={replies}
+              onBasculer={basculer}
             />
           ))}
           </Stack>
@@ -803,7 +884,7 @@ function TableauActivites({
 }: {
   activites: RecapCadreStrategique["projets"][number]["activites"];
 }) {
-  if (activites.length === 0) return <Text size="sm" c="dimmed">Aucune activité.</Text>;
+  if (activites.length === 0) return <Text size="sm" c="dimmed">{voc("Aucune activité.")}</Text>;
 
   const lignes = activites.map((a) => {
     const budgetAlloue = a.budget_alloue !== null ? Number(a.budget_alloue) : null;
@@ -818,17 +899,17 @@ function TableauActivites({
       <Table verticalSpacing={6} fz="sm" withTableBorder withColumnBorders striped>
         <Table.Thead>
           <Table.Tr>
-            <Table.Th rowSpan={2} {...ENTETE}>Activité</Table.Th>
-            <Table.Th colSpan={3} {...ENTETE} ta="center">Physique</Table.Th>
-            <Table.Th colSpan={3} {...ENTETE} ta="center">Financier (FCFA)</Table.Th>
+            <Table.Th rowSpan={2} {...ENTETE}>{voc("Activité")}</Table.Th>
+            <Table.Th colSpan={3} {...ENTETE} ta="center">{voc("Physique")}</Table.Th>
+            <Table.Th colSpan={3} {...ENTETE} ta="center">{voc("Financier (FCFA)")}</Table.Th>
           </Table.Tr>
           <Table.Tr>
-            <Table.Th {...ENTETE} ta="right">Cible</Table.Th>
-            <Table.Th {...ENTETE} ta="right">Réalisé</Table.Th>
-            <Table.Th {...ENTETE} ta="right">Taux</Table.Th>
-            <Table.Th {...ENTETE} ta="right">Budget alloué</Table.Th>
-            <Table.Th {...ENTETE} ta="right">Dépensé</Table.Th>
-            <Table.Th {...ENTETE} ta="right">Taux</Table.Th>
+            <Table.Th {...ENTETE} ta="right">{voc("Cible")}</Table.Th>
+            <Table.Th {...ENTETE} ta="right">{voc("Réalisé")}</Table.Th>
+            <Table.Th {...ENTETE} ta="right">{voc("Taux")}</Table.Th>
+            <Table.Th {...ENTETE} ta="right">{voc("Budget alloué")}</Table.Th>
+            <Table.Th {...ENTETE} ta="right">{voc("Dépensé")}</Table.Th>
+            <Table.Th {...ENTETE} ta="right">{voc("Taux")}</Table.Th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
@@ -853,7 +934,7 @@ function TableauActivites({
         </Table.Tbody>
         <Table.Tfoot bg="gray.1">
           <Table.Tr>
-            <Table.Th>Total ({lignes.length} activité{lignes.length > 1 ? "s" : ""})</Table.Th>
+            <Table.Th>{lignes.length > 1 ? voc`Total (${lignes.length} activités)` : voc`Total (${lignes.length} activité)`}</Table.Th>
             <Table.Th {...CHIFFRE} c="dimmed" fw={400}>—</Table.Th>
             <Table.Th {...CHIFFRE} c="dimmed" fw={400}>—</Table.Th>
             <Table.Th><TauxCell taux={moyenne(lignes.map((l) => l.taux_realisation))} /></Table.Th>
@@ -864,8 +945,7 @@ function TableauActivites({
         </Table.Tfoot>
       </Table>
       <Text size="xs" c="dimmed" mt={4}>
-        Taux physique total : moyenne des taux des activités (les quantités ont des unités différentes et ne
-        s'additionnent pas).
+        {voc("Taux physique total : moyenne des taux des activités (les quantités ont des unités différentes et ne s'additionnent pas).")}
       </Text>
     </Table.ScrollContainer>
   );
@@ -885,9 +965,9 @@ function TableauIndicateurs({ indicateurs }: { indicateurs: RecapCadreStrategiqu
         <Table.Thead>
           <Table.Tr>
             <Table.Th {...ENTETE}>{voc("Indicateur")}</Table.Th>
-            <Table.Th {...ENTETE} ta="right">Cible</Table.Th>
-            <Table.Th {...ENTETE} ta="right">Réalisé</Table.Th>
-            <Table.Th {...ENTETE} ta="right">Taux</Table.Th>
+            <Table.Th {...ENTETE} ta="right">{voc("Cible")}</Table.Th>
+            <Table.Th {...ENTETE} ta="right">{voc("Réalisé")}</Table.Th>
+            <Table.Th {...ENTETE} ta="right">{voc("Taux")}</Table.Th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
@@ -902,7 +982,7 @@ function TableauIndicateurs({ indicateurs }: { indicateurs: RecapCadreStrategiqu
         </Table.Tbody>
         <Table.Tfoot bg="gray.1">
           <Table.Tr>
-            <Table.Th>Total ({lignes.length} {voc(" indicateur")}{lignes.length > 1 ? "s" : ""}) — taux moyen</Table.Th>
+            <Table.Th>{lignes.length > 1 ? voc`Total (${lignes.length} indicateurs) — taux moyen` : voc`Total (${lignes.length} indicateur) — taux moyen`}</Table.Th>
             <Table.Th {...CHIFFRE} c="dimmed" fw={400}>—</Table.Th>
             <Table.Th {...CHIFFRE} c="dimmed" fw={400}>—</Table.Th>
             <Table.Th><TauxCell taux={moyenne(lignes.map((l) => l.taux))} /></Table.Th>
@@ -924,29 +1004,29 @@ function CarteProjetRecap({ p }: { p: RecapCadreStrategique["projets"][number] }
             <Badge variant="light" size="sm">{p.statut}</Badge>
           </Group>
           <Text size="xs" c="dimmed" mt={2}>
-            {p.chef_de_projet_nom || voc("Chef de projet non renseigné")} · {p.bailleur_nom || "Bailleur non renseigné"} ·{" "}
+            {p.chef_de_projet_nom || voc("Chef de projet non renseigné")} · {p.bailleur_nom || voc("Bailleur non renseigné")} ·{" "}
             {p.date_debut} → {p.date_fin}
           </Text>
         </div>
         <Group gap="lg">
           <div>
-            <Text size="xs" c="dimmed" ta="right">Taux physique</Text>
+            <Text size="xs" c="dimmed" ta="right">{voc("Taux physique")}</Text>
             <TauxCell taux={p.taux_execution_physique} />
           </div>
           <div>
-            <Text size="xs" c="dimmed" ta="right">Taux financier</Text>
+            <Text size="xs" c="dimmed" ta="right">{voc("Taux financier")}</Text>
             <TauxCell taux={p.taux_execution_financiere} />
           </div>
           <div>
-            <Text size="xs" c="dimmed" ta="right">Budget total</Text>
-            <Text fw={700} ta="right">{Number(p.budget_total).toLocaleString("fr-FR")} FCFA</Text>
+            <Text size="xs" c="dimmed" ta="right">{voc("Budget total")}</Text>
+            <Text fw={700} ta="right">{Number(p.budget_total).toLocaleString(locale())} {voc("FCFA")}</Text>
           </div>
         </Group>
       </Group>
 
       <Stack gap="md" mt="sm">
         <Box>
-          <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb={4}>Activités ({p.nombre_activites})</Text>
+          <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb={4}>{voc("Activités (")}{p.nombre_activites})</Text>
           <TableauActivites activites={p.activites} />
         </Box>
         <Box>
@@ -961,18 +1041,18 @@ function CarteProjetRecap({ p }: { p: RecapCadreStrategique["projets"][number] }
 function RecapProjetsBudgets({ cadreId }: { cadreId: number }) {
   const { data: recap, isLoading } = useRecapCadreStrategique(cadreId);
 
-  if (isLoading || !recap) return <Text c="dimmed">Chargement…</Text>;
+  if (isLoading || !recap) return <Text c="dimmed">{voc("Chargement…")}</Text>;
 
   return (
     <Stack gap="md">
       <SimpleGrid cols={{ base: 1, xs: 3, md: 5 }} spacing="md">
         <StatCard
-          label="Budget total contribuant"
-          value={`${recap.budget_total.toLocaleString("fr-FR")} FCFA`}
+          label={voc("Budget total contribuant")}
+          value={`${recap.budget_total.toLocaleString(locale())} FCFA`}
           icon={<Wallet size={20} />}
           color="indigo"
         />
-        <StatCard label="Activités" value={recap.nombre_activites_total} icon={<ListTree size={20} />} color="teal" />
+        <StatCard label={voc("Activités")} value={recap.nombre_activites_total} icon={<ListTree size={20} />} color="teal" />
         <StatCard
           label={voc("Indicateurs")}
           value={recap.nombre_indicateurs_total}
@@ -980,13 +1060,13 @@ function RecapProjetsBudgets({ cadreId }: { cadreId: number }) {
           color="orange"
         />
         <StatCard
-          label="Taux physique moyen"
+          label={voc("Taux physique moyen")}
           value={recap.taux_execution_physique_moyen !== null ? `${recap.taux_execution_physique_moyen}%` : "—"}
           icon={<Gauge size={20} />}
           color="grape"
         />
         <StatCard
-          label="Taux financier moyen"
+          label={voc("Taux financier moyen")}
           value={recap.taux_execution_financiere_moyen !== null ? `${recap.taux_execution_financiere_moyen}%` : "—"}
           icon={<Gauge size={20} />}
           color="cyan"
@@ -1039,21 +1119,21 @@ export function CadreStrategiqueDetailPage() {
             leftSection={<Download size={16} />}
             onClick={() => telechargerExportStructuration(cadreId, cadre?.nom ?? String(cadreId))}
           >
-            Exporter en Excel
+            {voc("Exporter en Excel")}
           </Button>
           <Button variant="light" leftSection={<FileSpreadsheet size={16} />} onClick={() => setModalImportOuvert(true)}>
-            Importer depuis Excel
+            {voc("Importer depuis Excel")}
           </Button>
         </Group>
       </Group>
 
       {chargementNiveaux || chargementElements ? (
-        <Text c="dimmed">Chargement…</Text>
+        <Text c="dimmed">{voc("Chargement…")}</Text>
       ) : (
         <Tabs defaultValue="arborescence" keepMounted={false}>
           <Tabs.List>
             <Tabs.Tab value="configuration" leftSection={<Settings2 size={15} />}>
-              Configuration des niveaux
+              {voc("Configuration des niveaux")}
             </Tabs.Tab>
             <Tabs.Tab value="arborescence" leftSection={<ListTree size={15} />}>
               Arborescence &amp; saisie
@@ -1073,7 +1153,7 @@ export function CadreStrategiqueDetailPage() {
           </Tabs.Panel>
 
           <Tabs.Panel value="arborescence" pt="md">
-            <Arborescence niveaux={niveaux ?? []} elements={elements ?? []} editionActive={editionActive} />
+            <Arborescence cadreId={cadreId} niveaux={niveaux ?? []} elements={elements ?? []} editionActive={editionActive} />
           </Tabs.Panel>
 
           <Tabs.Panel value="axes" pt="md">

@@ -9,6 +9,8 @@ import io
 import re
 from html.parser import HTMLParser
 
+from apps.core.langues import langue_active, traduire_html
+
 ELEMENTS_VIDES = {"br", "hr", "img", "meta", "link", "input", "col", "wbr"}
 BLOCS = {"div", "p", "h1", "h2", "h3", "h4", "h5", "h6", "table", "ul", "ol", "li", "section", "header", "footer", "thead", "tbody", "tr", "td", "th", "body", "html", "hr"}
 IGNORES = {"head", "style", "script", "title", "svg"}
@@ -284,14 +286,32 @@ class _Redacteur:
         self.document.add_paragraph().paragraph_format.space_after = self.Pt(2)
 
 
+def _droite_a_gauche(document):
+    """Document en arabe : paragraphes, tableaux et texte de droite à gauche."""
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+
+    def marquer(parent, balise):
+        if parent.find(qn(balise)) is None:
+            parent.append(OxmlElement(balise))
+
+    corps = document.element.body
+    for p in corps.iter(qn("w:p")):
+        marquer(p.get_or_add_pPr(), "w:bidi")
+    for r in corps.iter(qn("w:r")):
+        marquer(r.get_or_add_rPr(), "w:rtl")
+    for tableau in corps.iter(qn("w:tbl")):
+        marquer(tableau.tblPr, "w:bidiVisual")
+
+
 def html_vers_docx(html: str) -> bytes:
-    """Document Word (.docx) équivalent au HTML d'un rapport PDF."""
+    """Document Word (.docx) équivalent au HTML d'un rapport PDF, dans la langue du fichier demandé."""
     from docx import Document
     from docx.enum.section import WD_ORIENT
     from docx.shared import Mm, Pt, RGBColor
 
     lecteur = _Lecteur()
-    lecteur.feed(html)
+    lecteur.feed(traduire_html(html))
     document = Document()
 
     normal = document.styles["Normal"]
@@ -312,6 +332,8 @@ def html_vers_docx(html: str) -> bytes:
 
     corps = next((n for n in _parcourir(lecteur.racine) if isinstance(n, Noeud) and n.balise == "body"), lecteur.racine)
     _Redacteur(document).blocs(document, corps)
+    if langue_active() == "ar":
+        _droite_a_gauche(document)
     sortie = io.BytesIO()
     document.save(sortie)
     return sortie.getvalue()

@@ -1,4 +1,6 @@
 /** Formatage partagé des onglets « Planification par période » et « Suivi par période ». */
+import { locale } from "./i18n";
+import { voc } from "./vocabulaire";
 
 export function nombre(v: string | number | null | undefined): number | null {
   if (v === null || v === undefined || v === "") return null;
@@ -8,7 +10,7 @@ export function nombre(v: string | number | null | undefined): number | null {
 
 export function fmt(v: string | number | null | undefined): string {
   const n = nombre(v);
-  return n === null ? "—" : n.toLocaleString("fr-FR");
+  return n === null ? "—" : n.toLocaleString(locale());
 }
 
 /** « 01/02/2026 » */
@@ -28,12 +30,14 @@ export function dureeJours(debut: string | null | undefined, fin: string | null 
 /** « 1 jour », « 12 jours » */
 export function libelleDuree(debut: string | null | undefined, fin: string | null | undefined): string {
   const jours = dureeJours(debut, fin);
-  return jours === null ? "" : `${jours.toLocaleString("fr-FR")} jour${jours > 1 ? "s" : ""}`;
+  if (jours === null) return "";
+  const n = jours.toLocaleString(locale());
+  return jours > 1 ? voc`${n} jours` : voc`${n} jour`;
 }
 
 /** « 1er janvier 2026 » */
 export function fmtDateLongue(iso: string): string {
   const [a, m, j] = iso.slice(0, 10).split("-").map(Number);
-  const mois = new Date(a, m - 1, 1).toLocaleString("fr-FR", { month: "long" });
+  const mois = new Date(a, m - 1, 1).toLocaleString(locale(), { month: "long" });
   return `${j === 1 ? "1er" : j} ${mois} ${a}`;
 }

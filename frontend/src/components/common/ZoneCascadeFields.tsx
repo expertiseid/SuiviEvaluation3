@@ -3,6 +3,7 @@ import { Group, Select, Text } from "@mantine/core";
 import { useCreateZone, useNiveauxAdministratifs, useZones } from "../../api/geo";
 import type { NiveauAdministratif, Zone } from "../../types";
 import { voc } from "../../utils/vocabulaire";
+import { traduireDonnee } from "../../utils/i18n";
 
 /** Zone choisie à chaque niveau administratif (clé = id du NiveauAdministratif). */
 export type ZoneCascadeValue = Record<number, string | null>;
@@ -66,13 +67,13 @@ function NiveauSelect({
   const texte = recherche.trim();
   const dejaExistant = options.some((z) => z.nom.toLowerCase() === texte.toLowerCase());
   if (texte && !dejaExistant) {
-    data.push({ value: `${PREFIXE_CREATION}${texte}`, label: `+ Créer « ${texte} »` });
+    data.push({ value: `${PREFIXE_CREATION}${texte}`, label: voc`+ Créer « ${texte} »` });
   }
 
   return (
     <Select
-      label={niveau.nom_niveau}
-      placeholder={disabled ? "—" : niveau.aide_code || "Choisir…"}
+      label={traduireDonnee(niveau.nom_niveau)}
+      placeholder={disabled ? "—" : niveau.aide_code || voc("Choisir…")}
       data={data}
       value={value}
       searchable
@@ -119,7 +120,7 @@ export function ZoneCascadeFields({
   if (!pays) {
     return (
       <Text size="sm" c="dimmed">
-        Choisis un pays pour renseigner la localisation.
+        {voc("Choisis un pays pour renseigner la localisation.")}
       </Text>
     );
   }

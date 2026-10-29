@@ -9,6 +9,8 @@ import { SuiviProjetDashboard } from "../suivi/SuiviProjetDashboard";
 import { PartageContext, usePartage, type Partage } from "../../utils/partage";
 import { definirVocabulaire } from "../../utils/vocabulaire";
 
+import { locale } from "../../utils/i18n";
+import { voc } from "../../utils/vocabulaire";
 interface DescriptionLien {
   type: Partage["type"];
   contenu: Partage["contenu"];
@@ -24,7 +26,7 @@ function Contenu() {
   const partage = usePartage()!;
   const { data: menu, isLoading } = useConfigurationMenu();
   definirVocabulaire(menu?.vocabulaire);
-  if (isLoading) return <Text c="dimmed">Chargement…</Text>;
+  if (isLoading) return <Text c="dimmed">{voc("Chargement…")}</Text>;
   return partage.type === "TABLEAU_DE_BORD" ? <DashboardConsolidePage /> : <SuiviProjetDashboard />;
 }
 
@@ -42,18 +44,18 @@ export function PagePartagee() {
     <Box bg="gray.0" mih="100vh">
       <Box bg="teal.9" c="white" px="md" py="sm">
         <Group justify="space-between" wrap="nowrap">
-          <Text fw={700} size="sm">Plateforme de Suivi-Évaluation</Text>
+          <Text fw={700} size="sm">{voc("Plateforme de Suivi-Évaluation")}</Text>
           <Group gap={6} wrap="nowrap">
             <Eye size={15} />
-            <Text size="xs" c="teal.1">Lecture seule{data?.partage_par ? ` · partagé par ${data.partage_par}` : ""}</Text>
+            <Text size="xs" c="teal.1">{voc("Lecture seule")}{data?.partage_par ? voc` · partagé par ${data.partage_par}` : ""}</Text>
           </Group>
         </Group>
       </Box>
       <Container size="xl" py="md" px={{ base: "sm", sm: "lg" }}>
-        {isLoading && <Text c="dimmed">Chargement…</Text>}
+        {isLoading && <Text c="dimmed">{voc("Chargement…")}</Text>}
         {isError && (
-          <Alert color="orange" title="Lien indisponible">
-            Ce lien de partage n'existe pas, a expiré ou a été désactivé. Demandez un nouveau lien à la personne qui vous l'a envoyé.
+          <Alert color="orange" title={voc("Lien indisponible")}>
+            {voc("Ce lien de partage n'existe pas, a expiré ou a été désactivé. Demandez un nouveau lien à la personne qui vous l'a envoyé.")}
           </Alert>
         )}
         {data && (
@@ -61,7 +63,7 @@ export function PagePartagee() {
             value={{ jeton, type: data.type, contenu: data.contenu, projetId: data.projet?.id ?? null, filtres: data.filtres }}
           >
             {data.expire_le && (
-              <Text size="xs" c="dimmed" mb="xs">Lien valable jusqu'au {new Date(data.expire_le).toLocaleDateString("fr-FR")}.</Text>
+              <Text size="xs" c="dimmed" mb="xs">{voc("Lien valable jusqu'au")} {new Date(data.expire_le).toLocaleDateString(locale())}.</Text>
             )}
             <Contenu />
           </PartageContext.Provider>

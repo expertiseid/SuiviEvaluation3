@@ -3,6 +3,8 @@ import datetime
 
 from django.utils.html import escape
 
+from apps.core.vocabulaire import v
+
 ETATS = {"BON": ("Bonne progression", "#2f9e44"), "MOYEN": ("Progression moyenne", "#f59f00"), "INSUFFISANT": ("Progression insuffisante", "#c92a2a")}
 
 
@@ -32,7 +34,7 @@ def html_suivi_strategique(cadre, projets_visibles) -> str:
         calcule = contribution_projets(e, projets_visibles, arbres)
         indicateurs = indicateurs_element(e)
         derniere = e.appreciations.order_by("-periode_fin", "-id").first()
-        projets = ", ".join(p["code"] for p in calcule["projets"]) or "aucun projet"
+        projets = ", ".join(p["code"] for p in calcule["projets"]) or v("aucun projet")
         lignes_ind = "".join(
             f"<tr><td {td}>{escape(i['libelle'])}<div style='color:#666;'>{escape(i['origine'])}</div></td>"
             f"<td {td}>{_nombre(i['valeur_reference'])}</td><td {td}>{_nombre(i['valeur_cible'])} {escape(i['unite'])}</td>"

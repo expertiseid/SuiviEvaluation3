@@ -7,6 +7,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
+from apps.core.langues import dans_la_langue_demandee
 from apps.core.permissions import HasGlobalVisibilityOrAssigned, IsAdminOrReadOnly, has_global_visibility
 from apps.indicators.services import indicateurs_pour_projet, valeur_realisee_totale
 from apps.projects.budgets import activites_comptees, total_budget
@@ -255,6 +256,8 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
                         "ancetres": ancetres(a.id),
                         "taux_physique": arbres_taux.taux(a),
                         "taux_financier": a.taux_execution_financiere,
+                        "date_debut": a.date_debut,
+                        "date_fin": a.date_fin,
                     }
                     for a in activites
                 ],
@@ -310,6 +313,7 @@ class ElementStrategiqueViewSet(viewsets.ModelViewSet):
         return qs
 
     @action(detail=False, methods=["get"], url_path="modele-import")
+    @dans_la_langue_demandee
     def modele_import(self, request):
         cadre_id = request.query_params.get("cadre_strategique")
         if not cadre_id:

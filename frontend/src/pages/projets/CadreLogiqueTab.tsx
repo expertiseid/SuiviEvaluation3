@@ -9,6 +9,7 @@ import { telecharger } from "../../api/suivi";
 import { messageErreurApi } from "../../utils/erreurs";
 import { voc } from "../../utils/vocabulaire";
 
+import { locale, traduireDonnee } from "../../utils/i18n";
 interface IndicateurCadre {
   id: number;
   libelle: string;
@@ -34,7 +35,7 @@ interface LigneCadre {
 
 // Même code couleur par profondeur que l'export PDF.
 const COULEURS = ["teal", "blue", "violet", "orange", "pink", "gray"];
-const nombre = (v: number | null) => (v === null ? "—" : v.toLocaleString("fr-FR", { maximumFractionDigits: 2 }));
+const nombre = (v: number | null) => (v === null ? "—" : v.toLocaleString(locale(), { maximumFractionDigits: 2 }));
 
 function useCadreLogique(projetId: number) {
   return useQuery({
@@ -54,7 +55,7 @@ function CelluleTexte({ ligne, champ, modifiable, onSaved }: { ligne: LigneCadre
       <Stack gap={4}>
         <Textarea value={edition} onChange={(e) => setEdition(e.currentTarget.value)} autosize minRows={2} size="xs" autoFocus />
         <Group gap={4} justify="flex-end">
-          <Button size="compact-xs" variant="subtle" onClick={() => setEdition(null)}>Annuler</Button>
+          <Button size="compact-xs" variant="subtle" onClick={() => setEdition(null)}>{voc("Annuler")}</Button>
           <Button
             size="compact-xs"
             loading={modifier.isPending}
@@ -64,11 +65,11 @@ function CelluleTexte({ ligne, champ, modifiable, onSaved }: { ligne: LigneCadre
                 setEdition(null);
                 onSaved();
               } catch (e) {
-                notifications.show({ message: messageErreurApi(e, "Erreur lors de l'enregistrement"), color: "red" });
+                notifications.show({ message: messageErreurApi(e, voc("Erreur lors de l'enregistrement")), color: "red" });
               }
             }}
           >
-            Enregistrer
+            {voc("Enregistrer")}
           </Button>
         </Group>
       </Stack>
@@ -78,7 +79,7 @@ function CelluleTexte({ ligne, champ, modifiable, onSaved }: { ligne: LigneCadre
     <Group gap={4} wrap="nowrap" align="flex-start" justify="space-between">
       <Text size="xs" c={valeur ? undefined : "dimmed"} style={{ whiteSpace: "pre-wrap" }}>{valeur || "—"}</Text>
       {modifiable && ligne.id !== null && (
-        <Tooltip label="Modifier">
+        <Tooltip label={voc("Modifier")}>
           <ActionIcon size="xs" variant="subtle" onClick={() => setEdition(valeur)}>
             <Pencil size={11} />
           </ActionIcon>
@@ -96,12 +97,12 @@ function Indicateurs({ indicateurs }: { indicateurs: IndicateurCadre[] }) {
         <div key={i.id}>
           <Text size="xs" fw={500}>{i.libelle}</Text>
           <Text size="xs" c="dimmed">
-            Réf. {nombre(i.reference)} · Cible {nombre(i.cible)} {i.unite} · <b style={{ color: "var(--mantine-color-text)" }}>Réalisé {nombre(i.realise)}</b>
+            {voc("Réf.")} {nombre(i.reference)} {voc("· Cible")} {nombre(i.cible)} {i.unite} · <b style={{ color: "var(--mantine-color-text)" }}>{voc("Réalisé")} {nombre(i.realise)}</b>
           </Text>
           {i.taux !== null && (
             <Group gap={6} wrap="nowrap">
               <Progress value={Math.min(i.taux, 100)} size="sm" color={i.taux >= 80 ? "teal" : i.taux >= 40 ? "yellow" : "red"} style={{ flex: 1 }} />
-              <Text size="xs" w={44} ta="right">{i.taux.toLocaleString("fr-FR")} %</Text>
+              <Text size="xs" w={44} ta="right">{i.taux.toLocaleString(locale())} %</Text>
             </Group>
           )}
         </div>
@@ -115,7 +116,7 @@ const GRILLE = { display: "grid", gridTemplateColumns: "minmax(220px, 30%) minma
 /** Cadre logique : logique d'intervention, indicateurs, sources de vérification, hypothèses. */
 export function CadreLogiqueTab({ projetId, codeProjet, modifiable }: { projetId: number; codeProjet: string; modifiable: boolean }) {
   const { data, isLoading, refetch } = useCadreLogique(projetId);
-  if (isLoading || !data) return <Text c="dimmed">Chargement…</Text>;
+  if (isLoading || !data) return <Text c="dimmed">{voc("Chargement…")}</Text>;
 
   return (
     <Stack gap="sm">
@@ -125,11 +126,11 @@ export function CadreLogiqueTab({ projetId, codeProjet, modifiable }: { projetId
         </Text>
         <Menu position="bottom-end">
           <Menu.Target>
-            <Button variant="light" leftSection={<Download size={16} />}>Exporter</Button>
+            <Button variant="light" leftSection={<Download size={16} />}>{voc("Exporter")}</Button>
           </Menu.Target>
           <Menu.Dropdown>
-            <Menu.Item onClick={() => telecharger(`/rapports/cadre-logique/${projetId}/?fichier=pdf`, `cadre_logique_${codeProjet}.pdf`)}>PDF</Menu.Item>
-            <Menu.Item onClick={() => telecharger(`/rapports/cadre-logique/${projetId}/?fichier=docx`, `cadre_logique_${codeProjet}.docx`)}>Word</Menu.Item>
+            <Menu.Item onClick={() => telecharger(`/rapports/cadre-logique/${projetId}/?fichier=pdf`, `cadre_logique_${codeProjet}.pdf`)}>{voc("PDF")}</Menu.Item>
+            <Menu.Item onClick={() => telecharger(`/rapports/cadre-logique/${projetId}/?fichier=docx`, `cadre_logique_${codeProjet}.docx`)}>{voc("Word")}</Menu.Item>
           </Menu.Dropdown>
         </Menu>
       </Group>
@@ -137,7 +138,7 @@ export function CadreLogiqueTab({ projetId, codeProjet, modifiable }: { projetId
       <Box style={{ overflowX: "auto" }}>
         <Box miw={900}>
           <Box style={{ ...GRILLE, padding: "8px 12px", background: "var(--mantine-color-teal-9)", color: "white", borderRadius: "8px 8px 0 0" }}>
-            {["Logique d'intervention", "Indicateurs (référence, cible, réalisé)", "Sources de vérification", "Hypothèses / risques"].map((t) => (
+            {["Logique d'intervention", voc("Indicateurs (référence, cible, réalisé)"), voc("Sources de vérification"), voc("Hypothèses / risques")].map((t) => (
               <Text key={t} size="xs" fw={700} tt="uppercase">{t}</Text>
             ))}
           </Box>
@@ -153,13 +154,13 @@ export function CadreLogiqueTab({ projetId, codeProjet, modifiable }: { projetId
                 style={{ ...GRILLE, borderTop: 0, borderLeft: `4px solid var(--mantine-color-${couleur}-6)`, background: l.profondeur === 0 ? "var(--mantine-color-gray-0)" : undefined }}
               >
                 <div style={{ paddingLeft: l.profondeur * 14 }}>
-                  <Badge size="xs" variant="light" color={couleur} mb={4}>{l.niveau}</Badge>
+                  <Badge size="xs" variant="light" color={couleur} mb={4}>{traduireDonnee(l.niveau)}</Badge>
                   <Text size="sm" fw={l.profondeur === 0 ? 700 : 500}>
                     {l.code && <Text span c="dimmed" size="xs" mr={4}>{l.code}</Text>}
                     {l.libelle}
                   </Text>
                   {l.avancement !== null && (
-                    <Text size="xs" c="dimmed" mt={2}>Avancement : {l.avancement.toLocaleString("fr-FR")} %</Text>
+                    <Text size="xs" c="dimmed" mt={2}>{voc("Avancement :")} {l.avancement.toLocaleString(locale())} %</Text>
                   )}
                 </div>
                 <Indicateurs indicateurs={l.indicateurs} />

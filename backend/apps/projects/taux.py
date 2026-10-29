@@ -77,7 +77,7 @@ def libelle_methode(methode) -> str:
 
     if methode == "AGREGATION":
         return v("Agrégé des éléments en dessous")
-    return MethodeCalcul(methode).label
+    return v(MethodeCalcul(methode).label)
 
 
 def _arrondi(valeur):

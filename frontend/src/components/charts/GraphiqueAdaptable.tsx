@@ -30,6 +30,8 @@ import { CamembertChart } from "./CamembertChart";
 import type { TypeGraphique } from "../../utils/typesGraphiques";
 
 
+import { locale } from "../../utils/i18n";
+import { voc } from "../../utils/vocabulaire";
 export interface SerieGraphique {
   cle: string;
   nom: string;
@@ -38,13 +40,13 @@ export interface SerieGraphique {
 }
 
 const LIBELLES: Record<TypeGraphique, { libelle: string; icone: ReactNode }> = {
-  camembert: { libelle: "Camembert", icone: <IconeCamembert size={15} /> },
-  colonnes: { libelle: "Colonnes", icone: <BarChart3 size={15} /> },
-  "colonnes-empilees": { libelle: "Colonnes empilées", icone: <Columns3 size={15} /> },
-  barres: { libelle: "Barres horizontales", icone: <BarChartHorizontal size={15} /> },
-  courbes: { libelle: "Courbes", icone: <IconeCourbe size={15} /> },
-  aires: { libelle: "Aires", icone: <IconeAires size={15} /> },
-  tableau: { libelle: "Tableau", icone: <IconeTableau size={15} /> },
+  camembert: { libelle: voc("Camembert"), icone: <IconeCamembert size={15} /> },
+  colonnes: { libelle: voc("Colonnes"), icone: <BarChart3 size={15} /> },
+  "colonnes-empilees": { libelle: voc("Colonnes empilées"), icone: <Columns3 size={15} /> },
+  barres: { libelle: voc("Barres horizontales"), icone: <BarChartHorizontal size={15} /> },
+  courbes: { libelle: voc("Courbes"), icone: <IconeCourbe size={15} /> },
+  aires: { libelle: voc("Aires"), icone: <IconeAires size={15} /> },
+  tableau: { libelle: voc("Tableau"), icone: <IconeTableau size={15} /> },
 };
 
 
@@ -61,14 +63,14 @@ export function ChoixTypeGraphique({
   return (
     <Menu position="bottom-end" withinPortal>
       <Menu.Target>
-        <InfoBulle label={`Type de graphique : ${LIBELLES[valeur].libelle}`}>
+        <InfoBulle label={voc`Type de graphique : ${LIBELLES[valeur].libelle}`}>
           <ActionIcon variant="light" color="gray" size="md">
             {LIBELLES[valeur].icone}
           </ActionIcon>
         </InfoBulle>
       </Menu.Target>
       <Menu.Dropdown>
-        <Menu.Label>Type de graphique</Menu.Label>
+        <Menu.Label>{voc("Type de graphique")}</Menu.Label>
         {types.map((t) => (
           <Menu.Item
             key={t}
@@ -97,7 +99,7 @@ export function GraphiqueAdaptable({
   categories,
   series,
   couleursCategories,
-  formatValeur = (v) => v.toLocaleString("fr-FR"),
+  formatValeur = (v) => v.toLocaleString(locale()),
   formatAxe,
   formatCategorie = (c) => c,
   unite = "",
@@ -117,7 +119,7 @@ export function GraphiqueAdaptable({
   etiquettes?: boolean;
 }) {
   if (categories.length === 0 || series.length === 0) {
-    return <Text size="sm" c="dimmed" py="xl" ta="center">Aucune donnée.</Text>;
+    return <Text size="sm" c="dimmed" py="xl" ta="center">{voc("Aucune donnée.")}</Text>;
   }
   const axe = formatAxe ?? formatValeur;
   const lignes = categories.map((c, i) => ({

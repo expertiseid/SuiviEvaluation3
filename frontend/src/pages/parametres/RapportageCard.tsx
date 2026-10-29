@@ -21,9 +21,9 @@ import { AIDES_PERIMETRE, LIBELLES_PERIMETRE } from "../../utils/rapportage";
 
 function etatFenetre(debut: string, fin: string): { libelle: string; couleur: string } {
   const aujourdhui = new Date().toISOString().slice(0, 10);
-  if (fin < aujourdhui) return { libelle: "Passée", couleur: "gray" };
-  if (debut > aujourdhui) return { libelle: "À venir", couleur: "blue" };
-  return { libelle: "Ouverte", couleur: "green" };
+  if (fin < aujourdhui) return { libelle: voc("Passée"), couleur: "gray" };
+  if (debut > aujourdhui) return { libelle: voc("À venir"), couleur: "blue" };
+  return { libelle: voc("Ouverte"), couleur: "green" };
 }
 
 /**
@@ -49,14 +49,14 @@ export function RapportageCard() {
 
   const enregistrer = (payload: Parameters<typeof maj.mutate>[0]) =>
     maj.mutate(payload, {
-      onSuccess: () => notifications.show({ message: "Réglage enregistré", color: "green" }),
+      onSuccess: () => notifications.show({ message: voc("Réglage enregistré"), color: "green" }),
       onError: (error) => notifications.show({ message: messageErreurApi(error, "Erreur"), color: "red" }),
     });
 
   function ajouter() {
     const [debut, fin] = dates;
     if (!libelle.trim() || !debut || !fin) {
-      notifications.show({ message: "Donne un nom à la période et choisis ses dates.", color: "orange" });
+      notifications.show({ message: voc("Donne un nom à la période et choisis ses dates."), color: "orange" });
       return;
     }
     creer.mutate(
@@ -66,7 +66,7 @@ export function RapportageCard() {
           setLibelle("");
           setDates([null, null]);
           setProjet(null);
-          notifications.show({ message: "Période de rapportage ajoutée", color: "green" });
+          notifications.show({ message: voc("Période de rapportage ajoutée"), color: "green" });
         },
         onError: (error) => notifications.show({ message: messageErreurApi(error, "Erreur"), color: "red" }),
       },
@@ -77,20 +77,20 @@ export function RapportageCard() {
     <Card withBorder padding="lg" radius="md">
       <Group gap={8} mb={4}>
         <CalendarCheck size={18} />
-        <Text fw={600}>Périodes de rapportage</Text>
+        <Text fw={600}>{voc("Périodes de rapportage")}</Text>
       </Group>
       <Text size="sm" c="dimmed" mb="sm">
         {voc("Quand le contrôle est actif, la saisie n'est ouverte que pendant les périodes de rapportage ; le reste du temps, la plateforme est en lecture seule pour la partie choisie. Chaque projet peut aussi être toujours ouvert, ou fermé sauf pendant ses propres périodes (formulaire du projet). L'administrateur peut toujours corriger.")}
       </Text>
       <Stack gap="sm">
         <Switch
-          label="Contrôler l'ouverture de la saisie par périodes de rapportage"
+          label={voc("Contrôler l'ouverture de la saisie par périodes de rapportage")}
           checked={parametres.controle_actif}
           onChange={(e) => enregistrer({ controle_actif: e.currentTarget.checked })}
           disabled={!admin}
         />
         <Select
-          label="Hors période de rapportage, fermer"
+          label={voc("Hors période de rapportage, fermer")}
           description={AIDES_PERIMETRE[parametres.perimetre]}
           data={Object.entries(LIBELLES_PERIMETRE).map(([value, label]) => ({ value, label }))}
           value={parametres.perimetre}
@@ -104,10 +104,10 @@ export function RapportageCard() {
           <Table fz="sm" verticalSpacing={4}>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Période</Table.Th>
-                <Table.Th>Dates</Table.Th>
+                <Table.Th>{voc("Période")}</Table.Th>
+                <Table.Th>{voc("Dates")}</Table.Th>
                 <Table.Th>{voc("Projets")}</Table.Th>
-                <Table.Th>État</Table.Th>
+                <Table.Th>{voc("État")}</Table.Th>
                 <Table.Th />
               </Table.Tr>
             </Table.Thead>
@@ -126,14 +126,14 @@ export function RapportageCard() {
                     </Table.Td>
                     <Table.Td style={{ width: 1 }}>
                       {admin && (
-                        <Tooltip label="Supprimer cette période">
+                        <Tooltip label={voc("Supprimer cette période")}>
                           <ActionIcon
                             size="sm"
                             variant="subtle"
                             color="red"
                             onClick={() =>
                               confirmerSuppression({
-                                message: `Supprimer la période « ${f.libelle} » ?`,
+                                message: voc`Supprimer la période « ${f.libelle} » ?`,
                                 onConfirm: () => supprimer.mutate(f.id),
                               })
                             }
@@ -149,22 +149,22 @@ export function RapportageCard() {
             </Table.Tbody>
           </Table>
         ) : (
-          <Text size="sm" c="dimmed">Aucune période de rapportage pour l'instant.</Text>
+          <Text size="sm" c="dimmed">{voc("Aucune période de rapportage pour l'instant.")}</Text>
         )}
 
         {admin && (
           <Group align="flex-end" wrap="wrap">
             <TextInput
-              label="Nouvelle période"
-              placeholder="Ex : Rapport du 1er trimestre 2026"
+              label={voc("Nouvelle période")}
+              placeholder={voc("Ex : Rapport du 1er trimestre 2026")}
               value={libelle}
               onChange={(e) => setLibelle(e.currentTarget.value)}
               w={260}
             />
             <DatePickerInput
               type="range"
-              label="Dates d'ouverture"
-              placeholder="Début – fin"
+              label={voc("Dates d'ouverture")}
+              placeholder={voc("Début – fin")}
               value={dates}
               onChange={(v) => setDates(v as [string | null, string | null])}
               allowSingleDateInRange
@@ -181,7 +181,7 @@ export function RapportageCard() {
               w={260}
             />
             <Button onClick={ajouter} loading={creer.isPending}>
-              Ajouter
+              {voc("Ajouter")}
             </Button>
           </Group>
         )}

@@ -47,20 +47,21 @@ import { confirmerSuppression } from "../../components/common/confirmerSuppressi
 import { messageErreurApi } from "../../utils/erreurs";
 import { voc } from "../../utils/vocabulaire";
 
+import { locale } from "../../utils/i18n";
 const ETATS: Record<EtatAppreciation, { label: string; couleur: string }> = {
-  BON: { label: "Bonne progression", couleur: "teal" },
-  MOYEN: { label: "Progression moyenne", couleur: "yellow" },
-  INSUFFISANT: { label: "Progression insuffisante", couleur: "red" },
+  BON: { label: voc("Bonne progression"), couleur: "teal" },
+  MOYEN: { label: voc("Progression moyenne"), couleur: "yellow" },
+  INSUFFISANT: { label: voc("Progression insuffisante"), couleur: "red" },
 };
 const FREQUENCES = [
-  { value: "MENSUELLE", label: "Mensuelle" },
-  { value: "TRIMESTRIELLE", label: "Trimestrielle" },
-  { value: "SEMESTRIELLE", label: "Semestrielle" },
-  { value: "ANNUELLE", label: "Annuelle" },
+  { value: "MENSUELLE", label: voc("Mensuelle") },
+  { value: "TRIMESTRIELLE", label: voc("Trimestrielle") },
+  { value: "SEMESTRIELLE", label: voc("Semestrielle") },
+  { value: "ANNUELLE", label: voc("Annuelle") },
 ];
-const nombre = (v: number | null | undefined) => (v === null || v === undefined ? "—" : Number(v).toLocaleString("fr-FR", { maximumFractionDigits: 2 }));
-const dateFr = (d: string) => new Date(d).toLocaleDateString("fr-FR");
-const pct = (v: number | null) => (v === null ? "—" : `${v.toLocaleString("fr-FR")} %`);
+const nombre = (v: number | null | undefined) => (v === null || v === undefined ? "—" : Number(v).toLocaleString(locale(), { maximumFractionDigits: 2 }));
+const dateFr = (d: string) => new Date(d).toLocaleDateString(locale());
+const pct = (v: number | null) => (v === null ? "—" : `${v.toLocaleString(locale())} %`);
 
 function BarreTaux({ taux, couleur = "teal" }: { taux: number | null; couleur?: string }) {
   if (taux === null) return <Text size="xs" c="dimmed">—</Text>;
@@ -82,8 +83,8 @@ function Pieces({ pieces, modifiable }: { pieces: PieceJointe[]; modifiable: boo
           <Paperclip size={12} />
           <Anchor component="button" type="button" size="xs" onClick={() => telecharger(p.telechargement, p.nom)}>{p.nom}</Anchor>
           {modifiable && (
-            <ActionIcon size="xs" variant="subtle" color="red" aria-label="Retirer la pièce"
-              onClick={() => confirmerSuppression({ message: `Retirer « ${p.nom} » ?`, onConfirm: () => supprimer.mutate(p.id) })}>
+            <ActionIcon size="xs" variant="subtle" color="red" aria-label={voc("Retirer la pièce")}
+              onClick={() => confirmerSuppression({ message: voc`Retirer « ${p.nom} » ?`, onConfirm: () => supprimer.mutate(p.id) })}>
               <Trash2 size={10} />
             </ActionIcon>
           )}
@@ -101,28 +102,28 @@ function AppreciationModal({ elementId, appreciation, onClose }: { elementId: nu
 
   async function valider() {
     if (!a.periode_debut || !a.periode_fin) {
-      notifications.show({ message: "Indiquez la période.", color: "orange" });
+      notifications.show({ message: voc("Indiquez la période."), color: "orange" });
       return;
     }
     try {
       await enregistrer.mutateAsync({ ...a, element: elementId, pieces: undefined, fichiers });
-      notifications.show({ message: "Appréciation enregistrée", color: "green" });
+      notifications.show({ message: voc("Appréciation enregistrée"), color: "green" });
       onClose();
     } catch (e) {
-      notifications.show({ message: messageErreurApi(e, "Erreur lors de l'enregistrement"), color: "red" });
+      notifications.show({ message: messageErreurApi(e, voc("Erreur lors de l'enregistrement")), color: "red" });
     }
   }
 
   return (
-    <Modal opened onClose={onClose} title={a.id ? "Modifier l'appréciation" : "Nouvelle appréciation"} size="lg">
+    <Modal opened onClose={onClose} title={a.id ? voc("Modifier l'appréciation") : voc("Nouvelle appréciation")} size="lg">
       <Stack gap="sm">
-        <TextInput label="Période" placeholder="Ex : Année 2026, 1er semestre 2027" value={a.libelle_periode ?? ""} onChange={(e) => set({ libelle_periode: e.currentTarget.value })} data-autofocus />
+        <TextInput label={voc("Période")} placeholder={voc("Ex : Année 2026, 1er semestre 2027")} value={a.libelle_periode ?? ""} onChange={(e) => set({ libelle_periode: e.currentTarget.value })} data-autofocus />
         <SimpleGrid cols={{ base: 1, xs: 2 }}>
-          <DateInput label="Du" required valueFormat="DD/MM/YYYY" value={a.periode_debut ?? null} onChange={(v) => set({ periode_debut: v ?? undefined })} />
-          <DateInput label="Au" required valueFormat="DD/MM/YYYY" value={a.periode_fin ?? null} onChange={(v) => set({ periode_fin: v ?? undefined })} minDate={a.periode_debut} />
+          <DateInput label={voc("Du")} required valueFormat="DD/MM/YYYY" value={a.periode_debut ?? null} onChange={(v) => set({ periode_debut: v ?? undefined })} />
+          <DateInput label={voc("Au")} required valueFormat="DD/MM/YYYY" value={a.periode_fin ?? null} onChange={(v) => set({ periode_fin: v ?? undefined })} minDate={a.periode_debut} />
         </SimpleGrid>
         <div>
-          <Text size="sm" fw={500} mb={4}>Appréciation de l'avancement</Text>
+          <Text size="sm" fw={500} mb={4}>{voc("Appréciation de l'avancement")}</Text>
           <SegmentedControl
             fullWidth
             value={a.etat}
@@ -130,13 +131,13 @@ function AppreciationModal({ elementId, appreciation, onClose }: { elementId: nu
             data={(Object.keys(ETATS) as EtatAppreciation[]).map((e) => ({ value: e, label: ETATS[e].label }))}
           />
         </div>
-        <Textarea label="Analyse" description="Ce qui a été réalisé, au-delà des projets suivis dans la plateforme." autosize minRows={3} value={a.commentaire ?? ""} onChange={(e) => set({ commentaire: e.currentTarget.value })} />
-        <Textarea label="Difficultés" autosize minRows={2} value={a.difficultes ?? ""} onChange={(e) => set({ difficultes: e.currentTarget.value })} />
-        <Textarea label="Recommandations" autosize minRows={2} value={a.recommandations ?? ""} onChange={(e) => set({ recommandations: e.currentTarget.value })} />
-        <FileInput label="Pièces justificatives" placeholder="Rapports, études, comptes rendus…" multiple clearable value={fichiers} onChange={setFichiers} leftSection={<Paperclip size={14} />} />
+        <Textarea label={voc("Analyse")} description={voc("Ce qui a été réalisé, au-delà des projets suivis dans la plateforme.")} autosize minRows={3} value={a.commentaire ?? ""} onChange={(e) => set({ commentaire: e.currentTarget.value })} />
+        <Textarea label={voc("Difficultés")} autosize minRows={2} value={a.difficultes ?? ""} onChange={(e) => set({ difficultes: e.currentTarget.value })} />
+        <Textarea label={voc("Recommandations")} autosize minRows={2} value={a.recommandations ?? ""} onChange={(e) => set({ recommandations: e.currentTarget.value })} />
+        <FileInput label={voc("Pièces justificatives")} placeholder={voc("Rapports, études, comptes rendus…")} multiple clearable value={fichiers} onChange={setFichiers} leftSection={<Paperclip size={14} />} />
         <Group justify="flex-end">
-          <Button variant="subtle" onClick={onClose}>Annuler</Button>
-          <Button onClick={valider} loading={enregistrer.isPending}>Enregistrer</Button>
+          <Button variant="subtle" onClick={onClose}>{voc("Annuler")}</Button>
+          <Button onClick={valider} loading={enregistrer.isPending}>{voc("Enregistrer")}</Button>
         </Group>
       </Stack>
     </Modal>
@@ -153,7 +154,7 @@ function IndicateurModal({ elementId, onClose }: { elementId: number; onClose: (
 
   async function valider() {
     if (!libelle.trim() || !unite.trim() || cible === "") {
-      notifications.show({ message: "Libellé, unité et cible sont requis.", color: "orange" });
+      notifications.show({ message: voc("Libellé, unité et cible sont requis."), color: "orange" });
       return;
     }
     try {
@@ -161,27 +162,27 @@ function IndicateurModal({ elementId, onClose }: { elementId: number; onClose: (
         libelle: libelle.trim(), unite: unite.trim(), valeur_reference: reference === "" ? null : Number(reference),
         valeur_cible: Number(cible), frequence_collecte: frequence ?? "ANNUELLE", elements_strategiques: [elementId],
       });
-      notifications.show({ message: "Indicateur ajouté", color: "green" });
+      notifications.show({ message: voc("Indicateur ajouté"), color: "green" });
       onClose();
     } catch (e) {
-      notifications.show({ message: messageErreurApi(e, "Erreur lors de l'enregistrement"), color: "red" });
+      notifications.show({ message: messageErreurApi(e, voc("Erreur lors de l'enregistrement")), color: "red" });
     }
   }
 
   return (
-    <Modal opened onClose={onClose} title="Nouvel indicateur de l'élément">
+    <Modal opened onClose={onClose} title={voc("Nouvel indicateur de l'élément")}>
       <Stack gap="sm">
-        <Text size="xs" c="dimmed">Indicateur propre au document stratégique (ex. donnée nationale) : ses valeurs se saisissent ici, sans passer par un projet.</Text>
-        <Textarea label="Indicateur" required autosize minRows={2} value={libelle} onChange={(e) => setLibelle(e.currentTarget.value)} data-autofocus />
+        <Text size="xs" c="dimmed">{voc("Indicateur propre au document stratégique (ex. donnée nationale) : ses valeurs se saisissent ici, sans passer par un projet.")}</Text>
+        <Textarea label={voc("Indicateur")} required autosize minRows={2} value={libelle} onChange={(e) => setLibelle(e.currentTarget.value)} data-autofocus />
         <SimpleGrid cols={2}>
-          <TextInput label="Unité" required value={unite} onChange={(e) => setUnite(e.currentTarget.value)} placeholder="%, ménages…" />
-          <Select label="Fréquence" data={FREQUENCES} value={frequence} onChange={setFrequence} allowDeselect={false} />
-          <NumberInput label="Valeur de référence" value={reference} onChange={setReference} decimalSeparator="," />
-          <NumberInput label="Cible" required value={cible} onChange={setCible} decimalSeparator="," />
+          <TextInput label={voc("Unité")} required value={unite} onChange={(e) => setUnite(e.currentTarget.value)} placeholder={voc("%, ménages…")} />
+          <Select label={voc("Fréquence")} data={FREQUENCES} value={frequence} onChange={setFrequence} allowDeselect={false} />
+          <NumberInput label={voc("Valeur de référence")} value={reference} onChange={setReference} decimalSeparator="," />
+          <NumberInput label={voc("Cible")} required value={cible} onChange={setCible} decimalSeparator="," />
         </SimpleGrid>
         <Group justify="flex-end">
-          <Button variant="subtle" onClick={onClose}>Annuler</Button>
-          <Button onClick={valider} loading={creer.isPending}>Ajouter</Button>
+          <Button variant="subtle" onClick={onClose}>{voc("Annuler")}</Button>
+          <Button onClick={valider} loading={creer.isPending}>{voc("Ajouter")}</Button>
         </Group>
       </Stack>
     </Modal>
@@ -198,33 +199,33 @@ function ValeurModal({ indicateur, onClose }: { indicateur: IndicateurStrategiqu
 
   async function valider() {
     if (!debut || !fin || valeur === "") {
-      notifications.show({ message: "Période et valeur sont requises.", color: "orange" });
+      notifications.show({ message: voc("Période et valeur sont requises."), color: "orange" });
       return;
     }
     try {
       await saisir.mutateAsync({ indicateur: indicateur.id, periode_debut: debut, periode_fin: fin, valeur_realisee: Number(valeur), commentaire: commentaire.trim(), fichiers });
-      notifications.show({ message: "Valeur enregistrée", color: "green" });
+      notifications.show({ message: voc("Valeur enregistrée"), color: "green" });
       onClose();
     } catch (e) {
-      notifications.show({ message: messageErreurApi(e, "Erreur lors de l'enregistrement"), color: "red" });
+      notifications.show({ message: messageErreurApi(e, voc("Erreur lors de l'enregistrement")), color: "red" });
     }
   }
 
   return (
-    <Modal opened onClose={onClose} title="Saisir une valeur" size="lg">
+    <Modal opened onClose={onClose} title={voc("Saisir une valeur")} size="lg">
       <Stack gap="sm">
         <Text size="sm" fw={500}>{indicateur.libelle}</Text>
-        <Text size="xs" c="dimmed">Ce qui a été réalisé pendant la période (les valeurs des périodes s'additionnent). Cible : {nombre(indicateur.valeur_cible)} {indicateur.unite}.</Text>
+        <Text size="xs" c="dimmed">{voc("Ce qui a été réalisé pendant la période (les valeurs des périodes s'additionnent). Cible :")} {nombre(indicateur.valeur_cible)} {indicateur.unite}.</Text>
         <SimpleGrid cols={{ base: 1, xs: 3 }}>
-          <DateInput label="Du" required valueFormat="DD/MM/YYYY" value={debut} onChange={setDebut} />
-          <DateInput label="Au" required valueFormat="DD/MM/YYYY" value={fin} onChange={setFin} minDate={debut ?? undefined} />
-          <NumberInput label={`Valeur (${indicateur.unite})`} required value={valeur} onChange={setValeur} decimalSeparator="," />
+          <DateInput label={voc("Du")} required valueFormat="DD/MM/YYYY" value={debut} onChange={setDebut} />
+          <DateInput label={voc("Au")} required valueFormat="DD/MM/YYYY" value={fin} onChange={setFin} minDate={debut ?? undefined} />
+          <NumberInput label={voc`Valeur (${indicateur.unite})`} required value={valeur} onChange={setValeur} decimalSeparator="," />
         </SimpleGrid>
-        <Textarea label="Commentaire / source" autosize minRows={2} value={commentaire} onChange={(e) => setCommentaire(e.currentTarget.value)} />
-        <FileInput label="Pièces justificatives" multiple clearable value={fichiers} onChange={setFichiers} leftSection={<Paperclip size={14} />} />
+        <Textarea label={voc("Commentaire / source")} autosize minRows={2} value={commentaire} onChange={(e) => setCommentaire(e.currentTarget.value)} />
+        <FileInput label={voc("Pièces justificatives")} multiple clearable value={fichiers} onChange={setFichiers} leftSection={<Paperclip size={14} />} />
         <Group justify="flex-end">
-          <Button variant="subtle" onClick={onClose}>Annuler</Button>
-          <Button onClick={valider} loading={saisir.isPending}>Enregistrer</Button>
+          <Button variant="subtle" onClick={onClose}>{voc("Annuler")}</Button>
+          <Button onClick={valider} loading={saisir.isPending}>{voc("Enregistrer")}</Button>
         </Group>
       </Stack>
     </Modal>
@@ -238,7 +239,7 @@ function PanneauElement({ elementId, modifiable }: { elementId: number; modifiab
   const [appreciation, setAppreciation] = useState<Partial<AppreciationStrategique> | null>(null);
   const [nouvelIndicateur, setNouvelIndicateur] = useState(false);
   const [valeurPour, setValeurPour] = useState<IndicateurStrategique | null>(null);
-  if (isLoading || !data) return <Text c="dimmed">Chargement…</Text>;
+  if (isLoading || !data) return <Text c="dimmed">{voc("Chargement…")}</Text>;
   const { calcule } = data;
 
   return (
@@ -249,14 +250,14 @@ function PanneauElement({ elementId, modifiable }: { elementId: number; modifiab
       </div>
 
       <Card withBorder padding="md" radius="md">
-        <Text size="sm" fw={600} mb={4}>Avancement calculé à partir des projets</Text>
+        <Text size="sm" fw={600} mb={4}>{voc("Avancement calculé à partir des projets")}</Text>
         {calcule.projets.length === 0 ? (
           <Text size="sm" c="dimmed">{voc("Aucun projet ne contribue encore à cet élément.")}</Text>
         ) : (
           <Stack gap={6}>
             <SimpleGrid cols={{ base: 1, sm: 2 }}>
-              <div><Text size="xs" c="dimmed">Exécution physique ({calcule.nombre_activites} élément(s) de planification)</Text><BarreTaux taux={calcule.taux_physique} couleur="blue" /></div>
-              <div><Text size="xs" c="dimmed">Exécution financière : {nombre(calcule.budget_realise)} / {nombre(calcule.budget_alloue)} FCFA</Text><BarreTaux taux={calcule.taux_financier} /></div>
+              <div><Text size="xs" c="dimmed">{voc("Exécution physique (")}{calcule.nombre_activites} {voc("élément(s) de planification)")}</Text><BarreTaux taux={calcule.taux_physique} couleur="blue" /></div>
+              <div><Text size="xs" c="dimmed">{voc("Exécution financière :")} {nombre(calcule.budget_realise)} / {nombre(calcule.budget_alloue)} {voc("FCFA")}</Text><BarreTaux taux={calcule.taux_financier} /></div>
             </SimpleGrid>
             <Group gap={6}>
               {calcule.projets.map((p) => (
@@ -270,7 +271,7 @@ function PanneauElement({ elementId, modifiable }: { elementId: number; modifiab
       <Card withBorder padding="md" radius="md">
         <Group justify="space-between" mb="xs">
           <Text size="sm" fw={600}>{voc("Indicateurs")}</Text>
-          {modifiable && <Button size="compact-xs" variant="light" leftSection={<Plus size={12} />} onClick={() => setNouvelIndicateur(true)}>Ajouter un indicateur</Button>}
+          {modifiable && <Button size="compact-xs" variant="light" leftSection={<Plus size={12} />} onClick={() => setNouvelIndicateur(true)}>{voc("Ajouter un indicateur")}</Button>}
         </Group>
         {data.indicateurs.length === 0 && <Text size="sm" c="dimmed">{voc("Aucun indicateur rattaché à cet élément.")}</Text>}
         <Stack gap="sm">
@@ -279,12 +280,12 @@ function PanneauElement({ elementId, modifiable }: { elementId: number; modifiab
               <Group justify="space-between" wrap="nowrap" align="flex-start">
                 <div>
                   <Text size="sm" fw={500}>{i.libelle}</Text>
-                  <Text size="xs" c="dimmed">Réf. {nombre(i.valeur_reference)} · Cible {nombre(i.valeur_cible)} {i.unite} · <b>Réalisé {nombre(i.realise)}</b></Text>
+                  <Text size="xs" c="dimmed">{voc("Réf.")} {nombre(i.valeur_reference)} {voc("· Cible")} {nombre(i.valeur_cible)} {i.unite} · <b>{voc("Réalisé")} {nombre(i.realise)}</b></Text>
                 </div>
                 <Group gap={4} wrap="nowrap">
                   <Badge size="xs" variant="light" color={i.saisie_directe ? "grape" : "blue"}>{i.origine}</Badge>
                   {modifiable && i.saisie_directe && (
-                    <Button size="compact-xs" variant="light" onClick={() => setValeurPour(i)}>Saisir</Button>
+                    <Button size="compact-xs" variant="light" onClick={() => setValeurPour(i)}>{voc("Saisir")}</Button>
                   )}
                 </Group>
               </Group>
@@ -293,12 +294,12 @@ function PanneauElement({ elementId, modifiable }: { elementId: number; modifiab
                 <Group key={v.id} gap={6} mt={4} wrap="nowrap" align="flex-start">
                   <Text size="xs" c="dimmed" w={170} style={{ flexShrink: 0 }}>{dateFr(v.periode_debut)} → {dateFr(v.periode_fin)}</Text>
                   <div style={{ flex: 1 }}>
-                    <Text size="xs"><b>{nombre(v.valeur_realisee)} {i.unite}</b>{v.etat_approbation !== "APPROUVEE" && <Badge size="xs" ml={6} color="orange" variant="light">{v.etat_approbation === "EN_ATTENTE" ? "En attente d'approbation" : "Rejetée"}</Badge>}{v.commentaire && ` — ${v.commentaire}`}</Text>
+                    <Text size="xs"><b>{nombre(v.valeur_realisee)} {i.unite}</b>{v.etat_approbation !== "APPROUVEE" && <Badge size="xs" ml={6} color="orange" variant="light">{v.etat_approbation === "EN_ATTENTE" ? voc("En attente d'approbation") : voc("Rejetée")}</Badge>}{v.commentaire && ` — ${v.commentaire}`}</Text>
                     <Pieces pieces={v.pieces} modifiable={modifiable} />
                   </div>
                   {modifiable && (
-                    <ActionIcon size="xs" variant="subtle" color="red" aria-label="Supprimer la valeur"
-                      onClick={() => confirmerSuppression({ message: "Supprimer cette valeur ?", onConfirm: () => supprimerValeur.mutate(v.id) })}>
+                    <ActionIcon size="xs" variant="subtle" color="red" aria-label={voc("Supprimer la valeur")}
+                      onClick={() => confirmerSuppression({ message: voc("Supprimer cette valeur ?"), onConfirm: () => supprimerValeur.mutate(v.id) })}>
                       <Trash2 size={11} />
                     </ActionIcon>
                   )}
@@ -311,10 +312,10 @@ function PanneauElement({ elementId, modifiable }: { elementId: number; modifiab
 
       <Card withBorder padding="md" radius="md">
         <Group justify="space-between" mb="xs">
-          <Text size="sm" fw={600}>Appréciations par période</Text>
-          {modifiable && <Button size="compact-xs" variant="light" leftSection={<Plus size={12} />} onClick={() => setAppreciation({})}>Nouvelle appréciation</Button>}
+          <Text size="sm" fw={600}>{voc("Appréciations par période")}</Text>
+          {modifiable && <Button size="compact-xs" variant="light" leftSection={<Plus size={12} />} onClick={() => setAppreciation({})}>{voc("Nouvelle appréciation")}</Button>}
         </Group>
-        {data.appreciations.length === 0 && <Text size="sm" c="dimmed">Aucune appréciation pour l'instant.</Text>}
+        {data.appreciations.length === 0 && <Text size="sm" c="dimmed">{voc("Aucune appréciation pour l'instant.")}</Text>}
         <Stack gap="sm">
           {data.appreciations.map((a) => (
             <Box key={a.id} p="xs" style={{ borderLeft: `3px solid var(--mantine-color-${ETATS[a.etat].couleur}-6)`, background: "var(--mantine-color-gray-0)", borderRadius: 4 }}>
@@ -326,17 +327,17 @@ function PanneauElement({ elementId, modifiable }: { elementId: number; modifiab
                 </Group>
                 {modifiable && (
                   <Group gap={2} wrap="nowrap">
-                    <ActionIcon size="sm" variant="subtle" aria-label="Modifier" onClick={() => setAppreciation(a)}><Pencil size={13} /></ActionIcon>
-                    <ActionIcon size="sm" variant="subtle" color="red" aria-label="Supprimer"
-                      onClick={() => confirmerSuppression({ message: "Supprimer cette appréciation et ses pièces ?", onConfirm: () => supprimerAppreciation.mutate(a.id) })}>
+                    <ActionIcon size="sm" variant="subtle" aria-label={voc("Modifier")} onClick={() => setAppreciation(a)}><Pencil size={13} /></ActionIcon>
+                    <ActionIcon size="sm" variant="subtle" color="red" aria-label={voc("Supprimer")}
+                      onClick={() => confirmerSuppression({ message: voc("Supprimer cette appréciation et ses pièces ?"), onConfirm: () => supprimerAppreciation.mutate(a.id) })}>
                       <Trash2 size={13} />
                     </ActionIcon>
                   </Group>
                 )}
               </Group>
               {a.commentaire && <Text size="sm" mt={4} style={{ whiteSpace: "pre-wrap" }}>{a.commentaire}</Text>}
-              {a.difficultes && <Text size="sm" mt={4}><b>Difficultés :</b> {a.difficultes}</Text>}
-              {a.recommandations && <Text size="sm" mt={4}><b>Recommandations :</b> {a.recommandations}</Text>}
+              {a.difficultes && <Text size="sm" mt={4}><b>{voc("Difficultés :")}</b> {a.difficultes}</Text>}
+              {a.recommandations && <Text size="sm" mt={4}><b>{voc("Recommandations :")}</b> {a.recommandations}</Text>}
               <Pieces pieces={a.pieces} modifiable={modifiable} />
             </Box>
           ))}
@@ -372,7 +373,7 @@ export function SuiviStrategiqueTab({ cadreId, modifiable }: { cadreId: number; 
     return resultat;
   }, [elements]);
 
-  if (isLoading) return <Text c="dimmed">Chargement…</Text>;
+  if (isLoading) return <Text c="dimmed">{voc("Chargement…")}</Text>;
   const selection = choisi ?? ordonnes[0]?.ligne.id ?? null;
 
   return (
@@ -383,16 +384,16 @@ export function SuiviStrategiqueTab({ cadreId, modifiable }: { cadreId: number; 
         </Text>
         <Menu position="bottom-end">
           <Menu.Target>
-            <Button variant="light" leftSection={<Download size={16} />}>Rapport de suivi</Button>
+            <Button variant="light" leftSection={<Download size={16} />}>{voc("Rapport de suivi")}</Button>
           </Menu.Target>
           <Menu.Dropdown>
-            <Menu.Item leftSection={<FileText size={14} />} onClick={() => telecharger(`/rapports/suivi-strategique/${cadreId}/?fichier=pdf`, `suivi_strategique_${cadreId}.pdf`)}>PDF</Menu.Item>
-            <Menu.Item leftSection={<FileText size={14} />} onClick={() => telecharger(`/rapports/suivi-strategique/${cadreId}/?fichier=docx`, `suivi_strategique_${cadreId}.docx`)}>Word</Menu.Item>
+            <Menu.Item leftSection={<FileText size={14} />} onClick={() => telecharger(`/rapports/suivi-strategique/${cadreId}/?fichier=pdf`, `suivi_strategique_${cadreId}.pdf`)}>{voc("PDF")}</Menu.Item>
+            <Menu.Item leftSection={<FileText size={14} />} onClick={() => telecharger(`/rapports/suivi-strategique/${cadreId}/?fichier=docx`, `suivi_strategique_${cadreId}.docx`)}>{voc("Word")}</Menu.Item>
           </Menu.Dropdown>
         </Menu>
       </Group>
       {ordonnes.length === 0 ? (
-        <Text c="dimmed">Aucun élément dans ce document stratégique.</Text>
+        <Text c="dimmed">{voc("Aucun élément dans ce document stratégique.")}</Text>
       ) : (
         <Grid gap="md">
           <Grid.Col span={{ base: 12, md: 4 }}>
@@ -417,7 +418,7 @@ export function SuiviStrategiqueTab({ cadreId, modifiable }: { cadreId: number; 
                         </div>
                         <Stack gap={2} align="flex-end" style={{ flexShrink: 0 }}>
                           {ligne.taux_physique !== null && <Text size="xs" c="dimmed">{pct(ligne.taux_physique)}</Text>}
-                          {etat && <Tooltip label={`${etat.label} — ${ligne.derniere_appreciation!.libelle_periode || dateFr(ligne.derniere_appreciation!.periode_fin)}`}><Badge size="xs" variant="dot" color={etat.couleur}>{ligne.derniere_appreciation!.libelle_periode || "Appréciée"}</Badge></Tooltip>}
+                          {etat && <Tooltip label={`${etat.label} — ${ligne.derniere_appreciation!.libelle_periode || dateFr(ligne.derniere_appreciation!.periode_fin)}`}><Badge size="xs" variant="dot" color={etat.couleur}>{ligne.derniere_appreciation!.libelle_periode || voc("Appréciée")}</Badge></Tooltip>}
                         </Stack>
                       </Group>
                     </UnstyledButton>

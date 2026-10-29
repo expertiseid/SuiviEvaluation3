@@ -50,16 +50,16 @@ import { voc } from "../../utils/vocabulaire";
 import { libelleStructure, structuresEnArbre } from "../../utils/organisation";
 import type { Partenaire, PartiePrenante, StructureOrganisation } from "../../types";
 
-const TYPES_STRUCTURE_SUGGERES = ["Organisation", "Direction", "Service", "Secteur", "Division", "Cellule", "Antenne régionale"];
+const TYPES_STRUCTURE_SUGGERES = ["Organisation", "Direction", "Service", "Secteur", "Division", "Cellule", voc("Antenne régionale")];
 const TYPES_PARTENAIRE = [
-  { value: "MISE_EN_OEUVRE", label: "Partenaire de mise en œuvre" },
-  { value: "CONSORTIUM", label: "Partenaire de consortium" },
-  { value: "BAILLEUR", label: "Bailleur" },
+  { value: "MISE_EN_OEUVRE", label: voc("Partenaire de mise en œuvre") },
+  { value: "CONSORTIUM", label: voc("Partenaire de consortium") },
+  { value: "BAILLEUR", label: voc("Bailleur") },
 ];
 const LIBELLES_TYPE_PARTENAIRE: Record<string, { label: string; couleur: string }> = {
-  MISE_EN_OEUVRE: { label: "Mise en œuvre", couleur: "blue" },
-  CONSORTIUM: { label: "Consortium", couleur: "teal" },
-  BAILLEUR: { label: "Bailleur", couleur: "grape" },
+  MISE_EN_OEUVRE: { label: voc("Mise en œuvre"), couleur: "blue" },
+  CONSORTIUM: { label: voc("Consortium"), couleur: "teal" },
+  BAILLEUR: { label: voc("Bailleur"), couleur: "grape" },
 };
 
 // Option « + Ajouter » d'un nouveau type de structure.
@@ -93,15 +93,15 @@ function StructureModal({
 
   async function valider() {
     if (!valeurs.nom?.trim()) {
-      notifications.show({ message: "Indique le nom.", color: "orange" });
+      notifications.show({ message: voc("Indique le nom."), color: "orange" });
       return;
     }
     try {
       await enregistrer.mutateAsync(valeurs);
-      notifications.show({ message: "Structure enregistrée", color: "green" });
+      notifications.show({ message: voc("Structure enregistrée"), color: "green" });
       onClose();
     } catch (e) {
-      erreur(e, "Erreur lors de l'enregistrement");
+      erreur(e, voc("Erreur lors de l'enregistrement"));
     }
   }
 
@@ -111,20 +111,20 @@ function StructureModal({
       onClose={onClose}
       title={
         structure?.id
-          ? `Modifier — ${structure.nom}`
+          ? voc`Modifier — ${structure.nom}`
           : structure?.parent
-            ? `Nouveau service de « ${structures.find((x) => x.id === structure.parent)?.nom ?? ""} »`
-            : "Nouvelle organisation"
+            ? voc`Nouveau service de « ${structures.find((x) => x.id === structure.parent)?.nom ?? ""} »`
+            : voc("Nouvelle organisation")
       }
     >
       <Stack gap="sm">
-        <TextInput label="Nom" required value={valeurs.nom ?? ""} onChange={(e) => setValeurs({ ...valeurs, nom: e.currentTarget.value })} data-autofocus />
+        <TextInput label={voc("Nom")} required value={valeurs.nom ?? ""} onChange={(e) => setValeurs({ ...valeurs, nom: e.currentTarget.value })} data-autofocus />
         <Group grow>
-          <TextInput label="Sigle" value={valeurs.sigle ?? ""} onChange={(e) => setValeurs({ ...valeurs, sigle: e.currentTarget.value })} />
+          <TextInput label={voc("Sigle")} value={valeurs.sigle ?? ""} onChange={(e) => setValeurs({ ...valeurs, sigle: e.currentTarget.value })} />
           <Autocomplete
-            label="Type"
-            description="Choisir, ou taper un nouveau type"
-            placeholder="Direction, Service…"
+            label={voc("Type")}
+            description={voc("Choisir, ou taper un nouveau type")}
+            placeholder={voc("Direction, Service…")}
             data={
               valeurs.type?.trim() && !types.some((t) => t.toLowerCase() === valeurs.type!.trim().toLowerCase())
                 ? [...types, `${PREFIXE_AJOUT}${valeurs.type.trim()}`]
@@ -134,7 +134,7 @@ function StructureModal({
             onChange={(type) => setValeurs({ ...valeurs, type: type.startsWith(PREFIXE_AJOUT) ? type.slice(PREFIXE_AJOUT.length) : type })}
             renderOption={({ option }) =>
               option.value.startsWith(PREFIXE_AJOUT) ? (
-                <Text size="sm" c="teal" fw={500}>+ Ajouter « {option.value.slice(PREFIXE_AJOUT.length)} »</Text>
+                <Text size="sm" c="teal" fw={500}>{voc("+ Ajouter «")} {option.value.slice(PREFIXE_AJOUT.length)} »</Text>
               ) : (
                 <Text size="sm">{option.value}</Text>
               )
@@ -142,8 +142,8 @@ function StructureModal({
           />
         </Group>
         <Select
-          label="Rattachée à"
-          placeholder="Aucune (premier niveau)"
+          label={voc("Rattachée à")}
+          placeholder={voc("Aucune (premier niveau)")}
           data={parents}
           value={valeurs.parent ? String(valeurs.parent) : null}
           onChange={(v) => setValeurs({ ...valeurs, parent: v ? Number(v) : null })}
@@ -151,12 +151,12 @@ function StructureModal({
           searchable
         />
         <TextInput
-          label="Responsable"
+          label={voc("Responsable")}
           value={valeurs.responsable ?? ""}
           onChange={(e) => setValeurs({ ...valeurs, responsable: e.currentTarget.value })}
         />
         <Group justify="flex-end">
-          <Button onClick={valider} loading={enregistrer.isPending}>Enregistrer</Button>
+          <Button onClick={valider} loading={enregistrer.isPending}>{voc("Enregistrer")}</Button>
         </Group>
       </Stack>
     </Modal>
@@ -179,10 +179,10 @@ function AffectationsModal({ structure, onClose }: { structure: StructureOrganis
     if (!structure) return;
     try {
       await enregistrer.mutateAsync({ id: structure.id, projets: projets.map(Number), utilisateurs: utilisateurs.map(Number) });
-      notifications.show({ message: "Affectations enregistrées", color: "green" });
+      notifications.show({ message: voc("Affectations enregistrées"), color: "green" });
       onClose();
     } catch (e) {
-      erreur(e, "Erreur lors de l'enregistrement");
+      erreur(e, voc("Erreur lors de l'enregistrement"));
     }
   }
 
@@ -194,16 +194,16 @@ function AffectationsModal({ structure, onClose }: { structure: StructureOrganis
         onClose();
       }}
       size="lg"
-      title={structure ? `Affectations — ${libelleStructure(structure)}` : ""}
+      title={structure ? voc`Affectations — ${libelleStructure(structure)}` : ""}
     >
       {!data ? (
-        <Text>Chargement…</Text>
+        <Text>{voc("Chargement…")}</Text>
       ) : (
         <Stack gap="sm">
           <MultiSelect
             label={voc("Projets")}
             description={voc("Projets dont cette structure est chargée (un projet peut relever de plusieurs services). Une partie d'un projet s'affecte depuis sa planification.")}
-            placeholder="Aucun"
+            placeholder={voc("Aucun")}
             data={data.choix_projets ?? []}
             value={projets}
             onChange={setProjets}
@@ -213,7 +213,7 @@ function AffectationsModal({ structure, onClose }: { structure: StructureOrganis
           <MultiSelect
             label={voc("Utilisateurs")}
             description={voc("Membres de cette structure. Un utilisateur n'appartient qu'à une structure : l'ajouter ici le retire de son ancienne structure.")}
-            placeholder="Aucun"
+            placeholder={voc("Aucun")}
             data={data.choix_utilisateurs ?? []}
             value={utilisateurs}
             onChange={setUtilisateurs}
@@ -221,7 +221,7 @@ function AffectationsModal({ structure, onClose }: { structure: StructureOrganis
             clearable
           />
           <Group justify="flex-end">
-            <Button onClick={valider} loading={enregistrer.isPending}>Enregistrer</Button>
+            <Button onClick={valider} loading={enregistrer.isPending}>{voc("Enregistrer")}</Button>
           </Group>
         </Stack>
       )}
@@ -257,22 +257,22 @@ function BlocStructure({
             {structure.type && <Badge variant="light" size="sm">{structure.type}</Badge>}
           </Group>
           {structure.responsable && (
-            <Text size="xs" c="dimmed" mt={2}>Responsable : {structure.responsable}</Text>
+            <Text size="xs" c="dimmed" mt={2}>{voc("Responsable :")} {structure.responsable}</Text>
           )}
         </div>
         <Group gap={4} wrap="nowrap">
           <Button size="compact-xs" variant="light" leftSection={<Plus size={12} />} onClick={() => onEditer({ parent: structure.id, type: "Service" })}>
-            {racine ? "Ajouter un service" : "Sous-service"}
+            {racine ? voc("Ajouter un service") : voc("Sous-service")}
           </Button>
           <Button size="compact-xs" variant="light" color="indigo" leftSection={<Link2 size={12} />} onClick={() => onAffecter(structure)}>
             {voc("Projets et membres")}
           </Button>
-          <Tooltip label="Modifier">
+          <Tooltip label={voc("Modifier")}>
             <ActionIcon size="sm" variant="subtle" onClick={() => onEditer(structure)}>
               <Pencil size={13} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Supprimer">
+          <Tooltip label={voc("Supprimer")}>
             <ActionIcon size="sm" variant="subtle" color="red" onClick={() => onSupprimer(structure)}>
               <Trash2 size={13} />
             </ActionIcon>
@@ -363,7 +363,7 @@ function VueParProjet({ structures }: { structures: StructureOrganisation[] }) {
       <Table.Thead>
         <Table.Tr>
           <Table.Th>{voc("Projet")}</Table.Th>
-          <Table.Th>Services</Table.Th>
+          <Table.Th>{voc("Services")}</Table.Th>
           <Table.Th>{voc("Membres qui y participent")}</Table.Th>
         </Table.Tr>
       </Table.Thead>
@@ -402,18 +402,18 @@ function StructureTab() {
 
   function handleSupprimer(s: StructureOrganisation) {
     confirmerSuppression({
-      message: `Supprimer « ${s.nom} » ?`,
+      message: voc`Supprimer « ${s.nom} » ?`,
       onConfirm: async () => {
         try {
           await supprimer.mutateAsync(s.id);
         } catch (e) {
-          erreur(e, "Suppression impossible : la structure a des services rattachés.");
+          erreur(e, voc("Suppression impossible : la structure a des services rattachés."));
         }
       },
     });
   }
 
-  if (isLoading) return <Text>Chargement…</Text>;
+  if (isLoading) return <Text>{voc("Chargement…")}</Text>;
   return (
     <Stack gap="sm">
       <Group justify="space-between" align="flex-end">
@@ -425,12 +425,12 @@ function StructureTab() {
             value={vue}
             onChange={setVue}
             data={[
-              { value: "organigramme", label: "Organigramme" },
+              { value: "organigramme", label: voc("Organigramme") },
               { value: "projets", label: voc("Par projet") },
             ]}
           />
           <Button leftSection={<Plus size={16} />} onClick={() => setEdition({ type: "Organisation" })}>
-            Nouvelle organisation
+            {voc("Nouvelle organisation")}
           </Button>
         </Group>
       </Group>
@@ -475,13 +475,13 @@ function CategoriesParties() {
       await enregistrer.mutateAsync({ nom: nom.trim() });
       setNom("");
     } catch (e) {
-      erreur(e, "Catégorie déjà existante ?");
+      erreur(e, voc("Catégorie déjà existante ?"));
     }
   }
 
   return (
     <Card withBorder padding="sm">
-      <Text size="sm" fw={600} mb={4}>Catégories</Text>
+      <Text size="sm" fw={600} mb={4}>{voc("Catégories")}</Text>
       <Group gap="xs" align="center">
         {categories.map((c) => (
           <Pill key={c.id} withRemoveButton onRemove={() => supprimer.mutate(c.id)}>
@@ -490,7 +490,7 @@ function CategoriesParties() {
         ))}
         <TextInput
           size="xs"
-          placeholder="Nouvelle catégorie (Entrée)"
+          placeholder={voc("Nouvelle catégorie (Entrée)")}
           value={nom}
           onChange={(e) => setNom(e.currentTarget.value)}
           onKeyDown={(e) => e.key === "Enter" && ajouter()}
@@ -513,44 +513,44 @@ function PartiePrenanteModal({ partie, onClose }: { partie: Partial<PartiePrenan
 
   async function valider() {
     if (!valeurs.nom?.trim()) {
-      notifications.show({ message: "Indique le nom.", color: "orange" });
+      notifications.show({ message: voc("Indique le nom."), color: "orange" });
       return;
     }
     try {
       await enregistrer.mutateAsync(valeurs);
-      notifications.show({ message: "Partie prenante enregistrée", color: "green" });
+      notifications.show({ message: voc("Partie prenante enregistrée"), color: "green" });
       onClose();
     } catch (e) {
-      erreur(e, "Erreur lors de l'enregistrement");
+      erreur(e, voc("Erreur lors de l'enregistrement"));
     }
   }
 
   return (
-    <Modal opened={partie !== null} onClose={onClose} title={partie?.id ? "Modifier la partie prenante" : "Nouvelle partie prenante"}>
+    <Modal opened={partie !== null} onClose={onClose} title={partie?.id ? voc("Modifier la partie prenante") : voc("Nouvelle partie prenante")}>
       <Stack gap="sm">
-        <TextInput label="Nom" required value={valeurs.nom ?? ""} onChange={(e) => setValeurs({ ...valeurs, nom: e.currentTarget.value })} data-autofocus />
+        <TextInput label={voc("Nom")} required value={valeurs.nom ?? ""} onChange={(e) => setValeurs({ ...valeurs, nom: e.currentTarget.value })} data-autofocus />
         <Select
-          label="Catégorie"
+          label={voc("Catégorie")}
           data={categories.map((c) => ({ value: String(c.id), label: c.nom }))}
           value={valeurs.categorie ? String(valeurs.categorie) : null}
           onChange={(v) => setValeurs({ ...valeurs, categorie: v ? Number(v) : null })}
           clearable
         />
         <Group grow>
-          <TextInput label="Contact" value={valeurs.contact ?? ""} onChange={(e) => setValeurs({ ...valeurs, contact: e.currentTarget.value })} />
-          <TextInput label="Téléphone" value={valeurs.telephone ?? ""} onChange={(e) => setValeurs({ ...valeurs, telephone: e.currentTarget.value })} />
+          <TextInput label={voc("Contact")} value={valeurs.contact ?? ""} onChange={(e) => setValeurs({ ...valeurs, contact: e.currentTarget.value })} />
+          <TextInput label={voc("Téléphone")} value={valeurs.telephone ?? ""} onChange={(e) => setValeurs({ ...valeurs, telephone: e.currentTarget.value })} />
         </Group>
-        <TextInput label="Email" value={valeurs.email ?? ""} onChange={(e) => setValeurs({ ...valeurs, email: e.currentTarget.value })} />
+        <TextInput label={voc("Email")} value={valeurs.email ?? ""} onChange={(e) => setValeurs({ ...valeurs, email: e.currentTarget.value })} />
         <Textarea
-          label="Description"
-          description="Intérêt, influence, attentes…"
+          label={voc("Description")}
+          description={voc("Intérêt, influence, attentes…")}
           autosize
           minRows={2}
           value={valeurs.description ?? ""}
           onChange={(e) => setValeurs({ ...valeurs, description: e.currentTarget.value })}
         />
         <Group justify="flex-end">
-          <Button onClick={valider} loading={enregistrer.isPending}>Enregistrer</Button>
+          <Button onClick={valider} loading={enregistrer.isPending}>{voc("Enregistrer")}</Button>
         </Group>
       </Stack>
     </Modal>
@@ -562,7 +562,7 @@ function PartiesPrenantesTab() {
   const supprimer = useSupprimerPartiePrenante();
   const [edition, setEdition] = useState<Partial<PartiePrenante> | null>(null);
 
-  if (isLoading) return <Text>Chargement…</Text>;
+  if (isLoading) return <Text>{voc("Chargement…")}</Text>;
   return (
     <Stack gap="sm">
       <Group justify="space-between">
@@ -570,16 +570,16 @@ function PartiesPrenantesTab() {
           {voc("Enregistrées une fois, puis sélectionnées sur les projets et les éléments du cadre stratégique.")}
         </Text>
         <Button leftSection={<Plus size={16} />} onClick={() => setEdition({})}>
-          Ajouter
+          {voc("Ajouter")}
         </Button>
       </Group>
       <CategoriesParties />
       <Table highlightOnHover verticalSpacing={6}>
         <Table.Thead>
           <Table.Tr>
-            <Table.Th>Nom</Table.Th>
-            <Table.Th>Catégorie</Table.Th>
-            <Table.Th>Contact</Table.Th>
+            <Table.Th>{voc("Nom")}</Table.Th>
+            <Table.Th>{voc("Catégorie")}</Table.Th>
+            <Table.Th>{voc("Contact")}</Table.Th>
             <Table.Th>{voc("Projets")}</Table.Th>
             <Table.Th w={80} />
           </Table.Tr>
@@ -607,7 +607,7 @@ function PartiesPrenantesTab() {
                     color="red"
                     onClick={() =>
                       confirmerSuppression({
-                        message: `Supprimer « ${p.nom} » ?`,
+                        message: voc`Supprimer « ${p.nom} » ?`,
                         onConfirm: () => supprimer.mutateAsync(p.id).catch((e) => erreur(e, "Suppression impossible")),
                       })
                     }
@@ -638,36 +638,36 @@ function PartenaireModal({ partenaire, onClose }: { partenaire: Partial<Partenai
 
   async function valider() {
     if (!valeurs.nom?.trim()) {
-      notifications.show({ message: "Indique le nom.", color: "orange" });
+      notifications.show({ message: voc("Indique le nom."), color: "orange" });
       return;
     }
     try {
       await enregistrer.mutateAsync(valeurs);
-      notifications.show({ message: "Partenaire enregistré", color: "green" });
+      notifications.show({ message: voc("Partenaire enregistré"), color: "green" });
       onClose();
     } catch (e) {
-      erreur(e, "Erreur lors de l'enregistrement");
+      erreur(e, voc("Erreur lors de l'enregistrement"));
     }
   }
 
   return (
-    <Modal opened={partenaire !== null} onClose={onClose} title={partenaire?.id ? "Modifier le partenaire" : "Nouveau partenaire"}>
+    <Modal opened={partenaire !== null} onClose={onClose} title={partenaire?.id ? voc("Modifier le partenaire") : voc("Nouveau partenaire")}>
       <Stack gap="sm">
-        <TextInput label="Nom" required value={valeurs.nom ?? ""} onChange={(e) => setValeurs({ ...valeurs, nom: e.currentTarget.value })} data-autofocus />
+        <TextInput label={voc("Nom")} required value={valeurs.nom ?? ""} onChange={(e) => setValeurs({ ...valeurs, nom: e.currentTarget.value })} data-autofocus />
         <Select
-          label="Type"
+          label={voc("Type")}
           data={TYPES_PARTENAIRE}
           value={valeurs.type ?? "MISE_EN_OEUVRE"}
           onChange={(v) => setValeurs({ ...valeurs, type: (v ?? "MISE_EN_OEUVRE") as Partenaire["type"] })}
           allowDeselect={false}
         />
         <Group grow>
-          <TextInput label="Contact" value={valeurs.contact ?? ""} onChange={(e) => setValeurs({ ...valeurs, contact: e.currentTarget.value })} />
-          <TextInput label="Téléphone" value={valeurs.telephone ?? ""} onChange={(e) => setValeurs({ ...valeurs, telephone: e.currentTarget.value })} />
+          <TextInput label={voc("Contact")} value={valeurs.contact ?? ""} onChange={(e) => setValeurs({ ...valeurs, contact: e.currentTarget.value })} />
+          <TextInput label={voc("Téléphone")} value={valeurs.telephone ?? ""} onChange={(e) => setValeurs({ ...valeurs, telephone: e.currentTarget.value })} />
         </Group>
-        <TextInput label="Email" value={valeurs.email ?? ""} onChange={(e) => setValeurs({ ...valeurs, email: e.currentTarget.value })} />
+        <TextInput label={voc("Email")} value={valeurs.email ?? ""} onChange={(e) => setValeurs({ ...valeurs, email: e.currentTarget.value })} />
         <Group justify="flex-end">
-          <Button onClick={valider} loading={enregistrer.isPending}>Enregistrer</Button>
+          <Button onClick={valider} loading={enregistrer.isPending}>{voc("Enregistrer")}</Button>
         </Group>
       </Stack>
     </Modal>
@@ -705,7 +705,7 @@ function PartenairesTab() {
   const [filtre, setFiltre] = useState("TOUS");
   const [recherche, setRecherche] = useState("");
 
-  if (isLoading) return <Text>Chargement…</Text>;
+  if (isLoading) return <Text>{voc("Chargement…")}</Text>;
   // Filtre sur le rôle réel dans les projets (ou, à défaut, sur le type du partenaire).
   const joue = (p: Partenaire, role: string) =>
     role === "TOUS" ||
@@ -725,7 +725,7 @@ function PartenairesTab() {
       <Group justify="space-between">
         <Group>
           <TextInput
-            placeholder="Rechercher un partenaire…"
+            placeholder={voc("Rechercher un partenaire…")}
             leftSection={<Search size={14} />}
             value={recherche}
             onChange={(e) => setRecherche(e.currentTarget.value)}
@@ -735,20 +735,20 @@ function PartenairesTab() {
             value={filtre}
             onChange={setFiltre}
             data={[
-              { value: "TOUS", label: `Tous (${partenaires.length})` },
-              { value: "MISE_EN_OEUVRE", label: `Mise en œuvre (${compte("MISE_EN_OEUVRE")})` },
-              { value: "CONSORTIUM", label: `Consortium (${compte("CONSORTIUM")})` },
-              { value: "BAILLEUR", label: `Bailleurs (${compte("BAILLEUR")})` },
+              { value: "TOUS", label: voc`Tous (${partenaires.length})` },
+              { value: "MISE_EN_OEUVRE", label: voc`Mise en œuvre (${compte("MISE_EN_OEUVRE")})` },
+              { value: "CONSORTIUM", label: voc`Consortium (${compte("CONSORTIUM")})` },
+              { value: "BAILLEUR", label: voc`Bailleurs (${compte("BAILLEUR")})` },
             ]}
           />
         </Group>
         <Button leftSection={<Plus size={16} />} onClick={() => setEdition({ type: filtre === "TOUS" ? "MISE_EN_OEUVRE" : (filtre as Partenaire["type"]) })}>
-          Ajouter un partenaire
+          {voc("Ajouter un partenaire")}
         </Button>
       </Group>
 
       {visibles.length === 0 ? (
-        <Card withBorder><Text size="sm" c="dimmed">Aucun partenaire.</Text></Card>
+        <Card withBorder><Text size="sm" c="dimmed">{voc("Aucun partenaire.")}</Text></Card>
       ) : (
         <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
           {visibles.map((p) => {
@@ -771,7 +771,7 @@ function PartenairesTab() {
                       color="gray"
                       onClick={() =>
                         confirmerSuppression({
-                          message: `Supprimer « ${p.nom} » ?`,
+                          message: voc`Supprimer « ${p.nom} » ?`,
                           onConfirm: () =>
                             supprimer.mutateAsync(p.id).catch((e) => erreur(e, voc("Suppression impossible : ce partenaire est utilisé par un projet."))),
                         })
@@ -781,7 +781,7 @@ function PartenairesTab() {
                     </ActionIcon>
                   </Group>
                 </Group>
-                <Text size="xs" c="dimmed" mt={6} truncate>{contact || "Pas de contact renseigné"}</Text>
+                <Text size="xs" c="dimmed" mt={6} truncate>{contact || voc("Pas de contact renseigné")}</Text>
                 <Divider my="sm" />
                 {p.type === "BAILLEUR" ? (
                   <StatProjets libelle={voc("projets financés")} codes={p.projets_bailleur_codes ?? []} couleur="grape" />
@@ -805,12 +805,12 @@ function PartenairesTab() {
 export function OrganisationPage() {
   return (
     <Stack gap="md">
-      <TitreRubrique route="/organisation" defaut="Organisation" />
+      <TitreRubrique route="/organisation" defaut={voc("Organisation")} />
       <Tabs defaultValue="structure" keepMounted={false}>
         <Tabs.List>
-          <Tabs.Tab value="structure">Structure de l'organisation</Tabs.Tab>
-          <Tabs.Tab value="parties">Parties prenantes</Tabs.Tab>
-          <Tabs.Tab value="partenaires">Partenaires</Tabs.Tab>
+          <Tabs.Tab value="structure">{voc("Structure de l'organisation")}</Tabs.Tab>
+          <Tabs.Tab value="parties">{voc("Parties prenantes")}</Tabs.Tab>
+          <Tabs.Tab value="partenaires">{voc("Partenaires")}</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel value="structure" pt="md">
           <StructureTab />

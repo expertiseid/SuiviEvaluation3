@@ -261,8 +261,22 @@ Aucun niveau n'est imposé, ni au-dessus du projet ni en dessous :
 - **En dessous** : tous les niveaux de la planification sont des `Activite` imbriquées
   (`activite_parent`), nommées par projet (`NiveauActivite`). Un projet peut avoir un
   seul niveau (« Activité ») ou autant qu'il veut (« Résultat » → « Pilier » → « Activité »…).
-- **Import Excel** : toutes les colonnes placées avant « Sous-activité » (sauf « Code »)
-  sont des niveaux ; leurs noms deviennent les noms des niveaux du projet.
+- **Import Excel** : toutes les colonnes placées avant « Sous-activité » (sauf « Code » et
+  les attributs) sont des niveaux ; leurs noms deviennent les noms des niveaux du projet.
+- **Attributs libres** (`Activite.attributs`, `SousActivite.attributs`, `{nom: texte}`,
+  `projects/attributs.py`) : informations propres à l'organisation (« Responsable », « Lieu »…).
+  - À l'import, une colonne dont l'en-tête commence par « Attribut : » (ou sa traduction :
+    « Attribute: », « Atributo: », « سمة: ») n'est jamais un niveau, où qu'elle soit : sa valeur
+    va à l'élément ou à la sous-activité de la même ligne. « Attribut : Description »,
+    « Sources de vérification » et « Hypothèses » remplissent ces champs de l'élément. Le modèle
+    en montre un exemple (« Attribut : Responsable », en bleu).
+  - Saisie dans la fiche de l'élément et de la sous-activité (noms déjà utilisés dans le projet
+    proposés) ; affichage dans l'arbre de planification, le rapport de suivi (PDF, Word, Excel :
+    une colonne par attribut) et le cadre logique.
+  - Ordre : JSON stocké sans ordre, l'ordre vient de `Projet.ordre_attributs` (colonnes du fichier
+    importé, puis noms ajoutés par la fiche) ; l'API, l'écran et les exports le suivent.
+  - Vue Tableau de la planification (format cadre logique de PTA) : une ligne par élément,
+    bandeaux par niveau, une colonne par attribut, programmation par trimestre (X) ou dates.
 - **Historique** : les anciens « Objectif général » et « Objectif spécifique » ont été
   convertis par la migration `projects.0023` en éléments des deux premiers niveaux, nommés
   ainsi ; les indicateurs qui y étaient rattachés ont suivi.
@@ -526,6 +540,13 @@ secondaire ne peut viser qu'un niveau supérieur, jamais le parent principal ni 
 
 ### 5.12 Rapports, cadre logique, risques, suivi stratégique, partage
 
+- **Plusieurs bailleurs par projet** : un `Financement` par bailleur, avec son montant. Ils se
+  saisissent dans le formulaire du projet (bloc « Bailleurs et montants », autant de lignes que
+  de bailleurs ; un nom inconnu crée le bailleur) ou dans l'onglet Financement, et à l'import
+  Excel par la feuille « Financements » (Bailleur, Type de bailleur, Montant financé) des modèles
+  projet et planification complète (`importer_financements`). Dès qu'il y a des financements,
+  `budget_total` = fonds propres + financements (rallonges comprises). L'ancien champ unique
+  `partenaire_bailleur` reste lu pour les fichiers antérieurs.
 - **Rallonges de fonds** (`partners.RallongeFinancement`) : un bailleur ajoute des fonds en
   cours de projet, avec date et motif obligatoire. Le total d'un financement est
   `montant_finance` + rallonges ; le coût total du projet (`budget_total`) et les répartitions
@@ -565,6 +586,65 @@ secondaire ne peut viser qu'un niveau supérieur, jamais le parent principal ni 
   publique `/partage/{jeton}` réutilise les écrans habituels : `utils/partage.ts` fournit le
   jeton, les hooks lisent alors `public/partage/{jeton}/{ressource}/` (sans authentification)
   et les actions d'écriture et d'export sont masquées.
+
+### 5.13 Langues de l'interface
+
+- **Langues** : français (langue source), anglais, arabe (affichage de droite à gauche),
+  espagnol, allemand (`core.models.LANGUES`). Chaque utilisateur choisit la sienne
+  (`User.langue`, sélecteur en haut de l'écran) ; à défaut, la langue par défaut de
+  l'organisation (`ConfigurationMenu.langue_defaut`) s'applique, y compris sur la page de
+  connexion. Juste après la connexion, la langue du compte l'emporte : la page est chargée
+  sur `/` dans cette langue (recharger `/login` y ramènerait l'utilisateur).
+- **Textes de l'interface** : tout texte affiché passe par `voc("…")` ou `` voc`…${x}…` ``
+  (`utils/vocabulaire.ts`), qui applique le vocabulaire de l'organisation puis la traduction
+  (`utils/i18n.ts`). Les valeurs insérées deviennent `{0}`, `{1}`… dans les catalogues
+  `src/i18n/{en,ar,es,de}.json`, clés = texte français exact. Pas de pluriel fabriqué
+  (`projet{n > 1 ? "s" : ""}`) : écrire les deux phrases complètes, faux sinon en arabe ou
+  en allemand.
+- **Messages du serveur** (erreurs de validation, contrôles de cohérence) : envoyés en
+  français ; l'interface les traduit, y compris ceux qui contiennent des valeurs, en les
+  reconnaissant d'après leur modèle `{0}`. Les données saisies (noms de projets, de niveaux,
+  de rôles créés par l'organisation) ne sont pas traduites ; `traduireDonnee()` ne traduit
+  que celles qui figurent telles quelles au catalogue (« Région », rôles système…).
+- **Mettre à jour les traductions** après avoir ajouté ou modifié des textes :
+  1. relever les messages du serveur :
+     `docker compose exec -T backend python - < frontend/scripts/textes_serveur.py > frontend/src/i18n/serveur.json` ;
+  2. dans le conteneur frontend, `node scripts/extraire-textes.cjs` : écrit `sources.json`
+     (liste des textes), `contextes.json` (fichiers où chaque texte apparaît) et indique les
+     textes encore sans traduction pour chaque langue ;
+  3. compléter les catalogues : même clé, mêmes `{0}`, `{1}`.
+- **Corrections par l'Administrateur** (écran Langues, `core.TraductionCorrigee`) : une
+  correction remplace la traduction livrée pour tous, au chargement suivant de la page. Elle
+  doit garder exactement les emplacements `{0}`, `{1}`… du texte français (contrôlé à la saisie
+  et par le serveur). Export CSV d'une langue entière (séparateur `;`, BOM UTF-8 pour Excel),
+  import tout-ou-rien du fichier complété, historique des corrections et retraits
+  (`django-simple-history`), écran d'apparition de chaque texte et filtre par écran.
+- **Fichiers produits par le serveur** (rapports PDF et Word, exports Excel, modèles d'import,
+  carte imprimée, `core/langues.py`) : produits dans la langue de l'interface de la personne
+  qui les télécharge (en-tête `Accept-Language` envoyé par `api/client.ts`, ou `?langue=`).
+  - Les vues concernées sont décorées par `@dans_la_langue_demandee` ; ailleurs (imports,
+    messages d'erreur), le serveur reste en français.
+  - Le texte est écrit en français dans le code et traduit au moment où le fichier est produit :
+    `traduire_html()` (PDF, Word ; en arabe, `dir="rtl"` et paragraphes Word de droite à gauche),
+    `traduire_classeur()` (cellules, feuilles, listes déroulantes ; feuilles de droite à gauche
+    en arabe), `traduire_figure()` (carte matplotlib ; lettres arabes liées par
+    `arabic-reshaper` et `python-bidi`). `v()` traduit aussi, et ce qu'il a traduit n'est pas
+    retraduit avec le document (« Prénom » → « Nombre » ne doit pas devenir « Número »).
+  - Catalogues `backend/apps/core/i18n/{en,ar,es,de}.json` (clé = texte français, valeurs
+    insérées `{0}`), complétés par les corrections de l'écran Langues (cache de 10 s). Une
+    clé à valeurs insérées n'est reconnue seule que si son texte fixe est assez précis
+    (`_modele_assez_precis`) ; sinon, appeler `traduire_modele("Par {0}", valeur)`.
+  - Mise à jour : `docker compose exec backend python manage.py extraire_textes_fichiers`
+    (écrit `sources.json`, liste les textes sans traduction et signale deux en-têtes de modèle
+    traduits pareil) ; contrôle : `manage.py verifier_traductions_fichiers en` produit chaque
+    fichier et liste les textes restés en français (hors données saisies).
+- **Modèles d'import dans une autre langue** : téléchargés traduits (feuilles, en-têtes,
+  consignes, exemples), ils se réimportent tels quels. `ramener_classeur()` ramène noms de
+  feuilles et en-têtes au français (toutes langues, noms de feuilles raccourcis à 31 caractères
+  compris) ; `vers_francais()` ramène les valeurs à choix saisies dans une autre langue (« Yes »,
+  « In progress », « Quarterly », « Female »…). Les codes (`EN_COURS`, `DIRECT`…) ne se traduisent
+  pas. L'export Excel des bénéficiaires ne traduit que ses en-têtes : ses données se réimportent
+  telles quelles. Tests : `core/test_modeles_traduits.py`, `suivi/test_canevas.py`.
 
 ## 6. Utilisateurs, rôles et permissions
 
@@ -719,6 +799,10 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 | GET | `projets/{id}/coherence/` | Rapport de cohérence du projet |
 | GET | `approbations/` | Saisies et demandes en attente (approbateur : toutes ; autres : les siennes, avec les rejets) |
 | POST | `approbations/saisies/{point\|valeur\|taux}/{id}/`, `approbations/demandes/{id}/` | Approuver ou rejeter : `{approuver, motif}` (motif obligatoire pour un rejet) |
+| GET | `traductions/?langue=` | Sans authentification : langues, langue par défaut, corrections de la langue demandée |
+| CRUD | `traductions-corrigees/` | Traductions corrigées (`?langue=` ; modification : Administrateur) |
+| POST | `traductions-corrigees/importer/` | Import tout-ou-rien : `{langue, lignes: [{source, traduction}]}`, traduction `null` = retrait (Administrateur) |
+| GET | `traductions-corrigees/journal/?langue=` | 200 dernières corrections et retraits, avec auteur (Administrateur) |
 
 ## 8. Imports et exports
 
@@ -792,6 +876,7 @@ mutualisées) puis rejoue la requête, ou renvoie vers la page de connexion.
 | `/utilisateurs` | Utilisateurs et rôles (Administrateur) |
 | `/organisation` | Structure de l'organisation, parties prenantes, partenaires (Administrateur) |
 | `/parametres-alerte` | Grilles d'alerte, délai d'échéance et périodes de rapportage (Administrateur) |
+| `/langues` | Langue par défaut, correction, export et import des traductions, historique (Administrateur) |
 | `/partage/:jeton` | Page partagée par lien, sans compte et en lecture seule (hors du menu) |
 
 ### 10.4 Points d'attention

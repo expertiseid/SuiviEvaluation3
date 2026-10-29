@@ -9,6 +9,7 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font
 
 from apps.core.excel_utils import figer_entete, quadriller
+from apps.core.langues import vers_francais
 from apps.core.vocabulaire import adapter_classeur, ramener_classeur, ramener_terme, v
 
 # Le niveau de rattachement est libre : « Aucun », « Projet », ou le nom de
@@ -184,7 +185,7 @@ def importer_paliers_alerte(feuille, *, projet=None, indicateurs_par_nom=None, a
     for numero, ligne in enumerate(lignes[1:], start=2):
         if not any(ligne):
             continue
-        portee = ramener_terme(str(valeur(ligne, "Portée (Projet/Indicateur/Activité)") or "")).strip().upper()
+        portee = ramener_terme(vers_francais(str(valeur(ligne, "Portée (Projet/Indicateur/Activité)") or "").strip())).strip().upper()
         nom = str(valeur(ligne, "Nom de l'élément (laisser vide pour Projet)") or "").strip()
         borne = valeur(ligne, "Seuil (%)")
         libelle = valeur(ligne, "Libellé")
@@ -256,6 +257,9 @@ def _resoudre_rattachement(projet, niveau: str, nom_element: str):
     from apps.projects.models import Activite, NiveauActivite
 
     niveau_brut = ramener_terme((niveau or "").strip())
+    # « Aucun » / « Projet » saisis dans une autre langue ; un nom de niveau reste tel quel.
+    if vers_francais(niveau_brut).upper() in ("AUCUN", "PROJET"):
+        niveau_brut = vers_francais(niveau_brut)
     if niveau_brut.upper() in ("", "AUCUN"):
         return {}
     if niveau_brut.upper() == "PROJET":
@@ -340,7 +344,9 @@ def importer_indicateurs_depuis_feuille(feuille, projet=None) -> dict:
         cible = valeur(ligne, "Valeur cible")
         frequence = str(
             valeur(ligne, "Fréquence de collecte (MENSUELLE/TRIMESTRIELLE/SEMESTRIELLE/ANNUELLE)") or ""
-        ).strip().upper()
+        ).strip()
+        # Code (TRIMESTRIELLE) ou libellé, éventuellement dans une autre langue (« Quarterly »).
+        frequence = vers_francais(frequence).upper()
 
         if not libelle or not unite or cible in (None, ""):
             erreurs.append({"ligne": numero, "message": "Libellé, unité et valeur cible sont obligatoires — ligne ignorée."})
@@ -360,7 +366,7 @@ def importer_indicateurs_depuis_feuille(feuille, projet=None) -> dict:
 
         niveau = str(valeur(ligne, COLONNE_NIVEAU) or "")
         rattachement = {}
-        if niveau.strip().upper() not in ("", "AUCUN"):
+        if vers_francais(niveau.strip()).upper() not in ("", "AUCUN"):
             if projet_ligne is None:
                 erreurs.append({"ligne": numero, "message": v('Un projet (code) est requis pour ce rattachement — ligne ignorée.')})
                 continue

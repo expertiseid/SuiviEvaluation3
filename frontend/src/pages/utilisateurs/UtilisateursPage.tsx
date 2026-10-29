@@ -36,15 +36,16 @@ import { usePartiesPrenantes, useStructures, useTousPartenaires } from "../../ap
 import { optionsStructures } from "../../utils/organisation";
 import { TitreRubrique } from "../../components/common/TitreRubrique";
 import { voc } from "../../utils/vocabulaire";
+import { libelleRole } from "../../utils/roles";
 
 const PREFIXE_CREATION = "__creer__";
 
 const TYPES_STRUCTURE: { value: TypeStructureUtilisateur; label: string }[] = [
-  { value: "INTERNE", label: "Organisation (interne)" },
-  { value: "CONSORTIUM", label: "Partenaire de consortium" },
-  { value: "MISE_EN_OEUVRE", label: "Partenaire de mise en œuvre" },
-  { value: "PARTIE_PRENANTE", label: "Partie prenante" },
-  { value: "BAILLEUR", label: "Bailleur" },
+  { value: "INTERNE", label: voc("Organisation (interne)") },
+  { value: "CONSORTIUM", label: voc("Partenaire de consortium") },
+  { value: "MISE_EN_OEUVRE", label: voc("Partenaire de mise en œuvre") },
+  { value: "PARTIE_PRENANTE", label: voc("Partie prenante") },
+  { value: "BAILLEUR", label: voc("Bailleur") },
 ];
 
 type StructureUtilisateur = Pick<User, "type_structure" | "structure_interne" | "partenaire" | "partie_prenante">;
@@ -65,13 +66,13 @@ function ChoixStructure({ value, onChange }: { value: StructureUtilisateur; onCh
         }
       : type === "PARTIE_PRENANTE"
         ? {
-            label: "Partie prenante",
+            label: voc("Partie prenante"),
             data: (parties ?? []).map((p) => ({ value: String(p.id), label: p.nom })),
             champ: "partie_prenante" as const,
           }
         : type
           ? {
-              label: type === "BAILLEUR" ? "Bailleur" : "Partenaire",
+              label: type === "BAILLEUR" ? voc("Bailleur") : voc("Partenaire"),
               data: (partenaires ?? [])
                 .filter((p) => (type === "BAILLEUR" ? p.type === "BAILLEUR" : p.type !== "BAILLEUR"))
                 .map((p) => ({ value: String(p.id), label: p.nom })),
@@ -81,8 +82,8 @@ function ChoixStructure({ value, onChange }: { value: StructureUtilisateur; onCh
   return (
     <Group grow align="flex-start">
       <Select
-        label="Structure de l'utilisateur"
-        placeholder="Non précisée"
+        label={voc("Structure de l'utilisateur")}
+        placeholder={voc("Non précisée")}
         data={TYPES_STRUCTURE}
         value={type}
         onChange={(v) => onChange({ ...vider, type_structure: (v ?? "") as TypeStructureUtilisateur | "" })}
@@ -91,13 +92,13 @@ function ChoixStructure({ value, onChange }: { value: StructureUtilisateur; onCh
       {lien && (
         <Select
           label={lien.label}
-          placeholder="Choisir…"
+          placeholder={voc("Choisir…")}
           data={lien.data}
           value={value[lien.champ] ? String(value[lien.champ]) : null}
           onChange={(v) => onChange({ ...value, ...vider, [lien.champ]: v ? Number(v) : null })}
           searchable
           clearable
-          nothingFoundMessage="À ajouter dans l'écran Organisation"
+          nothingFoundMessage={voc("À ajouter dans l'écran Organisation")}
         />
       )}
     </Group>
@@ -120,11 +121,11 @@ function RoleSelect({ value, onChange }: { value: string | null; onChange: (code
   const [roleEnEdition, setRoleEnEdition] = useState<RoleUtilisateur | null>(null);
   const roleParCode = new Map(roles?.map((r) => [r.code, r]));
 
-  const data = roles?.map((r) => ({ value: r.code, label: r.libelle })) ?? [];
+  const data = roles?.map((r) => ({ value: r.code, label: libelleRole(r.libelle) })) ?? [];
   const texte = recherche.trim();
   const dejaExistant = data.some((o) => o.label.toLowerCase() === texte.toLowerCase());
   if (texte && !dejaExistant) {
-    data.push({ value: `${PREFIXE_CREATION}${texte}`, label: `+ Créer le rôle « ${texte} »` });
+    data.push({ value: `${PREFIXE_CREATION}${texte}`, label: voc`+ Créer le rôle « ${texte} »` });
   }
 
   async function handleChange(v: string | null) {
@@ -137,22 +138,22 @@ function RoleSelect({ value, onChange }: { value: string | null; onChange: (code
       const cree = await createRole.mutateAsync({ libelle, visibilite_globale: false });
       onChange(cree.code);
       setRecherche(cree.libelle);
-      notifications.show({ message: `Rôle « ${cree.libelle} » créé`, color: "green" });
+      notifications.show({ message: voc`Rôle « ${cree.libelle} » créé`, color: "green" });
     } catch (error) {
-      notifications.show({ message: messageErreurApi(error, "Erreur lors de la création du rôle"), color: "red" });
+      notifications.show({ message: messageErreurApi(error, voc("Erreur lors de la création du rôle")), color: "red" });
     }
   }
 
   function handleSupprimer(role: RoleUtilisateur) {
     confirmerSuppression({
-      message: `Supprimer le rôle "${role.libelle}" ?`,
+      message: voc`Supprimer le rôle "${role.libelle}" ?`,
       onConfirm: async () => {
         try {
           await deleteRole.mutateAsync(role.id);
           if (value === role.code) onChange(null);
-          notifications.show({ message: "Rôle supprimé", color: "green" });
+          notifications.show({ message: voc("Rôle supprimé"), color: "green" });
         } catch (error) {
-          notifications.show({ message: messageErreurApi(error, "Erreur lors de la suppression du rôle"), color: "red" });
+          notifications.show({ message: messageErreurApi(error, voc("Erreur lors de la suppression du rôle")), color: "red" });
         }
       },
     });
@@ -169,15 +170,15 @@ function RoleSelect({ value, onChange }: { value: string | null; onChange: (code
   return (
     <>
       <Select
-        label="Rôle"
-        placeholder="Choisir ou taper un nouveau rôle…"
+        label={voc("Rôle")}
+        placeholder={voc("Choisir ou taper un nouveau rôle…")}
         data={data}
         value={value}
         onChange={handleChange}
         searchable
         searchValue={recherche}
         onSearchChange={setRecherche}
-        nothingFoundMessage="Tape le nom du rôle à créer"
+        nothingFoundMessage={voc("Tape le nom du rôle à créer")}
         disabled={createRole.isPending || deleteRole.isPending}
         renderOption={({ option, checked }) => {
           const role = roleParCode.get(option.value);
@@ -190,7 +191,7 @@ function RoleSelect({ value, onChange }: { value: string | null; onChange: (code
                 <Text size="sm">{option.label}</Text>
               </Group>
               <Group gap={2} wrap="nowrap">
-                <Tooltip label="Modifier le rôle">
+                <Tooltip label={voc("Modifier le rôle")}>
                   <ActionIcon
                     size="sm"
                     variant="subtle"
@@ -203,10 +204,10 @@ function RoleSelect({ value, onChange }: { value: string | null; onChange: (code
                 <Tooltip
                   label={
                     role.systeme
-                      ? "Rôle système : non supprimable"
+                      ? voc("Rôle système : non supprimable")
                       : role.nb_utilisateurs > 0
                         ? voc("Des utilisateurs ont ce rôle")
-                        : "Supprimer le rôle"
+                        : voc("Supprimer le rôle")
                   }
                 >
                   <ActionIcon
@@ -235,13 +236,13 @@ function RoleSelect({ value, onChange }: { value: string | null; onChange: (code
 }
 
 const NIVEAUX_ACCES = [
-  { value: "LECTURE_SEULE", label: "Voir seulement" },
-  { value: "LECTURE_ECRITURE", label: "Créer et modifier" },
+  { value: "LECTURE_SEULE", label: voc("Voir seulement") },
+  { value: "LECTURE_ECRITURE", label: voc("Créer et modifier") },
 ];
 
 const LIBELLES_NIVEAU_ACCES: Record<string, string> = {
-  LECTURE_SEULE: "Voir seulement",
-  LECTURE_ECRITURE: "Créer et modifier",
+  LECTURE_SEULE: voc("Voir seulement"),
+  LECTURE_ECRITURE: voc("Créer et modifier"),
 };
 
 function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User | null; onClose: () => void }) {
@@ -300,42 +301,42 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
       notifications.show({ message: voc("Utilisateur modifié"), color: "green" });
       onClose();
     } catch {
-      notifications.show({ message: "Erreur lors de la modification", color: "red" });
+      notifications.show({ message: voc("Erreur lors de la modification"), color: "red" });
     }
   }
 
   return (
-    <Modal size="xl" opened={!!utilisateur} onClose={onClose} title={`Modifier — ${utilisateur?.username ?? ""}`}>
+    <Modal size="xl" opened={!!utilisateur} onClose={onClose} title={voc`Modifier — ${utilisateur?.username ?? ""}`}>
       <Stack gap="sm">
         <Group grow>
-          <TextInput label="Prénom" value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} />
-          <TextInput label="Nom" value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
+          <TextInput label={voc("Prénom")} value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} />
+          <TextInput label={voc("Nom")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
         </Group>
-        <TextInput label="Email" value={email} onChange={(e) => setEmail(e.currentTarget.value)} />
+        <TextInput label={voc("Email")} value={email} onChange={(e) => setEmail(e.currentTarget.value)} />
         <RoleSelect value={role} onChange={setRole} />
         <ChoixStructure value={structure} onChange={setStructure} />
         <Select
-          label="Niveau d'accès par défaut"
+          label={voc("Niveau d'accès par défaut")}
           data={NIVEAUX_ACCES}
           value={estAdmin ? "LECTURE_ECRITURE" : niveauAcces}
           onChange={setNiveauAcces}
           disabled={estAdmin}
-          description={estAdmin ? "Toujours complet pour un Administrateur" : "Appliqué aux modules non réglés ci-dessous"}
+          description={estAdmin ? voc("Toujours complet pour un Administrateur") : voc("Appliqué aux modules non réglés ci-dessous")}
         />
         {estAdmin ? (
-          <Text size="xs" c="dimmed">Un Administrateur a toujours accès à tous les modules.</Text>
+          <Text size="xs" c="dimmed">{voc("Un Administrateur a toujours accès à tous les modules.")}</Text>
         ) : (
           <DroitsModules value={droits} onChange={setDroits} niveauAcces={niveauAcces} />
         )}
-        <Switch label="Compte actif" checked={actif} onChange={(e) => setActif(e.currentTarget.checked)} />
+        <Switch label={voc("Compte actif")} checked={actif} onChange={(e) => setActif(e.currentTarget.checked)} />
         <PasswordInput
-          label="Nouveau mot de passe"
-          description="Laisser vide pour ne pas le changer"
+          label={voc("Nouveau mot de passe")}
+          description={voc("Laisser vide pour ne pas le changer")}
           value={password}
           onChange={(e) => setPassword(e.currentTarget.value)}
         />
         <Group justify="flex-end" mt="sm">
-          <Button onClick={handleEnregistrer} loading={updateUtilisateur.isPending}>Enregistrer</Button>
+          <Button onClick={handleEnregistrer} loading={updateUtilisateur.isPending}>{voc("Enregistrer")}</Button>
         </Group>
       </Stack>
     </Modal>
@@ -378,7 +379,7 @@ export function UtilisateursPage() {
 
   async function handleCreate() {
     if (!username || !password || !role) {
-      notifications.show({ message: "Identifiant, mot de passe et rôle requis.", color: "orange" });
+      notifications.show({ message: voc("Identifiant, mot de passe et rôle requis."), color: "orange" });
       return;
     }
     try {
@@ -398,14 +399,14 @@ export function UtilisateursPage() {
       setPassword("");
       notifications.show({ message: voc("Utilisateur créé"), color: "green" });
     } catch {
-      notifications.show({ message: "Erreur lors de la création (identifiant déjà utilisé ?)", color: "red" });
+      notifications.show({ message: voc("Erreur lors de la création (identifiant déjà utilisé ?)"), color: "red" });
     }
   }
 
   return (
     <Stack gap="md">
       <div>
-        <TitreRubrique route="/utilisateurs" defaut="Utilisateurs" />
+        <TitreRubrique route="/utilisateurs" defaut={voc("Utilisateurs")} />
         <Text c="dimmed" size="sm">
           {voc("Un Administrateur a toujours accès à tout. Pour les autres, choisis le rôle (détermine les projets visibles) et le niveau d'accès (voir seulement, ou créer et modifier dans son périmètre).")}</Text>
       </div>
@@ -413,7 +414,7 @@ export function UtilisateursPage() {
       <Tabs defaultValue="utilisateurs" keepMounted={false}>
         <Tabs.List>
           <Tabs.Tab value="utilisateurs">{voc("Utilisateurs")}</Tabs.Tab>
-          <Tabs.Tab value="roles">Rôles</Tabs.Tab>
+          <Tabs.Tab value="roles">{voc("Rôles")}</Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="roles" pt="md">
@@ -424,39 +425,39 @@ export function UtilisateursPage() {
           <Stack gap="md">
             <Stack gap="xs">
               <Group align="flex-end">
-                <TextInput label="Identifiant" value={username} onChange={(e) => setUsername(e.currentTarget.value)} />
-                <TextInput label="Prénom" value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} />
-                <TextInput label="Nom" value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
-                <TextInput label="Email" value={email} onChange={(e) => setEmail(e.currentTarget.value)} />
+                <TextInput label={voc("Identifiant")} value={username} onChange={(e) => setUsername(e.currentTarget.value)} />
+                <TextInput label={voc("Prénom")} value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} />
+                <TextInput label={voc("Nom")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
+                <TextInput label={voc("Email")} value={email} onChange={(e) => setEmail(e.currentTarget.value)} />
               </Group>
               <Group align="flex-end">
                 <RoleSelect value={role} onChange={setRole} />
                 <Select
-                  label="Niveau d'accès"
+                  label={voc("Niveau d'accès")}
                   data={NIVEAUX_ACCES}
                   value={estAdmin ? "LECTURE_ECRITURE" : niveauAcces}
                   onChange={setNiveauAcces}
                   disabled={estAdmin}
-                  description={estAdmin ? "Toujours complet pour un Administrateur" : undefined}
+                  description={estAdmin ? voc("Toujours complet pour un Administrateur") : undefined}
                 />
-                <PasswordInput label="Mot de passe" value={password} onChange={(e) => setPassword(e.currentTarget.value)} />
-                <Button onClick={handleCreate} loading={createUtilisateur.isPending}>Créer</Button>
+                <PasswordInput label={voc("Mot de passe")} value={password} onChange={(e) => setPassword(e.currentTarget.value)} />
+                <Button onClick={handleCreate} loading={createUtilisateur.isPending}>{voc("Créer")}</Button>
               </Group>
             </Stack>
 
             {isLoading ? (
-              <div>Chargement…</div>
+              <div>{voc("Chargement…")}</div>
             ) : (
               <Table striped highlightOnHover>
                 <Table.Thead>
                   <Table.Tr>
-                    <Table.Th>Identifiant</Table.Th>
-                    <Table.Th>Nom</Table.Th>
-                    <Table.Th>Email</Table.Th>
-                    <Table.Th>Rôle</Table.Th>
-                    <Table.Th>Structure</Table.Th>
-                    <Table.Th>Accès</Table.Th>
-                    <Table.Th>Actif</Table.Th>
+                    <Table.Th>{voc("Identifiant")}</Table.Th>
+                    <Table.Th>{voc("Nom")}</Table.Th>
+                    <Table.Th>{voc("Email")}</Table.Th>
+                    <Table.Th>{voc("Rôle")}</Table.Th>
+                    <Table.Th>{voc("Structure")}</Table.Th>
+                    <Table.Th>{voc("Accès")}</Table.Th>
+                    <Table.Th>{voc("Actif")}</Table.Th>
                     <Table.Th w={40} />
                   </Table.Tr>
                 </Table.Thead>
@@ -466,25 +467,25 @@ export function UtilisateursPage() {
                       <Table.Td>{u.username}</Table.Td>
                       <Table.Td>{u.first_name} {u.last_name}</Table.Td>
                       <Table.Td>{u.email}</Table.Td>
-                      <Table.Td><Badge variant="light">{u.role_libelle || u.role}</Badge></Table.Td>
+                      <Table.Td><Badge variant="light">{u.role_libelle ? libelleRole(u.role_libelle) : u.role}</Badge></Table.Td>
                       <Table.Td><Text size="sm">{u.structure_libelle || "—"}</Text></Table.Td>
                       <Table.Td>
                         <Badge variant="light" color={u.role === "ADMIN" || u.niveau_acces === "LECTURE_ECRITURE" ? "teal" : "gray"}>
-                          {u.role === "ADMIN" ? "Complet" : LIBELLES_NIVEAU_ACCES[u.niveau_acces] ?? u.niveau_acces}
+                          {u.role === "ADMIN" ? voc("Complet") : LIBELLES_NIVEAU_ACCES[u.niveau_acces] ?? u.niveau_acces}
                         </Badge>
                         {u.role !== "ADMIN" && Object.keys(u.acces_modules ?? {}).length > 0 && (
-                          <Badge variant="light" color="orange" ml={4}>Droits par module</Badge>
+                          <Badge variant="light" color="orange" ml={4}>{voc("Droits par module")}</Badge>
                         )}
                       </Table.Td>
-                      <Table.Td>{u.is_active ? "Oui" : "Non"}</Table.Td>
+                      <Table.Td>{u.is_active ? voc("Oui") : voc("Non")}</Table.Td>
                       <Table.Td>
                         <Group gap={4} wrap="nowrap">
-                          <Tooltip label="Modifier">
+                          <Tooltip label={voc("Modifier")}>
                             <ActionIcon size="sm" variant="subtle" onClick={() => setUtilisateurEnEdition(u)}>
                               <Pencil size={13} />
                             </ActionIcon>
                           </Tooltip>
-                          <Tooltip label={u.id === utilisateurConnecte?.id ? "Impossible de supprimer ton propre compte" : "Supprimer"}>
+                          <Tooltip label={u.id === utilisateurConnecte?.id ? voc("Impossible de supprimer ton propre compte") : voc("Supprimer")}>
                             <ActionIcon
                               size="sm"
                               variant="subtle"

@@ -60,7 +60,7 @@ function CadreModal({
 
   async function handleSave() {
     if (!nom.trim()) {
-      notifications.show({ message: "Le nom est requis.", color: "orange" });
+      notifications.show({ message: voc("Le nom est requis."), color: "orange" });
       return;
     }
     try {
@@ -73,7 +73,7 @@ function CadreModal({
       }
       onClose();
     } catch {
-      notifications.show({ message: "Erreur lors de l'enregistrement", color: "red" });
+      notifications.show({ message: voc("Erreur lors de l'enregistrement"), color: "red" });
     }
   }
 
@@ -86,16 +86,16 @@ function CadreModal({
     >
       <Stack gap="sm">
         <TextInput
-          label="Nom"
+          label={voc("Nom")}
           description={voc("Ex : « Cadre stratégique 2022-2026 »")}
           value={nom}
           onChange={(e) => setNom(e.currentTarget.value)}
           required
         />
-        <Textarea label="Description" minRows={2} value={description} onChange={(e) => setDescription(e.currentTarget.value)} />
+        <Textarea label={voc("Description")} minRows={2} value={description} onChange={(e) => setDescription(e.currentTarget.value)} />
         <MultiSelect
           label={voc("Services chargés")}
-          placeholder="Aucun"
+          placeholder={voc("Aucun")}
           data={optionsStructures(structures ?? [])}
           value={structuresIds}
           onChange={setStructuresIds}
@@ -103,8 +103,8 @@ function CadreModal({
           clearable
         />
         <MultiSelect
-          label="Parties prenantes"
-          placeholder="Aucune"
+          label={voc("Parties prenantes")}
+          placeholder={voc("Aucune")}
           data={(partiesPrenantes ?? []).map((p) => ({ value: String(p.id), label: p.nom }))}
           value={partiesIds}
           onChange={setPartiesIds}
@@ -113,7 +113,7 @@ function CadreModal({
         />
         <Group justify="flex-end">
           <Button onClick={handleSave} loading={createCadre.isPending || updateCadre.isPending}>
-            {cadreExistant ? "Enregistrer" : "Créer"}
+            {cadreExistant ? voc("Enregistrer") : voc("Créer")}
           </Button>
         </Group>
       </Stack>
@@ -151,7 +151,7 @@ export function CadresStrategiquesListPage() {
   return (
     <Stack gap="md">
       <Group justify="space-between">
-        <TitreRubrique route="/strategie" defaut="Cadres stratégiques" />
+        <TitreRubrique route="/strategie" defaut={voc("Cadres stratégiques")} />
         <Group gap="xs">
           <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />
           <Button onClick={() => setModalOuvert(true)}>{voc("Nouveau cadre stratégique")}</Button>
@@ -167,7 +167,7 @@ export function CadresStrategiquesListPage() {
       />
 
       {isLoading ? (
-        <Text c="dimmed">Chargement…</Text>
+        <Text c="dimmed">{voc("Chargement…")}</Text>
       ) : !cadres || cadres.length === 0 ? (
         <Card withBorder padding="md" radius="md">
           <EmptyState
@@ -177,7 +177,7 @@ export function CadresStrategiquesListPage() {
         </Card>
       ) : cadresFiltres.length === 0 ? (
         <Card withBorder padding="md" radius="md">
-          <EmptyState icon={<LayoutGrid size={32} strokeWidth={1.5} />} message="Aucun cadre ne correspond à la recherche." />
+          <EmptyState icon={<LayoutGrid size={32} strokeWidth={1.5} />} message={voc("Aucun cadre ne correspond à la recherche.")} />
         </Card>
       ) : (
         <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
@@ -189,12 +189,12 @@ export function CadresStrategiquesListPage() {
                 </Text>
                 {editionActive && (
                 <Group gap={4} wrap="nowrap">
-                  <Tooltip label="Modifier">
+                  <Tooltip label={voc("Modifier")}>
                     <ActionIcon variant="subtle" onClick={() => setCadreEnEdition(cadre)}>
                       <Pencil size={15} />
                     </ActionIcon>
                   </Tooltip>
-                  <Tooltip label="Supprimer">
+                  <Tooltip label={voc("Supprimer")}>
                     <ActionIcon variant="subtle" color="red" loading={deleteCadre.isPending} onClick={() => handleSupprimer(cadre)}>
                       <Trash2 size={15} />
                     </ActionIcon>
@@ -211,7 +211,7 @@ export function CadresStrategiquesListPage() {
                 <Text size="xs" c="dimmed" mt={4}>{voc("Services")} : {cadre.structures_noms?.join(", ")}</Text>
               )}
               <Button component={Link} to={`/strategie/${cadre.id}`} variant="light" size="xs" mt="sm" fullWidth>
-                Ouvrir
+                {voc("Ouvrir")}
               </Button>
             </Card>
           ))}

@@ -11,6 +11,7 @@ import datetime
 import segno
 from django.utils.html import escape
 
+from apps.core.langues import traduire_html, traduire_modele
 from apps.core.vocabulaire import v
 
 
@@ -35,7 +36,7 @@ def _carte(b, origine):
     projets = sorted({p.projet.code for p in b.participations.all()})
     details = [
         {"F": "Femme", "M": "Homme"}.get(b.sexe, ""),
-        b.date_naissance.strftime("né(e) le %d/%m/%Y") if b.date_naissance else "",
+        traduire_modele("né(e) le {0}", b.date_naissance.strftime("%d/%m/%Y")) if b.date_naissance else "",
     ]
     return f"""
     <div class="carte">
@@ -92,4 +93,4 @@ def cartes_pdf(beneficiaires, origine: str) -> bytes:
       .ligne {{ font-size: 7.5pt; color: #444; margin-bottom: 0.8mm; }}
       .qr svg {{ width: 26mm; height: 26mm; }}
     </style></head><body>{"".join(pages)}</body></html>"""
-    return HTML(string=html).write_pdf()
+    return HTML(string=traduire_html(html)).write_pdf()

@@ -25,34 +25,35 @@ import { GererCouchesModal, ImportCoucheModal, TelechargerCarteModal } from "./F
 import { CarteParZone, LegendeParZone } from "./CarteParZone";
 import { OutilsCarte } from "./OutilsCarte";
 
+import { locale, traduireDonnee } from "../../utils/i18n";
 const CENTRE_PAR_DEFAUT: [number, number] = [12.3, -1.6]; // Burkina Faso
 
 type Couche = "points" | "regions" | "provinces" | "communes" | "routes" | "villages" | "noms" | "beneficiaires";
 const COUCHES: { value: Couche; label: string }[] = [
-  { value: "points", label: "Bénéficiaires" },
-  { value: "regions", label: "Régions" },
-  { value: "provinces", label: "Provinces" },
-  { value: "communes", label: "Communes" },
-  { value: "routes", label: "Routes" },
-  { value: "villages", label: "Villes et villages" },
-  { value: "noms", label: "Noms" },
-  { value: "beneficiaires", label: "Noms des bénéficiaires" },
+  { value: "points", label: voc("Bénéficiaires") },
+  { value: "regions", label: voc("Régions") },
+  { value: "provinces", label: voc("Provinces") },
+  { value: "communes", label: voc("Communes") },
+  { value: "routes", label: voc("Routes") },
+  { value: "villages", label: voc("Villes et villages") },
+  { value: "noms", label: voc("Noms") },
+  { value: "beneficiaires", label: voc("Noms des bénéficiaires") },
 ];
 
 // Fonds de carte : « neutre » sans noms, pour que ceux de la base importée restent lisibles.
 const FONDS: Record<string, { label: string; url: string; attribution: string } | null> = {
   neutre: {
-    label: "Neutre",
+    label: voc("Neutre"),
     url: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
     attribution: "Fond &copy; Esri",
   },
   osm: {
-    label: "OpenStreetMap",
+    label: voc("OpenStreetMap"),
     url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   },
   satellite: {
-    label: "Satellite",
+    label: voc("Satellite"),
     url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     attribution: "Imagerie &copy; Esri, Maxar, Earthstar Geographics",
   },
@@ -66,9 +67,9 @@ const STYLE_LIMITES: Record<number, L.PathOptions> = {
   3: { color: "#9ca3af", weight: 0.8, fillOpacity: 0, dashArray: "2 3" },
 };
 const STYLE_ROUTES: Record<string, { color: string; weight: number; libelle: string }> = {
-  NATIONALE: { color: "#dc2626", weight: 2.6, libelle: "Nationale" },
-  REGIONALE: { color: "#ea580c", weight: 1.8, libelle: "Régionale" },
-  DEPARTEMENTALE: { color: "#ca8a04", weight: 1.2, libelle: "Départementale" },
+  NATIONALE: { color: "#dc2626", weight: 2.6, libelle: voc("Nationale") },
+  REGIONALE: { color: "#ea580c", weight: 1.8, libelle: voc("Régionale") },
+  DEPARTEMENTALE: { color: "#ca8a04", weight: 1.2, libelle: voc("Départementale") },
 };
 // Noms affichés selon le zoom, pour ne pas surcharger la carte.
 const ZOOM_NOMS: Record<number, [number, number]> = { 1: [0, 9], 2: [8, 11], 3: [9, 30] };
@@ -99,7 +100,7 @@ function etiquette(texte: string, classe: string) {
 function Chiffre({ valeur, libelle, couleur }: { valeur: number; libelle: string; couleur?: string }) {
   return (
     <div>
-      <Text size="xl" fw={700} c={couleur} lh={1.1}>{valeur.toLocaleString("fr-FR")}</Text>
+      <Text size="xl" fw={700} c={couleur} lh={1.1}>{valeur.toLocaleString(locale())}</Text>
       <Text size="xs" c="dimmed">{libelle}</Text>
     </div>
   );
@@ -182,7 +183,7 @@ function Villages({ pays, bbox, zoom, noms }: { pays: string | undefined; bbox: 
           radius={RAYON_LOCALITE[l.statut]}
           pathOptions={{ color: "#1f2937", weight: 1, fillColor: l.statut === "VILLE" ? "#1f2937" : "#fff", fillOpacity: 1 }}
         >
-          <Tooltip>{l.nom}{l.commune && l.commune !== l.nom ? ` (commune de ${l.commune})` : ""}</Tooltip>
+          <Tooltip>{l.nom}{l.commune && l.commune !== l.nom ? voc` (commune de ${l.commune})` : ""}</Tooltip>
         </CircleMarker>
       ))}
       {noms && zoom >= ZOOM_NOMS_VILLAGES &&
@@ -202,7 +203,7 @@ function LigneFiche({ b }: { b: FicheCarte }) {
         <Badge size="xs" variant="outline">{b.identifiant}</Badge>
       </Group>
       <Text size="xs" c="dimmed">
-        {b.sexe === "F" ? "Femme" : "Homme"}
+        {b.sexe === "F" ? voc("Femme") : voc("Homme")}
         {b.tranche_age && ` · ${b.tranche_age}`}
         {b.telephone && ` · ${b.telephone}`}
         {b.localite && ` · ${b.localite}`}
@@ -261,7 +262,7 @@ export function CartePage() {
   // Zones regroupées par niveau (Région, Province…) pour le filtre.
   const choixZones = useMemo(() => {
     const groupes = new Map<string, { value: string; label: string }[]>();
-    zones.forEach((z) => groupes.set(z.niveau_administratif_nom, [...(groupes.get(z.niveau_administratif_nom) ?? []), { value: String(z.id), label: z.nom }]));
+    zones.forEach((z) => groupes.set(traduireDonnee(z.niveau_administratif_nom), [...(groupes.get(traduireDonnee(z.niveau_administratif_nom)) ?? []), { value: String(z.id), label: z.nom }]));
     return [...groupes.entries()].map(([group, items]) => ({ group, items: items.sort((a, b) => a.label.localeCompare(b.label)) }));
   }, [zones]);
   const { data: regions, isError: limitesIndisponibles } = useLimitesAdministratives(pays, 1);
@@ -296,18 +297,18 @@ export function CartePage() {
     <Stack gap="md">
       <style>{STYLE_ETIQUETTES}</style>
       <Group justify="space-between">
-        <TitreRubrique route="/carte" defaut="Carte" />
+        <TitreRubrique route="/carte" defaut={voc("Carte")} />
         <Group gap="xs">
           {peutEcrire("/carte") && (
-            <Button variant="light" color="grape" leftSection={<Upload size={16} />} onClick={() => setFenetre("import")}>Importer une couche</Button>
+            <Button variant="light" color="grape" leftSection={<Upload size={16} />} onClick={() => setFenetre("import")}>{voc("Importer une couche")}</Button>
           )}
-          <Button leftSection={<FileDown size={16} />} onClick={() => setFenetre("telecharger")}>Télécharger la carte</Button>
+          <Button leftSection={<FileDown size={16} />} onClick={() => setFenetre("telecharger")}>{voc("Télécharger la carte")}</Button>
         </Group>
       </Group>
 
       <SimpleGrid cols={{ base: 1, sm: 2 }}>
         <Select
-          placeholder={data?.projets_zone ? `${voc("Tous les projets")} de la zone (${data.projets_zone.length})` : voc("Tous les projets")}
+          placeholder={data?.projets_zone ? voc`${voc("Tous les projets")} de la zone (${data.projets_zone.length})` : voc("Tous les projets")}
           data={data?.projets_zone ? projets.filter((p) => data.projets_zone!.some((pz) => String(pz.id) === p.value)) : projets}
           value={projet}
           onChange={setProjet}
@@ -316,13 +317,13 @@ export function CartePage() {
           nothingFoundMessage={voc("Aucun projet dans cette zone")}
         />
         <Select
-          placeholder="Toutes les zones (région, province, commune…)"
+          placeholder={voc("Toutes les zones (région, province, commune…)")}
           data={choixZones}
           value={zone}
           onChange={setZone}
           clearable
           searchable
-          nothingFoundMessage="Aucune zone"
+          nothingFoundMessage={voc("Aucune zone")}
         />
       </SimpleGrid>
 
@@ -343,7 +344,7 @@ export function CartePage() {
                   onChange={() => setProjet(projet === String(p.id) ? null : String(p.id))}
                   title={p.nom}
                 >
-                  {p.code} · {p.beneficiaires} {voc("bénéficiaire")}{p.beneficiaires > 1 ? "s" : ""}
+                  {p.code} · {p.beneficiaires} {p.beneficiaires > 1 ? voc("bénéficiaires") : voc("bénéficiaire")}
                 </Chip>
               ))}
             </Group>
@@ -354,28 +355,28 @@ export function CartePage() {
       {data && (
         <Card withBorder padding="sm">
           <SimpleGrid cols={{ base: 2, sm: 4 }}>
-            <Chiffre valeur={data.total} libelle={`${voc("bénéficiaires")} (${data.femmes} F, ${data.hommes} H)`} />
-            <Chiffre valeur={data.points.length} libelle="positionnés par GPS" couleur="orange.7" />
-            <Chiffre valeur={data.zones.reduce((s, z) => s + z.nombre, 0)} libelle="placés selon leur localité" couleur="teal.7" />
-            <Chiffre valeur={data.non_localises} libelle="sans localisation" couleur={data.non_localises ? "red.7" : undefined} />
+            <Chiffre valeur={data.total} libelle={`${voc("bénéficiaires")} (${voc`${data.femmes} F, ${data.hommes} H`})`} />
+            <Chiffre valeur={data.points.length} libelle={voc("positionnés par GPS")} couleur="orange.7" />
+            <Chiffre valeur={data.zones.reduce((s, z) => s + z.nombre, 0)} libelle={voc("placés selon leur localité")} couleur="teal.7" />
+            <Chiffre valeur={data.non_localises} libelle={voc("sans localisation")} couleur={data.non_localises ? "red.7" : undefined} />
           </SimpleGrid>
         </Card>
       )}
 
       {limitesIndisponibles && (
         <Alert color="orange" variant="light">
-          Contours administratifs indisponibles (pas d'accès à Internet ?) : la carte s'affiche sans les limites.
+          {voc("Contours administratifs indisponibles (pas d'accès à Internet ?) : la carte s'affiche sans les limites.")}
         </Alert>
       )}
 
       <Group gap="md" justify="space-between">
       <Group gap="xs">
-        <Text size="sm" fw={500}>Couches :</Text>
+        <Text size="sm" fw={500}>{voc("Couches :")}</Text>
         {/* Une seule liste : couches de base et couches importées (valeurs « import:<id> »). */}
         <MultiSelect
           size="xs"
           w={{ base: "100%", sm: 560 }}
-          placeholder="Choisir les couches à afficher"
+          placeholder={voc("Choisir les couches à afficher")}
           value={[...couches, ...importeesVisibles.map((id) => `import:${id}`)]}
           onChange={(valeurs) => {
             setCouches(valeurs.filter((v) => !v.startsWith("import:")) as Couche[]);
@@ -383,11 +384,11 @@ export function CartePage() {
           }}
           data={[
             {
-              group: "Couches de base",
+              group: voc("Couches de base"),
               items: COUCHES.filter((c) => c.value !== "routes" || routes !== undefined || active("routes")),
             },
             ...(couchesImportees.length
-              ? [{ group: "Couches importées", items: couchesImportees.map((c) => ({ value: `import:${c.id}`, label: c.nom })) }]
+              ? [{ group: voc("Couches importées"), items: couchesImportees.map((c) => ({ value: `import:${c.id}`, label: c.nom })) }]
               : []),
           ]}
           renderOption={({ option, checked }) => {
@@ -406,11 +407,11 @@ export function CartePage() {
           comboboxProps={{ zIndex: 1000 }}
         />
         {couchesImportees.length > 0 && peutEcrire("/carte") && (
-          <Button size="compact-xs" variant="subtle" leftSection={<Layers size={12} />} onClick={() => setFenetre("gerer")}>Gérer</Button>
+          <Button size="compact-xs" variant="subtle" leftSection={<Layers size={12} />} onClick={() => setFenetre("gerer")}>{voc("Gérer")}</Button>
         )}
       </Group>
       <Group gap="xs">
-        <Text size="sm" fw={500}>Par zone :</Text>
+        <Text size="sm" fw={500}>{voc("Par zone :")}</Text>
         <Select
           size="xs"
           w={250}
@@ -425,12 +426,12 @@ export function CartePage() {
           }}
           allowDeselect={false}
           data={[
-            { value: "aucun", label: "Rien (bénéficiaires seulement)" },
+            { value: "aucun", label: voc("Rien (bénéficiaires seulement)") },
             { value: "projets", label: voc("Nombre de projets") },
             { value: "beneficiaires", label: voc("Bénéficiaires") },
-            { value: "budget", label: "Budget" },
-            { value: "taux_physique", label: "Exécution physique" },
-            { value: "taux_financier", label: "Exécution financière" },
+            { value: "budget", label: voc("Budget") },
+            { value: "taux_physique", label: voc("Exécution physique") },
+            { value: "taux_financier", label: voc("Exécution financière") },
           ]}
         />
         {parZone !== "aucun" && (
@@ -438,17 +439,17 @@ export function CartePage() {
             size="xs"
             value={niveauZone}
             onChange={setNiveauZone}
-            data={[{ value: "1", label: "Régions" }, { value: "2", label: "Provinces" }, { value: "3", label: "Communes" }]}
+            data={[{ value: "1", label: voc("Régions") }, { value: "2", label: voc("Provinces") }, { value: "3", label: voc("Communes") }]}
           />
         )}
       </Group>
       <Group gap="xs">
-        <Text size="sm" fw={500}>Fond :</Text>
+        <Text size="sm" fw={500}>{voc("Fond :")}</Text>
         <SegmentedControl
           size="xs"
           value={fondChoisi}
           onChange={setFond}
-          data={Object.entries(FONDS).map(([value, f]) => ({ value, label: f?.label ?? "Aucun" }))}
+          data={Object.entries(FONDS).map(([value, f]) => ({ value, label: f?.label ?? voc("Aucun") }))}
         />
       </Group>
       </Group>
@@ -456,7 +457,7 @@ export function CartePage() {
       {/* « isolate » : les calques Leaflet (z-index 400+) restent sous les fenêtres et menus. */}
       <Card ref={setEncadre} className="encadre-carte" withBorder padding={0} radius="md" style={{ overflow: "hidden", isolation: "isolate" }}>
         {isLoading ? (
-          <Text p="md">Chargement…</Text>
+          <Text p="md">{voc("Chargement…")}</Text>
         ) : (
           <MapContainer
             key={JSON.stringify(cadre)}
@@ -471,7 +472,7 @@ export function CartePage() {
               <TileLayer key={fondChoisi} attribution={tuiles.attribution} url={tuiles.url} />
             )}
             {parZone !== "aucun" && synthese?.niveau && (
-              <CarteParZone pays={pays} niveau={synthese.niveau.ordre} nomNiveau={synthese.niveau.nom} indicateur={parZone} zones={synthese.zones} />
+              <CarteParZone pays={pays} niveau={synthese.niveau.ordre} nomNiveau={traduireDonnee(synthese.niveau.nom)} indicateur={parZone} zones={synthese.zones} />
             )}
             {active("communes") && <Limites pays={pays} niveau={3} zoom={vue.zoom} noms={nomsNiveau(3)} />}
             {active("provinces") && <Limites pays={pays} niveau={2} zoom={vue.zoom} noms={nomsNiveau(2)} />}
@@ -490,15 +491,15 @@ export function CartePage() {
                 pathOptions={{ color: "#0c8a5f", fillColor: "#12b886", fillOpacity: 0.55, weight: 2 }}
               >
                 <Tooltip direction="top">
-                  <b>{z.nom}</b> : {z.nombre} {voc("bénéficiaire")}{z.nombre > 1 ? "s" : ""} ({z.femmes} F, {z.hommes} H) — cliquer pour la liste
+                  <b>{z.nom}</b> : {z.nombre} {z.nombre > 1 ? voc("bénéficiaires") : voc("bénéficiaire")} ({voc`${z.femmes} F, ${z.hommes} H`}) — {voc("cliquer pour la liste")}
                 </Tooltip>
                 <Popup maxWidth={340}>
-                  <Text size="sm" fw={700}>{z.nom} — {z.nombre} {voc("bénéficiaire")}{z.nombre > 1 ? "s" : ""}</Text>
-                  <Text size="xs" c="dimmed" mb={4}>{z.femmes} femme(s), {z.hommes} homme(s) · placés au centre de la localité (pas de GPS)</Text>
+                  <Text size="sm" fw={700}>{z.nom} — {z.nombre} {z.nombre > 1 ? voc("bénéficiaires") : voc("bénéficiaire")}</Text>
+                  <Text size="xs" c="dimmed" mb={4}>{z.femmes} {voc("femme(s),")} {z.hommes} {voc("homme(s) · placés au centre de la localité (pas de GPS)")}</Text>
                   <div style={{ maxHeight: 260, overflowY: "auto" }}>
                     {z.beneficiaires.map((b) => <LigneFiche key={b.id} b={b} />)}
                   </div>
-                  {z.beneficiaires.length < z.nombre && <Text size="xs" c="dimmed" mt={4}>Liste limitée à {z.beneficiaires.length} : voir l'écran {voc("Bénéficiaires")}.</Text>}
+                  {z.beneficiaires.length < z.nombre && <Text size="xs" c="dimmed" mt={4}>{voc("Liste limitée à")} {z.beneficiaires.length} {voc(": voir l'écran")} {voc("Bénéficiaires")}.</Text>}
                 </Popup>
               </CircleMarker>
             ))}
@@ -507,7 +508,7 @@ export function CartePage() {
                 <Tooltip direction="top">{p.nom}</Tooltip>
                 <Popup maxWidth={320}>
                   <LigneFiche b={p} />
-                  <Text size="xs" c="dimmed" mt={4}>Position GPS : {p.lat.toFixed(5)}, {p.lng.toFixed(5)}</Text>
+                  <Text size="xs" c="dimmed" mt={4}>{voc("Position GPS :")} {p.lat.toFixed(5)}, {p.lng.toFixed(5)}</Text>
                 </Popup>
               </CircleMarker>
             ))}
@@ -522,7 +523,7 @@ export function CartePage() {
         <Stack gap={2}>
           <LegendeParZone indicateur={parZone} libelle={synthese.indicateurs[parZone]} zones={synthese.zones} />
           <Text size="xs" c="dimmed">
-            Cliquez sur la valeur d'une zone pour voir ses projets. Un projet compte dans chaque zone où il intervient (son budget n'est pas réparti entre les zones).
+            {voc("Cliquez sur la valeur d'une zone pour voir ses projets. Un projet compte dans chaque zone où il intervient (son budget n'est pas réparti entre les zones).")}
           </Text>
         </Stack>
       )}
@@ -531,16 +532,16 @@ export function CartePage() {
           Object.values(STYLE_ROUTES).map((s) => (
             <Group key={s.libelle} gap={6}>
               <div style={{ width: 22, height: s.weight + 1, background: s.color, borderRadius: 2 }} />
-              <Text size="xs" c="dimmed">Route {s.libelle.toLowerCase()}</Text>
+              <Text size="xs" c="dimmed">{voc("Route")} {s.libelle.toLowerCase()}</Text>
             </Group>
           ))}
         {active("villages") && vue.zoom < ZOOM_VILLAGES && (
-          <Text size="xs" c="dimmed">Zoomer pour voir les villes et villages.</Text>
+          <Text size="xs" c="dimmed">{voc("Zoomer pour voir les villes et villages.")}</Text>
         )}
       </Group>
       {regions?.source === "geoBoundaries" && (
         <Text size="xs" c="dimmed">
-          {`Contours : geoBoundaries (${regions.annee}) — un découpage plus récent que la source n'y figure pas encore ; ses zones sont placées au centre de leurs zones rattachées.`}
+          {voc`Contours : geoBoundaries (${regions.annee}) — un découpage plus récent que la source n'y figure pas encore ; ses zones sont placées au centre de leurs zones rattachées.`}
         </Text>
       )}
       {fenetre === "import" && <ImportCoucheModal onClose={() => setFenetre(null)} />}

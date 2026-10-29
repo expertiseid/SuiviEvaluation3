@@ -49,9 +49,10 @@ import { PAYS_MONDE } from "../../utils/pays";
 import type { NiveauAdministratif, Zone } from "../../types";
 import { TitreRubrique } from "../../components/common/TitreRubrique";
 import { voc } from "../../utils/vocabulaire";
+import { traduireDonnee } from "../../utils/i18n";
 
 function messageErreurSuppression(defaut: string) {
-  return `${defaut} — vérifie qu'aucune zone n'en dépend encore.`;
+  return voc`${defaut} — vérifie qu'aucune zone n'en dépend encore.`;
 }
 
 // ================== Onglet 1 : Configuration des niveaux ==================
@@ -83,38 +84,38 @@ function NiveauModal({
         id: niveauExistant.id,
         payload: { nom_niveau: nomNiveau.trim(), saut_niveau_autorise: sautAutorise, aide_code: aideCode },
       });
-      notifications.show({ message: "Niveau modifié", color: "green" });
+      notifications.show({ message: voc("Niveau modifié"), color: "green" });
       onClose();
     } catch {
-      notifications.show({ message: "Erreur lors de la modification du niveau", color: "red" });
+      notifications.show({ message: voc("Erreur lors de la modification du niveau"), color: "red" });
     }
   }
 
   return (
-    <Modal opened={opened} onClose={onClose} onExitTransitionEnd={reinitialiser} title="Modifier le niveau">
+    <Modal opened={opened} onClose={onClose} onExitTransitionEnd={reinitialiser} title={voc("Modifier le niveau")}>
       <Stack gap="sm">
         <TextInput
-          label="Nom du niveau"
-          description="Ex : « Région », « Province », « Département », « Commune », « Village »..."
+          label={voc("Nom du niveau")}
+          description={voc("Ex : « Région », « Province », « Département », « Commune », « Village »...")}
           value={nomNiveau}
           onChange={(e) => setNomNiveau(e.currentTarget.value)}
           required
         />
         <TextInput
-          label="Aide à la saisie"
-          description="Exemple affiché comme indication (facultatif)"
-          placeholder="Ex : Kadiogo"
+          label={voc("Aide à la saisie")}
+          description={voc("Exemple affiché comme indication (facultatif)")}
+          placeholder={voc("Ex : Kadiogo")}
           value={aideCode}
           onChange={(e) => setAideCode(e.currentTarget.value)}
         />
         <Switch
-          label="Autoriser à sauter ce niveau"
-          description="Une zone du niveau suivant pourra alors être rattachée directement à un ancêtre plus haut, sans passer par ce niveau — utile car la précision des données de terrain varie."
+          label={voc("Autoriser à sauter ce niveau")}
+          description={voc("Une zone du niveau suivant pourra alors être rattachée directement à un ancêtre plus haut, sans passer par ce niveau — utile car la précision des données de terrain varie.")}
           checked={sautAutorise}
           onChange={(e) => setSautAutorise(e.currentTarget.checked)}
         />
         <Group justify="flex-end">
-          <Button onClick={handleSave} loading={updateNiveau.isPending}>Enregistrer</Button>
+          <Button onClick={handleSave} loading={updateNiveau.isPending}>{voc("Enregistrer")}</Button>
         </Group>
       </Stack>
     </Modal>
@@ -165,13 +166,13 @@ function ConfigurationNiveaux({
         }),
       );
     } catch {
-      notifications.show({ message: "Erreur lors du réordonnancement", color: "red" });
+      notifications.show({ message: voc("Erreur lors du réordonnancement"), color: "red" });
     }
   }
 
   async function ajouterNiveau() {
     if (!nomNouveauNiveau.trim()) {
-      notifications.show({ message: "Le nom du niveau est requis.", color: "orange" });
+      notifications.show({ message: voc("Le nom du niveau est requis."), color: "orange" });
       return;
     }
     const dernier = tries[tries.length - 1];
@@ -183,23 +184,23 @@ function ConfigurationNiveaux({
         niveau_parent: dernier ? dernier.id : null,
         saut_niveau_autorise: true,
       });
-      notifications.show({ message: "Niveau ajouté", color: "green" });
+      notifications.show({ message: voc("Niveau ajouté"), color: "green" });
       setNomNouveauNiveau("");
     } catch {
-      notifications.show({ message: "Erreur lors de l'ajout du niveau", color: "red" });
+      notifications.show({ message: voc("Erreur lors de l'ajout du niveau"), color: "red" });
     }
   }
 
   function supprimerNiveau(niveau: NiveauAdministratif) {
     confirmerSuppression({
-      message: `Supprimer le niveau « ${niveau.nom_niveau} » ? Cette action est irréversible.`,
+      message: voc`Supprimer le niveau « ${niveau.nom_niveau} » ? Cette action est irréversible.`,
       onConfirm: async () => {
         try {
           await deleteNiveau.mutateAsync(niveau.id);
-          notifications.show({ message: "Niveau supprimé", color: "green" });
+          notifications.show({ message: voc("Niveau supprimé"), color: "green" });
         } catch {
           notifications.show({
-            message: messageErreurSuppression("Impossible de supprimer ce niveau"),
+            message: messageErreurSuppression(voc("Impossible de supprimer ce niveau")),
             color: "red",
           });
         }
@@ -209,45 +210,43 @@ function ConfigurationNiveaux({
 
   return (
     <Card withBorder padding="lg" radius="md">
-      <Text fw={600} mb="xs">Configuration des niveaux</Text>
+      <Text fw={600} mb="xs">{voc("Configuration des niveaux")}</Text>
       <Text size="sm" c="dimmed" mb="sm">
-        Nous définissons ici les niveaux administratifs propres à ce pays (nombre, noms, ordre) — par exemple
-        « Région » → « Province » → « Commune » → « Village », ou « Région » → « Département » → « Commune ».
-        Propre à ce pays, sans effet sur les autres.
+        {voc("Nous définissons ici les niveaux administratifs propres à ce pays (nombre, noms, ordre) — par exemple « Région » → « Province » → « Commune » → « Village », ou « Région » → « Département » → « Commune ». Propre à ce pays, sans effet sur les autres.")}
       </Text>
 
       {tries.length === 0 ? (
-        <EmptyState icon={<ListTree size={32} strokeWidth={1.5} />} message="Aucun niveau défini pour l'instant — commence par en ajouter un ci-dessous." />
+        <EmptyState icon={<ListTree size={32} strokeWidth={1.5} />} message={voc("Aucun niveau défini pour l'instant — commence par en ajouter un ci-dessous.")} />
       ) : (
         <Stack gap={6} mb="sm">
           {tries.map((niveau, index) => (
             <Group key={niveau.id} gap={6} wrap="nowrap" justify="space-between">
               <Group gap={6} wrap="nowrap">
                 <Text size="sm" c="dimmed" w={20}>{niveau.ordre}.</Text>
-                <Text size="sm" fw={500}>{niveau.nom_niveau}</Text>
+                <Text size="sm" fw={500}>{traduireDonnee(niveau.nom_niveau)}</Text>
                 {niveau.saut_niveau_autorise && (
-                  <Badge size="xs" variant="light" color="gray">Saut autorisé</Badge>
+                  <Badge size="xs" variant="light" color="gray">{voc("Saut autorisé")}</Badge>
                 )}
               </Group>
               <Group gap={2} wrap="nowrap">
-                <Tooltip label="Monter">
+                <Tooltip label={voc("Monter")}>
                   <ActionIcon size="sm" variant="subtle" disabled={index === 0} onClick={() => deplacer(index, -1)}>
                     <ArrowUp size={13} />
                   </ActionIcon>
                 </Tooltip>
-                <Tooltip label="Descendre">
+                <Tooltip label={voc("Descendre")}>
                   <ActionIcon size="sm" variant="subtle" disabled={index === tries.length - 1} onClick={() => deplacer(index, 1)}>
                     <ArrowDown size={13} />
                   </ActionIcon>
                 </Tooltip>
                 {editionActive && (
                 <Group gap={2} wrap="nowrap">
-                  <Tooltip label="Modifier">
+                  <Tooltip label={voc("Modifier")}>
                     <ActionIcon size="sm" variant="subtle" onClick={() => setNiveauEnEdition(niveau)}>
                       <Pencil size={13} />
                     </ActionIcon>
                   </Tooltip>
-                  <Tooltip label="Supprimer">
+                  <Tooltip label={voc("Supprimer")}>
                     <ActionIcon size="sm" variant="subtle" color="red" loading={deleteNiveau.isPending} onClick={() => supprimerNiveau(niveau)}>
                       <Trash2 size={13} />
                     </ActionIcon>
@@ -263,14 +262,14 @@ function ConfigurationNiveaux({
       <Group gap="xs" align="flex-end">
         <TextInput
           size="xs"
-          label="Ajouter un niveau"
-          placeholder="Ex : Région"
+          label={voc("Ajouter un niveau")}
+          placeholder={voc("Ex : Région")}
           value={nomNouveauNiveau}
           onChange={(e) => setNomNouveauNiveau(e.currentTarget.value)}
           style={{ flex: 1 }}
         />
         <Button size="xs" variant="light" onClick={ajouterNiveau} loading={createNiveau.isPending}>
-          Ajouter
+          {voc("Ajouter")}
         </Button>
       </Group>
 
@@ -326,7 +325,7 @@ function ZoneModal({
 
   async function handleSave() {
     if (!nom.trim()) {
-      notifications.show({ message: "Le nom est requis.", color: "orange" });
+      notifications.show({ message: voc("Le nom est requis."), color: "orange" });
       return;
     }
     try {
@@ -341,7 +340,7 @@ function ZoneModal({
             longitude: longitude === "" ? null : String(longitude),
           },
         });
-        notifications.show({ message: "Zone modifiée", color: "green" });
+        notifications.show({ message: voc("Zone modifiée"), color: "green" });
       } else if (niveauAdministratif) {
         await createZone.mutateAsync({
           niveau_administratif: niveauAdministratif.id,
@@ -349,11 +348,11 @@ function ZoneModal({
           code: code.trim(),
           nom: nom.trim(),
         });
-        notifications.show({ message: "Zone ajoutée", color: "green" });
+        notifications.show({ message: voc("Zone ajoutée"), color: "green" });
       }
       onClose();
     } catch {
-      notifications.show({ message: "Erreur lors de l'enregistrement", color: "red" });
+      notifications.show({ message: voc("Erreur lors de l'enregistrement"), color: "red" });
     }
   }
 
@@ -364,20 +363,20 @@ function ZoneModal({
       opened={opened}
       onClose={onClose}
       onExitTransitionEnd={reinitialiser}
-      title={zoneExistante ? "Modifier la zone" : niveauActif ? `Ajouter — ${niveauActif.nom_niveau}` : "Ajouter une zone"}
+      title={zoneExistante ? voc("Modifier la zone") : niveauActif ? voc`Ajouter — ${traduireDonnee(niveauActif.nom_niveau)}` : voc("Ajouter une zone")}
     >
       <Stack gap="sm">
         <TextInput
-          label="Code"
-          description="Code administratif (pcode), si connu — facultatif"
+          label={voc("Code")}
+          description={voc("Code administratif (pcode), si connu — facultatif")}
           placeholder={(zoneExistante ? undefined : niveauActif?.aide_code) || undefined}
           value={code}
           onChange={(e) => setCode(e.currentTarget.value)}
         />
-        <TextInput label="Nom" value={nom} onChange={(e) => setNom(e.currentTarget.value)} required />
+        <TextInput label={voc("Nom")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} required />
         {zoneExistante && niveauParentAttendu && (
           <Select
-            label={`Rattachée à (${niveauParentAttendu.nom_niveau})`}
+            label={voc`Rattachée à (${traduireDonnee(niveauParentAttendu.nom_niveau)})`}
             data={optionsParent}
             value={parentId}
             onChange={setParentId}
@@ -387,13 +386,13 @@ function ZoneModal({
         )}
         {zoneExistante && (
           <Group grow>
-            <NumberInput label="Latitude du centre" description="Carte des bénéficiaires" decimalScale={6} min={-90} max={90} value={latitude} onChange={setLatitude} />
-            <NumberInput label="Longitude du centre" description="Facultatif" decimalScale={6} min={-180} max={180} value={longitude} onChange={setLongitude} />
+            <NumberInput label={voc("Latitude du centre")} description={voc("Carte des bénéficiaires")} decimalScale={6} min={-90} max={90} value={latitude} onChange={setLatitude} />
+            <NumberInput label={voc("Longitude du centre")} description={voc("Facultatif")} decimalScale={6} min={-180} max={180} value={longitude} onChange={setLongitude} />
           </Group>
         )}
         <Group justify="flex-end">
           <Button onClick={handleSave} loading={createZone.isPending || updateZone.isPending}>
-            {zoneExistante ? "Enregistrer" : "Ajouter"}
+            {zoneExistante ? voc("Enregistrer") : voc("Ajouter")}
           </Button>
         </Group>
       </Stack>
@@ -432,14 +431,14 @@ function NoeudZone({
 
   function supprimer() {
     confirmerSuppression({
-      message: `Supprimer « ${zone.nom} » ? Cette action est irréversible.`,
+      message: voc`Supprimer « ${zone.nom} » ? Cette action est irréversible.`,
       onConfirm: async () => {
         try {
           await deleteZone.mutateAsync(zone.id);
-          notifications.show({ message: "Zone supprimée", color: "green" });
+          notifications.show({ message: voc("Zone supprimée"), color: "green" });
         } catch {
           notifications.show({
-            message: messageErreurSuppression("Impossible de supprimer cette zone"),
+            message: messageErreurSuppression(voc("Impossible de supprimer cette zone")),
             color: "red",
           });
         }
@@ -466,7 +465,7 @@ function NoeudZone({
               {ouvert ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             </ActionIcon>
           )}
-          <Badge color="teal" variant={estRacine ? "filled" : "light"} size="sm">{zone.niveau_administratif_nom}</Badge>
+          <Badge color="teal" variant={estRacine ? "filled" : "light"} size="sm">{traduireDonnee(zone.niveau_administratif_nom)}</Badge>
           <Text size={estRacine ? "md" : "sm"} fw={estRacine ? 700 : 400}>
             {zone.code && <Text span fw={700}>{zone.code} — </Text>}
             {zone.nom}
@@ -474,12 +473,12 @@ function NoeudZone({
         </Group>
         {editionActive && (
         <Group gap={4} wrap="nowrap">
-          <Tooltip label="Modifier">
+          <Tooltip label={voc("Modifier")}>
             <ActionIcon size="sm" variant="subtle" onClick={() => onModifier(zone)}>
               <Pencil size={13} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Supprimer">
+          <Tooltip label={voc("Supprimer")}>
             <ActionIcon size="sm" variant="subtle" color="red" loading={deleteZone.isPending} onClick={supprimer}>
               <Trash2 size={13} />
             </ActionIcon>
@@ -490,7 +489,7 @@ function NoeudZone({
 
       {niveauEnfant && (
         <Button size="xs" variant="subtle" leftSection={<Plus size={13} />} mt={6} onClick={() => onAjouter(niveauEnfant, zone)}>
-          {`Ajouter ${niveauEnfant.nom_niveau}`}
+          {voc`Ajouter ${traduireDonnee(niveauEnfant.nom_niveau)}`}
         </Button>
       )}
 
@@ -564,17 +563,17 @@ function Arborescence({
   return (
     <Card withBorder padding="lg" radius="md" mih={480}>
       <Group justify="space-between" mb="sm">
-        <Text fw={600}>Arborescence</Text>
+        <Text fw={600}>{voc("Arborescence")}</Text>
         {niveauRacine && (
           <Button size="sm" leftSection={<Plus size={14} />} onClick={() => setModalAjout({ niveau: niveauRacine, parent: null })}>
-            {arbreVide ? `Créer ${niveauRacine.nom_niveau}` : `Ajouter ${niveauRacine.nom_niveau}`}
+            {arbreVide ? voc`Créer ${traduireDonnee(niveauRacine.nom_niveau)}` : voc`Ajouter ${traduireDonnee(niveauRacine.nom_niveau)}`}
           </Button>
         )}
       </Group>
 
       {!arbreVide && (
         <TextInput
-          placeholder="Rechercher une zone…"
+          placeholder={voc("Rechercher une zone…")}
           leftSection={<Search size={15} />}
           value={recherche}
           onChange={(e) => setRecherche(e.currentTarget.value)}
@@ -586,12 +585,12 @@ function Arborescence({
       {!niveauRacine ? (
         <EmptyState
           icon={<ListTree size={32} strokeWidth={1.5} />}
-          message="Aucun niveau n'est configuré — passe d'abord par l'onglet « Configuration des niveaux »."
+          message={voc("Aucun niveau n'est configuré — passe d'abord par l'onglet « Configuration des niveaux ».")}
         />
       ) : arbreVide ? (
-        <EmptyState icon={<ListTree size={32} strokeWidth={1.5} />} message={`Aucune zone « ${niveauRacine.nom_niveau} » pour le moment.`} />
+        <EmptyState icon={<ListTree size={32} strokeWidth={1.5} />} message={voc`Aucune zone « ${traduireDonnee(niveauRacine.nom_niveau)} » pour le moment.`} />
       ) : racinesFiltrees.length === 0 ? (
-        <EmptyState icon={<ListTree size={32} strokeWidth={1.5} />} message="Aucune zone ne correspond à la recherche." />
+        <EmptyState icon={<ListTree size={32} strokeWidth={1.5} />} message={voc("Aucune zone ne correspond à la recherche.")} />
       ) : (
         <Box style={{ overflowX: "auto" }}>
           <Stack gap="lg">
@@ -646,14 +645,14 @@ export function ZonesAdministrativesPage() {
     <Stack gap="md">
       <Group justify="space-between" align="flex-end">
         <div>
-          <TitreRubrique route="/zones-administratives" defaut="Zones administratives" />
+          <TitreRubrique route="/zones-administratives" defaut={voc("Zones administratives")} />
           <Text c="dimmed" size="sm">
             {voc("Nous définissons ici les niveaux administratifs propres à chaque pays (Région, Province, Commune, Village, ou autre) et leur arborescence — utilisés pour localiser bénéficiaires et projets.")}</Text>
         </div>
         <Group gap="xs" align="flex-end">
           <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />
           <Select
-            label="Pays"
+            label={voc("Pays")}
             data={PAYS_MONDE.map((p) => ({ value: p.code, label: p.nom }))}
             value={pays}
             onChange={setPays}
@@ -668,12 +667,12 @@ export function ZonesAdministrativesPage() {
           <EmptyState icon={<MapPin size={32} strokeWidth={1.5} />} message={voc("Choisis un pays pour configurer ses zones administratives.")} />
         </Card>
       ) : chargementNiveaux || chargementZones ? (
-        <Text c="dimmed">Chargement…</Text>
+        <Text c="dimmed">{voc("Chargement…")}</Text>
       ) : (
         <Tabs defaultValue="arborescence" keepMounted={false}>
           <Tabs.List>
             <Tabs.Tab value="configuration" leftSection={<Settings2 size={15} />}>
-              Configuration des niveaux
+              {voc("Configuration des niveaux")}
             </Tabs.Tab>
             <Tabs.Tab value="arborescence" leftSection={<ListTree size={15} />}>
               Arborescence &amp; saisie

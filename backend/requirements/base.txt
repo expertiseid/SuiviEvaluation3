@@ -21,3 +21,6 @@ matplotlib==3.9.2
 shapely>=2.0.6,<2.1
 pyproj>=3.6,<3.8
 contextily==1.6.2
+# Carte imprimée en arabe : lettres liées et écriture de droite à gauche (matplotlib ne le fait pas).
+arabic-reshaper>=3.0,<4
+python-bidi>=0.6,<0.7

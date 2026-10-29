@@ -56,15 +56,15 @@ export function PersonnalisationModal({
         </SimpleGrid>
         <Group justify="space-between" mt="sm">
           <Group gap="xs">
-            <Button variant="subtle" onClick={() => onChange([])}>Tout afficher</Button>
+            <Button variant="subtle" onClick={() => onChange([])}>{voc("Tout afficher")}</Button>
             <Button variant="subtle" color="gray" onClick={() => onChange(blocs.map((b) => b.cle))}>
-              Tout masquer
+              {voc("Tout masquer")}
             </Button>
             <Button variant="subtle" color="gray" onClick={onReinitialiserTypes}>
-              Types de graphiques par défaut
+              {voc("Types de graphiques par défaut")}
             </Button>
           </Group>
-          <Button onClick={onClose}>Fermer</Button>
+          <Button onClick={onClose}>{voc("Fermer")}</Button>
         </Group>
       </Stack>
     </Modal>

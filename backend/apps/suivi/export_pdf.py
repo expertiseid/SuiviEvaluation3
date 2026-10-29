@@ -8,6 +8,7 @@ import datetime
 
 from django.utils.html import escape
 
+from apps.core.langues import traduire_html
 from apps.core.vocabulaire import v
 from apps.projects.taux import libelle_methode
 
@@ -138,6 +139,14 @@ def _bloc_indicateur(indicateur, aujourdhui):
     """
 
 
+def _attributs(attributs):
+    """Attributs libres d'un élément (« Responsable : … · Lieu : … »), sous sa planification."""
+    if not attributs:
+        return ""
+    texte = " · ".join(f"{escape(nom)} : <strong>{escape(valeur)}</strong>" for nom, valeur in attributs.items())
+    return f'<div style="font-size:12px;color:#555;margin-top:2px;">{texte}</div>'
+
+
 def _bloc_sous_activite(sa, aujourdhui):
     cible = sa["quantite_prevue"]
     debut = sa["date_debut"]
@@ -177,7 +186,8 @@ def _bloc_sous_activite(sa, aujourdhui):
         <span style="font-size:11px;color:#666;">{escape(STATUT_SOUS_ACTIVITE_LABEL.get(sa['statut'], sa['statut']))}</span>
       </div>
       <div style="font-size:12px;color:#666;">{planifie}</div>
-      {f'<div style="font-size:12px;margin-top:2px;">Réalisé : <strong>{_fmt(realise)} / {_fmt(cible)} {escape(sa["unite_quantite"])}</strong> ({_fmt_pct(taux)})' + (f" — Attendu aujourd'hui : {_fmt(attendu, 0)} {escape(sa['unite_quantite'])}" if attendu is not None else "") + '</div>' + _barre_progression(taux, '#1c7ed6') if cible is not None else ""}
+      {_attributs(sa.get("attributs"))}
+      {f'<div style="font-size:12px;margin-top:2px;">Réalisé : <strong>{_fmt(realise)} / {_fmt(cible)} {escape(sa["unite_quantite"])}</strong> ({_fmt_pct(taux)})' + (v(f" — Attendu aujourd'hui : {_fmt(attendu, 0)} {escape(sa['unite_quantite'])}") if attendu is not None else "") + '</div>' + _barre_progression(taux, '#1c7ed6') if cible is not None else ""}
       {_table_historique(["Période", "Cette période", "Cumul", "Attendu", "Statut"], lignes)}
     </div>
     """
@@ -218,7 +228,7 @@ def _bloc_activite(activite, aujourdhui):
             f"({_fmt_pct(activite['taux_realisation'])})"
         )
         if attendu_phys is not None:
-            avancement += f" — Attendu aujourd'hui : {_fmt(attendu_phys, 0)} {escape(activite['unite_quantite'])}"
+            avancement += v(f" — Attendu aujourd'hui : {_fmt(attendu_phys, 0)} {escape(activite['unite_quantite'])}")
         avancement += "</div>"
         avancement += _barre_progression(activite["taux_realisation"], couleur_activite)
     if budget is not None:
@@ -228,7 +238,7 @@ def _bloc_activite(activite, aujourdhui):
             f"({_fmt_pct(activite['taux_execution_financiere'])})"
         )
         if attendu_fin is not None:
-            avancement += f" — Attendu aujourd'hui : {_fmt(attendu_fin, 0)} FCFA"
+            avancement += v(f" — Attendu aujourd'hui : {_fmt(attendu_fin, 0)} FCFA")
         avancement += "</div>"
         avancement += _barre_progression(activite["taux_execution_financiere"], "#12b886")
 
@@ -281,6 +291,7 @@ def _bloc_activite(activite, aujourdhui):
         {_badge(STATUT_ACTIVITE_LABEL.get(activite['statut'], activite['statut']), '#555')}
       </div>
       <div style="font-size:12px;color:#666;margin-top:2px;">{planifie}</div>
+      {_attributs(activite.get("attributs"))}
       {avancement}
       {_table_historique(["Période", "Quantité", "Cumul", "Budget", "Attendu", "Statut"] if par_quantite else ["Période", "Budget", "Statut", "Commentaire"], lignes)}
       {sous_activites_html}
@@ -349,4 +360,4 @@ def html_suivi(projet) -> str:
 def exporter_suivi_pdf(projet) -> bytes:
     from weasyprint import HTML
 
-    return HTML(string=html_suivi(projet)).write_pdf()
+    return HTML(string=traduire_html(html_suivi(projet))).write_pdf()

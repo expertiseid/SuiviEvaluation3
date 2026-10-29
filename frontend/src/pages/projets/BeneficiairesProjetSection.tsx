@@ -79,7 +79,7 @@ export function BeneficiairesProjetSection({ projet }: { projet: Projet }) {
       notifications.show({ message: voc`${ajoutes} bénéficiaire(s) associé(s) au projet`, color: "green" });
     }
     if (echecs.length > 0) {
-      notifications.show({ message: `Échec de l'association pour : ${echecs.join(", ")}`, color: "red", autoClose: 8000 });
+      notifications.show({ message: voc`Échec de l'association pour : ${echecs.join(", ")}`, color: "red", autoClose: 8000 });
     }
   }
 
@@ -89,7 +89,7 @@ export function BeneficiairesProjetSection({ projet }: { projet: Projet }) {
       <Group justify="space-between" align="center">
         <Title order={5}>{voc("Bénéficiaires associés au projet")}</Title>
         <Button variant="light" size="xs" leftSection={<Upload size={14} />} onClick={() => setModalImportOpen(true)}>
-          Importer une liste (Excel)
+          {voc("Importer une liste (Excel)")}
         </Button>
       </Group>
 
@@ -105,7 +105,7 @@ export function BeneficiairesProjetSection({ projet }: { projet: Projet }) {
       />
 
       {isLoading ? (
-        <Text size="sm" c="dimmed">Chargement…</Text>
+        <Text size="sm" c="dimmed">{voc("Chargement…")}</Text>
       ) : data && data.results.length === 0 ? (
         <Text size="sm" c="dimmed">{voc("Aucun bénéficiaire trouvé.")}</Text>
       ) : (
@@ -119,13 +119,13 @@ export function BeneficiairesProjetSection({ projet }: { projet: Projet }) {
                   indeterminate={pagePartiellementCochee}
                   disabled={selectionnables.length === 0}
                   onChange={basculerPage}
-                  aria-label="Tout cocher sur cette page"
+                  aria-label={voc("Tout cocher sur cette page")}
                 />
               </Table.Th>
-              <Table.Th>Nom</Table.Th>
-              <Table.Th>Sexe</Table.Th>
-              <Table.Th>Zone</Table.Th>
-              <Table.Th>Téléphone</Table.Th>
+              <Table.Th>{voc("Nom")}</Table.Th>
+              <Table.Th>{voc("Sexe")}</Table.Th>
+              <Table.Th>{voc("Zone")}</Table.Th>
+              <Table.Th>{voc("Téléphone")}</Table.Th>
               <Table.Th />
             </Table.Tr>
           </Table.Thead>
@@ -145,7 +145,7 @@ export function BeneficiairesProjetSection({ projet }: { projet: Projet }) {
                       disabled={associe}
                       onChange={() => basculer(b)}
                       onClick={(e) => e.stopPropagation()}
-                      aria-label={`Sélectionner ${b.nom} ${b.prenom}`}
+                      aria-label={voc`Sélectionner ${b.nom} ${b.prenom}`}
                     />
                   </Table.Td>
                   <Table.Td>{b.nom} {b.prenom}</Table.Td>
@@ -153,7 +153,7 @@ export function BeneficiairesProjetSection({ projet }: { projet: Projet }) {
                   <Table.Td>{b.zone_nom ?? "—"}</Table.Td>
                   <Table.Td>{b.telephone || "—"}</Table.Td>
                   <Table.Td>
-                    {associe && <Badge size="xs" variant="light" color="gray">Déjà associé</Badge>}
+                    {associe && <Badge size="xs" variant="light" color="gray">{voc("Déjà associé")}</Badge>}
                   </Table.Td>
                 </Table.Tr>
               );
@@ -171,7 +171,7 @@ export function BeneficiairesProjetSection({ projet }: { projet: Projet }) {
           loading={ajoutEnCours}
           onClick={ajouterSelection}
         >
-          Ajouter la sélection{selection.size > 0 ? ` (${selection.size})` : ""}
+          {voc("Ajouter la sélection")}{selection.size > 0 ? ` (${selection.size})` : ""}
         </Button>
       </Group>
 

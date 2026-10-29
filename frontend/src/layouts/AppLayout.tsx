@@ -15,6 +15,7 @@ import {
   MapPin,
   PenLine,
   RotateCcw,
+  Languages,
   Sliders,
   Target,
   UserCog,
@@ -49,33 +50,37 @@ import { useDisclosure } from "@mantine/hooks";
 import { useAuth } from "../auth/useAuth";
 import { useConfigurationMenu, useEcheances, useUpdateConfigurationMenu } from "../api/dashboard";
 import { NotificationBell } from "../components/notifications/NotificationBell";
+import { ChoixLangue } from "../components/common/ChoixLangue";
 import { ICONES_MENU } from "../utils/iconesMenu";
 import { TERMES, definirVocabulaire, voc, type Vocabulaire } from "../utils/vocabulaire";
+import { langue } from "../utils/i18n";
 import { EcheancesBanner } from "../components/notifications/EcheancesBanner";
 import { useAccesModules } from "../utils/modules";
+import { libelleRole } from "../utils/roles";
 
 type NavItem = { to: string; label: string; icon: LucideIcon };
 
-const ITEM_ACCUEIL: NavItem = { to: "/", label: "Tableau de bord", icon: LayoutDashboard };
+const ITEM_ACCUEIL: NavItem = { to: "/", label: voc("Tableau de bord"), icon: LayoutDashboard };
 
 const ITEMS_PRINCIPAUX: NavItem[] = [
-  { to: "/planification", label: "Planification complète", icon: FileSpreadsheet },
-  { to: "/strategie", label: "Cadre stratégique", icon: Target },
-  { to: "/projets", label: "Projets", icon: FolderKanban },
-  { to: "/indicateurs", label: "Indicateurs", icon: Gauge },
-  { to: "/suivi", label: "Suivi", icon: Activity },
-  { to: "/approbations", label: "Approbations", icon: ClipboardCheck },
-  { to: "/beneficiaires", label: "Bénéficiaires", icon: Users },
-  { to: "/carte", label: "Carte", icon: MapIcon },
-  { to: "/doublons", label: "Doublons d'enregistrement", icon: Copy },
-  { to: "/zones-administratives", label: "Zones administratives", icon: MapPin },
-  { to: "/documents", label: "Documents", icon: FileText },
+  { to: "/planification", label: voc("Planification complète"), icon: FileSpreadsheet },
+  { to: "/strategie", label: voc("Cadre stratégique"), icon: Target },
+  { to: "/projets", label: voc("Projets"), icon: FolderKanban },
+  { to: "/indicateurs", label: voc("Indicateurs"), icon: Gauge },
+  { to: "/suivi", label: voc("Suivi"), icon: Activity },
+  { to: "/approbations", label: voc("Approbations"), icon: ClipboardCheck },
+  { to: "/beneficiaires", label: voc("Bénéficiaires"), icon: Users },
+  { to: "/carte", label: voc("Carte"), icon: MapIcon },
+  { to: "/doublons", label: voc("Doublons d'enregistrement"), icon: Copy },
+  { to: "/zones-administratives", label: voc("Zones administratives"), icon: MapPin },
+  { to: "/documents", label: voc("Documents"), icon: FileText },
 ];
 
 const ITEMS_ADMIN: NavItem[] = [
-  { to: "/utilisateurs", label: "Utilisateurs", icon: UserCog },
-  { to: "/organisation", label: "Organisation", icon: Building2 },
-  { to: "/parametres-alerte", label: "Paramètres d'alerte", icon: Sliders },
+  { to: "/utilisateurs", label: voc("Utilisateurs"), icon: UserCog },
+  { to: "/organisation", label: voc("Organisation"), icon: Building2 },
+  { to: "/parametres-alerte", label: voc("Paramètres d'alerte"), icon: Sliders },
+  { to: "/langues", label: voc("Langues"), icon: Languages },
 ];
 
 const TOUS_LES_ITEMS = [ITEM_ACCUEIL, ...ITEMS_PRINCIPAUX, ...ITEMS_ADMIN];
@@ -86,7 +91,7 @@ function ChoixIcone({ icone: Icone, onChoisir }: { icone: LucideIcon; onChoisir:
   return (
     <Popover opened={ouvert} onChange={setOuvert} position="bottom-start" withArrow shadow="md">
       <Popover.Target>
-        <Tooltip label="Changer l'icône">
+        <Tooltip label={voc("Changer l'icône")}>
           <ActionIcon variant="default" size="lg" mb={1} onClick={() => setOuvert((o) => !o)}>
             <Icone size={17} />
           </ActionIcon>
@@ -142,23 +147,21 @@ function PersonnalisationMenuModal({
   return (
     <Tabs defaultValue="menu">
       <Tabs.List mb="sm">
-        <Tabs.Tab value="menu">Menu</Tabs.Tab>
-        <Tabs.Tab value="vocabulaire">Vocabulaire</Tabs.Tab>
+        <Tabs.Tab value="menu">{voc("Menu")}</Tabs.Tab>
+        <Tabs.Tab value="vocabulaire">{voc("Vocabulaire")}</Tabs.Tab>
       </Tabs.List>
       <Tabs.Panel value="vocabulaire">
         <Stack gap="xs">
           <Text size="sm" c="dimmed">
-            Remplace les termes de la plateforme par ceux de ton organisation : ils changent partout (écrans,
-            formulaires, rattachements, messages, exports). Indique le singulier, le pluriel et le genre (pour
-            accorder « un/une », « le/la », « nouveau/nouvelle »…). Laisse vide pour garder le terme par défaut.
+            {voc("Remplace les termes de la plateforme par ceux de ton organisation : ils changent partout (écrans, formulaires, rattachements, messages, exports). Indique le singulier, le pluriel et le genre (pour accorder « un/une », « le/la », « nouveau/nouvelle »…). Laisse vide pour garder le terme par défaut.")}
           </Text>
           <Table withRowBorders={false} verticalSpacing={4}>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Terme par défaut</Table.Th>
-                <Table.Th>Singulier</Table.Th>
-                <Table.Th>Pluriel</Table.Th>
-                <Table.Th>Féminin</Table.Th>
+                <Table.Th>{voc("Terme par défaut")}</Table.Th>
+                <Table.Th>{voc("Singulier")}</Table.Th>
+                <Table.Th>{voc("Pluriel")}</Table.Th>
+                <Table.Th>{voc("Féminin")}</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -195,22 +198,22 @@ function PersonnalisationMenuModal({
               ))}
             </Table.Tbody>
           </Table>
-          <Text size="xs" c="dimmed">Clique sur « Enregistrer » (onglet Menu ou ci-dessous) pour appliquer.</Text>
+          <Text size="xs" c="dimmed">{voc("Clique sur « Enregistrer » (onglet Menu ou ci-dessous) pour appliquer.")}</Text>
           <Group justify="flex-end">
             <Button
               loading={enregistrer.isPending}
               onClick={async () => {
                 try {
                   await enregistrer.mutateAsync({ libelles: valeurs, icones: iconesChoisies, vocabulaire: termes });
-                  notifications.show({ message: "Vocabulaire mis à jour", color: "green" });
+                  notifications.show({ message: voc("Vocabulaire mis à jour"), color: "green" });
                   onClose();
                   window.location.reload();
                 } catch {
-                  notifications.show({ message: "Erreur lors de l'enregistrement du vocabulaire", color: "red" });
+                  notifications.show({ message: voc("Erreur lors de l'enregistrement du vocabulaire"), color: "red" });
                 }
               }}
             >
-              Enregistrer
+              {voc("Enregistrer")}
             </Button>
           </Group>
         </Stack>
@@ -218,8 +221,7 @@ function PersonnalisationMenuModal({
       <Tabs.Panel value="menu">
         <Stack gap="sm">
           <Text size="sm" c="dimmed">
-            Donne à chaque rubrique le nom et l'icône utilisés dans ton organisation (clique sur l'icône pour la
-            changer). Les changements s'appliquent à tous les utilisateurs ; ↺ revient au nom et à l'icône par défaut.
+            {voc("Donne à chaque rubrique le nom et l'icône utilisés dans ton organisation (clique sur l'icône pour la changer). Les changements s'appliquent à tous les utilisateurs ; ↺ revient au nom et à l'icône par défaut.")}
           </Text>
           {TOUS_LES_ITEMS.map((item) => (
             <Group key={item.to} gap="xs" wrap="nowrap" align="flex-end">
@@ -229,7 +231,7 @@ function PersonnalisationMenuModal({
               />
               <TextInput
                 style={{ flex: 1 }}
-                label={`Par défaut : ${item.label}`}
+                label={voc`Par défaut : ${item.label}`}
                 placeholder={item.label}
                 value={valeurs[item.to] ?? ""}
                 maxLength={60}
@@ -238,7 +240,7 @@ function PersonnalisationMenuModal({
                   setValeurs((v) => ({ ...v, [item.to]: valeur }));
                 }}
               />
-              <Tooltip label="Revenir au nom et à l'icône par défaut">
+              <Tooltip label={voc("Revenir au nom et à l'icône par défaut")}>
                 <ActionIcon
                   variant="subtle"
                   mb={4}
@@ -259,16 +261,16 @@ function PersonnalisationMenuModal({
               onClick={async () => {
                 try {
                   await enregistrer.mutateAsync({ libelles: valeurs, icones: iconesChoisies, vocabulaire: termes });
-                  notifications.show({ message: "Menu mis à jour", color: "green" });
+                  notifications.show({ message: voc("Menu mis à jour"), color: "green" });
                   onClose();
                   // Le vocabulaire s'applique à tous les textes : on recharge pour l'appliquer partout.
                   if (JSON.stringify(termes) !== JSON.stringify(vocabulaire)) window.location.reload();
                 } catch {
-                  notifications.show({ message: "Erreur lors de l'enregistrement du menu", color: "red" });
+                  notifications.show({ message: voc("Erreur lors de l'enregistrement du menu"), color: "red" });
                 }
               }}
             >
-              Enregistrer
+              {voc("Enregistrer")}
             </Button>
           </Group>
         </Stack>
@@ -320,7 +322,8 @@ export function AppLayout() {
   const icones = configurationMenu?.icones ?? {};
   const avecLibelle = (item: NavItem): NavItem => ({
     ...item,
-    label: libelles[item.to] || voc(item.label),
+    // Les noms personnalisés par l'organisation sont en français : dans une autre langue, on garde la traduction.
+    label: (langue() === "fr" && libelles[item.to]) || voc(item.label),
     icon: ICONES_MENU[icones[item.to]] ?? item.icon,
   });
 
@@ -338,11 +341,12 @@ export function AppLayout() {
           <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" color="white" />
             <Text fw={700} size="sm" truncate>
-              <Text span inherit visibleFrom="xs">Plateforme de </Text>Suivi-Évaluation
+              <Text span inherit visibleFrom="xs">{voc("Plateforme de")} </Text>{voc("Suivi-Évaluation")}
             </Text>
           </Group>
           {/* Sur téléphone : cloche, initiales et icône de déconnexion seulement. */}
           <Group gap="sm" wrap="nowrap">
+            <ChoixLangue connecte />
             <NotificationBell />
             {user && (
               <Group gap={8} wrap="nowrap">
@@ -350,7 +354,7 @@ export function AppLayout() {
                   {initiales(user.first_name || user.username)}
                 </Avatar>
                 <Text size="xs" c="teal.1" visibleFrom="md">
-                  {user.first_name || user.username} · {user.role_libelle || user.role}
+                  {user.first_name || user.username} · {user.role_libelle ? libelleRole(user.role_libelle) : user.role}
                 </Text>
               </Group>
             )}
@@ -364,13 +368,13 @@ export function AppLayout() {
                 navigate("/login");
               }}
             >
-              Déconnexion
+              {voc("Déconnexion")}
             </Button>
             <ActionIcon
               variant="subtle"
               color="gray.0"
               hiddenFrom="sm"
-              aria-label="Déconnexion"
+              aria-label={voc("Déconnexion")}
               onClick={() => {
                 logout();
                 navigate("/login");
@@ -393,7 +397,7 @@ export function AppLayout() {
               {ITEMS_ADMIN.map((item) => renderNavLink(avecLibelle(item), pathname))}
               <Divider my={4} />
               <NavLink
-                label="Personnaliser le menu"
+                label={voc("Personnaliser le menu")}
                 leftSection={<PenLine size={17} strokeWidth={2} />}
                 onClick={() => setPersonnalisationOuverte(true)}
                 c="dimmed"
@@ -407,7 +411,7 @@ export function AppLayout() {
         {chargementMenu ? (
           <Loader size="sm" />
         ) : moduleMasque ? (
-          <Alert color="gray" title="Module non accessible">
+          <Alert color="gray" title={voc("Module non accessible")}>
             {voc("Ce module n'est pas accessible avec votre compte. Adressez-vous à l'administrateur si vous en avez besoin.")}
           </Alert>
         ) : (
@@ -418,7 +422,7 @@ export function AppLayout() {
       <Modal
         opened={personnalisationOuverte}
         onClose={() => setPersonnalisationOuverte(false)}
-        title="Personnaliser le menu"
+        title={voc("Personnaliser le menu")}
         size="lg"
       >
         {personnalisationOuverte && (

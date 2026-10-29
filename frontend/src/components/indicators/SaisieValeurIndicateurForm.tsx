@@ -6,6 +6,7 @@ import { useCreateValeurIndicateur, useUpdateValeurIndicateur } from "../../api/
 import { useUploadPieceJustificative } from "../../api/documents";
 import { messageErreurApi } from "../../utils/erreurs";
 import type { SuiviHistoriqueValeurIndicateur } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 export function SaisieValeurIndicateurForm({
   indicateurId,
@@ -43,7 +44,7 @@ export function SaisieValeurIndicateurForm({
 
   async function handleSubmit() {
     if (!periodeDebut || !periodeFin || valeur === "") {
-      notifications.show({ message: "Merci de renseigner la période et la valeur.", color: "orange" });
+      notifications.show({ message: voc("Merci de renseigner la période et la valeur."), color: "orange" });
       return;
     }
     try {
@@ -66,10 +67,10 @@ export function SaisieValeurIndicateurForm({
         await uploadPiece.mutateAsync(formData);
       }
 
-      notifications.show({ message: enEdition ? "Valeur modifiée" : "Valeur enregistrée", color: "green" });
+      notifications.show({ message: enEdition ? voc("Valeur modifiée") : voc("Valeur enregistrée"), color: "green" });
       onDone();
     } catch (error) {
-      notifications.show({ message: messageErreurApi(error, "Erreur lors de la saisie"), color: "red" });
+      notifications.show({ message: messageErreurApi(error, voc("Erreur lors de la saisie")), color: "red" });
     }
   }
 
@@ -77,7 +78,7 @@ export function SaisieValeurIndicateurForm({
     <Stack gap="sm">
       <Group grow>
         <DateInput
-          label="Début de période"
+          label={voc("Début de période")}
           value={periodeDebut}
           onChange={setPeriodeDebut}
           minDate={bornes?.debut}
@@ -85,7 +86,7 @@ export function SaisieValeurIndicateurForm({
           required
         />
         <DateInput
-          label="Fin de période"
+          label={voc("Fin de période")}
           value={periodeFin}
           onChange={setPeriodeFin}
           minDate={bornes?.debut}
@@ -94,8 +95,8 @@ export function SaisieValeurIndicateurForm({
         />
       </Group>
       <NumberInput
-        label="Valeur réalisée pendant cette période"
-        description="Ce qui a été atteint entre le début et la fin de cette période précise (pas le total depuis le début)."
+        label={voc("Valeur réalisée pendant cette période")}
+        description={voc("Ce qui a été atteint entre le début et la fin de cette période précise (pas le total depuis le début).")}
         value={valeur}
         onChange={setValeur}
         min={0}
@@ -103,14 +104,14 @@ export function SaisieValeurIndicateurForm({
       />
       {nouveauCumul !== null && (
         <Text size="xs" c="dimmed">
-          Total cumulé après cette saisie : {nouveauCumul}
+          {voc("Total cumulé après cette saisie :")} {nouveauCumul}
         </Text>
       )}
-      <Textarea label="Commentaire" value={commentaire} onChange={(e) => setCommentaire(e.currentTarget.value)} />
-      <FileInput label="Pièce justificative (optionnel)" value={fichier} onChange={setFichier} clearable />
+      <Textarea label={voc("Commentaire")} value={commentaire} onChange={(e) => setCommentaire(e.currentTarget.value)} />
+      <FileInput label={voc("Pièce justificative (optionnel)")} value={fichier} onChange={setFichier} clearable />
       <Group justify="flex-end">
         <Button onClick={handleSubmit} loading={createValeur.isPending || updateValeur.isPending || uploadPiece.isPending}>
-          {enEdition ? "Enregistrer les modifications" : "Enregistrer"}
+          {enEdition ? voc("Enregistrer les modifications") : voc("Enregistrer")}
         </Button>
       </Group>
     </Stack>

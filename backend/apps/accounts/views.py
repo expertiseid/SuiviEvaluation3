@@ -29,10 +29,18 @@ class UserViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated()]
         return [IsAdmin()]
 
-    @action(detail=False, methods=["get"], url_path="me")
+    @action(detail=False, methods=["get", "patch"], url_path="me")
     def me(self, request):
-        serializer = UserSerializer(request.user)
-        return Response(serializer.data)
+        """Son propre compte ; PATCH : seulement ses préférences (langue de l'interface)."""
+        if request.method == "PATCH":
+            from apps.core.models import CODES_LANGUES
+
+            langue = request.data.get("langue", "")
+            if langue not in ("", *CODES_LANGUES):
+                raise ValidationError({"langue": "Langue inconnue."})
+            request.user.langue = langue
+            request.user.save(update_fields=["langue"])
+        return Response(UserSerializer(request.user).data)
 
     def perform_destroy(self, instance):
         if instance == self.request.user:

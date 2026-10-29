@@ -1,4 +1,5 @@
 import { Bar, BarChart, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { voc } from "../../utils/vocabulaire";
 
 interface Entree {
   id: number;
@@ -31,7 +32,7 @@ export function TauxParIndicateurChart({ indicateurs }: { indicateurs: Entree[] 
         />
         <Tooltip
           cursor={{ fill: "var(--mantine-color-gray-1)" }}
-          formatter={(value) => [`${value}%`, "Taux de réalisation"]}
+          formatter={(value) => [`${value}%`, voc("Taux de réalisation")]}
           labelFormatter={(_label, payload) => payload?.[0]?.payload?.libelle ?? ""}
         />
         <Bar dataKey="taux_realisation" radius={[0, 4, 4, 0]} maxBarSize={18}>

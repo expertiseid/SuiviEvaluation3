@@ -1,5 +1,6 @@
 import { Title } from "@mantine/core";
 import { useConfigurationMenu } from "../../api/dashboard";
+import { langue } from "../../utils/i18n";
 import { voc } from "../../utils/vocabulaire";
 
 /**
@@ -17,6 +18,7 @@ export function TitreRubrique({
   majuscules?: boolean;
 }) {
   const { data } = useConfigurationMenu();
-  const titre = data?.libelles[route] || voc(defaut);
+  // Les noms personnalisés sont en français : dans une autre langue, on garde la traduction.
+  const titre = (langue() === "fr" && data?.libelles[route]) || voc(defaut);
   return <Title order={2}>{majuscules ? titre.toUpperCase() : titre}</Title>;
 }

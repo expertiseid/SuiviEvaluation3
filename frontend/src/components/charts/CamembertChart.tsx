@@ -1,6 +1,8 @@
 import { Group, Stack, Text } from "@mantine/core";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
+import { locale } from "../../utils/i18n";
+import { voc } from "../../utils/vocabulaire";
 export interface PartCamembert {
   libelle: string;
   valeur: number;
@@ -14,7 +16,7 @@ export interface PartCamembert {
 export function CamembertChart({
   parts,
   unite,
-  formatValeur = (v) => v.toLocaleString("fr-FR"),
+  formatValeur = (v) => v.toLocaleString(locale()),
   formatCourt = formatValeur,
 }: {
   parts: PartCamembert[];
@@ -26,7 +28,7 @@ export function CamembertChart({
 }) {
   const visibles = parts.filter((p) => p.valeur > 0);
   const total = visibles.reduce((s, p) => s + p.valeur, 0);
-  if (total === 0) return <Text size="sm" c="dimmed" py="xl" ta="center">Aucune donnée.</Text>;
+  if (total === 0) return <Text size="sm" c="dimmed" py="xl" ta="center">{voc("Aucune donnée.")}</Text>;
 
   return (
     <Group wrap="nowrap" align="center" gap="md">

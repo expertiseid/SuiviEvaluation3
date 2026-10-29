@@ -28,12 +28,12 @@ import { voc } from "../../utils/vocabulaire";
 import type { TypeVariableBeneficiaire, VariableBeneficiaire } from "../../types";
 
 const TYPES_VARIABLE: { value: TypeVariableBeneficiaire; label: string }[] = [
-  { value: "TEXTE", label: "Texte" },
-  { value: "NOMBRE", label: "Nombre" },
-  { value: "DATE", label: "Date" },
-  { value: "OUI_NON", label: "Oui / non" },
-  { value: "CHOIX", label: "Choix unique" },
-  { value: "CHOIX_MULTIPLE", label: "Choix multiple" },
+  { value: "TEXTE", label: voc("Texte") },
+  { value: "NOMBRE", label: voc("Nombre") },
+  { value: "DATE", label: voc("Date") },
+  { value: "OUI_NON", label: voc("Oui / non") },
+  { value: "CHOIX", label: voc("Choix unique") },
+  { value: "CHOIX_MULTIPLE", label: voc("Choix multiple") },
 ];
 
 function FormulaireVariable({ variable, onFini }: { variable: Partial<VariableBeneficiaire>; onFini: () => void }) {
@@ -44,36 +44,36 @@ function FormulaireVariable({ variable, onFini }: { variable: Partial<VariableBe
 
   async function valider() {
     if (!v.libelle?.trim()) {
-      notifications.show({ message: "Indique le libellé.", color: "orange" });
+      notifications.show({ message: voc("Indique le libellé."), color: "orange" });
       return;
     }
     try {
       await enregistrer.mutateAsync({ ...v, libelle: v.libelle.trim() });
-      notifications.show({ message: "Variable enregistrée", color: "green" });
+      notifications.show({ message: voc("Variable enregistrée"), color: "green" });
       onFini();
     } catch (e) {
-      notifications.show({ message: messageErreurApi(e, "Erreur lors de l'enregistrement"), color: "red" });
+      notifications.show({ message: messageErreurApi(e, voc("Erreur lors de l'enregistrement")), color: "red" });
     }
   }
 
   return (
     <Stack gap="sm" p="sm" style={{ border: "1px solid var(--mantine-color-gray-3)", borderRadius: 8 }}>
       <Group grow align="flex-start">
-        <TextInput label="Libellé" placeholder="Ex : Taille du ménage" required value={v.libelle ?? ""} onChange={(e) => setV({ ...v, libelle: e.currentTarget.value })} data-autofocus />
-        <Select label="Type de réponse" data={TYPES_VARIABLE} value={v.type} onChange={(t) => setV({ ...v, type: (t ?? "TEXTE") as TypeVariableBeneficiaire })} allowDeselect={false} />
+        <TextInput label={voc("Libellé")} placeholder={voc("Ex : Taille du ménage")} required value={v.libelle ?? ""} onChange={(e) => setV({ ...v, libelle: e.currentTarget.value })} data-autofocus />
+        <Select label={voc("Type de réponse")} data={TYPES_VARIABLE} value={v.type} onChange={(t) => setV({ ...v, type: (t ?? "TEXTE") as TypeVariableBeneficiaire })} allowDeselect={false} />
         {v.type === "NOMBRE" && (
-          <TextInput label="Unité" placeholder="personnes, ha…" value={v.unite ?? ""} onChange={(e) => setV({ ...v, unite: e.currentTarget.value })} />
+          <TextInput label={voc("Unité")} placeholder={voc("personnes, ha…")} value={v.unite ?? ""} onChange={(e) => setV({ ...v, unite: e.currentTarget.value })} />
         )}
       </Group>
       {avecChoix && (
         <TagsInput
-          label="Réponses proposées"
-          description="Taper une réponse puis Entrée"
+          label={voc("Réponses proposées")}
+          description={voc("Taper une réponse puis Entrée")}
           value={v.choix ?? []}
           onChange={(choix) => setV({ ...v, choix })}
         />
       )}
-      <TextInput label="Aide (facultatif)" value={v.aide ?? ""} onChange={(e) => setV({ ...v, aide: e.currentTarget.value })} />
+      <TextInput label={voc("Aide (facultatif)")} value={v.aide ?? ""} onChange={(e) => setV({ ...v, aide: e.currentTarget.value })} />
       <Switch
         label={voc("Pour tous les projets")}
         description={voc("Sinon, seulement les projets choisis : pour les autres, la variable n'est pas demandée et vaut « NA ».")}
@@ -90,8 +90,8 @@ function FormulaireVariable({ variable, onFini }: { variable: Partial<VariableBe
         />
       )}
       <Group justify="flex-end">
-        <Button variant="subtle" onClick={onFini}>Annuler</Button>
-        <Button onClick={valider} loading={enregistrer.isPending}>Enregistrer</Button>
+        <Button variant="subtle" onClick={onFini}>{voc("Annuler")}</Button>
+        <Button onClick={valider} loading={enregistrer.isPending}>{voc("Enregistrer")}</Button>
       </Group>
     </Stack>
   );
@@ -113,19 +113,19 @@ export function VariablesBeneficiairesModal({ opened, onClose }: { opened: boole
           <FormulaireVariable key={edition.id ?? "nouvelle"} variable={edition} onFini={() => setEdition(null)} />
         ) : (
           <Group justify="flex-end">
-            <Button leftSection={<Plus size={16} />} onClick={() => setEdition({})}>Ajouter une variable</Button>
+            <Button leftSection={<Plus size={16} />} onClick={() => setEdition({})}>{voc("Ajouter une variable")}</Button>
           </Group>
         )}
         {variables.length === 0 ? (
-          <Text size="sm" c="dimmed">Aucune variable pour l'instant.</Text>
+          <Text size="sm" c="dimmed">{voc("Aucune variable pour l'instant.")}</Text>
         ) : (
           <Table verticalSpacing={6} highlightOnHover>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Variable</Table.Th>
-                <Table.Th>Type</Table.Th>
+                <Table.Th>{voc("Variable")}</Table.Th>
+                <Table.Th>{voc("Type")}</Table.Th>
                 <Table.Th>{voc("Projets")}</Table.Th>
-                <Table.Th>Réponses</Table.Th>
+                <Table.Th>{voc("Réponses")}</Table.Th>
                 <Table.Th w={70} />
               </Table.Tr>
             </Table.Thead>
@@ -161,7 +161,7 @@ export function VariablesBeneficiairesModal({ opened, onClose }: { opened: boole
                         color="red"
                         onClick={() =>
                           confirmerSuppression({
-                            message: `Supprimer « ${variable.libelle} » ?${variable.nb_reponses ? ` Les ${variable.nb_reponses} réponse(s) saisie(s) seront effacées.` : ""}`,
+                            message: voc`Supprimer « ${variable.libelle} » ?${variable.nb_reponses ? ` Les ${variable.nb_reponses} réponse(s) saisie(s) seront effacées.` : ""}`,
                             onConfirm: () => supprimer.mutate(variable.id),
                           })
                         }

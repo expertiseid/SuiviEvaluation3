@@ -4,6 +4,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
+from apps.core.langues import dans_la_langue_demandee
 from apps.core.permissions import HasGlobalVisibilityOrAssigned
 
 from .services import generer_modele_import_complet, importer_planification_complete
@@ -11,6 +12,7 @@ from .services import generer_modele_import_complet, importer_planification_comp
 
 @api_view(["GET"])
 @permission_classes([HasGlobalVisibilityOrAssigned])
+@dans_la_langue_demandee
 def modele_import_complet(request):
     contenu = generer_modele_import_complet()
     response = HttpResponse(

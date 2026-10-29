@@ -19,7 +19,7 @@ export interface ModuleReglable {
 export function modulesReglables(): { group: string; items: ModuleReglable[] }[] {
   return [
     {
-      group: "Menu",
+      group: voc("Menu"),
       items: [
         { cle: "/planification", label: voc("Planification complète"), ecriture: true },
         { cle: "/strategie", label: voc("Cadre stratégique"), ecriture: true },
@@ -27,10 +27,10 @@ export function modulesReglables(): { group: string; items: ModuleReglable[] }[]
         { cle: "/indicateurs", label: voc("Indicateurs"), ecriture: true },
         { cle: "/suivi", label: voc("Suivi"), ecriture: true },
         { cle: "/beneficiaires", label: voc("Bénéficiaires"), ecriture: true },
-        { cle: "/carte", label: "Carte", ecriture: true },
+        { cle: "/carte", label: voc("Carte"), ecriture: true },
         { cle: "/documents", label: voc("Documents"), ecriture: true },
         { cle: "/zones-administratives", label: voc("Zones administratives"), ecriture: true },
-        { cle: "/approbations", label: "Approbations", ecriture: false },
+        { cle: "/approbations", label: voc("Approbations"), ecriture: false },
         { cle: "/doublons", label: voc("Doublons d'enregistrement"), ecriture: false },
       ],
     },
@@ -38,16 +38,16 @@ export function modulesReglables(): { group: string; items: ModuleReglable[] }[]
       group: voc("Onglets d'un projet"),
       items: [
         { cle: "projet:equipe", label: voc("Équipe de projet"), ecriture: true },
-        { cle: "projet:financement", label: "Financement", ecriture: true },
+        { cle: "projet:financement", label: voc("Financement"), ecriture: true },
         { cle: "projet:partenaires", label: voc("Partenaires"), ecriture: false },
-        { cle: "projet:niveaux", label: "Configuration des niveaux", ecriture: false },
+        { cle: "projet:niveaux", label: voc("Configuration des niveaux"), ecriture: false },
         { cle: "projet:periode", label: voc("Planification par période"), ecriture: false },
         { cle: "projet:indicateurs", label: voc("Indicateurs"), ecriture: false },
         { cle: "projet:documents", label: voc("Documents"), ecriture: false },
         { cle: "projet:cadre-logique", label: voc("Cadre logique"), ecriture: false },
         { cle: "projet:risques", label: voc("Risques"), ecriture: true },
         { cle: "projet:coherence", label: voc("Contrôle de cohérence"), ecriture: false },
-        { cle: "projet:historique", label: "Historique", ecriture: false },
+        { cle: "projet:historique", label: voc("Historique"), ecriture: false },
       ],
     },
     { group: voc("Suivi"), items: [{ cle: "suivi:periode", label: voc("Suivi par période"), ecriture: false }] },

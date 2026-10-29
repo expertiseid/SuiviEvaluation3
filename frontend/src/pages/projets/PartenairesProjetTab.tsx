@@ -35,8 +35,8 @@ import type { Activite, PartenaireProjet, Projet } from "../../types";
 type Edition = Partial<PartenaireProjet> & { partenaire?: number };
 
 const NATURES = [
-  { value: "CONSORTIUM", label: "Consortium" },
-  { value: "MISE_EN_OEUVRE", label: "Mise en œuvre" },
+  { value: "CONSORTIUM", label: voc("Consortium") },
+  { value: "MISE_EN_OEUVRE", label: voc("Mise en œuvre") },
 ];
 
 /** Éléments de la planification à plat, indentés selon leur niveau (pour les listes de choix). */
@@ -60,7 +60,7 @@ function RoleModal({ projet, edition, onClose }: { projet: Projet; edition: Edit
 
   async function valider() {
     if (!valeurs.partenaire) {
-      notifications.show({ message: "Choisis le partenaire.", color: "orange" });
+      notifications.show({ message: voc("Choisis le partenaire."), color: "orange" });
       return;
     }
     try {
@@ -72,19 +72,19 @@ function RoleModal({ projet, edition, onClose }: { projet: Projet; edition: Edit
         role: valeurs.role,
         elements: valeurs.elements,
       });
-      notifications.show({ message: "Rôle du partenaire enregistré", color: "green" });
+      notifications.show({ message: voc("Rôle du partenaire enregistré"), color: "green" });
       onClose();
     } catch (e) {
-      notifications.show({ message: messageErreurApi(e, "Erreur (ce partenaire a peut-être déjà un rôle dans le projet)"), color: "red" });
+      notifications.show({ message: messageErreurApi(e, voc("Erreur (ce partenaire a peut-être déjà un rôle dans le projet)")), color: "red" });
     }
   }
 
   return (
-    <Modal opened={edition !== null} onClose={onClose} size="lg" title={edition?.id ? `Rôle de ${edition.partenaire_nom}` : "Ajouter un partenaire au projet"}>
+    <Modal opened={edition !== null} onClose={onClose} size="lg" title={edition?.id ? voc`Rôle de ${edition.partenaire_nom}` : voc("Ajouter un partenaire au projet")}>
       <Stack gap="sm">
         {!edition?.id && (
           <SelectOrCreate
-            label="Partenaire"
+            label={voc("Partenaire")}
             data={partenaires
               .filter((p) => p.type !== "BAILLEUR")
               .map((p) => ({ value: String(p.id), label: p.nom }))}
@@ -104,13 +104,13 @@ function RoleModal({ projet, edition, onClose }: { projet: Projet; edition: Edit
             onChange={(nature) => setValeurs({ ...valeurs, nature: nature as PartenaireProjet["nature"] })}
           />
           <Checkbox
-            label="Chef de file"
+            label={voc("Chef de file")}
             checked={!!valeurs.chef_de_file}
             onChange={(e) => setValeurs({ ...valeurs, chef_de_file: e.currentTarget.checked })}
           />
         </Group>
         <Textarea
-          label="Rôle et responsabilités"
+          label={voc("Rôle et responsabilités")}
           autosize
           minRows={3}
           value={valeurs.role ?? ""}
@@ -124,10 +124,10 @@ function RoleModal({ projet, edition, onClose }: { projet: Projet; edition: Edit
           onChange={(ids) => setValeurs({ ...valeurs, elements: ids.map(Number) })}
           searchable
           clearable
-          placeholder="Aucun élément"
+          placeholder={voc("Aucun élément")}
         />
         <Group justify="flex-end">
-          <Button onClick={valider} loading={enregistrer.isPending}>Enregistrer</Button>
+          <Button onClick={valider} loading={enregistrer.isPending}>{voc("Enregistrer")}</Button>
         </Group>
       </Stack>
     </Modal>
@@ -164,28 +164,28 @@ export function PartenairesProjetTab({ projet, editable }: { projet: Projet; edi
             <Group gap={6}>
               <Text fw={600}>{r.partenaire_nom}</Text>
               {r.chef_de_file && (
-                <Badge size="sm" color="yellow" variant="light" leftSection={<Crown size={11} />}>Chef de file</Badge>
+                <Badge size="sm" color="yellow" variant="light" leftSection={<Crown size={11} />}>{voc("Chef de file")}</Badge>
               )}
             </Group>
             <Badge size="sm" variant="light" color={r.nature === "CONSORTIUM" ? "teal" : "blue"} mt={4}>
-              {r.nature === "CONSORTIUM" ? "Consortium" : "Mise en œuvre"}
+              {r.nature === "CONSORTIUM" ? voc("Consortium") : voc("Mise en œuvre")}
             </Badge>
           </div>
           {editable && (
             <Group gap={4} wrap="nowrap">
-              <Tooltip label="Modifier">
+              <Tooltip label={voc("Modifier")}>
                 <ActionIcon variant="subtle" size="sm" onClick={() => setEdition(r)}>
                   <Pencil size={14} />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip label="Retirer le rôle">
+              <Tooltip label={voc("Retirer le rôle")}>
                 <ActionIcon
                   variant="subtle"
                   size="sm"
                   color="red"
                   onClick={() =>
                     confirmerSuppression({
-                      message: `Retirer le rôle de « ${r.partenaire_nom} » ? Il reste associé au projet.`,
+                      message: voc`Retirer le rôle de « ${r.partenaire_nom} » ? Il reste associé au projet.`,
                       onConfirm: () => supprimer.mutate(r.id),
                     })
                   }
@@ -213,12 +213,12 @@ export function PartenairesProjetTab({ projet, editable }: { projet: Projet; edi
           <div>
             <Text fw={600}>{p.partenaire_nom}</Text>
             <Text size="xs" c="dimmed">
-              {p.nature === "CONSORTIUM" ? "Consortium" : "Mise en œuvre"} · rôle non précisé
+              {p.nature === "CONSORTIUM" ? voc("Consortium") : voc("Mise en œuvre")} {voc("· rôle non précisé")}
             </Text>
           </div>
           {editable && (
             <Button size="xs" variant="light" onClick={() => setEdition(p)}>
-              Préciser le rôle
+              {voc("Préciser le rôle")}
             </Button>
           )}
         </Group>
@@ -233,7 +233,7 @@ export function PartenairesProjetTab({ projet, editable }: { projet: Projet; edi
         </Text>
         {editable && (
           <Button leftSection={<Plus size={16} />} onClick={() => setEdition({})}>
-            Ajouter un partenaire
+            {voc("Ajouter un partenaire")}
           </Button>
         )}
       </Group>
@@ -252,7 +252,7 @@ export function PartenairesProjetTab({ projet, editable }: { projet: Projet; edi
               <Badge variant="light" color={nature === "CONSORTIUM" ? "teal" : "blue"}>{r.length + sr.length}</Badge>
             </Group>
             {r.length + sr.length === 0 ? (
-              <Text size="sm" c="dimmed">Aucun.</Text>
+              <Text size="sm" c="dimmed">{voc("Aucun.")}</Text>
             ) : (
               <SimpleGrid cols={{ base: 1, md: 2 }}>
                 {r.map(carteRole)}
@@ -271,8 +271,8 @@ export function PartenairesProjetTab({ projet, editable }: { projet: Projet; edi
           <Table verticalSpacing={6} fz="sm">
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Service</Table.Th>
-                <Table.Th>Sur</Table.Th>
+                <Table.Th>{voc("Service")}</Table.Th>
+                <Table.Th>{voc("Sur")}</Table.Th>
                 <Table.Th>{voc("Membres")}</Table.Th>
               </Table.Tr>
             </Table.Thead>
@@ -298,11 +298,11 @@ export function PartenairesProjetTab({ projet, editable }: { projet: Projet; edi
       </Card>
 
       <Card withBorder padding="md">
-        <Title order={5} mb="xs">Parties prenantes</Title>
+        <Title order={5} mb="xs">{voc("Parties prenantes")}</Title>
         <Text size="sm">{projet.parties_prenantes_noms?.join(", ") || "—"}</Text>
         {(projet.elements_strategiques_secondaires_noms?.length ?? 0) > 0 && (
           <Text size="sm">
-            <b>Contribue aussi à :</b> {projet.elements_strategiques_secondaires_noms.join(", ")}
+            <b>{voc("Contribue aussi à :")}</b> {projet.elements_strategiques_secondaires_noms.join(", ")}
           </Text>
         )}
         <Text size="xs" c="dimmed" mt={4}>{voc("Se règlent dans le formulaire du projet (crayon), onglet « Organisation ».")}</Text>

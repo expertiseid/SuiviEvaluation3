@@ -119,3 +119,45 @@ export function useCreateFinancement() {
     },
   });
 }
+
+/** Une ligne « bailleur + montant » saisie dans la fiche projet. */
+export interface LigneFinancement {
+  nom: string;
+  montant: number;
+}
+
+/**
+ * Aligne les financements d'un projet sur les lignes saisies : bailleur retrouvé par son nom
+ * (créé s'il n'existe pas), montant mis à jour, financement ajouté ou retiré. Le serveur recalcule
+ * le coût total du projet à chaque changement.
+ */
+export function useEnregistrerFinancements() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ projetId, lignes, existants }: { projetId: number; lignes: LigneFinancement[]; existants: Financement[] }) => {
+      const voulus = new Map<number, number>();
+      for (const ligne of lignes) {
+        const nom = ligne.nom.trim();
+        const trouves = (await apiClient.get<Paginated<Bailleur>>("/bailleurs/", { params: { search: nom } })).data.results;
+        const bailleur =
+          trouves.find((b) => b.nom.localeCompare(nom, "fr", { sensitivity: "base" }) === 0) ??
+          (await apiClient.post<Bailleur>("/bailleurs/", { nom, type: "AUTRE" })).data;
+        voulus.set(bailleur.id, ligne.montant);
+      }
+      for (const f of existants) {
+        const montant = voulus.get(f.bailleur);
+        if (montant === undefined) await apiClient.delete(`/financements/${f.id}/`);
+        else if (Number(f.montant_finance) !== montant) await apiClient.patch(`/financements/${f.id}/`, { montant_finance: montant });
+        voulus.delete(f.bailleur);
+      }
+      for (const [bailleur, montant] of voulus) {
+        await apiClient.post("/financements/", { projet: projetId, bailleur, montant_finance: montant });
+      }
+    },
+    onSuccess: (_d, { projetId }) => {
+      queryClient.invalidateQueries({ queryKey: ["financements"] });
+      queryClient.invalidateQueries({ queryKey: ["bailleurs"] });
+      queryClient.invalidateQueries({ queryKey: ["projets", projetId] });
+    },
+  });
+}

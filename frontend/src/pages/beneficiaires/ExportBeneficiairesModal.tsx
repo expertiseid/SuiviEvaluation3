@@ -43,7 +43,7 @@ export function ExportBeneficiairesModal({
       );
       onClose();
     } catch (error) {
-      notifications.show({ message: messageErreurApi(error, "Erreur lors de l'export"), color: "red" });
+      notifications.show({ message: messageErreurApi(error, voc("Erreur lors de l'export")), color: "red" });
     } finally {
       setEnCours(false);
     }
@@ -56,8 +56,8 @@ export function ExportBeneficiairesModal({
           value={fichier}
           onChange={(v) => setFichier(v as "excel" | "pdf")}
           data={[
-            { value: "excel", label: "Excel (.xlsx)" },
-            { value: "pdf", label: "PDF" },
+            { value: "excel", label: voc("Excel (.xlsx)") },
+            { value: "pdf", label: voc("PDF") },
           ]}
         />
 
@@ -98,10 +98,12 @@ export function ExportBeneficiairesModal({
           <Text size="sm" c="dimmed">
             {tous
               ? voc("Export de tous les bénéficiaires, une feuille par projet.")
-              : voc`${coches.length} projet${coches.length > 1 ? "s" : ""} sélectionné${coches.length > 1 ? "s" : ""}`}
+              : coches.length > 1
+                ? voc`${coches.length} projets sélectionnés`
+                : voc`${coches.length} projet sélectionné`}
           </Text>
           <Button leftSection={<Download size={16} />} onClick={exporter} loading={enCours}>
-            Exporter en {fichier === "pdf" ? "PDF" : "Excel"}
+            {voc("Exporter en")} {fichier === "pdf" ? voc("PDF") : voc("Excel")}
           </Button>
         </Group>
       </Stack>

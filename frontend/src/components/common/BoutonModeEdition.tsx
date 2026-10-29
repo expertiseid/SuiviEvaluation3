@@ -1,5 +1,6 @@
 import { Button } from "@mantine/core";
 import { Pencil, X } from "lucide-react";
+import { voc } from "../../utils/vocabulaire";
 
 /**
  * Bascule un mode « édition » propre à la page/section : tant qu'il n'est
@@ -15,7 +16,7 @@ export function BoutonModeEdition({ actif, onToggle }: { actif: boolean; onToggl
       leftSection={actif ? <X size={15} /> : <Pencil size={15} />}
       onClick={onToggle}
     >
-      {actif ? "Terminer l'édition" : "Éditer"}
+      {actif ? voc("Terminer l'édition") : voc("Éditer")}
     </Button>
   );
 }

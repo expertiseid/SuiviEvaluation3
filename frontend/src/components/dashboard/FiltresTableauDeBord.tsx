@@ -7,10 +7,10 @@ import type { StatutProjet } from "../../types";
 import { voc } from "../../utils/vocabulaire";
 
 const PERIODES: { value: EtatFiltres["periode"]; label: string }[] = [
-  { value: "actifs", label: "En cours pendant la période" },
-  { value: "demarres", label: "Ont commencé dans la période" },
-  { value: "demarres_fin_prevue", label: "Ont commencé et doivent finir dans la période" },
-  { value: "demarres_termines", label: "Ont commencé et se sont terminés (clôturés) dans la période" },
+  { value: "actifs", label: voc("En cours pendant la période") },
+  { value: "demarres", label: voc("Ont commencé dans la période") },
+  { value: "demarres_fin_prevue", label: voc("Ont commencé et doivent finir dans la période") },
+  { value: "demarres_termines", label: voc("Ont commencé et se sont terminés (clôturés) dans la période") },
 ];
 
 export function FiltresTableauDeBord({
@@ -31,24 +31,24 @@ export function FiltresTableauDeBord({
     <Paper withBorder p="md" radius="md">
       <Group align="flex-end" gap="md" wrap="wrap">
         <div>
-          <Text size="sm" fw={600} mb={4}>Période</Text>
+          <Text size="sm" fw={600} mb={4}>{voc("Période")}</Text>
           <SegmentedControl
             value={valeur.mode}
             onChange={(v) => maj({ mode: v as ModeDates })}
             data={[
-              { value: "toutes", label: "Toutes" },
-              { value: "annee", label: "Année" },
-              { value: "plage", label: "Plage de dates" },
+              { value: "toutes", label: voc("Toutes") },
+              { value: "annee", label: voc("Année") },
+              { value: "plage", label: voc("Plage de dates") },
             ]}
           />
         </div>
         {valeur.mode === "annee" && (
-          <Select label="Année" data={annees} value={valeur.annee} onChange={(v) => maj({ annee: v })} w={110} allowDeselect={false} />
+          <Select label={voc("Année")} data={annees} value={valeur.annee} onChange={(v) => maj({ annee: v })} w={110} allowDeselect={false} />
         )}
         {valeur.mode === "plage" && (
           <>
             <DateInput
-              label="Du"
+              label={voc("Du")}
               value={valeur.dateDebut}
               onChange={(v) => maj({ dateDebut: v })}
               valueFormat="DD/MM/YYYY"
@@ -56,7 +56,7 @@ export function FiltresTableauDeBord({
               w={150}
             />
             <DateInput
-              label="Au"
+              label={voc("Au")}
               value={valeur.dateFin}
               onChange={(v) => maj({ dateFin: v })}
               valueFormat="DD/MM/YYYY"
@@ -78,7 +78,7 @@ export function FiltresTableauDeBord({
         )}
         <MultiSelect
           label={voc("Statut des projets")}
-          placeholder={valeur.statuts.length ? undefined : "Tous les statuts"}
+          placeholder={valeur.statuts.length ? undefined : voc("Tous les statuts")}
           data={(Object.keys(PROJET_STATUT_LABEL) as StatutProjet[]).map((s) => ({ value: s, label: PROJET_STATUT_LABEL[s] }))}
           value={valeur.statuts}
           onChange={(v) => maj({ statuts: v as StatutProjet[] })}
@@ -86,12 +86,12 @@ export function FiltresTableauDeBord({
           w={300}
         />
         <Button variant="subtle" leftSection={<RotateCcw size={15} />} onClick={() => onChange(FILTRES_PAR_DEFAUT)}>
-          Réinitialiser
+          {voc("Réinitialiser")}
         </Button>
       </Group>
       {nombreProjets !== undefined && (
         <Text size="sm" c="dimmed" mt="sm">
-          {nombreProjets} {voc(" projet")}{nombreProjets > 1 ? "s" : ""} retenu{nombreProjets > 1 ? "s" : ""} {voc(" — tous les chiffres et graphiques ci-dessous portent sur ces projets.")}{valeur.periode === "demarres_termines" && avecDates &&
+          {nombreProjets > 1 ? voc`${nombreProjets} projets retenus` : voc`${nombreProjets} projet retenu`}{voc(" — tous les chiffres et graphiques ci-dessous portent sur ces projets.")}{valeur.periode === "demarres_termines" && avecDates &&
             voc(" « Terminé » = projet au statut Clôturé dont la date de fin tombe dans la période.")}
         </Text>
       )}

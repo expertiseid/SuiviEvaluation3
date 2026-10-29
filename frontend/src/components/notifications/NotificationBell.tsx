@@ -3,10 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { ActionIcon, Divider, Group, Indicator, Menu, ScrollArea, Stack, Text } from "@mantine/core";
 import { useMarquerLu, useNonLuesCount, useNotifications, useToutMarquerLu } from "../../api/notifications";
 import type { AppNotification } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 function tempsRelatif(dateIso: string) {
   const minutes = Math.round((Date.now() - new Date(dateIso).getTime()) / 60000);
-  if (minutes < 1) return "à l'instant";
+  if (minutes < 1) return voc("à l'instant");
   if (minutes < 60) return `il y a ${minutes} min`;
   const heures = Math.round(minutes / 60);
   if (heures < 24) return `il y a ${heures} h`;
@@ -36,9 +37,9 @@ export function NotificationBell() {
       </Menu.Target>
       <Menu.Dropdown>
         <Group justify="space-between" px="sm" py={4}>
-          <Text size="sm" fw={600}>Notifications</Text>
+          <Text size="sm" fw={600}>{voc("Notifications")}</Text>
           {nonLues > 0 && (
-            <ActionIcon variant="subtle" size="sm" onClick={() => toutMarquerLu.mutate()} title="Tout marquer comme lu">
+            <ActionIcon variant="subtle" size="sm" onClick={() => toutMarquerLu.mutate()} title={voc("Tout marquer comme lu")}>
               <CheckCheck size={16} />
             </ActionIcon>
           )}
@@ -47,7 +48,7 @@ export function NotificationBell() {
         <ScrollArea.Autosize mah={400}>
           {!notifs || notifs.length === 0 ? (
             <Text c="dimmed" size="sm" ta="center" py="lg">
-              Aucune notification.
+              {voc("Aucune notification.")}
             </Text>
           ) : (
             <Stack gap={0}>

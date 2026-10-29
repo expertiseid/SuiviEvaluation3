@@ -1,6 +1,7 @@
 import { Group, Text, Tooltip } from "@mantine/core";
 import { STATUS_HEX } from "../common/statusPalette";
 import type { StatusTone } from "../common/StatusBadge";
+import { voc } from "../../utils/vocabulaire";
 
 export function toneDeTaux(taux: number | null): StatusTone {
   if (taux === null) return "neutral";
@@ -94,7 +95,7 @@ export function BarreProgression({
         ))}
         {pctAttendu != null && (
           <div
-            title={`Attendu aujourd'hui : ${Math.round(attendu!)}${unite ? " " + unite : ""}`}
+            title={voc`Attendu aujourd'hui : ${Math.round(attendu!)}${unite ? " " + unite : ""}`}
             style={{
               position: "absolute",
               left: `calc(${pctAttendu}% - 1px)`,
@@ -106,7 +107,7 @@ export function BarreProgression({
           />
         )}
         <div
-          title={`Cible : ${cible}${unite ? " " + unite : ""}`}
+          title={voc`Cible : ${cible}${unite ? " " + unite : ""}`}
           style={{
             position: "absolute",
             left: `calc(${pctCible}% - 1px)`,
@@ -123,7 +124,7 @@ export function BarreProgression({
         </Text>
         {attendu != null && (
           <Text size="sm" c="dimmed">
-            Attendu aujourd'hui : {Math.round(attendu)}{unite ? ` ${unite}` : ""}
+            {voc("Attendu aujourd'hui :")} {Math.round(attendu)}{unite ? ` ${unite}` : ""}
           </Text>
         )}
       </Group>

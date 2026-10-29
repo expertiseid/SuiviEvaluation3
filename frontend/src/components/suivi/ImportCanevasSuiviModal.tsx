@@ -26,10 +26,10 @@ import { messageErreurApi } from "../../utils/erreurs";
 import { voc } from "../../utils/vocabulaire";
 
 const STATUTS: Record<LigneCanevas["statut"], { libelle: string; couleur: string }> = {
-  ajout: { libelle: "Ajout", couleur: "teal" },
-  modification: { libelle: "Modification", couleur: "blue" },
-  ignoree: { libelle: "Ignorée", couleur: "gray" },
-  erreur: { libelle: "Erreur", couleur: "red" },
+  ajout: { libelle: voc("Ajout"), couleur: "teal" },
+  modification: { libelle: voc("Modification"), couleur: "blue" },
+  ignoree: { libelle: voc("Ignorée"), couleur: "gray" },
+  erreur: { libelle: voc("Erreur"), couleur: "red" },
 };
 
 /**
@@ -97,8 +97,8 @@ export function ImportCanevasSuiviModal({
 
         <Group align="flex-end" gap="sm">
           <FileInput
-            label="Canevas complété"
-            placeholder="Choisir un fichier .xlsx"
+            label={voc("Canevas complété")}
+            placeholder={voc("Choisir un fichier .xlsx")}
             accept=".xlsx"
             leftSection={<FileSpreadsheet size={16} />}
             value={fichier}
@@ -110,7 +110,7 @@ export function ImportCanevasSuiviModal({
             style={{ flex: 1 }}
           />
           <Stack gap={2}>
-            <Text size="sm" fw={500}>Saisies déjà existantes</Text>
+            <Text size="sm" fw={500}>{voc("Saisies déjà existantes")}</Text>
             <SegmentedControl
               value={mode}
               onChange={(v) => {
@@ -118,13 +118,13 @@ export function ImportCanevasSuiviModal({
                 if (fichier && apercu) analyser(fichier, v as ModeCanevas);
               }}
               data={[
-                { value: "ajout", label: "Conserver (ajouter seulement)" },
-                { value: "mise_a_jour", label: "Mettre à jour" },
+                { value: "ajout", label: voc("Conserver (ajouter seulement)") },
+                { value: "mise_a_jour", label: voc("Mettre à jour") },
               ]}
             />
           </Stack>
           <Button leftSection={<Search size={16} />} disabled={!fichier} loading={analyseEnCours} onClick={() => analyser()}>
-            Analyser
+            {voc("Analyser")}
           </Button>
         </Group>
 
@@ -146,22 +146,22 @@ export function ImportCanevasSuiviModal({
                   onClick={() => setFiltre(cle)}
                 >
                   {cle === "toutes"
-                    ? `Toutes : ${apercu.lignes.length}`
+                    ? voc`Toutes : ${apercu.lignes.length}`
                     : `${STATUTS[cle].libelle} : ${apercu.totaux[cle]}`}
                 </Badge>
               ))}
             </Group>
             {apercu.lignes.length === 0 ? (
-              <Text size="sm" c="dimmed">Aucune saisie trouvée dans le fichier.</Text>
+              <Text size="sm" c="dimmed">{voc("Aucune saisie trouvée dans le fichier.")}</Text>
             ) : (
               <Table.ScrollContainer minWidth={700} mah={360}>
                 <Table striped withTableBorder verticalSpacing={4} fz="sm">
                   <Table.Thead>
                     <Table.Tr>
-                      <Table.Th w={150}>Feuille / ligne</Table.Th>
-                      <Table.Th>Élément</Table.Th>
-                      <Table.Th w={110}>Résultat</Table.Th>
-                      <Table.Th>Détail</Table.Th>
+                      <Table.Th w={150}>{voc("Feuille / ligne")}</Table.Th>
+                      <Table.Th>{voc("Élément")}</Table.Th>
+                      <Table.Th w={110}>{voc("Résultat")}</Table.Th>
+                      <Table.Th>{voc("Détail")}</Table.Th>
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>
@@ -205,7 +205,7 @@ export function ImportCanevasSuiviModal({
                   leftSection={<Download size={16} />}
                   onClick={() => fichier && telechargerRapportErreursCanevas(projetId, fichier, mode)}
                 >
-                  Télécharger le rapport d'erreurs
+                  {voc("Télécharger le rapport d'erreurs")}
                 </Button>
               ) : (
                 <span />
@@ -220,29 +220,31 @@ export function ImportCanevasSuiviModal({
                     {
                       onSuccess: (r) => {
                         setResultat(r);
-                        notifications.show({ message: "Suivi importé", color: "green" });
+                        notifications.show({ message: voc("Suivi importé"), color: "green" });
                       },
                       onError: (error) =>
-                        notifications.show({ message: messageErreurApi(error, "Erreur lors de l'import"), color: "red" }),
+                        notifications.show({ message: messageErreurApi(error, voc("Erreur lors de l'import")), color: "red" }),
                     },
                   )
                 }
               >
                 {aEnregistrer === 0
-                  ? "Rien à enregistrer"
-                  : `Valider l'import (${aEnregistrer} ligne${aEnregistrer > 1 ? "s" : ""})`}
+                  ? voc("Rien à enregistrer")
+                  : aEnregistrer > 1
+                    ? voc`Valider l'import (${aEnregistrer} lignes)`
+                    : voc`Valider l'import (${aEnregistrer} ligne)`}
               </Button>
             </Group>
             {apercu.totaux.erreur > 0 && aEnregistrer > 0 && (
-              <Text size="xs" c="dimmed">Les lignes en erreur ne seront pas enregistrées.</Text>
+              <Text size="xs" c="dimmed">{voc("Les lignes en erreur ne seront pas enregistrées.")}</Text>
             )}
           </>
         )}
 
         {resultat && (
-          <Alert color="green" title="Import terminé">
-            {resultat.totaux.ajout} ajout(s), {resultat.totaux.modification} modification(s) enregistré(s)
-            {resultat.totaux.erreur > 0 ? `, ${resultat.totaux.erreur} ligne(s) en erreur ignorée(s)` : ""}
+          <Alert color="green" title={voc("Import terminé")}>
+            {resultat.totaux.ajout} {voc("ajout(s),")} {resultat.totaux.modification} {voc("modification(s) enregistré(s)")}
+            {resultat.totaux.erreur > 0 ? voc`, ${resultat.totaux.erreur} ligne(s) en erreur ignorée(s)` : ""}
             {voc(". Les taux d'exécution sont recalculés.")}
           </Alert>
         )}

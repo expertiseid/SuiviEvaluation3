@@ -1,5 +1,6 @@
 /** Carte par zone : classes et couleurs des valeurs (régions, provinces…). */
 import type { IndicateurZone, SyntheseZone } from "../api/geo";
+import { locale, nombreCourt } from "./i18n";
 
 // Dégradé du plus faible au plus fort (5 classes), et gris pour « aucune donnée ».
 export const DEGRADES: Record<IndicateurZone, string[]> = {
@@ -17,11 +18,11 @@ export const normaliser = (s: string) =>
 
 export function formatValeur(indicateur: IndicateurZone, v: number | null): string {
   if (v === null) return "—";
-  if (pourcentage(indicateur)) return `${v.toLocaleString("fr-FR")} %`;
+  if (pourcentage(indicateur)) return `${v.toLocaleString(locale())} %`;
   if (indicateur === "budget") {
-    return v >= 1e9 ? `${(v / 1e9).toLocaleString("fr-FR", { maximumFractionDigits: 2 })} Md` : v >= 1e6 ? `${(v / 1e6).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} M` : v.toLocaleString("fr-FR");
+    return nombreCourt(v);
   }
-  return v.toLocaleString("fr-FR");
+  return v.toLocaleString(locale());
 }
 
 /** Bornes des classes : seuils fixes pour les taux, sinon classes égales jusqu'au maximum. */

@@ -22,6 +22,7 @@ import { CadreStrategiqueDetailPage } from "./pages/strategie/CadreStrategiqueDe
 import { ZonesAdministrativesPage } from "./pages/geo/ZonesAdministrativesPage";
 import { PlanificationImportPage } from "./pages/planification/PlanificationImportPage";
 import { DocumentsGlobauxPage } from "./pages/documents/DocumentsGlobauxPage";
+import { LanguesPage } from "./pages/langues/LanguesPage";
 import { ParametresAlertePage } from "./pages/parametres/ParametresAlertePage";
 import { PagePartagee } from "./pages/partage/PagePartagee";
 
@@ -70,6 +71,14 @@ export default function App() {
           element={
             <RequireAuth roles={["ADMIN"]}>
               <UtilisateursPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/langues"
+          element={
+            <RequireAuth roles={["ADMIN"]}>
+              <LanguesPage />
             </RequireAuth>
           }
         />

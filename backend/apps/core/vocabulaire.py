@@ -141,7 +141,14 @@ def oublier_vocabulaire():
 
 
 def v(texte: str) -> str:
-    """Adapte un texte fixe (titre, en-tête, message) au vocabulaire de l'organisation."""
+    """
+    Adapte un texte fixe (titre, en-tête, message) au vocabulaire de l'organisation ; dans un
+    fichier produit dans une autre langue (voir apps.core.langues), le traduit.
+    """
+    from .langues import langue_active, traduire_texte_fixe
+
+    if langue_active() != "fr":
+        return traduire_texte_fixe(texte)
     return adapter_texte(texte, vocabulaire_courant())
 
 
@@ -169,19 +176,33 @@ def ramener_terme(texte: str) -> str:
 FEUILLES_A_EN_TETES_LIBRES = {"Structuration"}
 
 
+def _en_tete_libre(feuille, cellule) -> bool:
+    """Structuration : en-têtes = noms des niveaux du cadre (données), en ligne 1 ou 2."""
+    return (
+        feuille.title in FEUILLES_A_EN_TETES_LIBRES
+        and cellule.row <= 2
+        and not str(cellule.value or "").startswith("En jaune")
+    )
+
+
 def adapter_classeur(wb, feuilles=None):
-    """Adapte au vocabulaire tous les textes d'un modèle (feuilles, cellules, commentaires)."""
+    """
+    Adapte tous les textes d'un modèle (feuilles, cellules, commentaires) au vocabulaire de
+    l'organisation, ou les traduit s'il est produit dans une autre langue.
+    """
+    from .langues import langue_active, traduire_classeur
+
+    if langue_active() != "fr":
+        return traduire_classeur(wb, feuilles=feuilles, garder=_en_tete_libre)
     vocabulaire = vocabulaire_courant()
     if not vocabulaire:
         return wb
     for feuille in list(wb.worksheets):
         if feuilles is not None and feuille.title not in feuilles:
             continue
-        en_tetes_libres = feuille.title in FEUILLES_A_EN_TETES_LIBRES
         for ligne in feuille.iter_rows():
             for cellule in ligne:
-                # Structuration : en-têtes = noms des niveaux du cadre (données), en ligne 1 ou 2.
-                if en_tetes_libres and cellule.row <= 2 and not str(cellule.value or "").startswith("En jaune"):
+                if _en_tete_libre(feuille, cellule):
                     continue
                 if isinstance(cellule.value, str):
                     cellule.value = adapter_texte(cellule.value, vocabulaire)
@@ -204,17 +225,18 @@ def libelles_des_modeles() -> set:
     from apps.indicators.import_excel import COLONNES as COLONNES_INDICATEURS
     from apps.indicators.import_excel import COLONNES_PALIERS
     from apps.planification.services import CHAMPS_CADRE
-    from apps.projects.import_excel import CHAMPS_PROJET, COLONNES_PLANIFICATION
+    from apps.projects.import_excel import CHAMP_BAILLEUR_UNIQUE, CHAMPS_PROJET, COLONNES_FINANCEMENTS, COLONNES_PLANIFICATION
     from apps.suivi.canevas import libelles_canevas
 
     return (
         {
             "Projet", "Planification", "Grilles d'alerte", "Instructions", "Indicateurs", "Bénéficiaires",
-            "Cadre stratégique", "Structuration",
+            "Cadre stratégique", "Structuration", "Financements", CHAMP_BAILLEUR_UNIQUE,
         }
         | {cle for cle, _ in CHAMPS_PROJET}
         | {cle for cle, _ in CHAMPS_CADRE}
         | set(COLONNES_PLANIFICATION)
+        | set(COLONNES_FINANCEMENTS)
         | set(COLONNES_INDICATEURS)
         | set(COLONNES_PALIERS)
         | set(COLONNES_BENEFICIAIRES)
@@ -224,19 +246,23 @@ def libelles_des_modeles() -> set:
 
 def ramener_classeur(wb):
     """
-    Classeur rempli à partir d'un modèle généré avec le vocabulaire de l'organisation :
-    ramène noms de feuilles, en-têtes et noms de champs aux libellés par défaut. Seuls
-    les libellés fixes connus sont concernés — jamais les données ni les en-têtes de
-    niveaux (noms libres). Sans effet sur un classeur aux noms par défaut.
+    Classeur rempli à partir d'un modèle généré avec le vocabulaire de l'organisation, ou dans
+    une autre langue : ramène noms de feuilles, en-têtes et noms de champs aux libellés par
+    défaut, en français. Seuls les libellés fixes connus sont concernés — jamais les données
+    ni les en-têtes de niveaux (noms libres). Sans effet sur un classeur aux noms par défaut.
     """
+    from .langues import formes, titre_feuille
+
     vocabulaire = vocabulaire_courant()
-    if not vocabulaire:
-        return wb
     correspondances = {}
     for libelle in libelles_des_modeles():
-        adapte = adapter_texte(libelle, vocabulaire)
-        if adapte != libelle:
-            correspondances[_normaliser(adapte)] = libelle
+        variantes = formes(libelle)
+        if vocabulaire:
+            variantes.add(adapter_texte(libelle, vocabulaire))
+        for variante in variantes - {libelle}:
+            correspondances[_normaliser(variante)] = libelle
+            # Nom de feuille : raccourci à 31 caractères dans le modèle traduit.
+            correspondances.setdefault(_normaliser(titre_feuille(variante)), libelle)
     if not correspondances:
         return wb
     for feuille in wb.worksheets:

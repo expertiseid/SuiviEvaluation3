@@ -89,7 +89,7 @@ def test_seul_l_administrateur_renomme_les_rubriques_du_menu():
     # Libellé nettoyé ; un libellé vide est retiré (retour au nom par défaut).
     assert r.data["libelles"] == {"/projets": "Programmes"}
     assert charge.get("/api/v1/interface/menu/").data == {
-        "libelles": {"/projets": "Programmes"}, "icones": {}, "vocabulaire": {}, "peut_modifier": False,
+        "libelles": {"/projets": "Programmes"}, "icones": {}, "vocabulaire": {}, "langue_defaut": "fr", "peut_modifier": False,
     }
     # Les icônes s'enregistrent sans toucher aux libellés déjà choisis.
     r = admin.put("/api/v1/interface/menu/", {"icones": {"/projets": "Briefcase", "/suivi": ""}}, format="json")

@@ -1,0 +1,6506 @@
+{
+ " — à comparer à la cible globale de l'activité/indicateur.": [
+  "components/suivi/TranchesPlanifieesTab.tsx"
+ ],
+ " — les quantités réalisées se saisissent dans le module Suivi.": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ " — tous les chiffres et graphiques ci-dessous portent sur ces projets.": [
+  "components/dashboard/FiltresTableauDeBord.tsx"
+ ],
+ " · {0} FCFA": [
+  "pages/projets/PlanificationPeriodeTab.tsx",
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ " · expire le {0}": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ " · Né(e) le {0}": [
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx"
+ ],
+ " · partagé par {0}": [
+  "pages/partage/PagePartagee.tsx"
+ ],
+ " « Terminé » = projet au statut Clôturé dont la date de fin tombe dans la période.": [
+  "components/dashboard/FiltresTableauDeBord.tsx"
+ ],
+ " ({0} % de l'objectif)": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ " ({0}/{1} blocs)": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ " (attendu : 100 %)": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ " (commune de {0})": [
+  "pages/carte/CartePage.tsx"
+ ],
+ " (dépassée)": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ " (dont {0} de rallonges)": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ " (valeur de référence : {0})": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ " Aucun attribut de nom reconnu (modifiable dans « Gérer les couches »).": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ " bénéficiaire(s) créé(s)": [
+  "pages/beneficiaires/ImportBeneficiairesModal.tsx"
+ ],
+ " bénéficiaire(s) créé(s) et inscrit(s) au projet": [
+  "pages/planification/PlanificationImportPage.tsx"
+ ],
+ " doublon(s) potentiel(s) — à traiter dans « Doublons d'enregistrement »)": [
+  "pages/planification/PlanificationImportPage.tsx"
+ ],
+ " doublon(s) potentiel(s) détecté(s) — à traiter dans « Doublons d'enregistrement »": [
+  "pages/beneficiaires/ImportBeneficiairesModal.tsx"
+ ],
+ " élément(s) de planification": [
+  "pages/planification/PlanificationImportPage.tsx"
+ ],
+ " En tant qu'administrateur, vous pouvez quand même corriger.": [
+  "components/common/BandeauSaisieFermee.tsx"
+ ],
+ " FCFA) dépasse le budget restant du projet (": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ " indicateur(s) créé(s)": [
+  "pages/planification/PlanificationImportPage.tsx"
+ ],
+ " indicateur(s) créé(s).": [
+  "pages/indicateurs/ImportIndicateursModal.tsx"
+ ],
+ " Les chiffres portent sur les projets que vous voyez, avec les filtres actuels.": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ " Noms affichés : attribut « {0} ».": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "— l'objectif de la période est l'avancement visé à sa fin (en %), le réalisé est l'avancement atteint à cette date.": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "— score": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ ", {0} ligne(s) en erreur ignorée(s)": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ ", convertie en WGS 84.": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ ", dont": [
+  "pages/beneficiaires/ImportBeneficiairesModal.tsx"
+ ],
+ ", la dernière le {0}": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ ": voir l'écran": [
+  "pages/carte/CartePage.tsx"
+ ],
+ ". Les taux d'exécution sont recalculés.": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "· Cible": [
+  "pages/projets/CadreLogiqueTab.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "· Cible :": [
+  "pages/indicateurs/IndicateurDetailPage.tsx"
+ ],
+ "· Fréquence :": [
+  "pages/indicateurs/IndicateurDetailPage.tsx"
+ ],
+ "· importée le": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "· masqué avec «": [
+  "pages/utilisateurs/DroitsModules.tsx"
+ ],
+ "· personnalisé": [
+  "pages/utilisateurs/DroitsModules.tsx"
+ ],
+ "· rôle non précisé": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "· Valeur de base :": [
+  "pages/indicateurs/IndicateurDetailPage.tsx"
+ ],
+ "« {0} » : {1} caractères au plus pour le nom, {2} pour la valeur.": [
+  "serveur"
+ ],
+ "« {0} » créé": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "« {0} » importée": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "« {0} » n'est pas d'un niveau supérieur à « {1} ».": [
+  "serveur"
+ ],
+ "(dont": [
+  "pages/planification/PlanificationImportPage.tsx"
+ ],
+ "(héritée du projet ou de l'organisation)": [
+  "components/suivi/MethodeCalculLigne.tsx"
+ ],
+ "(niveaux :": [
+  "pages/planification/PlanificationImportPage.tsx",
+  "pages/projets/ImportProjetModal.tsx"
+ ],
+ "(sauf si sa ligne indique un autre Code projet).": [
+  "pages/beneficiaires/ImportBeneficiairesModal.tsx"
+ ],
+ "(voir seulement, ou créer et modifier) se règle par utilisateur, avec son niveau d'accès.": [
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ ") · projection d'origine :": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "[Financements] Bailleur « {0} » déjà présent plus haut — ligne ignorée.": [
+  "serveur"
+ ],
+ "[Financements] Colonnes « Bailleur » et « Montant financé (FCFA) » introuvables.": [
+  "serveur"
+ ],
+ "[Financements] Montant invalide pour « {0} » — ligne ignorée.": [
+  "serveur"
+ ],
+ "[Financements] Nom du bailleur manquant — ligne ignorée.": [
+  "serveur"
+ ],
+ "{0} — vérifie qu'aucun élément n'en dépend encore.": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "{0} — vérifie qu'aucune zone n'en dépend encore.": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "{0} {1} réalisé(s) sur {2} prévu(s).": [
+  "components/suivi/MethodeCalculLigne.tsx"
+ ],
+ "{0} → {1} : {2} FCFA": [
+  "pages/suivi/SuiviPeriodeTab.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "{0} activité des projets de ce cadre n'a pas encore d'élément stratégique : à renseigner dans la fiche de l'activité (champ « Élément stratégique »).": [
+  "pages/strategie/AxesBudgetsTab.tsx"
+ ],
+ "{0} activité/sous-activité en retard": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "{0} activités des projets de ce cadre n'ont pas encore d'élément stratégique : à renseigner dans la fiche de l'activité (champ « Élément stratégique »).": [
+  "pages/strategie/AxesBudgetsTab.tsx"
+ ],
+ "{0} activités/sous-activités en retard": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "{0} associé(s), {1} en échec.": [
+  "components/beneficiaires/BeneficiairesTab.tsx"
+ ],
+ "{0} avertissement(s)": [
+  "pages/beneficiaires/ImportBeneficiairesModal.tsx",
+  "pages/indicateurs/ImportIndicateursModal.tsx",
+  "pages/planification/PlanificationImportPage.tsx",
+  "pages/projets/ImportProjetModal.tsx"
+ ],
+ "{0} bénéficiaire": [
+  "pages/beneficiaires/BeneficiairesListPage.tsx"
+ ],
+ "{0} bénéficiaire au total": [
+  "pages/beneficiaires/BeneficiairesListPage.tsx"
+ ],
+ "{0} bénéficiaire(s) associé(s) au projet": [
+  "pages/projets/BeneficiairesProjetSection.tsx"
+ ],
+ "{0} bénéficiaire(s) importé(s)": [
+  "pages/beneficiaires/ImportBeneficiairesModal.tsx"
+ ],
+ "{0} bénéficiaires": [
+  "pages/beneficiaires/BeneficiairesListPage.tsx"
+ ],
+ "{0} bénéficiaires au total": [
+  "pages/beneficiaires/BeneficiairesListPage.tsx"
+ ],
+ "{0} caractères maximum par libellé.": [
+  "serveur"
+ ],
+ "{0} caractères maximum par terme.": [
+  "serveur"
+ ],
+ "{0} de la zone ({1})": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "{0} déjà renseigné ({1}) — conservé (mode ajouter)": [
+  "serveur"
+ ],
+ "{0} doublon(s) potentiel(s) détecté(s) — à traiter dans l'écran « Doublons d'enregistrement ».": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "{0} échéance proche (dans les {1} prochains jours)": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "{0} échéances proches (dans les {1} prochains jours)": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "{0} élément(s) créé(s), {1} mis à jour": [
+  "pages/strategie/ImportStructurationModal.tsx"
+ ],
+ "{0} envoyée pour approbation : elle sera appliquée une fois approuvée.": [
+  "serveur"
+ ],
+ "{0} erreur": [
+  "pages/projets/CoherenceTab.tsx"
+ ],
+ "{0} erreur(s)": [
+  "pages/planification/PlanificationImportPage.tsx",
+  "pages/projets/ImportProjetModal.tsx"
+ ],
+ "{0} erreurs": [
+  "pages/projets/CoherenceTab.tsx"
+ ],
+ "{0} et plus": [
+  "pages/carte/CarteParZone.tsx"
+ ],
+ "{0} F, {1} H": [
+  "pages/carte/CartePage.tsx",
+  "pages/carte/CarteParZone.tsx"
+ ],
+ "{0} FCFA dépensés sur {1} FCFA prévus": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "{0} indicateur(s) importé(s)": [
+  "pages/indicateurs/ImportIndicateursModal.tsx"
+ ],
+ "{0} jour": [
+  "utils/periode.ts"
+ ],
+ "{0} jours": [
+  "utils/periode.ts"
+ ],
+ "{0} ligne(s) à corriger dans le fichier : rien n'a été importé. Corrigez-les puis importez à nouveau.": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "{0} ligne(s) ignorée(s)": [
+  "pages/beneficiaires/ImportBeneficiairesModal.tsx",
+  "pages/indicateurs/ImportIndicateursModal.tsx",
+  "pages/strategie/ImportStructurationModal.tsx"
+ ],
+ "{0} ligne(s) ignorée(s) : traduction vide, ou texte français qui n'existe plus dans la plateforme.": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "{0} n'est ni un dossier ni une archive .zip.": [
+  "serveur"
+ ],
+ "{0} n'existe pas dans le texte français": [
+  "serveur"
+ ],
+ "{0} n'existe pas dans le texte français.": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "{0} projet retenu": [
+  "components/dashboard/FiltresTableauDeBord.tsx"
+ ],
+ "{0} projet sélectionné": [
+  "pages/beneficiaires/ExportBeneficiairesModal.tsx"
+ ],
+ "{0} projets retenus": [
+  "components/dashboard/FiltresTableauDeBord.tsx"
+ ],
+ "{0} projets sélectionnés": [
+  "pages/beneficiaires/ExportBeneficiairesModal.tsx"
+ ],
+ "{0} Réponse ignorée.": [
+  "serveur"
+ ],
+ "{0} saisie en attente d'approbation": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "{0} saisie rejetée": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "{0} saisies en attente d'approbation": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "{0} saisies rejetées": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "{0} signalement(s) retiré(s) (ne sont plus considérés comme des doublons), {1} maintenu(s).": [
+  "pages/beneficiaires/DoublonsPage.tsx"
+ ],
+ "{0} texte(s) · {1} correction(s) pour cette langue": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "{0} traduction(s) seront corrigées et {1} remise(s) à l'origine, pour tous les utilisateurs.": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "{0}{1} » existe déjà — import annulé.": [
+  "serveur"
+ ],
+ "{0}{1} » introuvable — grille ignorée.": [
+  "serveur"
+ ],
+ "{0}{1} » introuvable — laissé vide.": [
+  "serveur"
+ ],
+ "{0}{1} » introuvable — ligne ignorée.": [
+  "serveur"
+ ],
+ "{0}{1} de moins que prévu à cette date": [
+  "utils/suivi.ts"
+ ],
+ "{0}{1} de plus que prévu à cette date": [
+  "utils/suivi.ts"
+ ],
+ "{0}% et plus": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "%, ménages…": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "+ {0} de rallonges": [
+  "pages/projets/BailleursMontants.tsx"
+ ],
+ "+ Ajouter": [
+  "components/common/MultiSelectOrCreate.tsx"
+ ],
+ "+ Ajouter «": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "+ Créer": [
+  "components/common/SelectOrCreate.tsx"
+ ],
+ "+ Créer « {0} »": [
+  "components/common/ZoneCascadeFields.tsx"
+ ],
+ "+ Créer le rôle « {0} »": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "+ Créer une nouvelle équipe": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "+ Créer une nouvelle personne": [
+  "components/common/IntervenantsMultiples.tsx"
+ ],
+ "0 % tant que l'élément n'est pas « Réalisée », 100 % ensuite.": [
+  "utils/methodesCalcul.ts"
+ ],
+ "1. Télécharge le canevas prérempli avec la planification du projet et ses indicateurs. 2. Complète les colonnes bleues hors ligne. 3. Réimporte-le : un aperçu montre ce qui sera ajouté ou modifié, et les cellules en erreur, avant tout enregistrement.": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "À ajouter dans l'écran Organisation": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "À compléter en fin de projet : leçons apprises, bonnes pratiques.": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "À définir": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "à l'instant": [
+  "components/notifications/NotificationBell.tsx"
+ ],
+ "À la date du": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "À venir": [
+  "pages/parametres/RapportageCard.tsx"
+ ],
+ "à vérifier": [
+  "pages/projets/CoherenceTab.tsx"
+ ],
+ "À vérifier": [
+  "pages/projets/CoherenceTab.tsx",
+  "pages/strategie/ImportStructurationModal.tsx"
+ ],
+ "Absent de la liste ? Tape-le ici pour l'ajouter…": [
+  "components/common/MultiSelectOrCreate.tsx"
+ ],
+ "Accès": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Achèvement (%)": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "Actif": [
+  "components/partage/BoutonPartage.tsx",
+  "pages/projets/RisquesTab.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Actions": [
+  "pages/beneficiaires/DoublonsPage.tsx"
+ ],
+ "Actions :": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Actions menées depuis la dernière revue": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Activité": [
+  "pages/projets/PlanificationPeriodeTab.tsx",
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Activité — {0}": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Activité « {0} » introuvable — grille ignorée.": [
+  "serveur"
+ ],
+ "Activité introuvable.": [
+  "serveur"
+ ],
+ "Activités": [
+  "components/partage/BoutonPartage.tsx",
+  "pages/parametres/ParametresAlertePage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/suivi/SuiviPeriodeTab.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Activités :": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Activités (": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Activités et indicateurs": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Activités non rattachées à un(e)": [
+  "pages/strategie/AxesBudgetsTab.tsx"
+ ],
+ "Activités par statut, par projet": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Actualiser": [
+  "pages/suivi/SuiviPage.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Administrateur": [
+  "utils/roles.ts"
+ ],
+ "Affectations — {0}": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Affectations enregistrées": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Afficher": [
+  "pages/beneficiaires/ChampsVariables.tsx",
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Afficher les {0} autres": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Afficher seulement les {0} premiers": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Afficher tous les risques": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Agrégation des éléments en dessous": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Agrégation du taux du projet": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Agrégation par défaut": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Agrégé des éléments en dessous": [
+  "serveur",
+  "utils/methodesCalcul.ts"
+ ],
+ "Aide (facultatif)": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Aide à la saisie": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Aide à la saisie du code": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Aires": [
+  "components/charts/GraphiqueAdaptable.tsx"
+ ],
+ "Ajout": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "ajout(s),": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Ajouté à l'équipe du projet": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Ajouté au projet, mais erreur lors du rattachement à l'équipe.": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Ajouté aussi à la planification globale": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Ajouté par": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Ajouter": [
+  "components/common/IntervenantsMultiples.tsx",
+  "components/documents/DocumentsTab.tsx",
+  "components/suivi/TranchesPlanifieesTab.tsx",
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/parametres/RapportageCard.tsx",
+  "pages/projets/AvancementModal.tsx",
+  "pages/projets/FinancementsTab.tsx",
+  "pages/projets/NiveauxActiviteTab.tsx",
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx",
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Ajouter — {0}": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Ajouter «": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Ajouter {0}": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/CadreTableau.tsx"
+ ],
+ "Ajouter à l'équipe": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Ajouter ce partenaire": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Ajouter cette zone": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Ajouter la sélection": [
+  "pages/projets/BeneficiairesProjetSection.tsx"
+ ],
+ "Ajouter un « {0} » en dessous": [
+  "pages/projets/PlanificationTableau.tsx",
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Ajouter un attribut": [
+  "components/common/AttributsLibres.tsx"
+ ],
+ "Ajouter un autre bénéficiaire": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Ajouter un bailleur": [
+  "pages/projets/BailleursMontants.tsx"
+ ],
+ "Ajouter un document": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Ajouter un élément": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Ajouter un financement": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Ajouter un indicateur": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Ajouter un membre existant": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Ajouter un niveau": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/projets/NiveauxActiviteTab.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Ajouter un niveau en dessous": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Ajouter un palier": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Ajouter un partenaire": [
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Ajouter un partenaire au projet": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Ajouter un service": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Ajouter une nouvelle version": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Ajouter une sous-activité": [
+  "pages/projets/PlanificationTableau.tsx",
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Ajouter une variable": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Ajouter une zone": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Ajouts, modifications et suppressions d'éléments et de sous-activités passent par une demande, appliquée une fois approuvée.": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Alerter avant l'échéance (jours)": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Alloué aux activités": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Analyse": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Analyser": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Animateur de terrain": [
+  "utils/roles.ts"
+ ],
+ "Année": [
+  "components/dashboard/FiltresTableauDeBord.tsx"
+ ],
+ "Année {0}": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Année invalide.": [
+  "serveur"
+ ],
+ "Annuelle": [
+  "pages/indicateurs/IndicateurForm.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Annuler": [
+  "components/common/IntervenantsMultiples.tsx",
+  "components/common/confirmerSuppression.tsx",
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
+  "pages/carte/FenetresCarte.tsx",
+  "pages/langues/LanguesPage.tsx",
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/CadreLogiqueTab.tsx",
+  "pages/projets/EquipeTab.tsx",
+  "pages/projets/FinancementsTab.tsx",
+  "pages/projets/RisquesTab.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Antenne régionale": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Appliqué aux modules non réglés ci-dessous": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Appliquer": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Appréciation de l'avancement": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Appréciation enregistrée": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Appréciations par période": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Appréciée": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Approbations": [
+  "layouts/AppLayout.tsx",
+  "pages/approbations/ApprobationsPage.tsx",
+  "pages/langues/LanguesPage.tsx",
+  "pages/projets/ProjetForm.tsx",
+  "pages/utilisateurs/RolesTab.tsx",
+  "utils/modules.ts"
+ ],
+ "Approuve": [
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Approuve ou rejette les saisies et les changements de planification des projets qui exigent une approbation (écran Approbations).": [
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Approuver": [
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Arborescence": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Arbre": [
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Associer": [
+  "components/beneficiaires/BeneficiairesTab.tsx"
+ ],
+ "Associer un cadre": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Atteint": [
+  "utils/statusTones.ts"
+ ],
+ "Atteint : {0} %": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Atteinte": [
+  "components/suivi/TranchesPlanifieesTab.tsx"
+ ],
+ "Attendu": [
+  "components/suivi/HistoriqueSuiviTable.tsx"
+ ],
+ "Attendu : un objet {nom: texte}.": [
+  "serveur"
+ ],
+ "Attendu aujourd'hui :": [
+  "components/suivi/BarreProgression.tsx"
+ ],
+ "Attendu aujourd'hui : {0}{1}": [
+  "components/suivi/BarreProgression.tsx"
+ ],
+ "Attention : dépasse le global ({0} > {1})": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Atténuation :": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Attributs": [
+  "components/common/AttributsLibres.tsx"
+ ],
+ "Attributs conservés :": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "au": [
+  "components/suivi/EnTetePeriode.tsx"
+ ],
+ "Au": [
+  "components/dashboard/FiltresTableauDeBord.tsx",
+  "components/suivi/TranchesPlanifieesTab.tsx",
+  "pages/projets/RapportFinancierModal.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "aucun": [
+  "pages/carte/CarteParZone.tsx",
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Aucun": [
+  "pages/carte/CartePage.tsx",
+  "pages/carte/FenetresCarte.tsx",
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/ProjetForm.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Aucun bailleur : le projet est financé sur fonds propres.": [
+  "pages/projets/BailleursMontants.tsx"
+ ],
+ "Aucun bailleur renseigné.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Aucun bénéficiaire associé à ce projet pour l'instant.": [
+  "pages/beneficiaires/BeneficiairesListPage.tsx"
+ ],
+ "Aucun bénéficiaire associé pour le moment.": [
+  "components/beneficiaires/BeneficiairesTab.tsx"
+ ],
+ "Aucun bénéficiaire avec cet identifiant (ou vous n'y avez pas accès).": [
+  "serveur"
+ ],
+ "Aucun bénéficiaire trouvé.": [
+  "pages/projets/BeneficiairesProjetSection.tsx"
+ ],
+ "Aucun bloc affiché : l'administrateur a masqué tous les blocs du tableau de bord.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Aucun cadre ne correspond à la recherche.": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Aucun cadre stratégique associé": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Aucun cadre stratégique choisi — tu peux quand même créer le projet, mais ses activités ne pourront pas être rattachées à une structuration stratégique tant qu'un cadre n'est pas renseigné.": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Aucun cadre stratégique pour le moment — crée le premier pour définir sa structuration.": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Aucun document dans ce dossier.": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Aucun document lié à cette activité.": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Aucun document lié à cette sous-activité.": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Aucun document pour l'instant.": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Aucun doublon en attente de traitement.": [
+  "pages/beneficiaires/DoublonsPage.tsx"
+ ],
+ "Aucun élément": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Aucun élément « {0} » pour le moment.": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Aucun élément « {0} » renseigné au-dessus pour rattacher cette ligne — ligne ignorée.": [
+  "serveur"
+ ],
+ "Aucun élément dans ce document stratégique.": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Aucun élément de planification défini au-dessus — ligne ignorée.": [
+  "serveur"
+ ],
+ "Aucun élément ne correspond à la recherche.": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Aucun indicateur ne correspond à la recherche.": [
+  "pages/indicateurs/IndicateursListPage.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Aucun indicateur pour le moment.": [
+  "pages/indicateurs/IndicateursListPage.tsx"
+ ],
+ "Aucun indicateur rattaché à ce projet.": [
+  "pages/projets/PlanificationPeriodeTab.tsx",
+  "pages/suivi/SuiviPeriodeTab.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Aucun indicateur rattaché à cet élément.": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Aucun indicateur.": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Aucun membre affecté à ce projet pour le moment.": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Aucun membre renseigné pour cette équipe.": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Aucun niveau administratif configuré pour ce pays — configure-le dans « Zones administratives ».": [
+  "components/common/ZoneCascadeFields.tsx"
+ ],
+ "Aucun niveau défini pour ce cadre stratégique (onglet « Configuration des niveaux »).": [
+  "pages/strategie/AxesBudgetsTab.tsx"
+ ],
+ "Aucun niveau défini pour l'instant — commence par en ajouter un ci-dessous.": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Aucun niveau n'est configuré — passe d'abord par l'onglet « Configuration des niveaux ».": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Aucun niveau nommé pour l'instant — les éléments s'affichent sous le nom « Activité ». Ajoute ci-dessous les niveaux de ta planification, du plus haut au plus bas.": [
+  "pages/projets/NiveauxActiviteTab.tsx"
+ ],
+ "Aucun partenaire de mise en œuvre renseigné.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Aucun partenaire pour ce projet.": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Aucun partenaire.": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Aucun pays renseigné sur les projets.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Aucun pays renseigné.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Aucun poids saisi : poids égaux.": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "Aucun projet affecté à un service pour l'instant.": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Aucun projet créé — voir les erreurs ci-dessous.": [
+  "pages/projets/ImportProjetModal.tsx"
+ ],
+ "Aucun projet dans cette zone": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Aucun projet en consortium.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Aucun projet n'intervient dans cette zone.": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Aucun projet ne contribue encore à cet élément.": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Aucun projet ne correspond à la recherche.": [
+  "pages/beneficiaires/ExportBeneficiairesModal.tsx",
+  "pages/projets/ProjetsListPage.tsx",
+  "pages/suivi/SuiviPage.tsx"
+ ],
+ "Aucun projet ni membre pour l'instant — bouton « Projets et membres ».": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Aucun projet pour le moment.": [
+  "pages/DashboardConsolidePage.tsx",
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx",
+  "pages/projets/ProjetsListPage.tsx",
+  "pages/suivi/SuiviPage.tsx"
+ ],
+ "Aucun projet rattaché à ce cadre stratégique.": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Aucun résultat ne correspond à la recherche.": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Aucun risque identifié. Ajoutez les risques internes (organisation, finances…) et externes (sécurité, climat, prix…) qui pourraient compromettre le projet.": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Aucun service affecté (formulaire du projet, onglet « Organisation », ou écran Organisation).": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Aucun taux saisi.": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "Aucun.": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Aucune": [
+  "pages/projets/ProjetForm.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Aucune (premier niveau)": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Aucune activité ne correspond à la recherche.": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Aucune activité planifiée pour ce projet.": [
+  "pages/projets/CadreLogiqueTab.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Aucune activité.": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Aucune appréciation pour l'instant.": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Aucune colonne de niveau trouvée avant « Sous-activité ».": [
+  "serveur"
+ ],
+ "Aucune colonne de niveau trouvée sur la ligne d'en-têtes.": [
+  "serveur"
+ ],
+ "Aucune couche importée.": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Aucune date de rappel fixe n'est programmée pour le moment.": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Aucune dépense saisie dans le suivi.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Aucune donnée.": [
+  "components/charts/CamembertChart.tsx",
+  "components/charts/GraphiqueAdaptable.tsx"
+ ],
+ "Aucune équipe précise…": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Aucune feuille du canevas de suivi trouvée (Suivi, Jalons et livrables, Indicateurs).": [
+  "serveur"
+ ],
+ "Aucune incohérence repérée dans ce projet.": [
+  "pages/projets/CoherenceTab.tsx"
+ ],
+ "Aucune inscription.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Aucune modification enregistrée.": [
+  "components/audit/HistoriqueModification.tsx",
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Aucune notification.": [
+  "components/notifications/NotificationBell.tsx"
+ ],
+ "Aucune organisation pour l'instant : commencez par « Nouvelle organisation ».": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Aucune période — crée-en une": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Aucune période de planification pour ce projet. Crée-en une dans la fiche projet, onglet « Planification par période ».": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Aucune période de rapportage pour l'instant.": [
+  "pages/parametres/RapportageCard.tsx"
+ ],
+ "Aucune quantité prévue : renseigne-la dans la planification pour obtenir un taux.": [
+  "components/suivi/MethodeCalculLigne.tsx"
+ ],
+ "Aucune saisie pour le moment.": [
+  "components/suivi/HistoriqueSuiviTable.tsx"
+ ],
+ "Aucune saisie sur cette période.": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Aucune saisie trouvée dans le fichier.": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Aucune sous-activité : ajoute-en depuis la planification (bouton ≡+).": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "Aucune traduction modifiée dans ce fichier.": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Aucune tranche définie — la cible reste suivie uniquement en cumul global.": [
+  "components/suivi/TranchesPlanifieesTab.tsx"
+ ],
+ "Aucune variable pour l'instant.": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Aucune zone": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Aucune zone « {0} » pour le moment.": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Aucune zone d'intervention renseignée sur les fiches projet (champ « Zones »).": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Aucune zone ne correspond à la recherche.": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Auto": [
+  "pages/carte/FenetresCarte.tsx",
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "Autoriser à sauter ce niveau": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Autour des bénéficiaires": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Autres éléments d'un niveau supérieur (de ce cadre ou d'un autre document) auxquels celui-ci contribue. Seul le rattachement principal compte dans les totaux.": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Autres éléments stratégiques (de ce cadre ou d'un autre document) auxquels le projet contribue. Seul le rattachement ci-dessus compte dans les budgets et les taux : ces liens sont informatifs, pour éviter le double compte.": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Autres éléments stratégiques auxquels cet élément contribue. Seul l'élément stratégique ci-dessus compte dans les budgets et les taux ; ces liens sont informatifs.": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Autres périodes :": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Autres projets": [
+  "pages/beneficiaires/BeneficiairesListPage.tsx"
+ ],
+ "Avancement": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Avancement :": [
+  "pages/projets/CadreLogiqueTab.tsx"
+ ],
+ "Avancement (%)": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "Avancement atteint : ": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Avancement atteint à la fin de la période :": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Avancement atteint à la fin de la période (visé : {0} %)": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Avancement calculé à partir des projets": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Avancement financier": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Avancement financier sur la période": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Avancement physique": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Avancement physique sur la période": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Avancement vide : déduit des quantités de la sous-activité, sinon de son statut (Terminée = 100 %).": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "Avancement visé : ": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Avancement visé à la fin de la période (%)": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Avancement visé fin de période (%)": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Avant le démarrage — l'activité se suit alors comme un indicateur.": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Bailleur": [
+  "pages/DashboardConsolidePage.tsx",
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/projets/FinancementsTab.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Bailleur et montant requis.": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Bailleur non renseigné": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Bailleurs ({0})": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Bailleurs et montants": [
+  "pages/projets/BailleursMontants.tsx"
+ ],
+ "Barres horizontales": [
+  "components/charts/GraphiqueAdaptable.tsx"
+ ],
+ "Bénéf.": [
+  "pages/carte/CarteParZone.tsx"
+ ],
+ "bénéficiaire": [
+  "pages/carte/CartePage.tsx",
+  "pages/carte/CarteParZone.tsx"
+ ],
+ "Bénéficiaire 1": [
+  "pages/beneficiaires/DoublonsPage.tsx"
+ ],
+ "Bénéficiaire 2": [
+  "pages/beneficiaires/DoublonsPage.tsx"
+ ],
+ "Bénéficiaire associé": [
+  "components/beneficiaires/BeneficiairesTab.tsx"
+ ],
+ "Bénéficiaire créé, aucun doublon détecté.": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Bénéficiaire enregistré": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Bénéficiaire introuvable.": [
+  "pages/beneficiaires/BeneficiaireParIdentifiant.tsx"
+ ],
+ "Bénéficiaire modifié": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Bénéficiaire retiré": [
+  "components/beneficiaires/BeneficiairesTab.tsx"
+ ],
+ "Bénéficiaire supprimé": [
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx",
+  "pages/beneficiaires/BeneficiairesListPage.tsx"
+ ],
+ "bénéficiaires": [
+  "pages/DashboardConsolidePage.tsx",
+  "pages/carte/CartePage.tsx",
+  "pages/carte/CarteParZone.tsx"
+ ],
+ "Bénéficiaires": [
+  "layouts/AppLayout.tsx",
+  "pages/DashboardConsolidePage.tsx",
+  "pages/beneficiaires/BeneficiairesListPage.tsx",
+  "pages/carte/CartePage.tsx",
+  "pages/carte/FenetresCarte.tsx",
+  "pages/langues/LanguesPage.tsx",
+  "pages/planification/PlanificationImportPage.tsx",
+  "utils/modules.ts"
+ ],
+ "Bénéficiaires associés": [
+  "components/beneficiaires/BeneficiairesTab.tsx"
+ ],
+ "Bénéficiaires associés au projet": [
+  "pages/projets/BeneficiairesProjetSection.tsx"
+ ],
+ "Bénéficiaires enregistrés plusieurs fois sur la plateforme. Une paire n'est signalée que si elle a la même pièce d'identité, ou un nom et un prénom très proches confirmés par le même téléphone, la même date de naissance ou la même localité ; jamais si le sexe, l'année de naissance ou la pièce d'identité diffèrent. À confirmer avant de fusionner ou d'écarter.": [
+  "pages/beneficiaires/DoublonsPage.tsx"
+ ],
+ "Bénéficiaires inscrits par sexe": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Bénéficiaires liés": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Bénéficiaires liés à l'élément": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Bénéficiaires liés à la sous-activité": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Bénéficiaires par projet (femmes / hommes)": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Bénéficiaires seuls, sans inscription automatique à un projet.": [
+  "pages/planification/PlanificationImportPage.tsx"
+ ],
+ "Binaire (achevé / non achevé)": [
+  "utils/methodesCalcul.ts"
+ ],
+ "Bonne progression": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "budget": [
+  "pages/carte/CarteParZone.tsx"
+ ],
+ "Budget": [
+  "components/suivi/HistoriqueSuiviTable.tsx",
+  "pages/DashboardConsolidePage.tsx",
+  "pages/carte/CartePage.tsx",
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Budget (FCFA)": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Budget alloué": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Budget alloué (FCFA)": [
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/PlanificationTableau.tsx",
+  "pages/strategie/AxesBudgetsTab.tsx",
+  "pages/strategie/CadreTableau.tsx"
+ ],
+ "Budget dépensé (FCFA)": [
+  "pages/strategie/AxesBudgetsTab.tsx"
+ ],
+ "Budget dépensé pendant cette période (FCFA)": [
+  "components/suivi/SaisiePointSuiviForm.tsx"
+ ],
+ "Budget et financements": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Budget par projet (FCFA)": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Budget prévu — {0}": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Budget prévu sur la période (FCFA)": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Budget réalisé — {0}": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Budget restant du projet : {0} FCFA": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Budget total": [
+  "pages/DashboardConsolidePage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Budget total (FCFA)": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Budget total contribuant": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Budget total et détail": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Budgets : sommes des activités. Taux : moyenne des taux des activités (chaque activité compte pour une). Cliquer sur une ligne pour la déplier : ses sous-éléments (avec leurs propres totaux) puis ses activités.": [
+  "pages/strategie/AxesBudgetsTab.tsx"
+ ],
+ "C'est ce nom qui apparaît pour cocher la couche sur la carte.": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Cadre :": [
+  "pages/planification/PlanificationImportPage.tsx"
+ ],
+ "Cadre logique": [
+  "pages/projets/ProjetDetailPage.tsx",
+  "utils/modules.ts"
+ ],
+ "Cadre stratégique": [
+  "layouts/AppLayout.tsx",
+  "pages/langues/LanguesPage.tsx",
+  "pages/planification/PlanificationImportPage.tsx",
+  "pages/projets/ProjetForm.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "utils/modules.ts"
+ ],
+ "Cadre stratégique : {0}": [
+  "serveur"
+ ],
+ "Cadre stratégique « ": [
+  "serveur"
+ ],
+ "Cadre stratégique créé": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Cadre stratégique modifié": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Cadre stratégique supprimé": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Cadres stratégiques": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Calcul des taux d'exécution": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Calcul du taux d'exécution": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Calcul du taux global à partir des éléments de la planification.": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Calcul par quantité sans quantité prévue : le taux ne peut pas être calculé.": [
+  "serveur"
+ ],
+ "Calculé à partir des éléments placés en dessous.": [
+  "components/suivi/MethodeCalculLigne.tsx"
+ ],
+ "Camembert": [
+  "components/charts/GraphiqueAdaptable.tsx"
+ ],
+ "Canevas complété": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Carte": [
+  "layouts/AppLayout.tsx",
+  "pages/beneficiaires/BeneficiairesListPage.tsx",
+  "pages/carte/CartePage.tsx",
+  "pages/langues/LanguesPage.tsx",
+  "utils/modules.ts"
+ ],
+ "Carte à l'échelle avec grille de coordonnées, légende, situation, chiffres clés, tableau des localités et cartouche ; mêmes filtres (projet, zone) que la carte à l'écran.": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Carte bénéficiaire": [
+  "serveur"
+ ],
+ "Carte des bénéficiaires": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Catégorie": [
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Catégorie déjà existante ?": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Catégories": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Causes et conséquences": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Ce budget alloué (": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Ce classeur crée en une fois : un cadre stratégique, un projet et sa planification, ses indicateurs et ses bénéficiaires (automatiquement inscrits à ce projet).": [
+  "serveur"
+ ],
+ "Ce financement a des rallonges : à gérer dans l'onglet Financement": [
+  "pages/projets/BailleursMontants.tsx"
+ ],
+ "Ce lien de partage n'existe pas, a expiré ou a été désactivé.": [
+  "serveur"
+ ],
+ "Ce lien de partage n'existe pas, a expiré ou a été désactivé. Demandez un nouveau lien à la personne qui vous l'a envoyé.": [
+  "pages/partage/PagePartagee.tsx"
+ ],
+ "Ce modèle n'a pas d'historique.": [
+  "serveur"
+ ],
+ "Ce module n'est pas accessible avec votre compte.": [
+  "serveur"
+ ],
+ "Ce module n'est pas accessible avec votre compte. Adressez-vous à l'administrateur si vous en avez besoin.": [
+  "layouts/AppLayout.tsx"
+ ],
+ "Ce montant dépasse le budget restant du projet.": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Ce navigateur ne donne pas accès à la position.": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Ce niveau n'a pas encore de nom : il s'appliquera à tous les éléments de ce niveau dans le projet.": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Ce projet": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Ce projet est en lecture seule : sa planification, son suivi, ses indicateurs, ses bénéficiaires et ses documents ne peuvent plus être modifiés.": [
+  "components/common/BandeauProjetCloture.tsx"
+ ],
+ "Ce projet exige une approbation des changements : la duplication est réservée aux approbateurs.": [
+  "serveur"
+ ],
+ "Ce projet n'a pas de cadre stratégique associé — tous les éléments existants sont proposés.": [
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/SousActiviteForm.tsx"
+ ],
+ "Ce projet n'a pas encore de planification : commence par l'onglet « Planification ».": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Ce projet n'est plus accessible.": [
+  "serveur"
+ ],
+ "Ce qu'il réalise": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Ce qui a été atteint entre le début et la fin de cette période précise (pas le total depuis le début).": [
+  "components/indicators/SaisieValeurIndicateurForm.tsx"
+ ],
+ "Ce qui a été fait entre le début et la fin de cette période précise (pas le total depuis le début).": [
+  "components/suivi/SaisiePointSuiviForm.tsx"
+ ],
+ "Ce qui a été réalisé pendant la période (les valeurs des périodes s'additionnent). Cible :": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Ce qui a été réalisé, au-delà des projets suivis dans la plateforme.": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Ce qui est fait pour réduire la probabilité ou l'impact.": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Ce qui sera fait si le risque survient.": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Celle du niveau au-dessus, sinon du projet, sinon de l'organisation.": [
+  "components/suivi/MethodeCalculLigne.tsx"
+ ],
+ "Ces éléments n'appartiennent pas à ce projet.": [
+  "serveur"
+ ],
+ "Cet élément a déjà ses valeurs pour cette période.": [
+  "serveur"
+ ],
+ "Cet élément a des éléments en dessous : son taux est calculé à partir des leurs, selon sa méthode d'agrégation (modifiable dans le formulaire de l'élément).": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "Cet élément n'appartient pas au cadre stratégique du projet.": [
+  "serveur"
+ ],
+ "Cet élément n'appartient pas au projet de la période.": [
+  "serveur"
+ ],
+ "Cet élément n'appartient pas au projet.": [
+  "serveur"
+ ],
+ "Cet élément stratégique n'appartient pas au cadre stratégique du projet.": [
+  "serveur"
+ ],
+ "Cet indicateur": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Cette activité": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Cette demande a déjà été traitée.": [
+  "serveur"
+ ],
+ "Cette période": [
+  "components/suivi/HistoriqueSuiviTable.tsx"
+ ],
+ "Cette période chevauche une autre saisie de la même activité : les quantités risquent d'être comptées deux fois.": [
+  "serveur"
+ ],
+ "Cette période chevauche une autre valeur du même indicateur : elles s'additionnent.": [
+  "serveur"
+ ],
+ "Cette personne est déjà dans l'équipe.": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Cette saisie a été approuvée : seul un approbateur peut la supprimer.": [
+  "serveur"
+ ],
+ "Champ obligatoire manquant": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Changement approuvé et appliqué": [
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Changements de planification": [
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Changer l'icône": [
+  "layouts/AppLayout.tsx"
+ ],
+ "Changer la méthode de calcul": [
+  "components/suivi/MethodeCalculLigne.tsx"
+ ],
+ "Changer les dates met à jour toutes les valeurs de cette période ; une date prévue qui sortirait de la nouvelle période est effacée.": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Chaque bénéficiaire importé sera automatiquement associé au projet ": [
+  "pages/beneficiaires/ImportBeneficiairesModal.tsx"
+ ],
+ "Chaque borne doit être un pourcentage entre 0 et 100.": [
+  "serveur"
+ ],
+ "Chaque palier doit avoir un libellé.": [
+  "pages/parametres/ParametresAlertePage.tsx",
+  "serveur"
+ ],
+ "Chaque segment coloré de la barre = ce qui a été réalisé pendant une période · trait gris = où on devrait être aujourd'hui · trait teal en bout de barre = cible. La courbe en dessous trace le cumul dans le temps.": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Chaque segment coloré de la barre = une saisie faite pendant la période · trait gris = où on devrait être aujourd'hui · trait teal = objectif de la période. La courbe trace le cumul sur la période.": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Chaque seuil doit être un pourcentage entre 0 et 100.": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Chaque utilisateur choisit sa langue (en haut de l'écran). Ici : la langue proposée par défaut, et la correction des traductions livrées avec la plateforme.": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Chargé de Suivi-Évaluation": [
+  "utils/roles.ts"
+ ],
+ "Chargement de l'historique…": [
+  "components/audit/HistoriqueModification.tsx"
+ ],
+ "Chargement…": [
+  "components/beneficiaires/BeneficiairesTab.tsx",
+  "components/documents/DocumentsTab.tsx",
+  "components/suivi/TranchesPlanifieesTab.tsx",
+  "pages/DashboardConsolidePage.tsx",
+  "pages/approbations/ApprobationsPage.tsx",
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx",
+  "pages/beneficiaires/BeneficiairesListPage.tsx",
+  "pages/beneficiaires/DoublonsPage.tsx",
+  "pages/carte/CartePage.tsx",
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/indicateurs/IndicateurDetailPage.tsx",
+  "pages/indicateurs/IndicateursListPage.tsx",
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/parametres/ParametresAlertePage.tsx",
+  "pages/partage/PagePartagee.tsx",
+  "pages/projets/BeneficiairesProjetSection.tsx",
+  "pages/projets/CadreLogiqueTab.tsx",
+  "pages/projets/EquipeTab.tsx",
+  "pages/projets/FinancementsTab.tsx",
+  "pages/projets/NiveauxActiviteTab.tsx",
+  "pages/projets/PlanificationPeriodeTab.tsx",
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/projets/ProjetsListPage.tsx",
+  "pages/projets/RisquesTab.tsx",
+  "pages/strategie/AxesBudgetsTab.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/CadresStrategiquesListPage.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx",
+  "pages/suivi/SuiviPage.tsx",
+  "pages/suivi/SuiviPeriodeTab.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx",
+  "pages/utilisateurs/RolesTab.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Chef de file": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Chef de projet": [
+  "pages/projets/ProjetForm.tsx",
+  "pages/projets/ProjetsListPage.tsx",
+  "utils/roles.ts"
+ ],
+ "Chef de projet non renseigné": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Chef de service": [
+  "utils/roles.ts"
+ ],
+ "Chiffres clés": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Choisies dans le répertoire des parties prenantes ; taper un nom absent pour l'ajouter.": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Choisir l'élément dont relève le projet…": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Choisir le cadre stratégique associé…": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Choisir les bénéficiaires ou un projet.": [
+  "serveur"
+ ],
+ "Choisir les blocs affichés et les types de graphiques, pour tous les utilisateurs.": [
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Choisir les couches à afficher": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Choisir les projets concernés, ou « tous les projets ».": [
+  "serveur"
+ ],
+ "Choisir ou taper un nouveau rôle…": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Choisir sur le calendrier…": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Choisir un fichier": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Choisir un fichier .xlsx": [
+  "components/suivi/ImportCanevasSuiviModal.tsx",
+  "pages/beneficiaires/ImportBeneficiairesModal.tsx",
+  "pages/indicateurs/ImportIndicateursModal.tsx",
+  "pages/planification/PlanificationImportPage.tsx",
+  "pages/projets/ImportProjetModal.tsx",
+  "pages/strategie/ImportStructurationModal.tsx"
+ ],
+ "Choisir un fichier…": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Choisir un ou plusieurs bénéficiaires…": [
+  "components/beneficiaires/BeneficiairesTab.tsx"
+ ],
+ "Choisir une équipe…": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Choisir une ou plusieurs personnes déjà enregistrées…": [
+  "components/common/IntervenantsMultiples.tsx"
+ ],
+ "Choisir une période…": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Choisir une personne déjà enregistrée…": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Choisir, ou taper un nouveau type": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Choisir…": [
+  "components/common/MultiSelectOrCreate.tsx",
+  "components/common/SelectOrCreate.tsx",
+  "components/common/ZoneCascadeFields.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Choisis d'abord un cadre stratégique": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Choisis d'abord un fichier Excel.": [
+  "pages/beneficiaires/ImportBeneficiairesModal.tsx",
+  "pages/indicateurs/ImportIndicateursModal.tsx",
+  "pages/planification/PlanificationImportPage.tsx",
+  "pages/projets/ImportProjetModal.tsx",
+  "pages/strategie/ImportStructurationModal.tsx"
+ ],
+ "Choisis d'abord un rattachement ci-dessus pour limiter la liste à son cadre stratégique — sinon tous les éléments sont proposés.": [
+  "pages/indicateurs/IndicateurForm.tsx"
+ ],
+ "Choisis la période sur le calendrier et donne-lui un nom.": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Choisis le partenaire.": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Choisis un « {0} » de rattachement.": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Choisis un pays pour configurer ses zones administratives.": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Choisis un pays pour renseigner la localisation.": [
+  "components/common/ZoneCascadeFields.tsx"
+ ],
+ "Choisis un projet pour lui définir sa propre grille, ou reste sur la grille globale par défaut.": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Choisis un projet pour saisir le réel et suivre son évolution dans le temps.": [
+  "pages/suivi/SuiviPage.tsx"
+ ],
+ "Choisis un utilisateur existant dans la liste, ou tape librement un nom — la personne n'a pas besoin d'avoir un compte sur la plateforme. Ceci est juste un intitulé affiché : ça ne donne accès à rien tout seul.": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Choisis une ou plusieurs personnes déjà enregistrées, ou crée-en une nouvelle.": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Choisissez au moins une section.": [
+  "pages/projets/RapportFinancierModal.tsx",
+  "serveur"
+ ],
+ "Choisissez le projet à partager.": [
+  "serveur"
+ ],
+ "Choisissez un fichier et le nom de la couche.": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Choisissez un fichier.": [
+  "serveur"
+ ],
+ "Choix multiple": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Choix unique": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Cible": [
+  "pages/indicateurs/IndicateursListPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Cible : {0}{1}": [
+  "components/suivi/BarreProgression.tsx"
+ ],
+ "Cible {0} enregistrée": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Cible globale": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Cible supérieure à 100 alors que l'indicateur est en %.": [
+  "serveur"
+ ],
+ "Cible sur la période{0}": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Cible totale": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Cible totale :": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Cible{0}": [
+  "components/suivi/TranchesPlanifieesTab.tsx"
+ ],
+ "Cibles bénéficiaires": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Cibles des projets (par sexe et par statut)": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Cibles saisies sur la fiche de chaque projet (les jeunes et les PDI font partie de la cible totale).": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Climatique et environnemental": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Clique sur « Éditer » en haut de la page pour définir les objectifs de chaque élément sur cette période.": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Clique sur « Enregistrer » (onglet Menu ou ci-dessous) pour appliquer.": [
+  "layouts/AppLayout.tsx"
+ ],
+ "Clique sur la date de début puis sur la date de fin.": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "cliquer pour la liste": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Cliquez sur la valeur d'une zone pour voir ses projets. Un projet compte dans chaque zone où il intervient (son budget n'est pas réparti entre les zones).": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Clos": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Clôturé": [
+  "utils/statusTones.ts"
+ ],
+ "Coche les blocs à afficher. Le type de chaque graphique se change avec le petit bouton en haut à droite du bloc. Ces choix s'appliquent au tableau de bord de tous les utilisateurs.": [
+  "components/dashboard/PersonnalisationModal.tsx"
+ ],
+ "Code": [
+  "pages/DashboardConsolidePage.tsx",
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/ProjetForm.tsx",
+  "pages/projets/ProjetsListPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/CadreTableau.tsx",
+  "pages/suivi/SuiviPage.tsx",
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Code activité": [
+  "pages/projets/PlanificationTableau.tsx"
+ ],
+ "Code administratif (pcode), si connu — facultatif": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Code projet inconnu ignoré : « ": [
+  "serveur"
+ ],
+ "Colonnes": [
+  "components/charts/GraphiqueAdaptable.tsx"
+ ],
+ "Colonnes empilées": [
+  "components/charts/GraphiqueAdaptable.tsx"
+ ],
+ "Colorier les zones selon": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Commentaire": [
+  "components/indicators/SaisieValeurIndicateurForm.tsx",
+  "components/suivi/SaisiePointSuiviForm.tsx",
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/AvancementModal.tsx",
+  "pages/projets/PlanificationPeriodeTab.tsx",
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Commentaire — {0}": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Commentaire (optionnel)": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Commentaire / source": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Commune": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Communes": [
+  "pages/carte/CartePage.tsx",
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Complet": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Compte actif": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Compte lié": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Configuration de la structuration": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Configuration des niveaux": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/projets/NiveauxActiviteTab.tsx",
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "utils/modules.ts"
+ ],
+ "Confirmer doublon": [
+  "pages/beneficiaires/DoublonsPage.tsx"
+ ],
+ "Confirmer la suppression": [
+  "components/common/confirmerSuppression.tsx"
+ ],
+ "Connectez-vous pour accéder à vos projets": [
+  "auth/LoginPage.tsx"
+ ],
+ "Connexion": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Conserver (ajouter seulement)": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Consortium": [
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Consortium ({0})": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Construit à partir de la planification et des indicateurs rattachés à chaque élément. Les sources de vérification et les hypothèses se saisissent ici, sur chaque ligne.": [
+  "pages/projets/CadreLogiqueTab.tsx"
+ ],
+ "Consultation": [
+  "pages/utilisateurs/DroitsModules.tsx",
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "consultation(s)": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Contact": [
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Contenu": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Contenu partagé": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Continuer": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Contours : geoBoundaries ({0}) — un découpage plus récent que la source n'y figure pas encore ; ses zones sont placées au centre de leurs zones rattachées.": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Contours administratifs indisponibles (pas d'accès à Internet ?) : la carte s'affiche sans les limites.": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Contrat :": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Contrat de l'équipe :": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Contribue aussi à": [
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/ProjetForm.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Contribue aussi à :": [
+  "pages/projets/PartenairesProjetTab.tsx",
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Contrôle": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Contrôle de cohérence": [
+  "pages/projets/ProjetDetailPage.tsx",
+  "utils/modules.ts"
+ ],
+ "Contrôler l'ouverture de la saisie par périodes de rapportage": [
+  "pages/parametres/RapportageCard.tsx"
+ ],
+ "Coordonnateur général": [
+  "utils/roles.ts"
+ ],
+ "Copié": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Copier le lien": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Corrigé": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Corrigé le {0}": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Corrigé par {0} le {1}": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Corrigés": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Couche non importée.": [
+  "serveur"
+ ],
+ "Couches": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Couches :": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Couches de base": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Couches importées": [
+  "pages/carte/CartePage.tsx",
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Couleur": [
+  "pages/carte/FenetresCarte.tsx",
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Courbes": [
+  "components/charts/GraphiqueAdaptable.tsx"
+ ],
+ "Coût total": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Couverture géographique (nombre de zones)": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Création": [
+  "components/audit/HistoriqueModification.tsx"
+ ],
+ "Création et modification": [
+  "pages/utilisateurs/DroitsModules.tsx"
+ ],
+ "Créé": [
+  "components/audit/HistoriqueModification.tsx"
+ ],
+ "créé —": [
+  "pages/projets/ImportProjetModal.tsx"
+ ],
+ "Créé le": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Crée une période (mois, trimestre, année…) sur le calendrier pour planifier le projet sur cette période précise.": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Créer": [
+  "components/documents/DocumentsTab.tsx",
+  "pages/beneficiaires/BeneficiaireForm.tsx",
+  "pages/indicateurs/IndicateurForm.tsx",
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/ProjetForm.tsx",
+  "pages/projets/SousActiviteForm.tsx",
+  "pages/strategie/CadresStrategiquesListPage.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Créer {0}": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Créer et ajouter": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Créer et modifier": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Créer l'équipe": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Créer la période": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Créer le lien": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Créez l'organisation, puis ses services (directions, secteurs…). Affectez à chaque service ses projets et ses membres pour voir qui travaille sur quoi.": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Critique": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Cumul": [
+  "components/suivi/HistoriqueSuiviTable.tsx"
+ ],
+ "Cumul réalisé": [
+  "components/charts/EvolutionChart.tsx"
+ ],
+ "Date": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
+  "pages/langues/LanguesPage.tsx",
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Date d'accord": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Date d'inscription": [
+  "components/beneficiaires/BeneficiairesTab.tsx",
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx"
+ ],
+ "Date de début de contrat": [
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Date de début et Date de fin sont obligatoires, au format AAAA-MM-JJ.": [
+  "serveur"
+ ],
+ "Date de début prévue": [
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/ProjetForm.tsx",
+  "pages/projets/SousActiviteForm.tsx"
+ ],
+ "Date de fin de contrat": [
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Date de fin prévue": [
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/ProjetForm.tsx",
+  "pages/projets/SousActiviteForm.tsx"
+ ],
+ "Date de naissance": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Date de rappel (optionnel)": [
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Date début": [
+  "pages/projets/PlanificationTableau.tsx",
+  "pages/strategie/CadreTableau.tsx"
+ ],
+ "Date fin": [
+  "pages/projets/PlanificationTableau.tsx",
+  "pages/strategie/CadreTableau.tsx"
+ ],
+ "Date, bailleur, montant et motif de chaque rallonge.": [
+  "pages/projets/RapportFinancierModal.tsx"
+ ],
+ "Dates": [
+  "components/suivi/TranchesPlanifieesTab.tsx",
+  "pages/parametres/RapportageCard.tsx",
+  "pages/projets/PlanificationTableau.tsx",
+  "pages/strategie/CadreTableau.tsx"
+ ],
+ "Dates ({0} → {1}) en dehors de celles du projet ({2} → {3}).": [
+  "serveur"
+ ],
+ "Dates d'ouverture": [
+  "pages/parametres/RapportageCard.tsx"
+ ],
+ "Dates en dehors de celles de « {0} ».": [
+  "serveur"
+ ],
+ "Dates en dehors de celles de son activité « {0} ».": [
+  "serveur"
+ ],
+ "Dates prévues dans la période": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Dates prévues et commentaire — {0}": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Début – fin": [
+  "pages/parametres/RapportageCard.tsx"
+ ],
+ "Début de période": [
+  "components/indicators/SaisieValeurIndicateurForm.tsx",
+  "components/suivi/SaisiePointSuiviForm.tsx"
+ ],
+ "Déclenche une alerte à cette date précise, indépendamment du seuil de jours avant l'échéance.": [
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Déconnexion": [
+  "layouts/AppLayout.tsx"
+ ],
+ "Déjà associé": [
+  "pages/projets/BeneficiairesProjetSection.tsx"
+ ],
+ "Déjà réparti sur les autres périodes :": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Demande": [
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Demande rejetée": [
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Départementale": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Dépensé": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Dépensé ({0} FCFA) supérieur au budget alloué ({1} FCFA).": [
+  "serveur"
+ ],
+ "Dépensé (suivi)": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Dépenses cumulées par projet (FCFA)": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Dépenses et cumul, trimestre par trimestre.": [
+  "pages/projets/RapportFinancierModal.tsx"
+ ],
+ "Dépenses par trimestre": [
+  "pages/projets/RapportFinancierModal.tsx"
+ ],
+ "Déplier": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Des cartes sont en cours de génération, réessayez dans une minute.": [
+  "serveur"
+ ],
+ "Des utilisateurs ont ce rôle": [
+  "pages/utilisateurs/RolesTab.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Désactivé": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Descendre": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Description": [
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/projets/ActiviteForm.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Destinataire ou objet (facultatif)": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Détail": [
+  "components/suivi/ImportCanevasSuiviModal.tsx",
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Détail par élément": [
+  "pages/projets/RapportFinancierModal.tsx"
+ ],
+ "Détermine les éléments (axes, orientations…) proposés ensuite pour les activités de ce projet.": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Deux paliers ne peuvent pas avoir le même seuil.": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Difficultés": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Difficultés :": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Direct": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Direction / service": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Direction, Service…": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Directions, services… de l'organisation (paramétrés dans Organisation). Une partie du projet peut être confiée à un autre service depuis sa planification.": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Document ajouté": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Document stratégique introuvable.": [
+  "serveur"
+ ],
+ "Document supprimé": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Documents": [
+  "layouts/AppLayout.tsx",
+  "pages/documents/DocumentsGlobauxPage.tsx",
+  "pages/langues/LanguesPage.tsx",
+  "pages/projets/ProjetDetailPage.tsx",
+  "utils/modules.ts"
+ ],
+ "Documents libres, sans rattachement à un projet en particulier.": [
+  "pages/documents/DocumentsGlobauxPage.tsx"
+ ],
+ "Documents liés": [
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Documents liés à cette activité": [
+  "components/suivi/SaisiePointSuiviForm.tsx"
+ ],
+ "Documents liés à l'élément": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Documents liés à la sous-activité": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Domaine": [
+  "pages/projets/CoherenceTab.tsx"
+ ],
+ "Donne à chaque rubrique le nom et l'icône utilisés dans ton organisation (clique sur l'icône pour la changer). Les changements s'appliquent à tous les utilisateurs ; ↺ revient au nom et à l'icône par défaut.": [
+  "layouts/AppLayout.tsx"
+ ],
+ "Donne un nom à ce niveau (ex : Résultat, Pilier, Activité).": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Donne un nom à la période et choisis ses dates.": [
+  "pages/parametres/RapportageCard.tsx"
+ ],
+ "Dont femmes": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Dont hommes": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Dont jeunes": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Dont PDI": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Dossier créé": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Dossier supprimé": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Doublon bénéficiaire potentiel : ": [
+  "serveur"
+ ],
+ "Doublons d'enregistrement": [
+  "layouts/AppLayout.tsx",
+  "pages/beneficiaires/DoublonsPage.tsx",
+  "utils/modules.ts"
+ ],
+ "Doublons potentiels détectés": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Droits par module": [
+  "pages/utilisateurs/DroitsModules.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Du": [
+  "components/dashboard/FiltresTableauDeBord.tsx",
+  "components/suivi/EnTetePeriode.tsx",
+  "components/suivi/TranchesPlanifieesTab.tsx",
+  "pages/projets/RapportFinancierModal.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Dupliquer ce « {0} » avec tout ce qui est en dessous (sans les réalisations)": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Durée : {0}": [
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/SousActiviteForm.tsx"
+ ],
+ "Écarter (faux positif)": [
+  "pages/beneficiaires/DoublonsPage.tsx"
+ ],
+ "Échéance dépassée le {0}": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Échéance prévue le {0} — approche": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Échéance proche": [
+  "components/notifications/EcheancesBanner.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Échec de l'association pour : {0}": [
+  "pages/projets/BeneficiairesProjetSection.tsx"
+ ],
+ "Écran": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Éditer": [
+  "components/common/BoutonModeEdition.tsx"
+ ],
+ "Effacé": [
+  "components/audit/HistoriqueModification.tsx"
+ ],
+ "Effacer l'objectif de la période": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Effacer les objectifs de « {0} » sur {1} (quantité, budget, dates, commentaire) ? La planification globale et les saisies de suivi ne changent pas.": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Effacer les objectifs de la période": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Élément": [
+  "components/suivi/ImportCanevasSuiviModal.tsx",
+  "pages/approbations/ApprobationsPage.tsx",
+  "pages/projets/CoherenceTab.tsx"
+ ],
+ "Élément :": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Élément « {0} » introuvable dans le cadre — rattachement laissé vide.": [
+  "serveur"
+ ],
+ "Élément ajouté": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Élément créé": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Élément de la planification le plus exposé": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Élément de rattachement introuvable — indicateur créé sans rattachement.": [
+  "serveur"
+ ],
+ "Élément modifié": [
+  "pages/projets/ActiviteForm.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Élément stratégique": [
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/SousActiviteForm.tsx"
+ ],
+ "Élément supprimé": [
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "élément(s) créé(s),": [
+  "pages/strategie/ImportStructurationModal.tsx"
+ ],
+ "élément(s) de planification": [
+  "pages/projets/ImportProjetModal.tsx"
+ ],
+ "élément(s) de planification)": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "élément(s) stratégique(s) créé(s)": [
+  "pages/planification/PlanificationImportPage.tsx"
+ ],
+ "Éléments avec objectifs définis": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Éléments ayant un objectif fixé pour la période": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Éléments communs": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Éléments de capitalisation": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Éléments stratégiques rattachés": [
+  "pages/indicateurs/IndicateurForm.tsx"
+ ],
+ "Élevé": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Email": [
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "En attente": [
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "En attente d'approbation": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "En attente d'approbation (non comptée)": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "en consortium": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "En consortium": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "En cours": [
+  "components/suivi/SaisieSuiviMethode.tsx",
+  "components/suivi/TranchesPlanifieesTab.tsx",
+  "pages/DashboardConsolidePage.tsx",
+  "pages/projets/AvancementModal.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx",
+  "utils/statusTones.ts"
+ ],
+ "En cours pendant la période": [
+  "components/dashboard/FiltresTableauDeBord.tsx"
+ ],
+ "en mise en œuvre": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "En plus de l'avancement calculé depuis les projets, renseignez pour chaque élément ses indicateurs propres, une appréciation par période et les pièces qui la justifient.": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "En plus du seuil en jours ci-dessus, chaque activité ou projet peut avoir sa propre date de rappel fixe (indépendante du nombre de jours) — à définir directement dans sa fiche, champ « Date de rappel ». Voici celles actuellement programmées :": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "En préparation": [
+  "utils/statusTones.ts"
+ ],
+ "En retard": [
+  "components/notifications/EcheancesBanner.tsx",
+  "components/suivi/TranchesPlanifieesTab.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx",
+  "utils/statusTones.ts"
+ ],
+ "Enregistre d'abord le projet pour pouvoir y associer des bénéficiaires (import Excel ou recherche dans la base).": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Enregistrées une fois, puis sélectionnées sur les projets et les éléments du cadre stratégique.": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Enregistrer": [
+  "components/indicators/SaisieValeurIndicateurForm.tsx",
+  "components/suivi/MethodeCalculLigne.tsx",
+  "components/suivi/SaisiePointSuiviForm.tsx",
+  "layouts/AppLayout.tsx",
+  "pages/beneficiaires/BeneficiaireForm.tsx",
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/indicateurs/IndicateurForm.tsx",
+  "pages/langues/LanguesPage.tsx",
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/parametres/ParametresAlertePage.tsx",
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/AvancementModal.tsx",
+  "pages/projets/CadreLogiqueTab.tsx",
+  "pages/projets/EquipeTab.tsx",
+  "pages/projets/NiveauxActiviteTab.tsx",
+  "pages/projets/PartenairesProjetTab.tsx",
+  "pages/projets/PlanificationPeriodeTab.tsx",
+  "pages/projets/ProjetForm.tsx",
+  "pages/projets/RisquesTab.tsx",
+  "pages/projets/SousActiviteForm.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/CadresStrategiquesListPage.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx",
+  "pages/utilisateurs/RolesTab.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Enregistrer la rallonge": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Enregistrer les modifications": [
+  "components/indicators/SaisieValeurIndicateurForm.tsx",
+  "components/suivi/SaisiePointSuiviForm.tsx"
+ ],
+ "Envoyé pour approbation": [
+  "api/client.ts"
+ ],
+ "Envoyer": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Équipe": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Équipe de projet": [
+  "pages/projets/ProjetDetailPage.tsx",
+  "utils/modules.ts"
+ ],
+ "Équipe modifiée": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Équipe responsable": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Équipe supprimée": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Équipes rattachées aux activités de ce projet": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Erreur": [
+  "components/suivi/ImportCanevasSuiviModal.tsx",
+  "pages/projets/CoherenceTab.tsx"
+ ],
+ "Erreur — ce bailleur finance peut-être déjà ce projet.": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Erreur (ce partenaire a peut-être déjà un rôle dans le projet)": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Erreur lors de l'ajout": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Erreur lors de l'ajout de la tranche": [
+  "components/suivi/TranchesPlanifieesTab.tsx"
+ ],
+ "Erreur lors de l'ajout de la version": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Erreur lors de l'ajout du document": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Erreur lors de l'ajout du niveau": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/projets/NiveauxActiviteTab.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Erreur lors de l'association des bénéficiaires": [
+  "components/beneficiaires/BeneficiairesTab.tsx"
+ ],
+ "Erreur lors de l'enregistrement": [
+  "pages/DashboardConsolidePage.tsx",
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/langues/LanguesPage.tsx",
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/parametres/ParametresAlertePage.tsx",
+  "pages/projets/AvancementModal.tsx",
+  "pages/projets/CadreLogiqueTab.tsx",
+  "pages/projets/FinancementsTab.tsx",
+  "pages/projets/PlanificationPeriodeTab.tsx",
+  "pages/projets/RisquesTab.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/CadresStrategiquesListPage.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Erreur lors de l'enregistrement de l'objectif": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Erreur lors de l'enregistrement de la période": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Erreur lors de l'enregistrement du menu": [
+  "layouts/AppLayout.tsx"
+ ],
+ "Erreur lors de l'enregistrement du nom du niveau": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Erreur lors de l'enregistrement du vocabulaire": [
+  "layouts/AppLayout.tsx"
+ ],
+ "Erreur lors de l'export": [
+  "pages/beneficiaires/ExportBeneficiairesModal.tsx"
+ ],
+ "Erreur lors de l'import": [
+  "components/suivi/ImportCanevasSuiviModal.tsx",
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Erreur lors de l'import — vérifie le format du fichier.": [
+  "pages/beneficiaires/ImportBeneficiairesModal.tsx",
+  "pages/indicateurs/ImportIndicateursModal.tsx",
+  "pages/planification/PlanificationImportPage.tsx",
+  "pages/projets/ImportProjetModal.tsx",
+  "pages/strategie/ImportStructurationModal.tsx"
+ ],
+ "Erreur lors de la création": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Erreur lors de la création (identifiant déjà utilisé ?)": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Erreur lors de la création de l'élément": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Erreur lors de la création de l'équipe": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Erreur lors de la création de l'indicateur": [
+  "pages/indicateurs/IndicateurForm.tsx"
+ ],
+ "Erreur lors de la création de la personne": [
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Erreur lors de la création de la sous-activité": [
+  "pages/projets/SousActiviteForm.tsx"
+ ],
+ "Erreur lors de la création du bailleur": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Erreur lors de la création du dossier": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Erreur lors de la création du lien": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Erreur lors de la création du partenaire": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Erreur lors de la création du projet": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Erreur lors de la création du rôle": [
+  "pages/utilisateurs/RolesTab.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Erreur lors de la création du statut": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Erreur lors de la création du type d'activité": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Erreur lors de la création.": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Erreur lors de la duplication": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Erreur lors de la génération du rapport.": [
+  "pages/projets/RapportFinancierModal.tsx"
+ ],
+ "Erreur lors de la mise à jour": [
+  "pages/beneficiaires/DoublonsPage.tsx"
+ ],
+ "Erreur lors de la modification": [
+  "pages/beneficiaires/BeneficiaireForm.tsx",
+  "pages/projets/EquipeTab.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Erreur lors de la modification de l'élément": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Erreur lors de la modification de l'équipe": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Erreur lors de la modification de l'indicateur": [
+  "pages/indicateurs/IndicateurForm.tsx"
+ ],
+ "Erreur lors de la modification de la sous-activité": [
+  "pages/projets/SousActiviteForm.tsx"
+ ],
+ "Erreur lors de la modification du niveau": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Erreur lors de la modification du projet": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Erreur lors de la modification du rôle": [
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Erreur lors de la réinitialisation": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Erreur lors de la saisie": [
+  "components/indicators/SaisieValeurIndicateurForm.tsx",
+  "components/suivi/SaisiePointSuiviForm.tsx"
+ ],
+ "Erreur lors de la suppression": [
+  "components/suivi/TranchesPlanifieesTab.tsx",
+  "pages/projets/EquipeTab.tsx",
+  "pages/projets/NiveauxActiviteTab.tsx",
+  "pages/projets/PlanificationPeriodeTab.tsx",
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/suivi/SuiviPeriodeTab.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Erreur lors de la suppression de l'équipe": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Erreur lors de la suppression de l'indicateur": [
+  "pages/indicateurs/IndicateurDetailPage.tsx",
+  "pages/indicateurs/IndicateursListPage.tsx"
+ ],
+ "Erreur lors de la suppression de l'utilisateur": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Erreur lors de la suppression du bénéficiaire": [
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx",
+  "pages/beneficiaires/BeneficiairesListPage.tsx"
+ ],
+ "Erreur lors de la suppression du cadre stratégique": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Erreur lors de la suppression du document": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Erreur lors de la suppression du dossier": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Erreur lors de la suppression du projet": [
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/projets/ProjetsListPage.tsx"
+ ],
+ "Erreur lors de la suppression du rôle": [
+  "pages/utilisateurs/RolesTab.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Erreur lors de la vérification": [
+  "pages/beneficiaires/DoublonsPage.tsx"
+ ],
+ "Erreur lors du changement": [
+  "components/suivi/MethodeCalculLigne.tsx"
+ ],
+ "Erreur lors du renommage": [
+  "pages/projets/NiveauxActiviteTab.tsx"
+ ],
+ "Erreur lors du réordonnancement": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Erreur lors du retrait": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Erreur lors du retrait du bénéficiaire": [
+  "components/beneficiaires/BeneficiairesTab.tsx"
+ ],
+ "État": [
+  "pages/parametres/RapportageCard.tsx"
+ ],
+ "Étendue": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Étendue : la zone choisie dans le filtre.": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Évolution dans le temps": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Ex : « Cadre stratégique 2022-2026 »": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Ex : « Orientation stratégique », « Priorité », « Pilier »...": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Ex : « Région », « Province », « Département », « Commune », « Village »...": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Ex : 1.1": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Ex : Année 1, T1 2026…": [
+  "components/suivi/TranchesPlanifieesTab.tsx"
+ ],
+ "Ex : Année 2026, 1er semestre 2027": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Ex : Comité de pilotage, bailleur": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Ex : Dégradation de la situation sécuritaire dans la zone": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Ex : extension de la zone d'intervention à deux nouvelles communes": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Ex : Forages réalisés": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Ex : Kadiogo": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Ex : Note, Contrat, Rapport bailleur…": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Ex : Orientation stratégique": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Ex : OS1": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Ex : producteurs": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Ex : R1, P1.2, A1.1": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Ex : Rapport du 1er trimestre 2026": [
+  "pages/parametres/RapportageCard.tsx"
+ ],
+ "Ex : Région": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Ex : Résultat": [
+  "pages/projets/NiveauxActiviteTab.tsx"
+ ],
+ "Ex : Résultat, Objectif, Pilier…": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Ex : Résultat, Pilier, Activité…": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Ex : Résultat, Pilier…": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Ex : Superviseur régional": [
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Ex : T1 2026, Année 2027…": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Ex : Taille du ménage": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Ex. : Budget des projets par province": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Ex. : Situation au 31 octobre 2026": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "exactement comme prévu à cette date": [
+  "utils/suivi.ts"
+ ],
+ "Excel": [
+  "pages/beneficiaires/ExportBeneficiairesModal.tsx",
+  "pages/projets/PlanificationPeriodeTab.tsx",
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/projets/RapportFinancierModal.tsx"
+ ],
+ "Excel (.xlsx)": [
+  "pages/beneficiaires/ExportBeneficiairesModal.tsx",
+  "pages/suivi/SuiviPeriodeTab.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Exécution financière": [
+  "pages/DashboardConsolidePage.tsx",
+  "pages/carte/CartePage.tsx",
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Exécution financière :": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Exécution financière de la période": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Exécution financière globale": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Exécution par composante": [
+  "pages/projets/RapportFinancierModal.tsx"
+ ],
+ "Exécution par projet (%)": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Exécution physique": [
+  "pages/DashboardConsolidePage.tsx",
+  "pages/carte/CartePage.tsx",
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Exécution physique (": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Exécution physique de la période": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Exécution physique globale": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Exemple affiché comme indication (facultatif)": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Expiré": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Expire le (facultatif)": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Export de tous les bénéficiaires, une feuille par projet.": [
+  "pages/beneficiaires/ExportBeneficiairesModal.tsx"
+ ],
+ "Exporter": [
+  "pages/beneficiaires/BeneficiairesListPage.tsx",
+  "pages/langues/LanguesPage.tsx",
+  "pages/projets/CadreLogiqueTab.tsx",
+  "pages/projets/PlanificationPeriodeTab.tsx",
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/projets/RisquesTab.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Exporter en": [
+  "pages/beneficiaires/ExportBeneficiairesModal.tsx"
+ ],
+ "Exporter en Excel": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Exporter le suivi de la période": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Exporter les bénéficiaires": [
+  "pages/beneficiaires/ExportBeneficiairesModal.tsx"
+ ],
+ "Externe": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Facultatif": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Facultatif — cherche et choisis directement le projet ou un élément de sa planification, quel que soit son niveau. L'indicateur suit la grille d'alerte (paliers/libellés/couleurs) du projet, configurable depuis Paramètres d'alerte.": [
+  "pages/indicateurs/IndicateurForm.tsx"
+ ],
+ "Facultatif — l'élément du cadre dont relève ce projet, à n'importe quel niveau (programme, axe, pilier…). Permet de regrouper les projets par élément.": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Facultatif — le taux de cette activité vient de la saisie ci-dessus ; cette partie enregistre le budget dépensé, le statut et un commentaire pour la période.": [
+  "components/suivi/SaisieSuiviMethode.tsx"
+ ],
+ "Facultatif (carte)": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Faible": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "FCFA": [
+  "pages/approbations/ApprobationsPage.tsx",
+  "pages/carte/CarteParZone.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "FCFA au total). Vérifie le montant avant d'enregistrer.": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "FCFA sur": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Féminin": [
+  "layouts/AppLayout.tsx",
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx",
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Femme": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "femme(s),": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Femmes": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Fermée, sauf pendant les périodes propres au projet": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Fermer": [
+  "components/dashboard/PersonnalisationModal.tsx",
+  "pages/beneficiaires/ImportBeneficiairesModal.tsx",
+  "pages/carte/FenetresCarte.tsx",
+  "pages/indicateurs/ImportIndicateursModal.tsx",
+  "pages/projets/ImportProjetModal.tsx",
+  "pages/strategie/ImportStructurationModal.tsx"
+ ],
+ "Feuille / ligne": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Fiche projet + planification (niveaux libres → Sous-activité), sans cadre stratégique ni indicateurs.": [
+  "pages/planification/PlanificationImportPage.tsx"
+ ],
+ "Fichier": [
+  "components/documents/DocumentsTab.tsx",
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Fichier à importer": [
+  "pages/beneficiaires/ImportBeneficiairesModal.tsx",
+  "pages/indicateurs/ImportIndicateursModal.tsx",
+  "pages/planification/PlanificationImportPage.tsx",
+  "pages/projets/ImportProjetModal.tsx",
+  "pages/strategie/ImportStructurationModal.tsx"
+ ],
+ "Fin ({0}) avant le début ({1}).": [
+  "serveur"
+ ],
+ "Fin avant le début (sous-activité).": [
+  "serveur"
+ ],
+ "Fin de période": [
+  "components/indicators/SaisieValeurIndicateurForm.tsx",
+  "components/suivi/SaisiePointSuiviForm.tsx"
+ ],
+ "Financement": [
+  "pages/projets/ProjetDetailPage.tsx",
+  "utils/modules.ts"
+ ],
+ "Financement actuel :": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Financement ajouté": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Financements bailleurs": [
+  "pages/DashboardConsolidePage.tsx",
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Financements bailleurs (dont {0} de rallonges)": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Finances": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Financier": [
+  "pages/carte/CarteParZone.tsx"
+ ],
+ "Financier (FCFA)": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Fonction": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Fond :": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Fond de carte": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Fonds propres": [
+  "pages/DashboardConsolidePage.tsx",
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Fonds propres (FCFA)": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Fonds propres + financements des bailleurs": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Fonds propres et bailleurs : montant initial, rallonges, part.": [
+  "pages/projets/RapportFinancierModal.tsx"
+ ],
+ "Format papier": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Fréquence": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Fréquence de collecte": [
+  "pages/indicateurs/IndicateurForm.tsx"
+ ],
+ "Fréquence de collecte invalide « {0} » — ligne ignorée.": [
+  "serveur"
+ ],
+ "Général": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Géographie": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Gérer": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Gérer les périodes et leurs objectifs": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Global : {0} {1}": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Graphiques": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Gravité": [
+  "pages/projets/CoherenceTab.tsx"
+ ],
+ "Grille « Projet » ignorée : aucun projet dans cet import.": [
+  "serveur"
+ ],
+ "Grille d'alerte enregistrée": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Grille d'interprétation": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Grille du projet (par défaut)": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Grille globale (par défaut)": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Grille héritée de nouveau en vigueur": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Hériter (niveau au-dessus / projet)": [
+  "components/suivi/MethodeCalculLigne.tsx",
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Hériter de l'organisation ({0})": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Historique": [
+  "pages/langues/LanguesPage.tsx",
+  "pages/projets/ProjetDetailPage.tsx",
+  "utils/modules.ts"
+ ],
+ "Historique des réévaluations": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Historique des taux saisis": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "Historique des traductions ({0})": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Historique des versions": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Homme": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "homme(s) · placés au centre de la localité (pas de GPS)": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Hommes": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Hors de ses dates dans la planification globale": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Hors période : suivis, valeurs d'indicateurs, taux manuels, avancement des tâches et validation des livrables sont fermés ; la planification reste modifiable.": [
+  "utils/rapportage.ts"
+ ],
+ "Hors période : tout le projet est en lecture seule (planification, suivi, indicateurs, bénéficiaires, documents).": [
+  "utils/rapportage.ts"
+ ],
+ "Hors période de rapportage, fermer": [
+  "pages/parametres/RapportageCard.tsx",
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Hypothèses / risques": [
+  "pages/projets/CadreLogiqueTab.tsx"
+ ],
+ "Identifiant": [
+  "auth/LoginPage.tsx",
+  "pages/beneficiaires/BeneficiairesListPage.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Identifiant, mot de passe et rôle requis.": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Identifié le": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Identité": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Ignorée": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Il manque {0} : gardez-le tel quel, il sera remplacé par une valeur à l'affichage.": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Image PNG": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Impact": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Import combiné — un seul fichier Excel": [
+  "pages/planification/PlanificationImportPage.tsx"
+ ],
+ "Import terminé": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Import terminé : {0} traduction(s) corrigée(s), {1} remise(s) à l'origine.": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Importer": [
+  "pages/beneficiaires/ImportBeneficiairesModal.tsx",
+  "pages/carte/FenetresCarte.tsx",
+  "pages/indicateurs/ImportIndicateursModal.tsx",
+  "pages/langues/LanguesPage.tsx",
+  "pages/planification/PlanificationImportPage.tsx",
+  "pages/projets/ImportProjetModal.tsx",
+  "pages/strategie/ImportStructurationModal.tsx"
+ ],
+ "Importer depuis Excel": [
+  "pages/beneficiaires/BeneficiairesListPage.tsx",
+  "pages/indicateurs/IndicateursListPage.tsx",
+  "pages/projets/ProjetsListPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Importer des bénéficiaires depuis Excel": [
+  "pages/beneficiaires/ImportBeneficiairesModal.tsx"
+ ],
+ "Importer des indicateurs depuis Excel": [
+  "pages/indicateurs/ImportIndicateursModal.tsx"
+ ],
+ "Importer des traductions ({0})": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Importer la structuration depuis Excel": [
+  "pages/strategie/ImportStructurationModal.tsx"
+ ],
+ "Importer un projet depuis Excel": [
+  "pages/projets/ImportProjetModal.tsx"
+ ],
+ "Importer une couche": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Importer une couche sur la carte": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Importer une liste (Excel)": [
+  "pages/projets/BeneficiairesProjetSection.tsx"
+ ],
+ "Impossible de créer cet indicateur : ": [
+  "serveur"
+ ],
+ "Impossible de lire ce fichier : {0}": [
+  "serveur"
+ ],
+ "Impossible de supprimer ce niveau": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Impossible de supprimer ce rôle : des utilisateurs l'ont encore. Change d'abord leur rôle.": [
+  "serveur"
+ ],
+ "Impossible de supprimer cet élément": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Impossible de supprimer cet utilisateur : il a déjà des données rattachées (valeurs saisies, documents, points de suivi...). Désactive-le plutôt (Actif = Non).": [
+  "serveur"
+ ],
+ "Impossible de supprimer cette zone": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Impossible de supprimer ton propre compte": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Impossible de supprimer ton propre compte.": [
+  "serveur"
+ ],
+ "Imprimer la carte": [
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx"
+ ],
+ "Imprimer les cartes de ce projet": [
+  "pages/beneficiaires/BeneficiairesListPage.tsx"
+ ],
+ "Indicateur": [
+  "pages/projets/PlanificationPeriodeTab.tsx",
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Indicateur ajouté": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Indicateur créé": [
+  "pages/indicateurs/IndicateurForm.tsx"
+ ],
+ "Indicateur modifié": [
+  "pages/indicateurs/IndicateurForm.tsx"
+ ],
+ "Indicateur propre au document stratégique (ex. donnée nationale) : ses valeurs se saisissent ici, sans passer par un projet.": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Indicateur supprimé": [
+  "pages/indicateurs/IndicateurDetailPage.tsx",
+  "pages/indicateurs/IndicateursListPage.tsx"
+ ],
+ "indicateurs": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Indicateurs": [
+  "components/partage/BoutonPartage.tsx",
+  "layouts/AppLayout.tsx",
+  "pages/DashboardConsolidePage.tsx",
+  "pages/indicateurs/IndicateursListPage.tsx",
+  "pages/langues/LanguesPage.tsx",
+  "pages/parametres/ParametresAlertePage.tsx",
+  "pages/planification/PlanificationImportPage.tsx",
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx",
+  "pages/suivi/SuiviPeriodeTab.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx",
+  "utils/modules.ts"
+ ],
+ "Indicateurs — ": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Indicateurs (": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Indicateurs (référence, cible, réalisé)": [
+  "pages/projets/CadreLogiqueTab.tsx"
+ ],
+ "Indicateurs par statut": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Indicateurs seuls, rattachés à un projet déjà existant (par son code) ou stratégiques.": [
+  "pages/planification/PlanificationImportPage.tsx"
+ ],
+ "Indicateurs stratégiques (sans projet rattaché)": [
+  "pages/indicateurs/IndicateursListPage.tsx"
+ ],
+ "Indicateurs suivis": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Indique le libellé du rôle.": [
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Indique le libellé.": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Indique le motif du rejet : il sera montré à l'auteur.": [
+  "serveur"
+ ],
+ "Indique le motif du rejet.": [
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Indique le nom.": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Indique le projet ou l'élément parent.": [
+  "serveur"
+ ],
+ "Indiquer au moins deux réponses possibles.": [
+  "serveur"
+ ],
+ "Indiquez la période.": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Indiquez le motif de la rallonge.": [
+  "serveur"
+ ],
+ "Indiquez le risque.": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Indiquez le sous-titre.": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Indiquez le titre de la carte.": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Indispensable pour qu'un chef de projet, animateur, etc. puisse se connecter et voir ce projet — sans ça, même désigné ci-dessus, il ne verra rien après connexion.": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Informations": [
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx"
+ ],
+ "Informations complémentaires": [
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx",
+  "pages/beneficiaires/ChampsVariables.tsx"
+ ],
+ "Informations libres sur cet élément (ex : Responsable, Lieu), reprises dans les exports. À l'import, ce sont les colonnes « Attribut : … ».": [
+  "components/common/AttributsLibres.tsx"
+ ],
+ "Informations propres à vos projets (taille du ménage, superficie cultivée…). Une variable peut concerner tous les projets ou seulement certains : pour un projet qu'elle ne concerne pas, elle n'est pas demandée et vaut « NA » dans les exports. Elle apparaît aussi comme colonne dans le modèle d'import Excel.": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Inscrit(e) le": [
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx"
+ ],
+ "Intérêt, influence, attentes…": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Interne": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Jalon": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "Jeunes": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Jeunes :": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "L'élément concerné n'existe plus.": [
+  "serveur"
+ ],
+ "L'élément parent doit appartenir au même projet.": [
+  "serveur"
+ ],
+ "L'élément principal n'a pas à être repris dans les autres liens.": [
+  "serveur"
+ ],
+ "La carte n'a pas pu être générée (réessayez dans un instant).": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "La cotation et le statut évoluent ensuite par les réévaluations (bouton « Réévaluer »).": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "La couche mélange points, lignes et polygones : importez-les séparément.": [
+  "serveur"
+ ],
+ "La couche ne contient aucun objet géographique.": [
+  "serveur"
+ ],
+ "La date de fin doit être postérieure à la date de début.": [
+  "serveur"
+ ],
+ "La date de fin doit suivre la date de début.": [
+  "serveur"
+ ],
+ "La date de fin du projet est avant sa date de début.": [
+  "serveur"
+ ],
+ "La date de fin prévue doit être postérieure à la date de début prévue.": [
+  "serveur"
+ ],
+ "La feuille « Projet » du modèle porte sa fiche (nom, code, dates, modalités, bailleur…) en une ligne par champ. La feuille « Planification » porte sa planification : une colonne par niveau (en jaune dans le modèle, avec les noms et le nombre que tu veux, ex : Résultat → Pilier → Activité), puis Sous-activité — une seule colonne de niveau remplie par ligne.": [
+  "pages/projets/ImportProjetModal.tsx"
+ ],
+ "La fin de la période est avant son début.": [
+  "serveur"
+ ],
+ "La fin de la période précède son début.": [
+  "serveur"
+ ],
+ "La fin doit être après le début.": [
+  "serveur"
+ ],
+ "La grille d'interprétation des taux de réalisation (paliers, libellés, couleurs) se configure ici, projet par projet — un projet sans grille propre utilise la grille globale par défaut.": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "La grille du projet entier, ou personnalise-la pour un indicateur ou une activité précis.": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "La grille globale doit contenir au moins un palier.": [
+  "pages/parametres/ParametresAlertePage.tsx",
+  "serveur"
+ ],
+ "La latitude doit être comprise entre -90 et 90.": [
+  "serveur"
+ ],
+ "La longitude doit être comprise entre -180 et 180.": [
+  "serveur"
+ ],
+ "La période de fin doit être postérieure à la période de début.": [
+  "serveur"
+ ],
+ "La période est en dehors des dates du projet ({0} → {1}).": [
+  "serveur"
+ ],
+ "La période est en dehors des dates prévues de l'activité ({0} → {1}).": [
+  "serveur"
+ ],
+ "La période se termine dans le futur ({0}) : une réalisation ne peut pas encore avoir eu lieu.": [
+  "serveur"
+ ],
+ "La saisie des valeurs réalisées et leur évolution dans le temps se font depuis le module Suivi.": [
+  "pages/indicateurs/IndicateurDetailPage.tsx"
+ ],
+ "Laisser vide pour ne pas le changer": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Langue par défaut de l'organisation": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Langue par défaut enregistrée": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Langues": [
+  "layouts/AppLayout.tsx",
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Latitude": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Latitude du centre": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Le bailleur « {0} » est saisi deux fois.": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Le budget dépensé ({0} FCFA) dépasse le budget alloué à l'activité ({1} FCFA).": [
+  "serveur"
+ ],
+ "Le détail de ce budget est saisi sur les éléments en dessous : il n'est pas compté une seconde fois dans les totaux.": [
+  "pages/strategie/AxesBudgetsTab.tsx"
+ ],
+ "Le fichier est un classeur à plusieurs feuilles (Cadre stratégique, Structuration, Projet, Planification, Indicateurs, Bénéficiaires), avec une colonne par niveau pour les hiérarchies. Seule la feuille « Projet » est obligatoire — les autres sections sont ignorées si elles sont laissées vides. Les bénéficiaires importés sont automatiquement inscrits au projet créé.": [
+  "pages/planification/PlanificationImportPage.tsx"
+ ],
+ "Le français est la langue source : modifiez plutôt le vocabulaire.": [
+  "serveur"
+ ],
+ "Le libellé est requis.": [
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/SousActiviteForm.tsx"
+ ],
+ "Le montant de la rallonge doit être positif.": [
+  "serveur"
+ ],
+ "Le niveau parent doit appartenir au même cadre stratégique.": [
+  "serveur"
+ ],
+ "Le niveau parent doit appartenir au même pays.": [
+  "serveur"
+ ],
+ "Le nom de l'équipe est requis.": [
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Le nom du niveau est requis.": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/projets/NiveauxActiviteTab.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Le nom est requis.": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Le parent principal n'a pas à être repris dans les autres liens.": [
+  "serveur"
+ ],
+ "Le réalisé de la période est calculé à partir des valeurs saisies dont les dates tombent dans la période.": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Le seuil {0}% est défini plusieurs fois.": [
+  "serveur"
+ ],
+ "Le texte français sert de référence. Modifiez une traduction puis validez : elle remplace celle livrée avec la plateforme, pour tous les utilisateurs, au prochain chargement de la page. ↺ revient à la traduction d'origine.": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Le total réalisé ({0} {1}) dépasse la quantité prévue ({2}) : à vérifier.": [
+  "serveur"
+ ],
+ "Lecture seule": [
+  "pages/partage/PagePartagee.tsx"
+ ],
+ "Les budgets des activités ({0} FCFA) dépassent le budget total du projet ({1} FCFA).": [
+  "serveur"
+ ],
+ "Les changements de planification doivent être approuvés": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Les colonnes de localisation suivent son découpage administratif": [
+  "pages/beneficiaires/ImportBeneficiairesModal.tsx"
+ ],
+ "Les dates de la période sont requises.": [
+  "serveur"
+ ],
+ "Les dates prévues doivent rester dans la période ({0} → {1}).": [
+  "serveur"
+ ],
+ "Les grands formats peuvent prendre une à deux minutes, surtout avec un fond de carte.": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Les lignes en erreur ne seront pas enregistrées.": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Les mêmes chiffres pour chaque niveau de la planification.": [
+  "pages/projets/RapportFinancierModal.tsx"
+ ],
+ "Les niveaux de la planification de ce projet, du plus haut au plus bas. Leur nom et leur nombre sont libres : par exemple « Objectif général » → « Objectif spécifique » → « Activité », ou « Résultat » → « Pilier » → « Activité ». Renommer un niveau change seulement son nom affiché, jamais les éléments déjà saisis.": [
+  "pages/projets/NiveauxActiviteTab.tsx"
+ ],
+ "Les niveaux sont libres : leur nom et leur nombre sont propres à ce projet. Clique sur l'étiquette d'un élément pour nommer ou renommer son niveau ; le bouton + ajoute un élément au niveau en dessous.": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Les réalisations seulement": [
+  "utils/rapportage.ts"
+ ],
+ "les risques maîtrisés ou clos (": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Les rôles système (cadenas) sont utilisés par la plateforme : ils peuvent être renommés, pas supprimés. Un rôle ajouté peut être supprimé tant qu'aucun utilisateur ne l'a.": [
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Les saisies de réalisations doivent être approuvées": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Les saisies faites ici (dates comprises dans la période) sont aussi comptées dans le suivi global du projet : quantités, budget, statut et dates réelles s'actualisent automatiquement.": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "les variables d'autres projets": [
+  "pages/beneficiaires/ChampsVariables.tsx"
+ ],
+ "Libellé": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
+  "pages/indicateurs/IndicateurForm.tsx",
+  "pages/indicateurs/IndicateursListPage.tsx",
+  "pages/parametres/ParametresAlertePage.tsx",
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/projets/SousActiviteForm.tsx",
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Libellé du premier élément…": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Libellé et cible sont requis.": [
+  "serveur"
+ ],
+ "Libellé requis.": [
+  "serveur"
+ ],
+ "Libellé, dates et cible sont requis.": [
+  "components/suivi/TranchesPlanifieesTab.tsx"
+ ],
+ "Libellé, unité et cible sont requis.": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Libellé, unité et valeur cible sont obligatoires — ligne ignorée.": [
+  "serveur"
+ ],
+ "Lien créé : copiez-le pour l'envoyer.": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Lien indisponible": [
+  "pages/partage/PagePartagee.tsx"
+ ],
+ "Lien valable jusqu'au": [
+  "pages/partage/PagePartagee.tsx"
+ ],
+ "Liens existants": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Ligne": [
+  "pages/beneficiaires/ImportBeneficiairesModal.tsx",
+  "pages/indicateurs/ImportIndicateursModal.tsx",
+  "pages/planification/PlanificationImportPage.tsx",
+  "pages/projets/ImportProjetModal.tsx",
+  "pages/strategie/ImportStructurationModal.tsx"
+ ],
+ "Limité au cadre stratégique du projet choisi ci-dessus.": [
+  "pages/indicateurs/IndicateurForm.tsx"
+ ],
+ "Liste de clés de blocs attendue.": [
+  "serveur"
+ ],
+ "Liste des projets": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Liste limitée à": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Livrable": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "Livrable validé": [
+  "serveur"
+ ],
+ "Localisation": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Localisation :": [
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx"
+ ],
+ "Logique d'intervention": [
+  "pages/projets/PlanificationTableau.tsx",
+  "pages/strategie/CadreTableau.tsx"
+ ],
+ "Longitude": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Longitude du centre": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Ma position": [
+  "pages/carte/OutilsCarte.tsx"
+ ],
+ "Ma position actuelle": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Maîtrisé": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Maraîchage, élevage, petit commerce... — tape un nouveau type s'il manque à la liste.": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Marquée « Réalisée » mais taux de {0} %.": [
+  "serveur"
+ ],
+ "Marquer l'activité comme réalisée": [
+  "components/suivi/SaisieSuiviMethode.tsx"
+ ],
+ "Masculin": [
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx",
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Masqué": [
+  "pages/utilisateurs/DroitsModules.tsx"
+ ],
+ "Masquer": [
+  "pages/beneficiaires/ChampsVariables.tsx",
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Matrice des risques ouverts": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Membre ajouté à l'équipe": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Membre modifié": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Membre supprimé": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Membres": [
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/projets/EquipeTab.tsx",
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Membres de cette structure. Un utilisateur n'appartient qu'à une structure : l'ajouter ici le retire de son ancienne structure.": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Membres de l'équipe": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Membres qui y participent": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Même date de naissance": [
+  "serveur"
+ ],
+ "Même localité": [
+  "serveur"
+ ],
+ "Même moyenne, pondérée par le budget alloué de chaque élément.": [
+  "utils/methodesCalcul.ts"
+ ],
+ "Même pièce d'identité": [
+  "pages/beneficiaires/DoublonsPage.tsx",
+  "serveur"
+ ],
+ "Même téléphone": [
+  "serveur"
+ ],
+ "Mensuelle": [
+  "pages/indicateurs/IndicateurForm.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Menu": [
+  "layouts/AppLayout.tsx",
+  "pages/langues/LanguesPage.tsx",
+  "utils/modules.ts"
+ ],
+ "Menu mis à jour": [
+  "layouts/AppLayout.tsx"
+ ],
+ "Merci de compléter les champs obligatoires — voir l'onglet mis en évidence.": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Merci de compléter tous les champs requis.": [
+  "pages/indicateurs/IndicateurForm.tsx"
+ ],
+ "Merci de renseigner la période et la valeur.": [
+  "components/indicators/SaisieValeurIndicateurForm.tsx"
+ ],
+ "Merci de renseigner la période.": [
+  "components/suivi/SaisiePointSuiviForm.tsx"
+ ],
+ "Message envoyé par le serveur": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Messages du serveur": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Mesures d'atténuation": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Méthode :": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Méthode : {0}": [
+  "components/suivi/MethodeCalculLigne.tsx"
+ ],
+ "Méthode : {0} · objectif en avancement (%)": [
+  "pages/projets/PlanificationPeriodeTab.tsx",
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Méthode binaire : choisis le statut « Réalisée » pour passer l'activité à 100 %.": [
+  "components/suivi/SaisieSuiviMethode.tsx"
+ ],
+ "Méthode de calcul": [
+  "components/suivi/MethodeCalculLigne.tsx",
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Méthode de calcul :": [
+  "components/suivi/MethodeCalculLigne.tsx"
+ ],
+ "Méthode de calcul des taux": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Méthode de calcul inconnue « {0} » — laissée vide (héritée du niveau au-dessus ou du projet).": [
+  "serveur"
+ ],
+ "Méthode de calcul par défaut": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Mettre à jour": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "mis à jour.": [
+  "pages/strategie/ImportStructurationModal.tsx"
+ ],
+ "Mise en œuvre": [
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Mise en œuvre ({0})": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Mise en page": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Modéré": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Modification": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "modification(s) enregistré(s)": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Modifié": [
+  "components/audit/HistoriqueModification.tsx"
+ ],
+ "Modifier": [
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx",
+  "pages/beneficiaires/BeneficiairesListPage.tsx",
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/projets/CadreLogiqueTab.tsx",
+  "pages/projets/EquipeTab.tsx",
+  "pages/projets/PartenairesProjetTab.tsx",
+  "pages/projets/PlanificationTableau.tsx",
+  "pages/projets/RisquesTab.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/CadreTableau.tsx",
+  "pages/strategie/CadresStrategiquesListPage.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx",
+  "pages/utilisateurs/RolesTab.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Modifier — {0}": [
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Modifier — {0} {1}": [
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx",
+  "pages/beneficiaires/BeneficiairesListPage.tsx"
+ ],
+ "Modifier ce « {0} »": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Modifier cette saisie": [
+  "components/suivi/HistoriqueSuiviTable.tsx"
+ ],
+ "Modifier l'appréciation": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Modifier l'élément": [
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Modifier l'équipe": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Modifier l'indicateur": [
+  "pages/indicateurs/IndicateurDetailPage.tsx",
+  "pages/indicateurs/IndicateursListPage.tsx"
+ ],
+ "Modifier la partie prenante": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Modifier la période": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Modifier la saisie — indicateur": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Modifier la sous-activité": [
+  "pages/projets/PlanificationTableau.tsx",
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Modifier la sous-activité « {0} »": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Modifier la zone": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Modifier le cadre stratégique": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Modifier le niveau": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Modifier le partenaire": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Modifier le point de suivi — activité": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Modifier le point de suivi — sous-activité": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Modifier le projet": [
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/projets/ProjetsListPage.tsx"
+ ],
+ "Modifier le risque {0}": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Modifier le rôle": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Modifier le rôle — {0}": [
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Module non accessible": [
+  "layouts/AppLayout.tsx"
+ ],
+ "Montant": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Montant (FCFA)": [
+  "pages/DashboardConsolidePage.tsx",
+  "pages/projets/BailleursMontants.tsx"
+ ],
+ "Montant = budget total des projets auxquels le partenaire participe.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Montant = budget total des projets du pays.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Montant = budget total des projets mis en œuvre par le partenaire.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Montant = financements saisis ; à défaut, budget du projet hors fonds propres, attribué au bailleur principal.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Montant ajouté (FCFA)": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Montant financé (FCFA)": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Montant initial": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Montant, date et motif sont requis.": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Monter": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Montré à l'auteur, pour qu'il corrige.": [
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Mot de passe": [
+  "auth/LoginPage.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Motif": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Motif du rejet": [
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Moyen": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Moyenne des activités dont l'objectif est défini": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Moyenne des éléments directement en dessous, pondérée par leur poids.": [
+  "utils/methodesCalcul.ts"
+ ],
+ "Moyenne des taux des éléments du dernier niveau en dessous.": [
+  "utils/methodesCalcul.ts"
+ ],
+ "Moyenne pondérée par le budget": [
+  "utils/methodesCalcul.ts"
+ ],
+ "Moyenne pondérée par les poids": [
+  "utils/methodesCalcul.ts"
+ ],
+ "Moyenne simple": [
+  "utils/methodesCalcul.ts"
+ ],
+ "N° pièce d'identité": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "N° pièce d'identité :": [
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx"
+ ],
+ "NA": [
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx"
+ ],
+ "Nationale": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Nature": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Négligeable": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Neutre": [
+  "pages/carte/CartePage.tsx",
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "niveau": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Niveau": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Niveau :": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Niveau « {0} » inséré au-dessus de « {1} » : les éléments « {2} » déjà saisis et absents du fichier gardent leur ancien rattachement.": [
+  "serveur"
+ ],
+ "Niveau ajouté": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/projets/NiveauxActiviteTab.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Niveau d'accès": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Niveau d'accès par défaut": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Niveau de risque :": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Niveau modifié": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Niveau renommé": [
+  "pages/projets/NiveauxActiviteTab.tsx"
+ ],
+ "Niveau sans nom — clique pour le nommer": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Niveau supprimé": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/projets/NiveauxActiviteTab.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "niveau(x) créé(s),": [
+  "pages/strategie/ImportStructurationModal.tsx"
+ ],
+ "Nom": [
+  "components/beneficiaires/BeneficiairesTab.tsx",
+  "components/common/IntervenantsMultiples.tsx",
+  "components/documents/DocumentsTab.tsx",
+  "pages/DashboardConsolidePage.tsx",
+  "pages/beneficiaires/BeneficiaireForm.tsx",
+  "pages/beneficiaires/BeneficiairesListPage.tsx",
+  "pages/carte/FenetresCarte.tsx",
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/projets/BeneficiairesProjetSection.tsx",
+  "pages/projets/EquipeTab.tsx",
+  "pages/projets/ProjetsListPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/CadresStrategiquesListPage.tsx",
+  "pages/suivi/SuiviPage.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Nom (ex : Responsable)": [
+  "components/common/AttributsLibres.tsx"
+ ],
+ "Nom affiché": [
+  "pages/projets/NiveauxActiviteTab.tsx"
+ ],
+ "Nom affiché dans les couches": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Nom d'icône invalide.": [
+  "serveur"
+ ],
+ "Nom de ce niveau": [
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Nom de ce niveau (pour tous ses éléments dans le projet)": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Nom de l'équipe": [
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Nom de la période": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Nom du bailleur": [
+  "pages/projets/BailleursMontants.tsx"
+ ],
+ "Nom du document": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Nom du dossier": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Nom du niveau": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Nom du projet": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Nom du projet et Code du projet sont obligatoires.": [
+  "serveur"
+ ],
+ "Nom et fichier requis.": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Nom et prénom inversés": [
+  "serveur"
+ ],
+ "Nom et prénom obligatoires — ligne ignorée.": [
+  "serveur"
+ ],
+ "Nom et prénom requis.": [
+  "pages/beneficiaires/BeneficiaireForm.tsx",
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Nom, prénom, téléphone…": [
+  "components/beneficiaires/BeneficiairesTab.tsx"
+ ],
+ "Nombre": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Nombre d'activités": [
+  "pages/strategie/AxesBudgetsTab.tsx"
+ ],
+ "Nombre de bénéficiaires ajoutés à chaque projet pendant le mois.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Nombre de projets": [
+  "pages/carte/CartePage.tsx",
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Noms": [
+  "pages/carte/CartePage.tsx",
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Noms affichés": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Noms des bénéficiaires": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Noms des bénéficiaires (GPS)": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Non": [
+  "pages/beneficiaires/ChampsVariables.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "non additionné": [
+  "pages/strategie/AxesBudgetsTab.tsx"
+ ],
+ "Non précisée": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Non réalisée": [
+  "components/suivi/SaisieSuiviMethode.tsx",
+  "pages/projets/AvancementModal.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx",
+  "utils/statusTones.ts"
+ ],
+ "Non réalisées": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Non traduit": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Non traduits": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Non validé": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "Note libre (ex : validation, remarque) — n'affecte ni le suivi ni les calculs.": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Notifications": [
+  "components/notifications/NotificationBell.tsx",
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Nous chargeons ici, en un seul classeur Excel, un cadre stratégique complet (objectifs, axes...), un projet (modalités, budget, planification), ses indicateurs et ses bénéficiaires. Pour importer chaque élément séparément, utilise plutôt les écrans listés plus bas.": [
+  "pages/planification/PlanificationImportPage.tsx"
+ ],
+ "Nous définissons ici les niveaux administratifs propres à ce pays (nombre, noms, ordre) — par exemple « Région » → « Province » → « Commune » → « Village », ou « Région » → « Département » → « Commune ». Propre à ce pays, sans effet sur les autres.": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Nous définissons ici les niveaux administratifs propres à chaque pays (Région, Province, Commune, Village, ou autre) et leur arborescence — utilisés pour localiser bénéficiaires et projets.": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Nous définissons ici les niveaux propres à ce cadre stratégique (nombre, noms, ordre) — par exemple « Plan » → « Orientation » → « Axe » → « Activité », ou « Priorité » → « Sous-priorité ». Cette structuration reste propre à ce cadre, sans effet sur les autres.": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Nouveau « {0} » en dessous (ajouté aussi à la planification globale)": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Nouveau « {0} » sous « {1} »": [
+  "pages/projets/PlanificationPeriodeTab.tsx",
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Nouveau « {0} »…": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Nouveau bénéficiaire": [
+  "pages/beneficiaires/BeneficiairesListPage.tsx"
+ ],
+ "Nouveau cadre stratégique": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Nouveau document": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Nouveau dossier": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Nouveau jalon": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "Nouveau livrable": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "Nouveau mot de passe": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Nouveau partenaire": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Nouveau point de suivi — sous-activité": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Nouveau projet": [
+  "pages/projets/ProjetsListPage.tsx"
+ ],
+ "Nouveau risque": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Nouveau rôle": [
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Nouveau service de « {0} »": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Nouveaux bénéficiaires inscrits par mois": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Nouvel élément sous « {0} »": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Nouvel indicateur": [
+  "pages/indicateurs/IndicateursListPage.tsx"
+ ],
+ "Nouvel indicateur de l'élément": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Nouvelle {0}": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Nouvelle appréciation": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Nouvelle catégorie (Entrée)": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Nouvelle équipe": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Nouvelle organisation": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Nouvelle partie prenante": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Nouvelle période": [
+  "pages/parametres/RapportageCard.tsx",
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Nouvelle période de planification": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Nouvelle saisie — indicateur": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Nouvelle sous-activité": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Nouvelle sous-activité (ajoutée aussi à la planification globale)": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Nouvelle sous-activité sous « {0} »": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Nouvelle version ajoutée": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Objectif : ": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Objectif à définir": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Objectif et réalisé sur la période": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Objectif non défini": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Objectif{0}": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Objectifs de la période effacés": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Objectifs définis": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Objectifs, résultats, activités… de la planification dont ce partenaire est chargé (ce qui est en dessous en fait partie).": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "objet(s) ·": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "objet(s) (": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "OK": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Onglets d'un projet": [
+  "utils/modules.ts"
+ ],
+ "Ont commencé dans la période": [
+  "components/dashboard/FiltresTableauDeBord.tsx"
+ ],
+ "Ont commencé et doivent finir dans la période": [
+  "components/dashboard/FiltresTableauDeBord.tsx"
+ ],
+ "Ont commencé et se sont terminés (clôturés) dans la période": [
+  "components/dashboard/FiltresTableauDeBord.tsx"
+ ],
+ "OpenStreetMap": [
+  "pages/carte/CartePage.tsx",
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Opérationnel": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Organigramme": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Organisation": [
+  "layouts/AppLayout.tsx",
+  "pages/langues/LanguesPage.tsx",
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Organisation (interne)": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Orientation": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Ou cocher un ou plusieurs projets :": [
+  "pages/beneficiaires/ExportBeneficiairesModal.tsx"
+ ],
+ "Ou créer un nouveau — nom…": [
+  "components/common/SelectOrCreate.tsx"
+ ],
+ "ou créer une nouvelle personne": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Ou importer séparément": [
+  "pages/planification/PlanificationImportPage.tsx"
+ ],
+ "Oui": [
+  "pages/beneficiaires/ChampsVariables.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Oui / non": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Ouverte": [
+  "pages/parametres/RapportageCard.tsx"
+ ],
+ "Ouverture de la saisie du projet": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Ouvre ou crée un cadre stratégique, puis importe sa structuration depuis son propre écran.": [
+  "pages/planification/PlanificationImportPage.tsx"
+ ],
+ "Ouvrir": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Ouvrir cet écran": [
+  "pages/planification/PlanificationImportPage.tsx"
+ ],
+ "par": [
+  "components/partage/BoutonPartage.tsx",
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Par": [
+  "pages/DashboardConsolidePage.tsx",
+  "pages/approbations/ApprobationsPage.tsx",
+  "pages/carte/FenetresCarte.tsx",
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Par défaut : {0}": [
+  "layouts/AppLayout.tsx"
+ ],
+ "Par défaut, chaque module suit le niveau d'accès ci-dessus. Les onglets peuvent seulement être masqués.": [
+  "pages/utilisateurs/DroitsModules.tsx"
+ ],
+ "Par jalons pondérés": [
+  "utils/methodesCalcul.ts"
+ ],
+ "Par livrables": [
+  "utils/methodesCalcul.ts"
+ ],
+ "Par pays": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Par projet": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Par quantité": [
+  "utils/methodesCalcul.ts"
+ ],
+ "Par tâches pondérées": [
+  "utils/methodesCalcul.ts"
+ ],
+ "Par zone :": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Par zone administrative": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Paramètre bbox attendu : sud,ouest,nord,est.": [
+  "serveur"
+ ],
+ "Paramètre requis.": [
+  "serveur"
+ ],
+ "Paramètres": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Paramètres d'alerte": [
+  "layouts/AppLayout.tsx",
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Paramètres d'alerte enregistrés": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Paramètres invalides (sortie, papier, orientation ou fond).": [
+  "serveur"
+ ],
+ "Partage": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Partager": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Partager le suivi du projet": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Partager le tableau de bord": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Partenaire": [
+  "pages/DashboardConsolidePage.tsx",
+  "pages/projets/PartenairesProjetTab.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Partenaire de consortium": [
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Partenaire de mise en œuvre": [
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/projets/ProjetForm.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Partenaire enregistré": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Partenaires": [
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/projets/ProjetDetailPage.tsx",
+  "utils/modules.ts"
+ ],
+ "Partenaires de mise en œuvre": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Partenaires du consortium": [
+  "pages/projets/PartenairesProjetTab.tsx",
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Partie prenante": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Partie prenante enregistrée": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Parties prenantes": [
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/projets/PartenairesProjetTab.tsx",
+  "pages/projets/ProjetForm.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Pas de contact renseigné": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Passée": [
+  "pages/parametres/RapportageCard.tsx"
+ ],
+ "Pays": [
+  "pages/DashboardConsolidePage.tsx",
+  "pages/beneficiaires/BeneficiaireForm.tsx",
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Pays d'intervention": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Pays de la zone à ajouter": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Pays du modèle": [
+  "pages/beneficiaires/ImportBeneficiairesModal.tsx"
+ ],
+ "Paysage": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "PDF": [
+  "pages/beneficiaires/ExportBeneficiairesModal.tsx",
+  "pages/carte/FenetresCarte.tsx",
+  "pages/projets/CadreLogiqueTab.tsx",
+  "pages/projets/PlanificationPeriodeTab.tsx",
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/projets/RapportFinancierModal.tsx",
+  "pages/projets/RisquesTab.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx",
+  "pages/suivi/SuiviPeriodeTab.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "PDI": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "PDI :": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "PDI, jeune, femme cheffe de ménage, personne handicapée... — tape un nouveau statut s'il manque à la liste.": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Période": [
+  "components/dashboard/FiltresTableauDeBord.tsx",
+  "components/suivi/HistoriqueSuiviTable.tsx",
+  "components/suivi/TranchesPlanifieesTab.tsx",
+  "pages/approbations/ApprobationsPage.tsx",
+  "pages/parametres/RapportageCard.tsx",
+  "pages/projets/PlanificationPeriodeTab.tsx",
+  "pages/projets/ProjetsListPage.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx",
+  "pages/suivi/SuiviPage.tsx",
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Période créée": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Période de planification": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Période de rapportage ajoutée": [
+  "pages/parametres/RapportageCard.tsx"
+ ],
+ "Période des dépenses (facultatif)": [
+  "pages/projets/RapportFinancierModal.tsx"
+ ],
+ "Période et valeur sont requises.": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Période modifiée": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Période sans nom": [
+  "pages/projets/PlanificationPeriodeTab.tsx",
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Période supprimée": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Périodes de rapportage": [
+  "pages/parametres/RapportageCard.tsx"
+ ],
+ "Périodes de rapportage : voir Paramètres. « Fermée » : seules les périodes propres au projet l'ouvrent.": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Personnaliser": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Personnaliser le menu": [
+  "layouts/AppLayout.tsx"
+ ],
+ "Personnaliser le tableau de bord": [
+  "components/dashboard/PersonnalisationModal.tsx"
+ ],
+ "personnes": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "personnes, ha…": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Peut être rattaché à n'importe quelle ligne du cadre stratégique (orientation, axe, activité, sous-activité…), limité au cadre de ce projet.": [
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/SousActiviteForm.tsx"
+ ],
+ "Peut personnaliser": [
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Peut personnaliser le tableau de bord": [
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Physique": [
+  "pages/carte/CarteParZone.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Pièce justificative (optionnel)": [
+  "components/indicators/SaisieValeurIndicateurForm.tsx"
+ ],
+ "Pièces justificatives": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "placés selon leur localité": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Plafonner à 100 % dans les agrégations": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Plage de dates": [
+  "components/dashboard/FiltresTableauDeBord.tsx"
+ ],
+ "Plan de contingence": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Planification": [
+  "pages/langues/LanguesPage.tsx",
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Planification — {0}": [
+  "pages/indicateurs/IndicateurForm.tsx"
+ ],
+ "Planification complète": [
+  "layouts/AppLayout.tsx",
+  "pages/planification/PlanificationImportPage.tsx",
+  "utils/modules.ts"
+ ],
+ "Planification complète — consignes": [
+  "serveur"
+ ],
+ "Planification et suivi": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Planification globale": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Planification importée — projet « {0} » créé": [
+  "pages/planification/PlanificationImportPage.tsx"
+ ],
+ "Planification par période": [
+  "pages/projets/ProjetDetailPage.tsx",
+  "utils/modules.ts"
+ ],
+ "Planifié :": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Planifié : {0} → {1}": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Planifiée": [
+  "pages/suivi/SuiviProjetDashboard.tsx",
+  "utils/statusTones.ts"
+ ],
+ "Plateforme de": [
+  "layouts/AppLayout.tsx"
+ ],
+ "Plateforme de Suivi-Évaluation": [
+  "auth/LoginPage.tsx",
+  "pages/partage/PagePartagee.tsx"
+ ],
+ "Plein écran": [
+  "pages/carte/OutilsCarte.tsx"
+ ],
+ "Pluriel": [
+  "layouts/AppLayout.tsx"
+ ],
+ "Poids": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Poids (%)": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "Point de suivi enregistré": [
+  "components/suivi/SaisiePointSuiviForm.tsx"
+ ],
+ "Point de suivi modifié": [
+  "components/suivi/SaisiePointSuiviForm.tsx"
+ ],
+ "Point de suivi supprimé": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Points à vérifier dans les données de ce projet : « Erreur » = donnée certainement fausse (fin avant début, période future, % au-delà de 100…) ; « À vérifier » = possible mais inhabituel (dépassement de cible, dates hors du projet, saisies qui se chevauchent…).": [
+  "pages/projets/CoherenceTab.tsx"
+ ],
+ "Politique et institutionnel": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Portée invalide « {0}{1}": [
+  "serveur"
+ ],
+ "Portrait": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Position GPS :": [
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx",
+  "pages/carte/CartePage.tsx"
+ ],
+ "Position GPS invalide — ignorée.": [
+  "serveur"
+ ],
+ "Position indisponible (autorisation refusée ?).": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Position introuvable pour le moment (GPS désactivé ou signal faible).": [
+  "pages/carte/OutilsCarte.tsx"
+ ],
+ "Position refusée : autorisez la localisation pour ce site dans votre navigateur.": [
+  "pages/carte/OutilsCarte.tsx"
+ ],
+ "positionnés par GPS": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Pour faire traduire une langue entière, exportez-la, faites compléter la colonne de traduction dans Excel puis importez le fichier.": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Pour la collecte terrain": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Pour tous les éléments du projet qui ne fixent pas la leur.": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Pour tous les projets": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Pour une agrégation « pondérée par les poids » du niveau au-dessus.": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Pourquoi": [
+  "pages/beneficiaires/DoublonsPage.tsx"
+ ],
+ "Précise au plus un seul parmi projet/indicateur/activité.": [
+  "serveur"
+ ],
+ "Préciser le rôle": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Prénom": [
+  "components/common/IntervenantsMultiples.tsx",
+  "pages/beneficiaires/BeneficiaireForm.tsx",
+  "pages/projets/EquipeTab.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Présélectionnée automatiquement — change-la ou vide-la si tu ne veux pas rattacher la personne à une équipe précise.": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Prévu le": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "Prévu sur la période :": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Prévu, dépensé, taux et solde des grandes composantes.": [
+  "pages/projets/RapportFinancierModal.tsx"
+ ],
+ "Probabilité": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Problème": [
+  "pages/projets/CoherenceTab.tsx"
+ ],
+ "Prochaine revue": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Prochaine revue :": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Programmation {0}": [
+  "pages/projets/PlanificationTableau.tsx",
+  "pages/strategie/CadreTableau.tsx"
+ ],
+ "Programmation de l'année": [
+  "pages/projets/PlanificationTableau.tsx",
+  "pages/strategie/CadreTableau.tsx"
+ ],
+ "Progression": [
+  "components/suivi/TranchesPlanifieesTab.tsx"
+ ],
+ "Progression insuffisante": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Progression moyenne": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Projection inconnue (fichier .prj absent) : ajoutez le .prj dans l'archive.": [
+  "serveur"
+ ],
+ "projet": [
+  "pages/DashboardConsolidePage.tsx",
+  "pages/carte/CarteParZone.tsx"
+ ],
+ "Projet": [
+  "components/documents/DocumentsTab.tsx",
+  "pages/approbations/ApprobationsPage.tsx",
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx",
+  "pages/carte/CarteParZone.tsx",
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/parametres/ParametresAlertePage.tsx",
+  "pages/parametres/RapportageCard.tsx",
+  "pages/planification/PlanificationImportPage.tsx"
+ ],
+ "Projet ": [
+  "pages/projets/ImportProjetModal.tsx"
+ ],
+ "Projet : ": [
+  "pages/planification/PlanificationImportPage.tsx"
+ ],
+ "Projet « {0} » créé": [
+  "pages/projets/ImportProjetModal.tsx"
+ ],
+ "Projet clôturé": [
+  "components/common/BandeauProjetCloture.tsx"
+ ],
+ "Projet créé": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Projet de code « ": [
+  "serveur"
+ ],
+ "Projet modifié": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Projet rouvert": [
+  "components/common/BandeauProjetCloture.tsx"
+ ],
+ "Projet supprimé": [
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/projets/ProjetsListPage.tsx"
+ ],
+ "PROJET:{0}": [
+  "pages/indicateurs/IndicateurForm.tsx"
+ ],
+ "projets": [
+  "pages/DashboardConsolidePage.tsx",
+  "pages/carte/CarteParZone.tsx"
+ ],
+ "Projets": [
+  "layouts/AppLayout.tsx",
+  "pages/DashboardConsolidePage.tsx",
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
+  "pages/carte/CartePage.tsx",
+  "pages/indicateurs/IndicateurForm.tsx",
+  "pages/langues/LanguesPage.tsx",
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/parametres/RapportageCard.tsx",
+  "pages/projets/ProjetsListPage.tsx"
+ ],
+ "Projets & budgets": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Projets affectés": [
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Projets concernés": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Projets contribuant à ce cadre stratégique": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Projets dont cette structure est chargée (un projet peut relever de plusieurs services). Une partie d'un projet s'affecte depuis sa planification.": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Projets et membres": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Projets et planification": [
+  "utils/modules.ts"
+ ],
+ "projets financés": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Projets par bailleur": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Projets par partenaire de consortium": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Projets par partenaire de mise en œuvre": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Projets par pays et zone d'intervention": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Projets par statut": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Projets qui l'ont aidé(e)": [
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx"
+ ],
+ "Projets retenus": [
+  "components/dashboard/FiltresTableauDeBord.tsx"
+ ],
+ "Proposé automatiquement d'après les dates — modifiable.": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Province": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Provinces": [
+  "pages/carte/CartePage.tsx",
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Quand le contrôle est actif, la saisie n'est ouverte que pendant les périodes de rapportage ; le reste du temps, la plateforme est en lecture seule pour la partie choisie. Chaque projet peut aussi être toujours ouvert, ou fermé sauf pendant ses propres périodes (formulaire du projet). L'administrateur peut toujours corriger.": [
+  "pages/parametres/RapportageCard.tsx"
+ ],
+ "Quantité prévue": [
+  "pages/projets/SousActiviteForm.tsx"
+ ],
+ "Quantité prévue (cible)": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Quantité prévue sur la période{0}": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Quantité réalisée ÷ quantité prévue (saisies de suivi). Un dépassement de cible reste affiché (ex : 130 %).": [
+  "utils/methodesCalcul.ts"
+ ],
+ "Quantité réalisée pendant cette période": [
+  "components/suivi/SaisiePointSuiviForm.tsx"
+ ],
+ "Quitter le plein écran": [
+  "pages/carte/OutilsCarte.tsx"
+ ],
+ "Rallonge": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Rallonge de fonds — {0}": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Rallonge du": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Rallonge enregistrée : le coût total du projet est mis à jour.": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Rallonges": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Rallonges de fonds": [
+  "pages/projets/RapportFinancierModal.tsx"
+ ],
+ "Rappel": [
+  "components/notifications/EcheancesBanner.tsx"
+ ],
+ "Rappels à date calendaire programmés": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Rappels d'échéance": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Rapport de suivi": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Rapport financier": [
+  "pages/projets/RapportFinancierModal.tsx"
+ ],
+ "Rapport financier…": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Rapports, études, comptes rendus…": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Rattaché à": [
+  "components/documents/DocumentsTab.tsx",
+  "pages/indicateurs/IndicateurForm.tsx"
+ ],
+ "Rattaché à ({0})": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Rattachée à": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Rattachée à ({0})": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Rattachement dans le cadre stratégique": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Rattacher aussi à une équipe": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Rattachez la pièce à une valeur d'indicateur ou à une appréciation.": [
+  "serveur"
+ ],
+ "Réalise": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Réalisé": [
+  "pages/projets/AvancementModal.tsx",
+  "pages/projets/CadreLogiqueTab.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Réalisé : ": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Réalisé sur la période :": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Réalisée": [
+  "components/suivi/SaisieSuiviMethode.tsx",
+  "pages/projets/AvancementModal.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx",
+  "utils/statusTones.ts"
+ ],
+ "Réalisées": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Recherche de": [
+  "pages/beneficiaires/BeneficiaireParIdentifiant.tsx"
+ ],
+ "Rechercher dans la planification…": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Rechercher par nom, téléphone, pièce d'identité…": [
+  "pages/beneficiaires/BeneficiairesListPage.tsx"
+ ],
+ "Rechercher un bénéficiaire": [
+  "components/beneficiaires/BeneficiairesTab.tsx"
+ ],
+ "Rechercher un bénéficiaire par nom, téléphone, pièce d'identité…": [
+  "pages/projets/BeneficiairesProjetSection.tsx"
+ ],
+ "Rechercher un cadre stratégique…": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Rechercher un élément…": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Rechercher un indicateur ou un projet…": [
+  "pages/indicateurs/IndicateursListPage.tsx"
+ ],
+ "Rechercher un indicateur ou une activité…": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Rechercher un ou plusieurs pays…": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Rechercher un partenaire…": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Rechercher un projet (nom ou code)…": [
+  "pages/projets/ProjetsListPage.tsx",
+  "pages/suivi/SuiviPage.tsx"
+ ],
+ "Rechercher un projet par code ou nom…": [
+  "pages/beneficiaires/ExportBeneficiairesModal.tsx"
+ ],
+ "Rechercher un texte…": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Rechercher un utilisateur…": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Rechercher une activité ou un indicateur…": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Rechercher une activité…": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Rechercher une zone…": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Rechercher…": [
+  "pages/indicateurs/IndicateurForm.tsx"
+ ],
+ "Recommandations": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Recommandations :": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Réévaluation enregistrée": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Réévaluer": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Réévaluer {0} — {1}": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Réf.": [
+  "pages/projets/CadreLogiqueTab.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Région": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Régionale": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Régions": [
+  "pages/carte/CartePage.tsx",
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Réglage enregistré": [
+  "pages/parametres/ParametresAlertePage.tsx",
+  "pages/parametres/RapportageCard.tsx"
+ ],
+ "Réglage par défaut de l'organisation : chaque projet peut fixer le sien (fiche projet, onglet Stratégie), et chaque élément de la planification aussi (son formulaire).": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Regrouper par :": [
+  "pages/strategie/AxesBudgetsTab.tsx"
+ ],
+ "Réinitialiser": [
+  "components/dashboard/FiltresTableauDeBord.tsx"
+ ],
+ "Rejetée": [
+  "pages/approbations/ApprobationsPage.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Rejetée : {0}": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Rejeter": [
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Remise à l'origine": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Remplace les termes de la plateforme par ceux de ton organisation : ils changent partout (écrans, formulaires, rattachements, messages, exports). Indique le singulier, le pluriel et le genre (pour accorder « un/une », « le/la », « nouveau/nouvelle »…). Laisse vide pour garder le terme par défaut.": [
+  "layouts/AppLayout.tsx"
+ ],
+ "Renommer": [
+  "pages/projets/NiveauxActiviteTab.tsx"
+ ],
+ "Renommer ce niveau": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Renommer le niveau": [
+  "pages/projets/NiveauxActiviteTab.tsx"
+ ],
+ "Replier": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Réponses": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Réponses invalides.": [
+  "serveur"
+ ],
+ "Réponses proposées": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Responsable": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Responsable :": [
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Responsable du suivi": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Responsables": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Résultat": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Résultat de l'import": [
+  "pages/beneficiaires/ImportBeneficiairesModal.tsx",
+  "pages/indicateurs/ImportIndicateursModal.tsx",
+  "pages/planification/PlanificationImportPage.tsx",
+  "pages/projets/ImportProjetModal.tsx",
+  "pages/strategie/ImportStructurationModal.tsx"
+ ],
+ "Retiré de l'équipe du projet": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Retirer": [
+  "components/beneficiaires/BeneficiairesTab.tsx"
+ ],
+ "Retirer \"{0}\" de cette liste ? Cette action est irréversible.": [
+  "components/beneficiaires/BeneficiairesTab.tsx"
+ ],
+ "Retirer « {0} » ?": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Retirer ce bailleur": [
+  "pages/projets/BailleursMontants.tsx"
+ ],
+ "Retirer de ce projet (reste dans les autres)": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Retirer l'attribut": [
+  "components/common/AttributsLibres.tsx"
+ ],
+ "Retirer la pièce": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Retirer le rôle": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Retirer le rôle de « {0} » ? Il reste associé au projet.": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Revenir à la grille héritée": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Revenir à la traduction d'origine": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Revenir au nom et à l'icône par défaut": [
+  "layouts/AppLayout.tsx"
+ ],
+ "Revérifier les signalements": [
+  "pages/beneficiaires/DoublonsPage.tsx"
+ ],
+ "Rien (bénéficiaires seulement)": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Rien (carte des bénéficiaires)": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Rien à afficher ici.": [
+  "serveur"
+ ],
+ "Rien à enregistrer": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Rien en attente.": [
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Risque": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Risque enregistré": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "risque(s) ouvert(s)": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Risques": [
+  "pages/projets/ProjetDetailPage.tsx",
+  "utils/modules.ts"
+ ],
+ "Rôle": [
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Rôle « {0} » créé": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Rôle « {0} » inconnu.": [
+  "serveur"
+ ],
+ "Rôle créé": [
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Rôle de {0}": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Rôle de chaque partenaire de consortium ou de mise en œuvre et éléments de la planification qu'il réalise.": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Rôle du partenaire enregistré": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Rôle et responsabilités": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Rôle modifié": [
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Rôle supprimé": [
+  "pages/utilisateurs/RolesTab.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Rôle système": [
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Rôle système : il peut être renommé, mais pas supprimé.": [
+  "serveur"
+ ],
+ "Rôle système : non supprimable": [
+  "pages/utilisateurs/RolesTab.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Rôles": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Route": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Routes": [
+  "pages/carte/CartePage.tsx",
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Rouvrir le projet": [
+  "components/common/BandeauProjetCloture.tsx"
+ ],
+ "Saisie": [
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Saisie ({0} → {1}) en dehors des dates du projet.": [
+  "serveur"
+ ],
+ "Saisie {0} déjà existante — conservée (mode ajouter)": [
+  "serveur"
+ ],
+ "Saisie approuvée": [
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Saisie de la période : budget, statut, commentaire": [
+  "components/suivi/SaisieSuiviMethode.tsx"
+ ],
+ "Saisie du suivi par Excel": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Saisie enregistrée — à vérifier": [
+  "api/client.ts"
+ ],
+ "Saisie fermée": [
+  "components/common/BandeauSaisieFermee.tsx"
+ ],
+ "Saisie manuelle": [
+  "utils/methodesCalcul.ts"
+ ],
+ "Saisie par": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Saisie par Excel": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Saisie pour une période future ({0} → {1}).": [
+  "serveur"
+ ],
+ "Saisie rejetée": [
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Saisie supprimée": [
+  "pages/suivi/SuiviPeriodeTab.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Saisies de réalisations": [
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Saisies déjà existantes": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Saisies et changements en attente sur les projets qui exigent une approbation : ils ne comptent (ou ne s'appliquent) qu'une fois approuvés. Un rejet demande un motif, montré à l'auteur.": [
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Saisies qui se chevauchent ({0} → {1} et {2} → {3}) : risque de double compte.": [
+  "serveur"
+ ],
+ "Saisir": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "saisir un suivi": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Saisir un suivi": [
+  "pages/suivi/SuiviPeriodeTab.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Saisir une valeur": [
+  "pages/strategie/SuiviStrategiqueTab.tsx",
+  "pages/suivi/SuiviPeriodeTab.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Saisis les objectifs de chaque élément sur cette période directement dans les champs (quantité, et budget pour une activité) — l'enregistrement est automatique. Le crayon permet d'ajouter des dates prévues et un commentaire.": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Sans date, le lien reste valable jusqu'à ce que vous le désactiviez.": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Sans dates, toutes les dépenses saisies sont prises en compte.": [
+  "pages/projets/RapportFinancierModal.tsx"
+ ],
+ "sans localisation": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Sans nom": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Sans projet": [
+  "pages/beneficiaires/BeneficiairesListPage.tsx"
+ ],
+ "Satellite": [
+  "pages/carte/CartePage.tsx",
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Saut autorisé": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Scanner pour ouvrir cette fiche": [
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx"
+ ],
+ "Score": [
+  "pages/beneficiaires/DoublonsPage.tsx"
+ ],
+ "Se connecter": [
+  "auth/LoginPage.tsx"
+ ],
+ "Se règlent dans le formulaire du projet (crayon), onglet « Organisation ».": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Sections": [
+  "pages/projets/RapportFinancierModal.tsx"
+ ],
+ "Sécuritaire": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Sélectionner {0} {1}": [
+  "pages/projets/BeneficiairesProjetSection.tsx"
+ ],
+ "Selon le réglage général": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Semestrielle": [
+  "pages/indicateurs/IndicateurForm.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Service": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Services": [
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/projets/PlanificationTableau.tsx",
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Services chargés": [
+  "pages/projets/ActiviteForm.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Services chargés du projet": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Services de l'organisation chargés de cette partie du projet (paramétrés dans Organisation).": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Services de l'organisation qui travaillent sur le projet": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Seuil « {0} » hors de 0-100 — ligne ignorée.": [
+  "serveur"
+ ],
+ "Seuil « {0} » invalide — ligne ignorée.": [
+  "serveur"
+ ],
+ "Seuil (%) et Libellé sont obligatoires — ligne ignorée.": [
+  "serveur"
+ ],
+ "Seuil bas (%)": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Seuil global par défaut : une activité, une sous-activité ou un projet non terminé déclenche une notification (et un email) dès que son échéance tombe dans cette fenêtre — et reste alerté si l'échéance est déjà dépassée.": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Seuils dupliqués pour « {0} » — grille ignorée.": [
+  "serveur"
+ ],
+ "Seul l'Administrateur peut renommer les rubriques du menu.": [
+  "serveur"
+ ],
+ "Seul un administrateur peut le rouvrir.": [
+  "components/common/BandeauProjetCloture.tsx"
+ ],
+ "Seul un administrateur peut régler l'ouverture de la saisie et les approbations du projet.": [
+  "serveur"
+ ],
+ "Seul un administrateur peut rouvrir un projet clôturé.": [
+  "serveur"
+ ],
+ "Seulement les éléments prévus à ces dates dans la planification globale": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Sexe": [
+  "pages/beneficiaires/BeneficiaireForm.tsx",
+  "pages/beneficiaires/BeneficiairesListPage.tsx",
+  "pages/projets/BeneficiairesProjetSection.tsx"
+ ],
+ "Sexe invalide (attendu F ou M) — ligne ignorée.": [
+  "serveur"
+ ],
+ "Shapefile dans une archive .zip (avec ses fichiers .shp, .shx, .dbf et .prj), GeoPackage (.gpkg), GeoJSON ou KML. La projection est lue dans le fichier et convertie automatiquement.": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Si survenu :": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Sigle": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Signalement mis à jour": [
+  "pages/beneficiaires/DoublonsPage.tsx"
+ ],
+ "Singulier": [
+  "layouts/AppLayout.tsx"
+ ],
+ "Sinon, l'utilisateur ne voit que les projets (et zones) auxquels il est affecté. Ce qu'il peut faire ": [
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Sinon, seulement les projets choisis : pour les autres, la variable n'est pas demandée et vaut « NA ».": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Social et communautaire": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Somme des cibles de toutes les tranches :": [
+  "components/suivi/TranchesPlanifieesTab.tsx"
+ ],
+ "Somme des poids des livrables validés.": [
+  "utils/methodesCalcul.ts"
+ ],
+ "Sources de financement": [
+  "pages/projets/RapportFinancierModal.tsx"
+ ],
+ "Sources de vérification": [
+  "pages/projets/CadreLogiqueTab.tsx"
+ ],
+ "Sous-activité": [
+  "pages/projets/PlanificationPeriodeTab.tsx",
+  "pages/projets/PlanificationTableau.tsx",
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Sous-activité — {0}": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Sous-activité créée": [
+  "pages/projets/SousActiviteForm.tsx"
+ ],
+ "Sous-activité modifiée": [
+  "pages/projets/SousActiviteForm.tsx"
+ ],
+ "Sous-activité supprimée": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "sous-activité(s)": [
+  "pages/planification/PlanificationImportPage.tsx"
+ ],
+ "sous-activité(s).": [
+  "pages/projets/ImportProjetModal.tsx"
+ ],
+ "Sous-service": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Sous-titre": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Statut": [
+  "components/suivi/TranchesPlanifieesTab.tsx",
+  "pages/DashboardConsolidePage.tsx",
+  "pages/indicateurs/IndicateursListPage.tsx",
+  "pages/projets/ProjetForm.tsx",
+  "pages/projets/ProjetsListPage.tsx",
+  "pages/projets/RisquesTab.tsx",
+  "pages/suivi/SuiviPage.tsx"
+ ],
+ "Statut à cette date": [
+  "components/suivi/SaisiePointSuiviForm.tsx"
+ ],
+ "Statut actuel :": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "Statut des projets": [
+  "components/dashboard/FiltresTableauDeBord.tsx"
+ ],
+ "Statut particulier": [
+  "pages/beneficiaires/BeneficiairesListPage.tsx"
+ ],
+ "Statut particulier inconnu ignoré : « {0} ».": [
+  "serveur"
+ ],
+ "Statuts :": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Statuts particuliers": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Stratégie & capitalisation": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Structure": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Structure de l'organisation": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Structure de l'utilisateur": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Structure enregistrée": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Suggestions issues du niveau « {0} » du cadre stratégique — vous pouvez aussi taper un nouveau libellé.": [
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/SousActiviteForm.tsx"
+ ],
+ "Suivi": [
+  "layouts/AppLayout.tsx",
+  "pages/langues/LanguesPage.tsx",
+  "pages/suivi/SuiviPage.tsx",
+  "utils/modules.ts"
+ ],
+ "Suivi — ": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Suivi détaillé par période": [
+  "pages/indicateurs/IndicateurDetailPage.tsx"
+ ],
+ "Suivi global": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Suivi importé": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Suivi par période": [
+  "pages/suivi/SuiviProjetDashboard.tsx",
+  "utils/modules.ts"
+ ],
+ "Suivi stratégique": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Suivi-Évaluation": [
+  "layouts/AppLayout.tsx"
+ ],
+ "Suivis, valeurs d'indicateurs et taux manuels ne comptent qu'une fois approuvés (écran Approbations).": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Suppression de l'élément et de tout ce qui est en dessous.": [
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Suppression impossible : ce partenaire est utilisé par un projet.": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Suppression impossible : la structure a des services rattachés.": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Supprimer": [
+  "components/documents/DocumentsTab.tsx",
+  "components/suivi/TranchesPlanifieesTab.tsx",
+  "pages/beneficiaires/BeneficiairesListPage.tsx",
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/projets/AvancementModal.tsx",
+  "pages/projets/NiveauxActiviteTab.tsx",
+  "pages/projets/PlanificationPeriodeTab.tsx",
+  "pages/projets/PlanificationTableau.tsx",
+  "pages/projets/RisquesTab.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/CadresStrategiquesListPage.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx",
+  "pages/utilisateurs/RolesTab.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Supprimer \"{0} {1}\" ? Ses participations aux projets et signalements de doublon associés seront aussi supprimés. Cette action est irréversible.": [
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx",
+  "pages/beneficiaires/BeneficiairesListPage.tsx"
+ ],
+ "Supprimer « {0} » ?": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Supprimer « {0} » ? Cette action est irréversible.": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Supprimer « {0} » ?{1}": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Supprimer « {0} » ({1}) ainsi que tout ce qui se trouve en dessous (niveaux inférieurs, sous-activités, indicateurs liés) ? Cette action est irréversible.": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Supprimer ce « {0} »": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Supprimer ce dossier": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Supprimer ce lien ? Il ne fonctionnera plus.": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Supprimer ce point de suivi ? Cette action est irréversible.": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Supprimer cette appréciation et ses pièces ?": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Supprimer cette période": [
+  "pages/parametres/RapportageCard.tsx"
+ ],
+ "Supprimer cette saisie": [
+  "components/suivi/HistoriqueSuiviTable.tsx"
+ ],
+ "Supprimer cette saisie ? Le suivi global du projet sera recalculé en conséquence.": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Supprimer cette saisie d'indicateur ? Cette action est irréversible.": [
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Supprimer cette valeur ?": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Supprimer cette valeur d'indicateur ? Le suivi global de l'indicateur sera recalculé en conséquence.": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Supprimer définitivement": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Supprimer définitivement \"{0} {1}\" de l'équipe (tous projets confondus) ? Cette action est irréversible.": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Supprimer définitivement l'équipe \"{0}\" ? Les activités qui l'utilisent perdront ce rattachement. Cette action est irréversible.": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Supprimer l'équipe": [
+  "pages/projets/EquipeTab.tsx"
+ ],
+ "Supprimer l'indicateur": [
+  "pages/indicateurs/IndicateurDetailPage.tsx",
+  "pages/indicateurs/IndicateursListPage.tsx"
+ ],
+ "Supprimer l'indicateur \"{0}\" ainsi que toutes ses valeurs saisies ? Cette action est irréversible.": [
+  "pages/indicateurs/IndicateurDetailPage.tsx",
+  "pages/indicateurs/IndicateursListPage.tsx"
+ ],
+ "Supprimer l'utilisateur \"{0}\" ? Cette action est irréversible.": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Supprimer la couche": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Supprimer la couche « {0} » ?": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Supprimer la période « {0} » ?": [
+  "pages/parametres/RapportageCard.tsx"
+ ],
+ "Supprimer la période « {0} » et toutes ses valeurs ? La planification globale et les saisies de suivi ne changent pas.": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Supprimer la rallonge": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Supprimer la rallonge de {0} du {1} ?": [
+  "pages/projets/FinancementsTab.tsx"
+ ],
+ "Supprimer la réévaluation": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Supprimer la réévaluation du {0} ?": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Supprimer la sous-activité": [
+  "pages/projets/PlanificationTableau.tsx",
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Supprimer la sous-activité \"{0}\" ? Cette action est irréversible.": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Supprimer la tranche \"{0}\" ? Les saisies de suivi déjà faites ne sont pas supprimées, seule cette répartition par période l'est.": [
+  "components/suivi/TranchesPlanifieesTab.tsx"
+ ],
+ "Supprimer la valeur": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Supprimer le bénéficiaire": [
+  "pages/beneficiaires/BeneficiaireDetailPage.tsx"
+ ],
+ "Supprimer le cadre stratégique « {0} » ainsi que tous ses niveaux et éléments ? Cette action est irréversible.": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Supprimer le document \"{0}\" ainsi que toutes ses versions ? Cette action est irréversible.": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Supprimer le dossier \"{0}\" ainsi que tous les documents qu'il contient ? Cette action est irréversible.": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Supprimer le lien": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Supprimer le niveau « {0} » ? Cette action est irréversible.": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Supprimer le niveau « {0} » ? Les éléments déjà créés à ce niveau ne sont pas affectés — ils s'afficheront simplement avec le nom par défaut « Activité ».": [
+  "pages/projets/NiveauxActiviteTab.tsx"
+ ],
+ "Supprimer le projet": [
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/projets/ProjetsListPage.tsx"
+ ],
+ "Supprimer le projet \"{0}\" ainsi que toute sa planification et ses indicateurs ? Cette action est irréversible.": [
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/projets/ProjetsListPage.tsx"
+ ],
+ "Supprimer le risque {0} et son historique ?": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Supprimer le rôle": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Supprimer le rôle \"{0}\" ?": [
+  "pages/utilisateurs/RolesTab.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Sur": [
+  "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Survenu": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Tableau": [
+  "components/charts/GraphiqueAdaptable.tsx",
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Tableau de bord": [
+  "layouts/AppLayout.tsx",
+  "pages/DashboardConsolidePage.tsx",
+  "pages/langues/LanguesPage.tsx",
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Tâche (sous-activité)": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "Tape le nom du rôle à créer": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Taper une réponse puis Entrée": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Taux": [
+  "pages/projets/PlanificationTableau.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/CadreTableau.tsx"
+ ],
+ "Taux (%)": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "Taux d'exécution": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Taux de réalisation": [
+  "components/charts/TauxParIndicateurChart.tsx",
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Taux de réalisation de {0} % : la cible est dépassée, à vérifier.": [
+  "serveur"
+ ],
+ "Taux de réalisation par indicateur": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Taux financier": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Taux financier moyen": [
+  "pages/strategie/AxesBudgetsTab.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Taux manuel du {0} : {1} → {2} %": [
+  "serveur"
+ ],
+ "Taux manuel du {0} déjà saisi — conservé (mode ajouter)": [
+  "serveur"
+ ],
+ "Taux physique": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Taux physique moyen": [
+  "pages/strategie/AxesBudgetsTab.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Taux physique total : moyenne des taux des activités (les quantités ont des unités différentes et ne s'additionnent pas).": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Taux saisi directement (0 à 100 %), jamais recalculé.": [
+  "utils/methodesCalcul.ts"
+ ],
+ "Télécharger": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Télécharger cette version": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Télécharger la carte": [
+  "pages/carte/CartePage.tsx",
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Télécharger le canevas de suivi": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Télécharger le modèle Excel": [
+  "pages/beneficiaires/ImportBeneficiairesModal.tsx",
+  "pages/indicateurs/ImportIndicateursModal.tsx",
+  "pages/projets/ImportProjetModal.tsx",
+  "pages/strategie/ImportStructurationModal.tsx"
+ ],
+ "Télécharger le modèle Excel complet": [
+  "pages/planification/PlanificationImportPage.tsx"
+ ],
+ "Télécharger le rapport d'erreurs": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Téléphone": [
+  "pages/beneficiaires/BeneficiaireForm.tsx",
+  "pages/beneficiaires/BeneficiairesListPage.tsx",
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/projets/BeneficiairesProjetSection.tsx"
+ ],
+ "Terme par défaut": [
+  "layouts/AppLayout.tsx"
+ ],
+ "Terminée": [
+  "pages/suivi/SuiviProjetDashboard.tsx",
+  "utils/statusTones.ts"
+ ],
+ "Terminer": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Terminer l'édition": [
+  "components/common/BoutonModeEdition.tsx"
+ ],
+ "Texte": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Texte français": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Titre de la carte": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Ton rôle ne permet pas de personnaliser le tableau de bord.": [
+  "serveur"
+ ],
+ "Total": [
+  "pages/DashboardConsolidePage.tsx",
+  "pages/projets/FinancementsTab.tsx",
+  "pages/strategie/AxesBudgetsTab.tsx"
+ ],
+ "Total ({0} activité)": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Total ({0} activités)": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Total ({0} indicateur) — taux moyen": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Total ({0} indicateurs) — taux moyen": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Total bailleurs :": [
+  "pages/projets/BailleursMontants.tsx"
+ ],
+ "Total cumulé après cette saisie :": [
+  "components/indicators/SaisieValeurIndicateurForm.tsx",
+  "components/suivi/SaisiePointSuiviForm.tsx"
+ ],
+ "Total des poids :": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "Toujours actif pour l'Administrateur": [
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Toujours complet pour un Administrateur": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Toujours ouverte": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Tous": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Tous ({0})": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Tous les bénéficiaires (tous les projets, et ceux sans projet)": [
+  "pages/beneficiaires/ExportBeneficiairesModal.tsx"
+ ],
+ "Tous les blocs sont masqués — clique sur « Personnaliser » pour en afficher.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Tous les dossiers": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Tous les écrans": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Tous les projets": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
+  "pages/carte/CartePage.tsx",
+  "pages/parametres/RapportageCard.tsx",
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Tous les statuts": [
+  "components/dashboard/FiltresTableauDeBord.tsx"
+ ],
+ "Tout afficher": [
+  "components/dashboard/PersonnalisationModal.tsx"
+ ],
+ "Tout cocher sur cette page": [
+  "pages/projets/BeneficiairesProjetSection.tsx"
+ ],
+ "Tout déplier": [
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Tout le pays": [
+  "pages/carte/FenetresCarte.tsx",
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Tout le pays (ensemble du territoire des pays d'intervention)": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Tout le projet": [
+  "pages/projets/PartenairesProjetTab.tsx",
+  "pages/projets/RisquesTab.tsx",
+  "utils/rapportage.ts"
+ ],
+ "Tout marquer comme lu": [
+  "components/notifications/NotificationBell.tsx"
+ ],
+ "Tout masquer": [
+  "components/dashboard/PersonnalisationModal.tsx"
+ ],
+ "Tout remettre par défaut": [
+  "pages/utilisateurs/DroitsModules.tsx"
+ ],
+ "Tout replier": [
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Toute personne qui a le lien voit la page en lecture seule, sans compte ni mot de passe, et sans pouvoir rien modifier.": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Toutes": [
+  "components/dashboard/FiltresTableauDeBord.tsx"
+ ],
+ "Toutes : {0}": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Toutes les zones (région, province, commune…)": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Traduction": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Traduction enregistrée": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Traductions de l'interface": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Tranche ajoutée": [
+  "components/suivi/TranchesPlanifieesTab.tsx"
+ ],
+ "Tranche d'âge": [
+  "pages/beneficiaires/BeneficiairesListPage.tsx"
+ ],
+ "Tranche supprimée": [
+  "components/suivi/TranchesPlanifieesTab.tsx"
+ ],
+ "Trimestres": [
+  "pages/projets/PlanificationTableau.tsx",
+  "pages/strategie/CadreTableau.tsx"
+ ],
+ "Trimestrielle": [
+  "pages/indicateurs/IndicateurForm.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Type": [
+  "components/documents/DocumentsTab.tsx",
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Type d'activité inconnu ignoré : « {0} ».": [
+  "serveur"
+ ],
+ "Type de graphique": [
+  "components/charts/GraphiqueAdaptable.tsx"
+ ],
+ "Type de graphique : {0}": [
+  "components/charts/GraphiqueAdaptable.tsx"
+ ],
+ "Type de graphique inconnu.": [
+  "serveur"
+ ],
+ "Type de mise en œuvre": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Type de réponse": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Type de saisie inconnu.": [
+  "serveur"
+ ],
+ "Types d'activité menée": [
+  "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Types de graphiques par défaut": [
+  "components/dashboard/PersonnalisationModal.tsx"
+ ],
+ "Un Administrateur a toujours accès à tous les modules.": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Un Administrateur a toujours accès à tout. Pour les autres, choisis le rôle (détermine les projets visibles) et le niveau d'accès (voir seulement, ou créer et modifier dans son périmètre).": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Un dépassement de cible (ex : 130 %) reste affiché, mais compte pour 100 % dans les moyennes.": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Un élément de niveau « {0} » (niveau racine) ne peut pas avoir de parent.": [
+  "serveur"
+ ],
+ "Un élément de niveau « {0} » doit avoir un parent de niveau « {1} ».": [
+  "serveur"
+ ],
+ "Un élément doit appartenir au même projet que son élément parent.": [
+  "serveur"
+ ],
+ "Un élément du niveau suivant pourra alors être rattaché directement à un ancêtre plus haut, sans passer par ce niveau.": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Un élément ne peut pas contribuer à lui-même ni à ses descendants.": [
+  "serveur"
+ ],
+ "Un fichier est requis pour créer un document.": [
+  "serveur"
+ ],
+ "Un fichier est requis.": [
+  "serveur"
+ ],
+ "Un fichier Excel (.xlsx) est requis.": [
+  "serveur"
+ ],
+ "Un indicateur se rattache soit au projet, soit à un élément de sa planification (ou à aucun des deux, s'il est purement stratégique).": [
+  "serveur"
+ ],
+ "Un point de suivi doit être rattaché soit à une activité, soit à une sous-activité (jamais les deux, jamais aucune).": [
+  "serveur"
+ ],
+ "Un point de suivi existe déjà pour cette période sur cette cible.": [
+  "serveur"
+ ],
+ "Un projet (code) est requis pour ce rattachement — ligne ignorée.": [
+  "serveur"
+ ],
+ "Un projet avec le code « ": [
+  "serveur"
+ ],
+ "Un rôle avec le code « {0} » existe déjà.": [
+  "serveur"
+ ],
+ "Un shapefile se compose de plusieurs fichiers : envoyez-les ensemble dans une archive .zip.": [
+  "serveur"
+ ],
+ "Une activité ne peut pas être sa propre ancêtre (boucle détectée).": [
+  "serveur"
+ ],
+ "Une ligne = un indicateur. Le rattachement (Projet, ou nom d'un niveau de la planification : Objectif, Résultat, Pilier, Activité…) se fait par le code exact du projet et le libellé exact de l'élément — laisse « Aucun » pour un indicateur stratégique sans projet.": [
+  "pages/indicateurs/ImportIndicateursModal.tsx"
+ ],
+ "Une même organisation peut être de mise en œuvre sur un projet et du consortium sur un autre : son rôle se précise dans l'onglet « Partenaires » de chaque projet.": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Une seule colonne de niveau doit être remplie par ligne — ligne ignorée.": [
+  "serveur"
+ ],
+ "Une seule colonne doit être remplie par ligne — ligne ignorée.": [
+  "serveur"
+ ],
+ "Une structure ne peut pas dépendre d'elle-même ni d'une structure qui en dépend.": [
+  "serveur"
+ ],
+ "Une structure ne peut pas être rattachée à elle-même ni à une structure qui en dépend.": [
+  "serveur"
+ ],
+ "Une tranche doit être rattachée à une seule cible : une activité, une sous-activité ou un indicateur.": [
+  "serveur"
+ ],
+ "Une zone de niveau « {0} » (niveau racine) ne peut pas avoir de zone parente.": [
+  "serveur"
+ ],
+ "Une zone de niveau « {0} » doit avoir une zone parente de niveau « {1} ».": [
+  "serveur"
+ ],
+ "Une zone du niveau suivant pourra alors être rattachée directement à un ancêtre plus haut, sans passer par ce niveau — utile car la précision des données de terrain varie.": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Unité": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
+  "pages/indicateurs/IndicateurForm.tsx",
+  "pages/indicateurs/IndicateursListPage.tsx",
+  "pages/projets/ActiviteForm.tsx",
+  "pages/projets/SousActiviteForm.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Unité :": [
+  "pages/indicateurs/IndicateurDetailPage.tsx"
+ ],
+ "Utilisateur créé": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Utilisateur modifié": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Utilisateur supprimé": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Utilisateurs": [
+  "layouts/AppLayout.tsx",
+  "pages/langues/LanguesPage.tsx",
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/utilisateurs/RolesTab.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Utilisateurs affectés (accès à la plateforme)": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "utilise actuellement la grille héritée — modifie les paliers ci-dessous et enregistre pour lui créer une grille propre.": [
+  "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Utilise le modèle ci-dessous : une colonne = un niveau. Écris chaque élément dans la colonne de son niveau, une seule colonne par ligne — son rattachement au niveau supérieur se déduit automatiquement du dernier élément écrit juste à gauche, au-dessus. Les niveaux manquants sont créés automatiquement. Réimporter le même fichier met à jour les éléments déjà importés au lieu de les dupliquer.": [
+  "pages/strategie/ImportStructurationModal.tsx"
+ ],
+ "Utilise le modèle ci-dessous pour être sûr que les colonnes sont dans le bon format, puis remplis-le et importe-le. Les régions/provinces doivent correspondre à des zones existantes ; les communes/villages sont créés automatiquement s'ils n'existent pas encore.": [
+  "pages/beneficiaires/ImportBeneficiairesModal.tsx"
+ ],
+ "Utilisée si cet élément a des éléments en dessous.": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Utilisée sur la page de connexion et pour les utilisateurs qui n'ont pas choisi de langue.": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Valeur": [
+  "components/common/AttributsLibres.tsx",
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Valeur ({0})": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Valeur {0} déjà saisie — conservée (mode ajouter)": [
+  "serveur"
+ ],
+ "Valeur cible": [
+  "pages/indicateurs/IndicateurForm.tsx"
+ ],
+ "valeur d'indicateur": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Valeur de {0} alors que l'indicateur est en %.": [
+  "serveur"
+ ],
+ "Valeur de 1 à 5.": [
+  "serveur"
+ ],
+ "Valeur de base": [
+  "pages/indicateurs/IndicateurForm.tsx",
+  "pages/indicateurs/IndicateursListPage.tsx",
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Valeur de référence": [
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Valeur enregistrée": [
+  "components/indicators/SaisieValeurIndicateurForm.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Valeur modifiée": [
+  "components/indicators/SaisieValeurIndicateurForm.tsx"
+ ],
+ "Valeur négative.": [
+  "serveur"
+ ],
+ "Valeur pour une période future ({0}).": [
+  "serveur"
+ ],
+ "Valeur réalisée pendant cette période": [
+  "components/indicators/SaisieValeurIndicateurForm.tsx"
+ ],
+ "Valeur supérieure à 100 alors que l'indicateur est en %.": [
+  "serveur"
+ ],
+ "Valeur supprimée": [
+  "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Valeurs {0} enregistrées": [
+  "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Valeurs dont les périodes se chevauchent : elles s'additionnent.": [
+  "serveur"
+ ],
+ "Validation déjà enregistrée — conservée (mode ajouter)": [
+  "serveur"
+ ],
+ "Validation retirée": [
+  "serveur"
+ ],
+ "Validé": [
+  "pages/projets/AvancementModal.tsx"
+ ],
+ "Valider": [
+  "pages/langues/LanguesPage.tsx"
+ ],
+ "Valider l'import ({0} ligne)": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Valider l'import ({0} lignes)": [
+  "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Variable": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Variable enregistrée": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Variables à collecter": [
+  "pages/beneficiaires/BeneficiairesListPage.tsx"
+ ],
+ "Variables à collecter sur les bénéficiaires": [
+  "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Version": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Version {0}": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "version(s)": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "Vide : celle du niveau au-dessus, sinon du projet, sinon de l'organisation.": [
+  "pages/projets/ActiviteForm.tsx"
+ ],
+ "Villes et villages": [
+  "pages/carte/CartePage.tsx",
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Visibilité": [
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Visible": [
+  "pages/utilisateurs/DroitsModules.tsx"
+ ],
+ "Vocabulaire": [
+  "layouts/AppLayout.tsx"
+ ],
+ "Vocabulaire mis à jour": [
+  "layouts/AppLayout.tsx"
+ ],
+ "Voir seulement": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Voit tous les projets": [
+  "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Vos saisies et demandes de changement en attente d'approbation, et celles qui ont été rejetées (avec le motif). Une saisie rejetée peut être corrigée depuis la page Suivi : elle repart alors en approbation.": [
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Votre compte permet de consulter ce module, pas d'y créer ou modifier.": [
+  "serveur"
+ ],
+ "Votre navigateur ne permet pas la géolocalisation.": [
+  "pages/carte/OutilsCarte.tsx"
+ ],
+ "Vous êtes ici (±": [
+  "pages/carte/OutilsCarte.tsx"
+ ],
+ "Vous n'avez pas associé de cadre stratégique à ce projet. Voulez-vous continuer sans cadre stratégique, ou l'associer d'abord ?": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Vous n'avez pas le droit d'approuver.": [
+  "serveur"
+ ],
+ "Word": [
+  "pages/projets/CadreLogiqueTab.tsx",
+  "pages/projets/PlanificationPeriodeTab.tsx",
+  "pages/projets/ProjetDetailPage.tsx",
+  "pages/projets/RapportFinancierModal.tsx",
+  "pages/projets/RisquesTab.tsx",
+  "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Word (.docx)": [
+  "pages/suivi/SuiviPeriodeTab.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "XLSForm (KoboToolbox/ODK)": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Zone": [
+  "pages/beneficiaires/BeneficiairesListPage.tsx",
+  "pages/projets/BeneficiairesProjetSection.tsx"
+ ],
+ "Zone ajoutée": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Zone modifiée": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Zone supprimée": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Zones administratives": [
+  "layouts/AppLayout.tsx",
+  "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/langues/LanguesPage.tsx",
+  "utils/modules.ts"
+ ],
+ "Zones d'intervention": [
+  "pages/projets/ProjetForm.tsx"
+ ],
+ "Zoomer pour voir les villes et villages.": [
+  "pages/carte/CartePage.tsx"
+ ],
+ "Σ (poids × achèvement) des jalons, les poids totalisant 100 %.": [
+  "utils/methodesCalcul.ts"
+ ],
+ "Σ (poids × avancement) des sous-activités, les poids totalisant 100 %.": [
+  "utils/methodesCalcul.ts"
+ ]
+}

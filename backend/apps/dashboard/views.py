@@ -318,6 +318,12 @@ def configuration_menu(request):
         libelles = _dictionnaire_par_route(request.data.get("libelles", configuration.libelles), "libelles")
         icones = _dictionnaire_par_route(request.data.get("icones", configuration.icones), "icones")
         vocabulaire = _vocabulaire_valide(request.data.get("vocabulaire", configuration.vocabulaire))
+        from apps.core.models import CODES_LANGUES
+
+        langue_defaut = request.data.get("langue_defaut", configuration.langue_defaut)
+        if langue_defaut not in CODES_LANGUES:
+            raise ValidationError({"langue_defaut": "Langue inconnue."})
+        configuration.langue_defaut = langue_defaut
         if any(len(v) > LONGUEUR_MAX_LIBELLE_MENU for v in libelles.values()):
             raise ValidationError({"libelles": f"{LONGUEUR_MAX_LIBELLE_MENU} caractères maximum par libellé."})
         if not all(NOM_ICONE.fullmatch(v) for v in icones.values()):
@@ -333,6 +339,7 @@ def configuration_menu(request):
             "libelles": configuration.libelles,
             "icones": configuration.icones,
             "vocabulaire": configuration.vocabulaire,
+            "langue_defaut": configuration.langue_defaut,
             "peut_modifier": request.user.role == ROLE_ADMIN,
         }
     )

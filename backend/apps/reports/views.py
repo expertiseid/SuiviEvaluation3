@@ -4,6 +4,8 @@ from django.http import HttpResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
+from apps.core.langues import dans_la_langue_demandee
+from apps.core.langues import traduire_html
 from apps.core.permissions import HasGlobalVisibilityOrAssigned
 from apps.core.vocabulaire import v
 from apps.projects.models import Projet
@@ -25,6 +27,7 @@ def _date(texte):
 
 @api_view(["GET"])
 @permission_classes([HasGlobalVisibilityOrAssigned])
+@dans_la_langue_demandee
 def rapport_financier(request, projet_id):
     """
     Rapport financier seul : ?fichier=pdf|docx|xlsx&sections=sources,rallonges,…&debut=AAAA-MM-JJ&fin=…
@@ -52,13 +55,14 @@ def rapport_financier(request, projet_id):
         return response
     from weasyprint import HTML
 
-    response = HttpResponse(HTML(string=html_rapport_financier(donnees, sections)).write_pdf(), content_type="application/pdf")
+    response = HttpResponse(HTML(string=traduire_html(html_rapport_financier(donnees, sections))).write_pdf(), content_type="application/pdf")
     response["Content-Disposition"] = f"attachment; filename={nom}.pdf"
     return response
 
 
 @api_view(["GET"])
 @permission_classes([HasGlobalVisibilityOrAssigned])
+@dans_la_langue_demandee
 def cadre_logique(request, projet_id):
     """Cadre logique du projet (JSON pour l'écran), ou ?fichier=pdf|docx pour l'exporter."""
     from .cadre_logique import construire_cadre_logique, html_cadre_logique
@@ -75,7 +79,7 @@ def cadre_logique(request, projet_id):
     if fichier == "pdf":
         from weasyprint import HTML
 
-        response = HttpResponse(HTML(string=html_cadre_logique(data)).write_pdf(), content_type="application/pdf")
+        response = HttpResponse(HTML(string=traduire_html(html_cadre_logique(data))).write_pdf(), content_type="application/pdf")
         response["Content-Disposition"] = f"attachment; filename=cadre_logique_{projet.code}.pdf"
         return response
     return Response(data)
@@ -83,6 +87,7 @@ def cadre_logique(request, projet_id):
 
 @api_view(["GET"])
 @permission_classes([HasGlobalVisibilityOrAssigned])
+@dans_la_langue_demandee
 def registre_risques(request, projet_id):
     """Registre des risques du projet : ?fichier=pdf (défaut) ou docx."""
     from .risques import html_registre_risques
@@ -97,13 +102,14 @@ def registre_risques(request, projet_id):
         return reponse_docx(html, f"risques_{projet.code}")
     from weasyprint import HTML
 
-    response = HttpResponse(HTML(string=html).write_pdf(), content_type="application/pdf")
+    response = HttpResponse(HTML(string=traduire_html(html)).write_pdf(), content_type="application/pdf")
     response["Content-Disposition"] = f"attachment; filename=risques_{projet.code}.pdf"
     return response
 
 
 @api_view(["GET"])
 @permission_classes([HasGlobalVisibilityOrAssigned])
+@dans_la_langue_demandee
 def rapport_suivi_strategique(request, cadre_id):
     """Rapport de suivi d'un document stratégique : ?fichier=pdf (défaut) ou docx."""
     from apps.strategy.models import CadreStrategique
@@ -121,6 +127,6 @@ def rapport_suivi_strategique(request, cadre_id):
         return reponse_docx(html, nom)
     from weasyprint import HTML
 
-    response = HttpResponse(HTML(string=html).write_pdf(), content_type="application/pdf")
+    response = HttpResponse(HTML(string=traduire_html(html)).write_pdf(), content_type="application/pdf")
     response["Content-Disposition"] = f"attachment; filename={nom}.pdf"
     return response

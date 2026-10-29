@@ -4,6 +4,7 @@ import { Alert, Button, FileInput, Group, List, Modal, Stack, Text } from "@mant
 import { notifications } from "@mantine/notifications";
 import { useImporterStructuration, telechargerModeleImportStructuration } from "../../api/strategy";
 import type { ImportStructurationResultat } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 export function ImportStructurationModal({
   opened,
@@ -26,7 +27,7 @@ export function ImportStructurationModal({
 
   async function handleImporter() {
     if (!fichier) {
-      notifications.show({ message: "Choisis d'abord un fichier Excel.", color: "orange" });
+      notifications.show({ message: voc("Choisis d'abord un fichier Excel."), color: "orange" });
       return;
     }
     const formData = new FormData();
@@ -37,24 +38,20 @@ export function ImportStructurationModal({
       setResultat(res);
       if (res.elements_crees > 0 || res.elements_mis_a_jour > 0) {
         notifications.show({
-          message: `${res.elements_crees} élément(s) créé(s), ${res.elements_mis_a_jour} mis à jour`,
+          message: voc`${res.elements_crees} élément(s) créé(s), ${res.elements_mis_a_jour} mis à jour`,
           color: "green",
         });
       }
     } catch {
-      notifications.show({ message: "Erreur lors de l'import — vérifie le format du fichier.", color: "red" });
+      notifications.show({ message: voc("Erreur lors de l'import — vérifie le format du fichier."), color: "red" });
     }
   }
 
   return (
-    <Modal opened={opened} onClose={fermer} title="Importer la structuration depuis Excel" size="lg">
+    <Modal opened={opened} onClose={fermer} title={voc("Importer la structuration depuis Excel")} size="lg">
       <Stack gap="md">
         <Alert color="blue" variant="light">
-          Utilise le modèle ci-dessous : une colonne = un niveau. Écris chaque élément dans la colonne de
-          son niveau, une seule colonne par ligne — son rattachement au niveau supérieur se déduit
-          automatiquement du dernier élément écrit juste à gauche, au-dessus. Les niveaux manquants sont
-          créés automatiquement. Réimporter le même fichier met à jour les éléments déjà importés au lieu
-          de les dupliquer.
+          {voc("Utilise le modèle ci-dessous : une colonne = un niveau. Écris chaque élément dans la colonne de son niveau, une seule colonne par ligne — son rattachement au niveau supérieur se déduit automatiquement du dernier élément écrit juste à gauche, au-dessus. Les niveaux manquants sont créés automatiquement. Réimporter le même fichier met à jour les éléments déjà importés au lieu de les dupliquer.")}
         </Alert>
 
         <Button
@@ -62,20 +59,20 @@ export function ImportStructurationModal({
           leftSection={<Download size={16} />}
           onClick={() => telechargerModeleImportStructuration(cadreStrategiqueId)}
         >
-          Télécharger le modèle Excel
+          {voc("Télécharger le modèle Excel")}
         </Button>
 
         <Group align="flex-end">
           <FileInput
-            label="Fichier à importer"
-            placeholder="Choisir un fichier .xlsx"
+            label={voc("Fichier à importer")}
+            placeholder={voc("Choisir un fichier .xlsx")}
             accept=".xlsx"
             value={fichier}
             onChange={setFichier}
             style={{ flex: 1 }}
           />
           <Button leftSection={<Upload size={16} />} onClick={handleImporter} loading={importer.isPending}>
-            Importer
+            {voc("Importer")}
           </Button>
         </Group>
 
@@ -83,26 +80,25 @@ export function ImportStructurationModal({
           <Stack gap="xs">
             <Alert
               color={resultat.elements_crees > 0 || resultat.elements_mis_a_jour > 0 ? "green" : "orange"}
-              title="Résultat de l'import"
+              title={voc("Résultat de l'import")}
             >
               <Text size="sm">
-                <strong>{resultat.niveaux_crees}</strong> niveau(x) créé(s), <strong>{resultat.elements_crees}</strong> élément(s)
-                créé(s), <strong>{resultat.elements_mis_a_jour}</strong> mis à jour.
+                <strong>{resultat.niveaux_crees}</strong> {voc("niveau(x) créé(s),")} <strong>{resultat.elements_crees}</strong> {voc("élément(s) créé(s),")} <strong>{resultat.elements_mis_a_jour}</strong> {voc("mis à jour.")}
               </Text>
             </Alert>
 
             {resultat.erreurs.length > 0 && (
-              <Alert color="red" title={`${resultat.erreurs.length} ligne(s) ignorée(s)`}>
+              <Alert color="red" title={voc`${resultat.erreurs.length} ligne(s) ignorée(s)`}>
                 <List size="sm">
                   {resultat.erreurs.map((e, i) => (
-                    <List.Item key={i}>Ligne {e.ligne} : {e.message}</List.Item>
+                    <List.Item key={i}>{voc("Ligne")} {e.ligne} : {e.message}</List.Item>
                   ))}
                 </List>
               </Alert>
             )}
 
             {(resultat.avertissements ?? []).length > 0 && (
-              <Alert color="yellow" title="À vérifier">
+              <Alert color="yellow" title={voc("À vérifier")}>
                 <List size="sm">
                   {resultat.avertissements.map((e, i) => (
                     <List.Item key={i}>{e.message}</List.Item>
@@ -114,7 +110,7 @@ export function ImportStructurationModal({
         )}
 
         <Group justify="flex-end">
-          <Button variant="subtle" onClick={fermer}>Fermer</Button>
+          <Button variant="subtle" onClick={fermer}>{voc("Fermer")}</Button>
         </Group>
       </Stack>
     </Modal>

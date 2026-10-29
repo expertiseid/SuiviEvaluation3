@@ -1,4 +1,5 @@
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { voc } from "../../utils/vocabulaire";
 
 interface PointReel {
   date: string;
@@ -48,7 +49,7 @@ export function EvolutionChart({
         <YAxis tick={{ fontSize: 13, fill: "var(--mantine-color-dimmed)" }} width={56} />
         <Tooltip
           labelFormatter={(ts) => formatTick(Number(ts))}
-          formatter={(value) => [`${value}${unite ? " " + unite : ""}`, "Cumul réalisé"]}
+          formatter={(value) => [`${value}${unite ? " " + unite : ""}`, voc("Cumul réalisé")]}
         />
         {cible != null && (
           <ReferenceLine

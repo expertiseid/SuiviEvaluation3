@@ -3,6 +3,18 @@ from rest_framework import serializers
 
 from apps.core.vocabulaire import v
 
+from .attributs import nettoyer as nettoyer_attributs
+from .attributs import ordonner as ordonner_attributs
+from .attributs import retenir_ordre as retenir_ordre_attributs
+
+
+def attributs_dans_l_ordre(serializer, attributs, projet_id):
+    """Attributs dans l'ordre du projet (colonnes du fichier importé) ; ordre lu une fois par projet."""
+    ordres = serializer.context.setdefault("ordres_attributs", {})
+    if projet_id not in ordres:
+        ordres[projet_id] = Projet.objects.filter(id=projet_id).values_list("ordre_attributs", flat=True).first() or []
+    attributs = attributs or {}
+    return {nom: attributs[nom] for nom in ordonner_attributs(attributs, ordres[projet_id])}
 from .budgets import avertissements_budget
 from .models import (
     Activite,
@@ -63,9 +75,23 @@ class SousActiviteSerializer(serializers.ModelSerializer):
             "statut",
             "poids",
             "avancement",
+            "attributs",
         )
         read_only_fields = ("quantite_realisee", "statut")
+
+    def save(self, **kwargs):
+        instance = super().save(**kwargs)
+        retenir_ordre_attributs(instance.activite.projet, instance.attributs or {})
+        return instance
+
+    def to_representation(self, instance):
+        donnees = super().to_representation(instance)
+        donnees["attributs"] = attributs_dans_l_ordre(self, instance.attributs, instance.activite.projet_id)
+        return donnees
         extra_kwargs = {"avancement": {"min_value": 0, "max_value": 100}, "poids": {"min_value": 0}}
+
+    def validate_attributs(self, valeur):
+        return nettoyer_attributs(valeur)
 
     def validate(self, attrs):
         if "axe_strategique" in attrs and attrs["axe_strategique"] is not None:
@@ -124,6 +150,7 @@ class ActiviteSerializer(serializers.ModelSerializer):
             "commentaire",
             "sources_verification",
             "hypotheses",
+            "attributs",
             "axe_strategique",
             "axe_strategique_libelle",
             "axes_strategiques_secondaires",
@@ -201,6 +228,19 @@ class ActiviteSerializer(serializers.ModelSerializer):
         # même sérialiseur, récursif : chaque enfant peut lui-même avoir des
         # enfants (profondeur illimitée).
         return ActiviteSerializer(obj.enfants.all(), many=True, context=self.context).data
+
+    def validate_attributs(self, valeur):
+        return nettoyer_attributs(valeur)
+
+    def save(self, **kwargs):
+        instance = super().save(**kwargs)
+        retenir_ordre_attributs(instance.projet, instance.attributs or {})
+        return instance
+
+    def to_representation(self, instance):
+        donnees = super().to_representation(instance)
+        donnees["attributs"] = attributs_dans_l_ordre(self, instance.attributs, instance.projet_id)
+        return donnees
 
     def validate(self, attrs):
         activite_parent = attrs.get("activite_parent") or getattr(self.instance, "activite_parent", None)
@@ -409,8 +449,10 @@ class ProjetSerializer(serializers.ModelSerializer):
             "elements_capitalisation",
             "methode_calcul",
             "methode_agregation",
+            "ordre_attributs",
             "activites",
         )
+        read_only_fields = ("ordre_attributs",)
 
     def get_element_strategique_libelle(self, obj):
         element = obj.element_strategique

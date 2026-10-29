@@ -16,6 +16,7 @@ from decimal import Decimal
 from django.db.models import Sum
 from django.utils.html import escape
 
+from apps.core.langues import traduire_classeur
 from apps.core.vocabulaire import v
 
 SECTIONS = {
@@ -187,11 +188,11 @@ def _carte(titre, valeur, detail="", alerte=False):
 def html_rapport_financier(d, sections) -> str:
     projet, periode = d["projet"], d["periode"]
     if periode["debut"] or periode["fin"]:
-        portee = f"Dépenses du {_date(periode['debut'])} au {_date(periode['fin'])}" if periode["debut"] and periode["fin"] else (
-            f"Dépenses à partir du {_date(periode['debut'])}" if periode["debut"] else f"Dépenses jusqu'au {_date(periode['fin'])}"
+        portee = v(f"Dépenses du {_date(periode['debut'])} au {_date(periode['fin'])}") if periode["debut"] and periode["fin"] else (
+            v(f"Dépenses à partir du {_date(periode['debut'])}") if periode["debut"] else v(f"Dépenses jusqu'au {_date(periode['fin'])}")
         )
     else:
-        portee = "Toutes les dépenses saisies"
+        portee = v("Toutes les dépenses saisies")
     blocs = []
 
     blocs.append(
@@ -363,5 +364,6 @@ def excel_rapport_financier(d, sections) -> bytes:
                 if ws.cell(row=1, column=cellule.column).value in ("Taux (%)", "Cumul / prévu (%)"):
                     cellule.number_format = "0.0"
     sortie = io.BytesIO()
+    traduire_classeur(classeur)
     classeur.save(sortie)
     return sortie.getvalue()

@@ -72,6 +72,7 @@ import { SousActiviteForm } from "./SousActiviteForm";
 import { voc } from "../../utils/vocabulaire";
 import { libelleMethodeEffective } from "../../utils/methodesCalcul";
 
+import { locale } from "../../utils/i18n";
 // ---------------------------------------------------------------- utilitaires
 
 /**
@@ -85,11 +86,11 @@ function libelleSuggere(debut: string, fin: string): string {
   const dernierJour = new Date(a2, m2, 0).getDate();
   if (j1 !== 1 || j2 !== dernierJour) return "";
   const nbMois = (a2 - a1) * 12 + (m2 - m1) + 1;
-  const mois = new Date(a1, m1 - 1, 1).toLocaleString("fr-FR", { month: "long" });
+  const mois = new Date(a1, m1 - 1, 1).toLocaleString(locale(), { month: "long" });
   if (nbMois === 1) return `${mois.charAt(0).toUpperCase()}${mois.slice(1)} ${a1}`;
   if (nbMois === 3 && (m1 - 1) % 3 === 0) return `T${(m1 + 2) / 3} ${a1}`;
   if (nbMois === 6 && (m1 === 1 || m1 === 7)) return `S${m1 === 1 ? 1 : 2} ${a1}`;
-  if (nbMois === 12 && m1 === 1) return `Année ${a1}`;
+  if (nbMois === 12 && m1 === 1) return voc`Année ${a1}`;
   return "";
 }
 
@@ -150,32 +151,32 @@ function PeriodeModal({
   async function enregistrer() {
     const [debut, fin] = dates;
     if (!debut || !fin || !libelle.trim()) {
-      notifications.show({ message: "Choisis la période sur le calendrier et donne-lui un nom.", color: "orange" });
+      notifications.show({ message: voc("Choisis la période sur le calendrier et donne-lui un nom."), color: "orange" });
       return;
     }
     try {
       if (periode) {
         await updatePeriode.mutateAsync({ id: periode.id, payload: { libelle: libelle.trim(), date_debut: debut, date_fin: fin } });
-        notifications.show({ message: "Période modifiée", color: "green" });
+        notifications.show({ message: voc("Période modifiée"), color: "green" });
       } else {
         const creee = await createPeriode.mutateAsync({ projet: projet.id, libelle: libelle.trim(), date_debut: debut, date_fin: fin });
-        notifications.show({ message: "Période créée", color: "green" });
+        notifications.show({ message: voc("Période créée"), color: "green" });
         onCreee(creee);
       }
       onClose();
     } catch (error) {
-      notifications.show({ message: messageErreurApi(error, "Erreur lors de l'enregistrement de la période"), color: "red" });
+      notifications.show({ message: messageErreurApi(error, voc("Erreur lors de l'enregistrement de la période")), color: "red" });
     }
   }
 
   return (
-    <Modal opened={opened} onClose={onClose} title={periode ? "Modifier la période" : voc("Nouvelle période de planification")}>
+    <Modal opened={opened} onClose={onClose} title={periode ? voc("Modifier la période") : voc("Nouvelle période de planification")}>
       <Stack gap="sm">
         <DatePickerInput
           type="range"
-          label="Période"
-          description="Clique sur la date de début puis sur la date de fin."
-          placeholder="Choisir sur le calendrier…"
+          label={voc("Période")}
+          description={voc("Clique sur la date de début puis sur la date de fin.")}
+          placeholder={voc("Choisir sur le calendrier…")}
           value={dates}
           onChange={(v) => changerDates(v as [string | null, string | null])}
           defaultDate={projet.date_debut}
@@ -185,9 +186,9 @@ function PeriodeModal({
           required
         />
         <TextInput
-          label="Nom de la période"
-          description="Proposé automatiquement d'après les dates — modifiable."
-          placeholder="Ex : T1 2026, Année 2027…"
+          label={voc("Nom de la période")}
+          description={voc("Proposé automatiquement d'après les dates — modifiable.")}
+          placeholder={voc("Ex : T1 2026, Année 2027…")}
           value={libelle}
           onChange={(e) => {
             setLibelle(e.currentTarget.value);
@@ -197,13 +198,12 @@ function PeriodeModal({
         />
         {periode && (
           <Alert color="blue" variant="light" py={6}>
-            Changer les dates met à jour toutes les valeurs de cette période ; une date prévue qui sortirait de la
-            nouvelle période est effacée.
+            {voc("Changer les dates met à jour toutes les valeurs de cette période ; une date prévue qui sortirait de la nouvelle période est effacée.")}
           </Alert>
         )}
         <Group justify="flex-end">
           <Button onClick={enregistrer} loading={createPeriode.isPending || updatePeriode.isPending}>
-            {periode ? "Enregistrer" : "Créer la période"}
+            {periode ? voc("Enregistrer") : voc("Créer la période")}
           </Button>
         </Group>
       </Stack>
@@ -285,10 +285,10 @@ function ValeursPeriodeModal({
           ...payload,
         });
       }
-      notifications.show({ message: `Valeurs ${periode.libelle} enregistrées`, color: "green" });
+      notifications.show({ message: voc`Valeurs ${periode.libelle} enregistrées`, color: "green" });
       onClose();
     } catch (error) {
-      notifications.show({ message: messageErreurApi(error, "Erreur lors de l'enregistrement"), color: "red" });
+      notifications.show({ message: messageErreurApi(error, voc("Erreur lors de l'enregistrement")), color: "red" });
     }
   }
 
@@ -299,25 +299,24 @@ function ValeursPeriodeModal({
           <Text size="xs" fw={600} c="dimmed" tt="uppercase">{voc("Planification globale")}</Text>
           <Text size="sm">
             {fmt(quantiteGlobale)} {unite}
-            {estActivite && ` · ${fmt(budgetGlobal)} FCFA`} · {fmtDate(objet.date_debut)} → {fmtDate(objet.date_fin)}
+            {estActivite && voc` · ${fmt(budgetGlobal)} FCFA`} · {fmtDate(objet.date_debut)} → {fmtDate(objet.date_fin)}
           </Text>
           {avancement && element.type === "activite" && (
             <Text size="xs" c="dimmed" mt={2}>
-              Méthode : {libelleMethodeEffective(element.objet.methode_calcul_effective)} — l'objectif de la période est
-              l'avancement visé à sa fin (en %), le réalisé est l'avancement atteint à cette date.
+              {voc("Méthode :")} {libelleMethodeEffective(element.objet.methode_calcul_effective)} {voc("— l'objectif de la période est l'avancement visé à sa fin (en %), le réalisé est l'avancement atteint à cette date.")}
             </Text>
           )}
           {autres.length > 0 && !avancement && (
             <Text size="xs" c="dimmed" mt={2}>
-              Déjà réparti sur les autres périodes : {fmt(quantiteAilleurs)} {unite}
-              {estActivite && ` · ${fmt(budgetAilleurs)} FCFA`}
+              {voc("Déjà réparti sur les autres périodes :")} {fmt(quantiteAilleurs)} {unite}
+              {estActivite && voc` · ${fmt(budgetAilleurs)} FCFA`}
             </Text>
           )}
         </Card>
 
         <Group grow align="flex-start">
           <NumberInput
-            label={avancement ? "Avancement visé à la fin de la période (%)" : `Quantité prévue sur la période${unite ? ` (${unite})` : ""}`}
+            label={avancement ? voc("Avancement visé à la fin de la période (%)") : voc`Quantité prévue sur la période${unite ? ` (${unite})` : ""}`}
             value={cible}
             onChange={setCible}
             min={0}
@@ -325,20 +324,20 @@ function ValeursPeriodeModal({
             thousandSeparator=" "
             description={
               !avancement && quantiteGlobale !== null && nombre(cible) !== null && quantiteAilleurs + (nombre(cible) ?? 0) > quantiteGlobale
-                ? `Attention : dépasse le global (${fmt(quantiteAilleurs + (nombre(cible) ?? 0))} > ${fmt(quantiteGlobale)})`
+                ? voc`Attention : dépasse le global (${fmt(quantiteAilleurs + (nombre(cible) ?? 0))} > ${fmt(quantiteGlobale)})`
                 : undefined
             }
           />
           {estActivite && (
             <NumberInput
-              label="Budget prévu sur la période (FCFA)"
+              label={voc("Budget prévu sur la période (FCFA)")}
               value={budget}
               onChange={setBudget}
               min={0}
               thousandSeparator=" "
               description={
                 budgetGlobal !== null && nombre(budget) !== null && budgetAilleurs + (nombre(budget) ?? 0) > budgetGlobal
-                  ? `Attention : dépasse le global (${fmt(budgetAilleurs + (nombre(budget) ?? 0))} > ${fmt(budgetGlobal)})`
+                  ? voc`Attention : dépasse le global (${fmt(budgetAilleurs + (nombre(budget) ?? 0))} > ${fmt(budgetGlobal)})`
                   : undefined
               }
             />
@@ -347,8 +346,8 @@ function ValeursPeriodeModal({
 
         <DatePickerInput
           type="range"
-          label="Dates prévues dans la période"
-          placeholder="Facultatif"
+          label={voc("Dates prévues dans la période")}
+          placeholder={voc("Facultatif")}
           value={dates}
           onChange={(v) => setDates(v as [string | null, string | null])}
           minDate={periode.date_debut}
@@ -358,10 +357,10 @@ function ValeursPeriodeModal({
           allowSingleDateInRange
           clearable
         />
-        <Textarea label="Commentaire" autosize minRows={2} value={commentaire} onChange={(e) => setCommentaire(e.currentTarget.value)} />
+        <Textarea label={voc("Commentaire")} autosize minRows={2} value={commentaire} onChange={(e) => setCommentaire(e.currentTarget.value)} />
 
         <Group justify="flex-end">
-          <Button onClick={enregistrer} loading={createTranche.isPending || updateTranche.isPending}>Enregistrer</Button>
+          <Button onClick={enregistrer} loading={createTranche.isPending || updateTranche.isPending}>{voc("Enregistrer")}</Button>
         </Group>
       </Stack>
     </Modal>
@@ -395,10 +394,10 @@ function IndicateurPeriodeModal({
     try {
       if (tranche) await updateTranche.mutateAsync({ id: tranche.id, payload });
       else await createTranche.mutateAsync({ periode: periode.id, indicateur: indicateur.id, ...payload });
-      notifications.show({ message: `Cible ${periode.libelle} enregistrée`, color: "green" });
+      notifications.show({ message: voc`Cible ${periode.libelle} enregistrée`, color: "green" });
       onClose();
     } catch (error) {
-      notifications.show({ message: messageErreurApi(error, "Erreur lors de l'enregistrement"), color: "red" });
+      notifications.show({ message: messageErreurApi(error, voc("Erreur lors de l'enregistrement")), color: "red" });
     }
   }
 
@@ -406,28 +405,28 @@ function IndicateurPeriodeModal({
     <Modal opened onClose={onClose} title={`${periode.libelle} — ${indicateur.libelle}`} size="lg">
       <Stack gap="sm">
         <Card withBorder padding="xs" bg="gray.0">
-          <Text size="xs" fw={600} c="dimmed" tt="uppercase">Cible globale</Text>
+          <Text size="xs" fw={600} c="dimmed" tt="uppercase">{voc("Cible globale")}</Text>
           <Text size="sm">
             {fmt(indicateur.valeur_cible)} {indicateur.unite}
-            {indicateur.valeur_reference !== null && ` (valeur de référence : ${fmt(indicateur.valeur_reference)})`}
+            {indicateur.valeur_reference !== null && voc` (valeur de référence : ${fmt(indicateur.valeur_reference)})`}
           </Text>
           {autres.length > 0 && (
             <Text size="xs" c="dimmed" mt={2}>
-              Autres périodes : {autres.map((t) => `${t.libelle} ${fmt(t.cible)}`).join(" · ")}
+              {voc("Autres périodes :")} {autres.map((t) => `${t.libelle} ${fmt(t.cible)}`).join(" · ")}
             </Text>
           )}
         </Card>
         <NumberInput
-          label={`Cible sur la période${indicateur.unite ? ` (${indicateur.unite})` : ""}`}
-          description="Le réalisé de la période est calculé à partir des valeurs saisies dont les dates tombent dans la période."
+          label={voc`Cible sur la période${indicateur.unite ? ` (${indicateur.unite})` : ""}`}
+          description={voc("Le réalisé de la période est calculé à partir des valeurs saisies dont les dates tombent dans la période.")}
           value={cible}
           onChange={setCible}
           min={0}
           thousandSeparator=" "
         />
-        <Textarea label="Commentaire" autosize minRows={2} value={commentaire} onChange={(e) => setCommentaire(e.currentTarget.value)} />
+        <Textarea label={voc("Commentaire")} autosize minRows={2} value={commentaire} onChange={(e) => setCommentaire(e.currentTarget.value)} />
         <Group justify="flex-end">
-          <Button onClick={enregistrer} loading={createTranche.isPending || updateTranche.isPending}>Enregistrer</Button>
+          <Button onClick={enregistrer} loading={createTranche.isPending || updateTranche.isPending}>{voc("Enregistrer")}</Button>
         </Group>
       </Stack>
     </Modal>
@@ -483,7 +482,7 @@ function ObjectifsPeriode({
       if (valeursCourantes.tranche_id) await updateTranche.mutateAsync({ id: valeursCourantes.tranche_id, payload });
       else await createTranche.mutateAsync({ periode: periode.id, ...cible, ...payload });
     } catch (error) {
-      notifications.show({ message: messageErreurApi(error, "Erreur lors de l'enregistrement de l'objectif"), color: "red" });
+      notifications.show({ message: messageErreurApi(error, voc("Erreur lors de l'enregistrement de l'objectif")), color: "red" });
     }
   }
 
@@ -498,8 +497,8 @@ function ObjectifsPeriode({
           <>
             <NumberInput
               size="xs"
-              label={avancement ? "Avancement visé fin de période (%)" : `Objectif${unite ? ` (${unite})` : ""}`}
-              placeholder="À définir"
+              label={avancement ? voc("Avancement visé fin de période (%)") : voc`Objectif${unite ? ` (${unite})` : ""}`}
+              placeholder={voc("À définir")}
               value={quantite}
               onChange={setQuantite}
               onBlur={enregistrer}
@@ -513,8 +512,8 @@ function ObjectifsPeriode({
             {avecBudget && (
               <NumberInput
                 size="xs"
-                label="Budget (FCFA)"
-                placeholder="À définir"
+                label={voc("Budget (FCFA)")}
+                placeholder={voc("À définir")}
                 value={budget}
                 onChange={setBudget}
                 onBlur={enregistrer}
@@ -529,18 +528,18 @@ function ObjectifsPeriode({
         ) : (
           v.source === "saisi" && (
             <Text size="xs">
-              <Text span fw={600}>{avancement ? "Avancement visé : " : "Objectif : "}</Text>
+              <Text span fw={600}>{avancement ? voc("Avancement visé : ") : voc("Objectif : ")}</Text>
               {fmt(v.prevu_quantite)} {unite}
-              {avecBudget && ` · ${fmt(v.prevu_budget)} FCFA`}
+              {avecBudget && voc` · ${fmt(v.prevu_budget)} FCFA`}
             </Text>
           )
         )}
         <Stack gap={2} style={{ minWidth: 200 }}>
           <Text size="xs">
-            <Text span fw={600}>{avancement ? "Avancement atteint : " : "Réalisé : "}</Text>
+            <Text span fw={600}>{avancement ? voc("Avancement atteint : ") : voc("Réalisé : ")}</Text>
             {fmt(v.realise_quantite)} {unite}
-            {v.taux !== null && (avancement ? ` (${v.taux} % de l'objectif)` : ` (${v.taux} %)`)}
-            {avecBudget && ` · ${fmt(v.budget_realise)} FCFA`}
+            {v.taux !== null && (avancement ? voc` (${v.taux} % de l'objectif)` : ` (${v.taux} %)`)}
+            {avecBudget && voc` · ${fmt(v.budget_realise)} FCFA`}
             {avecBudget && v.taux_financier !== null && ` (${v.taux_financier} %)`}
           </Text>
           {v.prevu_quantite !== null && <Progress value={Math.min(v.taux ?? 0, 100)} color={couleur} size="xs" />}
@@ -548,7 +547,7 @@ function ObjectifsPeriode({
       </Group>
       <Group gap={6} wrap="wrap">
         {v.source === "a_definir" && (
-          <Badge size="xs" variant="light" color="orange">Objectif à définir</Badge>
+          <Badge size="xs" variant="light" color="orange">{voc("Objectif à définir")}</Badge>
         )}
         {v.dans_dates_globales === false && (
           <Text size="xs" c="dimmed">{voc("Hors de ses dates dans la planification globale")}</Text>
@@ -608,9 +607,9 @@ function LigneElement({
           </Group>
           <Text size="xs" c="dimmed">
             {element.type === "activite" && avancement
-              ? `Méthode : ${libelleMethodeEffective(element.objet.methode_calcul_effective)} · objectif en avancement (%)`
-              : `Global : ${fmt(objet.quantite_prevue)} ${unite}`}
-            {element.type === "activite" && ` · ${fmt(element.objet.budget_alloue)} FCFA`}
+              ? voc`Méthode : ${libelleMethodeEffective(element.objet.methode_calcul_effective)} · objectif en avancement (%)`
+              : voc`Global : ${fmt(objet.quantite_prevue)} ${unite}`}
+            {element.type === "activite" && voc` · ${fmt(element.objet.budget_alloue)} FCFA`}
           </Text>
           <ObjectifsPeriode
             v={valeur}
@@ -624,7 +623,7 @@ function LigneElement({
         </Stack>
         {editionActive && peutModifier && (
           <Group gap={4} wrap="nowrap">
-            <Tooltip label={`Dates prévues et commentaire — ${periode.libelle}`}>
+            <Tooltip label={voc`Dates prévues et commentaire — ${periode.libelle}`}>
               <ActionIcon size="sm" variant="subtle" onClick={() => onEditer(element)}>
                 <Pencil size={12} />
               </ActionIcon>
@@ -637,7 +636,7 @@ function LigneElement({
               </Tooltip>
             ))}
             {trancheId !== null && (
-              <Tooltip label="Effacer les objectifs de la période">
+              <Tooltip label={voc("Effacer les objectifs de la période")}>
                 <ActionIcon size="sm" variant="subtle" color="red" onClick={() => onEffacer(trancheId, objet.libelle)}>
                   <Trash2 size={12} />
                 </ActionIcon>
@@ -757,9 +756,9 @@ export function PlanificationPeriodeTab({
       onConfirm: async () => {
         try {
           await deleteTranche.mutateAsync(trancheId);
-          notifications.show({ message: "Objectifs de la période effacés", color: "green" });
+          notifications.show({ message: voc("Objectifs de la période effacés"), color: "green" });
         } catch (error) {
-          notifications.show({ message: messageErreurApi(error, "Erreur lors de la suppression"), color: "red" });
+          notifications.show({ message: messageErreurApi(error, voc("Erreur lors de la suppression")), color: "red" });
         }
       },
     });
@@ -773,9 +772,9 @@ export function PlanificationPeriodeTab({
         try {
           await deletePeriode.mutateAsync(periode.id);
           setPeriodeId(null);
-          notifications.show({ message: "Période supprimée", color: "green" });
+          notifications.show({ message: voc("Période supprimée"), color: "green" });
         } catch (error) {
-          notifications.show({ message: messageErreurApi(error, "Erreur lors de la suppression"), color: "red" });
+          notifications.show({ message: messageErreurApi(error, voc("Erreur lors de la suppression")), color: "red" });
         }
       },
     });
@@ -787,7 +786,7 @@ export function PlanificationPeriodeTab({
       <Stack key={act.id} gap={6}>
         <LigneElement
           element={{ type: "activite", objet: act }}
-          nomNiveau={niveauxNoms[profondeur] ?? "Activité"}
+          nomNiveau={niveauxNoms[profondeur] ?? voc("Activité")}
           valeur={valeursParElement.get(`activite-${act.id}`)}
           periode={periode!}
           editionActive={editionActive}
@@ -816,7 +815,7 @@ export function PlanificationPeriodeTab({
                 <LigneElement
                   key={`sa-${sa.id}`}
                   element={{ type: "sous_activite", objet: sa, unite: sa.unite_quantite }}
-                  nomNiveau="Sous-activité"
+                  nomNiveau={voc("Sous-activité")}
                   valeur={valeursParElement.get(`sous_activite-${sa.id}`)}
                   periode={periode!}
                   editionActive={editionActive}
@@ -838,12 +837,12 @@ export function PlanificationPeriodeTab({
       <Card withBorder padding="md">
         <Group justify="space-between" align="flex-end" wrap="wrap">
           <Select
-            label="Période"
-            placeholder={periodes && periodes.length === 0 ? "Aucune période — crée-en une" : "Choisir une période…"}
+            label={voc("Période")}
+            placeholder={periodes && periodes.length === 0 ? voc("Aucune période — crée-en une") : voc("Choisir une période…")}
             leftSection={<CalendarRange size={16} />}
             data={(periodes ?? []).map((p) => ({
               value: String(p.id),
-              label: p.libelle || "Période sans nom",
+              label: p.libelle || voc("Période sans nom"),
             }))}
             value={periodeId ? String(periodeId) : null}
             onChange={(v) => setPeriodeId(v ? Number(v) : null)}
@@ -854,7 +853,7 @@ export function PlanificationPeriodeTab({
             {periode && editionActive && (
               <>
                 <Button variant="subtle" size="sm" leftSection={<Pencil size={14} />} onClick={() => setModalPeriode("edition")}>
-                  Modifier la période
+                  {voc("Modifier la période")}
                 </Button>
                 <Button
                   variant="subtle"
@@ -864,32 +863,32 @@ export function PlanificationPeriodeTab({
                   onClick={supprimerPeriode}
                   loading={deletePeriode.isPending}
                 >
-                  Supprimer
+                  {voc("Supprimer")}
                 </Button>
               </>
             )}
             {periode && (
               <Menu shadow="md" width={200}>
                 <Menu.Target>
-                  <Button variant="light" leftSection={<Download size={16} />}>Exporter</Button>
+                  <Button variant="light" leftSection={<Download size={16} />}>{voc("Exporter")}</Button>
                 </Menu.Target>
                 <Menu.Dropdown>
                   <Menu.Label>{periode.libelle}</Menu.Label>
-                  <Menu.Item onClick={() => telechargerExportPeriode(periode, projet.code, "excel")}>Excel</Menu.Item>
-                  <Menu.Item onClick={() => telechargerExportPeriode(periode, projet.code, "pdf")}>PDF</Menu.Item>
-                  <Menu.Item onClick={() => telechargerExportPeriode(periode, projet.code, "word")}>Word</Menu.Item>
+                  <Menu.Item onClick={() => telechargerExportPeriode(periode, projet.code, "excel")}>{voc("Excel")}</Menu.Item>
+                  <Menu.Item onClick={() => telechargerExportPeriode(periode, projet.code, "pdf")}>{voc("PDF")}</Menu.Item>
+                  <Menu.Item onClick={() => telechargerExportPeriode(periode, projet.code, "word")}>{voc("Word")}</Menu.Item>
                 </Menu.Dropdown>
               </Menu>
             )}
             <Button leftSection={<CalendarPlus size={16} />} onClick={() => setModalPeriode("creation")}>
-              Nouvelle période
+              {voc("Nouvelle période")}
             </Button>
           </Group>
         </Group>
       </Card>
 
       {isLoading ? (
-        <Text c="dimmed">Chargement…</Text>
+        <Text c="dimmed">{voc("Chargement…")}</Text>
       ) : !periode ? (
         <EmptyState message={voc("Crée une période (mois, trimestre, année…) sur le calendrier pour planifier le projet sur cette période précise.")} />
       ) : projet.activites.length === 0 ? (
@@ -900,19 +899,19 @@ export function PlanificationPeriodeTab({
 
           <SimpleGrid cols={{ base: 1, sm: 3 }}>
             <StatCard
-              label={`Budget prévu — ${periode.libelle}`}
+              label={voc`Budget prévu — ${periode.libelle}`}
               value={`${fmt(totaux?.budget_prevu)} FCFA`}
               icon={<Wallet size={20} />}
               color="teal"
             />
             <StatCard
-              label={`Budget réalisé — ${periode.libelle}`}
+              label={voc`Budget réalisé — ${periode.libelle}`}
               value={`${fmt(totaux?.budget_realise)} FCFA`}
               icon={<TrendingUp size={20} />}
               color="blue"
             />
             <StatCard
-              label="Éléments avec objectifs définis"
+              label={voc("Éléments avec objectifs définis")}
               value={`${totaux?.nb_definis ?? 0} / ${totaux?.nb_elements ?? 0}`}
               icon={<ListChecks size={20} />}
               color="grape"
@@ -922,8 +921,8 @@ export function PlanificationPeriodeTab({
           {peutModifier && (
             <Alert color="blue" variant="light" py={6}>
               {editionActive
-                ? "Saisis les objectifs de chaque élément sur cette période directement dans les champs (quantité, et budget pour une activité) — l'enregistrement est automatique. Le crayon permet d'ajouter des dates prévues et un commentaire."
-                : "Clique sur « Éditer » en haut de la page pour définir les objectifs de chaque élément sur cette période."}
+                ? voc("Saisis les objectifs de chaque élément sur cette période directement dans les champs (quantité, et budget pour une activité) — l'enregistrement est automatique. Le crayon permet d'ajouter des dates prévues et un commentaire.")
+                : voc("Clique sur « Éditer » en haut de la page pour définir les objectifs de chaque élément sur cette période.")}
             </Alert>
           )}
 
@@ -931,7 +930,7 @@ export function PlanificationPeriodeTab({
             <Group justify="space-between" mb="sm" wrap="wrap">
               <TextInput
                 leftSection={<Search size={14} />}
-                placeholder="Rechercher une activité…"
+                placeholder={voc("Rechercher une activité…")}
                 value={recherche}
                 onChange={(e) => setRecherche(e.currentTarget.value)}
                 w={320}
@@ -952,7 +951,7 @@ export function PlanificationPeriodeTab({
                     leftSection={<Plus size={12} />}
                     onClick={() => setAjout({ type: "racine" })}
                   >
-                    {niveauxNoms[0] ?? "Activité"}
+                    {niveauxNoms[0] ?? voc("Activité")}
                   </Button>
                 </Tooltip>
               </Group>
@@ -973,8 +972,8 @@ export function PlanificationPeriodeTab({
                   <Table.Thead>
                     <Table.Tr>
                       <Table.Th>{voc("Indicateur")}</Table.Th>
-                      <Table.Th>Cible globale</Table.Th>
-                      <Table.Th>Objectif et réalisé sur la période</Table.Th>
+                      <Table.Th>{voc("Cible globale")}</Table.Th>
+                      <Table.Th>{voc("Objectif et réalisé sur la période")}</Table.Th>
                       <Table.Th w={70} />
                     </Table.Tr>
                   </Table.Thead>
@@ -1005,13 +1004,13 @@ export function PlanificationPeriodeTab({
                             <Table.Td>
                               {editionActive && peutModifier && (
                                 <Group gap={4} wrap="nowrap">
-                                  <Tooltip label={`Commentaire — ${periode.libelle}`}>
+                                  <Tooltip label={voc`Commentaire — ${periode.libelle}`}>
                                     <ActionIcon size="sm" variant="subtle" onClick={() => setIndicateurEnEdition(i)}>
                                       <Pencil size={12} />
                                     </ActionIcon>
                                   </Tooltip>
                                   {trancheId !== null && (
-                                    <Tooltip label="Effacer l'objectif de la période">
+                                    <Tooltip label={voc("Effacer l'objectif de la période")}>
                                       <ActionIcon size="sm" variant="subtle" color="red" onClick={() => effacer(trancheId, i.libelle)}>
                                         <Trash2 size={12} />
                                       </ActionIcon>
@@ -1054,10 +1053,10 @@ export function PlanificationPeriodeTab({
         onClose={() => setAjout(null)}
         title={
           ajout?.type === "sous_activite"
-            ? `Nouvelle sous-activité sous « ${ajout.activite.libelle} »`
+            ? voc`Nouvelle sous-activité sous « ${ajout.activite.libelle} »`
             : ajout?.type === "enfant"
-              ? `Nouveau « ${niveauxNoms[ajout.profondeur] ?? "niveau"} » sous « ${ajout.parent.libelle} »`
-              : `Nouvelle ${(niveauxNoms[0] ?? "activité").toLowerCase()}`
+              ? voc`Nouveau « ${niveauxNoms[ajout.profondeur] ?? voc("niveau")} » sous « ${ajout.parent.libelle} »`
+              : voc`Nouvelle ${(niveauxNoms[0] ?? voc("Activité")).toLowerCase()}`
         }
         size="lg"
       >

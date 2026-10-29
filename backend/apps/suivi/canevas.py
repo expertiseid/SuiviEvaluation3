@@ -30,6 +30,7 @@ from openpyxl.comments import Comment
 from openpyxl.styles import Font, PatternFill
 
 from apps.core.excel_utils import figer_entete, quadriller
+from apps.core.langues import vers_francais
 from apps.core.vocabulaire import adapter_classeur, ramener_classeur
 
 COULEUR_LECTURE = "EDEDED"  # colonnes informatives (ne pas modifier)
@@ -341,7 +342,7 @@ def analyser_canevas(fichier, projet, mode=MODE_AJOUT, utilisateur=None):
             statut = None
             if not _vide(v.get(COL_STATUT)):
                 table = STATUTS_ACTIVITE if est_element else STATUTS_SOUS_ACTIVITE
-                statut = table.get(_normaliser(v[COL_STATUT])) or (
+                statut = table.get(_normaliser(vers_francais(str(v[COL_STATUT])))) or (
                     str(v[COL_STATUT]).strip().upper() if str(v[COL_STATUT]).strip().upper() in table.values() else None
                 )
                 if statut is None:
@@ -433,7 +434,7 @@ def analyser_canevas(fichier, projet, mode=MODE_AJOUT, utilisateur=None):
             achevement = _nombre(ligne, COL_ACHEVEMENT, v.get(COL_ACHEVEMENT), 0, 100)
             valide = None
             if not _vide(v.get(COL_VALIDE)):
-                valide = {"oui": True, "non": False}.get(_normaliser(v[COL_VALIDE]))
+                valide = {"oui": True, "non": False}.get(_normaliser(vers_francais(str(v[COL_VALIDE]))))
                 if valide is None:
                     ligne.erreur(COL_VALIDE, "Attendu : Oui ou Non.")
             if identifiant:
@@ -470,7 +471,7 @@ def analyser_canevas(fichier, projet, mode=MODE_AJOUT, utilisateur=None):
                         ligne.operations.append(lambda jalon=jalon: enregistrer_jalon(jalon, "valide", False))
             else:
                 element = elements.get(str(v.get(COL_ELEMENT) or "").strip())
-                type_ = {"jalon": "JALON", "livrable": "LIVRABLE"}.get(_normaliser(v.get(COL_TYPE) or ""))
+                type_ = {"jalon": "JALON", "livrable": "LIVRABLE"}.get(_normaliser(vers_francais(str(v.get(COL_TYPE) or ""))))
                 if element is None:
                     ligne.erreur(COL_ELEMENT, "Identifiant d'élément (Exx) inconnu ou manquant.")
                 if type_ is None:

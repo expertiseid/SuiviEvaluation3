@@ -32,7 +32,12 @@ CHAMPS_CADRE = [
 def generer_modele_import_complet() -> bytes:
     from apps.beneficiaries.services.import_excel import COLONNES as COLONNES_BENEFICIAIRES
     from apps.indicators.import_excel import generer_feuille_indicateurs, generer_feuille_paliers_alerte
-    from apps.projects.import_excel import CHAMPS_PROJET, generer_feuille_planification
+    from apps.projects.import_excel import (
+        CHAMPS_PROJET,
+        INSTRUCTION_FINANCEMENTS,
+        generer_feuille_financements,
+        generer_feuille_planification,
+    )
     from apps.strategy.services import remplir_feuille_structuration
 
     wb = Workbook()
@@ -68,6 +73,7 @@ def generer_modele_import_complet() -> bytes:
     feuille_projet.column_dimensions["A"].width = 42
     feuille_projet.column_dimensions["B"].width = 48
 
+    generer_feuille_financements(wb)
     generer_feuille_planification(wb)
     generer_feuille_indicateurs(wb, avec_colonne_projet=False)
 
@@ -75,11 +81,14 @@ def generer_modele_import_complet() -> bytes:
     feuille_benef.append(COLONNES_BENEFICIAIRES)
     for cellule in feuille_benef[1]:
         cellule.font = Font(bold=True)
+    # Même ordre que COLONNES_BENEFICIAIRES : la localisation d'abord, puis l'identité.
     feuille_benef.append(
-        ["Traoré", "Awa", "F", "1990-05-12", "70000001", "CNIB123456", "CNIB", "BF", "Kadiogo", "Kadiogo", "Koubri", "", "", ""]
+        ["BF", "Kadiogo", "Kadiogo", "Koubri", "Traoré", "Awa", "F", "1990-05-12", "70000001", "CNIB123456", "CNIB",
+         "", "", "", "", ""]
     )
     feuille_benef.append(
-        ["Kaboré", "Issa", "M", "1985-11-03", "70000002", "CNIB654321", "CNIB", "BF", "Kadiogo", "Kadiogo", "Koubri", "", "", ""]
+        ["BF", "Kadiogo", "Kadiogo", "Koubri", "Kaboré", "Issa", "M", "1985-11-03", "70000002", "CNIB654321", "CNIB",
+         "", "", "", "", ""]
     )
     for _ in range(15):
         feuille_benef.append([""] * len(COLONNES_BENEFICIAIRES))
@@ -95,6 +104,7 @@ def generer_modele_import_complet() -> bytes:
         "indicateurs et ses bénéficiaires (automatiquement inscrits à ce projet)."
     ])
     instructions.append(["- Seule la feuille « Projet » est obligatoire (Nom, Code, dates de début/fin)."])
+    instructions.append([INSTRUCTION_FINANCEMENTS])
     instructions.append([
         "- « Utilisateurs affectés » (feuille Projet) : identifiants (username) de comptes déjà créés sur la "
         "plateforme, séparés par « ; ». C'est ce qui donne réellement accès au projet une fois connecté — le "
@@ -112,6 +122,10 @@ def generer_modele_import_complet() -> bytes:
         "- Feuille « Planification » : même principe — toutes les colonnes avant « Sous-activité » (sauf "
         "« Code », en jaune dans le modèle) sont les niveaux de la planification du projet, avec les noms et le nombre que tu veux "
         "(ex : Objectif général > Objectif spécifique > Activité, ou Résultat > Pilier > Activité)."
+    ])
+    instructions.append([
+        "- Sauf les colonnes « Attribut : … » (en bleu, ex : « Attribut : Responsable ») : ce ne sont jamais des "
+        "niveaux, mais des informations sur l'élément ou la sous-activité de la même ligne."
     ])
     instructions.append(["- Feuille « Indicateurs » : rattachés au projet créé dans ce même classeur."])
     instructions.append(["- Feuille « Bénéficiaires » : chaque bénéficiaire créé est automatiquement inscrit à ce projet."])

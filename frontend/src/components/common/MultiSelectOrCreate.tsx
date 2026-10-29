@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button, Group, MultiSelect, Stack, TextInput } from "@mantine/core";
+import { voc } from "../../utils/vocabulaire";
 
 interface Option {
   value: string;
@@ -47,7 +48,7 @@ export function MultiSelectOrCreate({
       <MultiSelect
         label={label}
         description={description}
-        placeholder="Choisir…"
+        placeholder={voc("Choisir…")}
         data={data}
         value={value}
         onChange={onChange}
@@ -55,7 +56,7 @@ export function MultiSelectOrCreate({
       />
       <Group gap={6} wrap="nowrap">
         <TextInput
-          placeholder="Absent de la liste ? Tape-le ici pour l'ajouter…"
+          placeholder={voc("Absent de la liste ? Tape-le ici pour l'ajouter…")}
           size="xs"
           value={nouveauLibelle}
           onChange={(e) => setNouveauLibelle(e.currentTarget.value)}
@@ -68,7 +69,7 @@ export function MultiSelectOrCreate({
           style={{ flex: 1 }}
         />
         <Button size="xs" variant="light" loading={creating} onClick={handleCreer}>
-          + Ajouter
+          {voc("+ Ajouter")}
         </Button>
       </Group>
     </Stack>

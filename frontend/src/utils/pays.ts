@@ -1,7 +1,9 @@
 // Liste des pays du monde (codes ISO 3166-1 alpha-2 + nom français),
 // triée alphabétiquement — sert de source pour le sélecteur "Pays
 // d'intervention" du formulaire Projet (recherche + sélection multiple).
-export const PAYS_MONDE: { code: string; nom: string }[] = [
+import { langue, locale } from "./i18n";
+
+const PAYS_FR: { code: string; nom: string }[] = [
   { code: "AF", nom: "Afghanistan" },
   { code: "ZA", nom: "Afrique du Sud" },
   { code: "AL", nom: "Albanie" },
@@ -198,3 +200,12 @@ export const PAYS_MONDE: { code: string; nom: string }[] = [
   { code: "ZM", nom: "Zambie" },
   { code: "ZW", nom: "Zimbabwe" },
 ];
+
+// Hors français : noms fournis par le navigateur dans la langue choisie, puis triés.
+function paysTraduits(): { code: string; nom: string }[] {
+  if (langue() === "fr" || typeof Intl.DisplayNames !== "function") return PAYS_FR;
+  const noms = new Intl.DisplayNames([locale()], { type: "region" });
+  return PAYS_FR.map((p) => ({ code: p.code, nom: noms.of(p.code) ?? p.nom })).sort((a, b) => a.nom.localeCompare(b.nom, locale()));
+}
+
+export const PAYS_MONDE = paysTraduits();

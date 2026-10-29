@@ -114,7 +114,7 @@ interface LignePalier {
 function intervalleTexte(lignesTriees: LignePalier[], position: number): string {
   const courant = Number(lignesTriees[position].borne_min);
   const suivant = lignesTriees[position + 1];
-  if (!suivant) return `${courant}% et plus`;
+  if (!suivant) return voc`${courant}% et plus`;
   const max = Number(suivant.borne_min) - 1;
   return max > courant ? `${courant}% – ${max}%` : `${courant}%`;
 }
@@ -131,8 +131,8 @@ function CalculTauxCard() {
   const maj = useUpdateParametresCalcul();
   const enregistrer = (payload: Parameters<typeof maj.mutate>[0]) =>
     maj.mutate(payload, {
-      onSuccess: () => notifications.show({ message: "Réglage enregistré", color: "green" }),
-      onError: () => notifications.show({ message: "Erreur lors de l'enregistrement", color: "red" }),
+      onSuccess: () => notifications.show({ message: voc("Réglage enregistré"), color: "green" }),
+      onError: () => notifications.show({ message: voc("Erreur lors de l'enregistrement"), color: "red" }),
     });
   if (!parametres) return null;
   return (
@@ -146,7 +146,7 @@ function CalculTauxCard() {
       </Text>
       <Group grow align="flex-start">
         <Select
-          label="Méthode de calcul par défaut"
+          label={voc("Méthode de calcul par défaut")}
           description={AIDES_METHODE[parametres.methode_calcul]}
           data={optionsMethode()}
           value={parametres.methode_calcul}
@@ -154,7 +154,7 @@ function CalculTauxCard() {
           allowDeselect={false}
         />
         <Select
-          label="Agrégation par défaut"
+          label={voc("Agrégation par défaut")}
           description={AIDES_AGREGATION[parametres.methode_agregation]}
           data={optionsAgregation()}
           value={parametres.methode_agregation}
@@ -164,8 +164,8 @@ function CalculTauxCard() {
       </Group>
       <Switch
         mt="md"
-        label="Plafonner à 100 % dans les agrégations"
-        description="Un dépassement de cible (ex : 130 %) reste affiché, mais compte pour 100 % dans les moyennes."
+        label={voc("Plafonner à 100 % dans les agrégations")}
+        description={voc("Un dépassement de cible (ex : 130 %) reste affiché, mais compte pour 100 % dans les moyennes.")}
         checked={parametres.plafonner_agregation}
         onChange={(e) => enregistrer({ plafonner_agregation: e.currentTarget.checked })}
       />
@@ -177,7 +177,7 @@ export function ParametresAlertePage() {
   return (
     <Stack gap="md">
       <div>
-        <TitreRubrique route="/parametres-alerte" defaut="Paramètres d'alerte" />
+        <TitreRubrique route="/parametres-alerte" defaut={voc("Paramètres d'alerte")} />
         <Text c="dimmed" size="sm">
           {voc("La grille d'interprétation des taux de réalisation (paliers, libellés, couleurs) se configure ici, projet par projet — un projet sans grille propre utilise la grille globale par défaut.")}</Text>
       </div>
@@ -238,17 +238,17 @@ function GrilleInterpretationCard() {
 
   function validerLignes(): string | null {
     if (projetId === null && lignes.length === 0) {
-      return "La grille globale doit contenir au moins un palier.";
+      return voc("La grille globale doit contenir au moins un palier.");
     }
     if (lignes.some((l) => !String(l.libelle).trim())) {
-      return "Chaque palier doit avoir un libellé.";
+      return voc("Chaque palier doit avoir un libellé.");
     }
     const bornes = lignes.map((l) => Number(l.borne_min));
     if (bornes.some((b) => Number.isNaN(b) || b < 0 || b > 100)) {
-      return "Chaque seuil doit être un pourcentage entre 0 et 100.";
+      return voc("Chaque seuil doit être un pourcentage entre 0 et 100.");
     }
     if (new Set(bornes).size !== bornes.length) {
-      return "Deux paliers ne peuvent pas avoir le même seuil.";
+      return voc("Deux paliers ne peuvent pas avoir le même seuil.");
     }
     return null;
   }
@@ -268,16 +268,16 @@ function GrilleInterpretationCard() {
       });
       notifications.show({ message: voc("Grille d'alerte enregistrée"), color: "green" });
     } catch {
-      notifications.show({ message: "Erreur lors de l'enregistrement", color: "red" });
+      notifications.show({ message: voc("Erreur lors de l'enregistrement"), color: "red" });
     }
   }
 
   async function handleRevenirHeritage() {
     try {
       await enregistrer.mutateAsync({ portee, paliers: [] });
-      notifications.show({ message: "Grille héritée de nouveau en vigueur", color: "green" });
+      notifications.show({ message: voc("Grille héritée de nouveau en vigueur"), color: "green" });
     } catch {
-      notifications.show({ message: "Erreur lors de la réinitialisation", color: "red" });
+      notifications.show({ message: voc("Erreur lors de la réinitialisation"), color: "red" });
     }
   }
 
@@ -287,7 +287,7 @@ function GrilleInterpretationCard() {
     indicateurId !== null
       ? voc("Cet indicateur")
       : activiteId !== null
-        ? "Cette activité"
+        ? voc("Cette activité")
         : projetId !== null
           ? voc("Ce projet")
           : null;
@@ -296,7 +296,7 @@ function GrilleInterpretationCard() {
     <Card withBorder padding="lg" radius="md">
       <Group gap="xs" mb="md">
         <Sliders size={18} />
-        <Text fw={600}>Grille d'interprétation</Text>
+        <Text fw={600}>{voc("Grille d'interprétation")}</Text>
       </Group>
 
       <Group align="flex-start" grow mb="md">
@@ -304,7 +304,7 @@ function GrilleInterpretationCard() {
           label={voc("Projet")}
           description={voc("Choisis un projet pour lui définir sa propre grille, ou reste sur la grille globale par défaut.")}
           data={[
-            { value: PALETTE_GLOBALE, label: "Grille globale (par défaut)" },
+            { value: PALETTE_GLOBALE, label: voc("Grille globale (par défaut)") },
             ...(projets ?? []).map((p) => ({ value: String(p.id), label: `${p.code} — ${p.nom}` })),
           ]}
           value={projetSelectionne}
@@ -314,7 +314,7 @@ function GrilleInterpretationCard() {
         />
         {projetId !== null && (
           <Select
-            label="Niveau"
+            label={voc("Niveau")}
             description={voc("La grille du projet entier, ou personnalise-la pour un indicateur ou une activité précis.")}
             data={[
               { value: NIVEAU_PROJET, label: voc("Grille du projet (par défaut)") },
@@ -329,7 +329,7 @@ function GrilleInterpretationCard() {
               ...((activitesDuProjet?.length ?? 0) > 0
                 ? [
                     {
-                      group: "Activités",
+                      group: voc("Activités"),
                       items: activitesDuProjet!.map((a) => ({ value: `ACT:${a.id}`, label: a.libelle })),
                     },
                   ]
@@ -344,13 +344,12 @@ function GrilleInterpretationCard() {
       </Group>
 
       {isLoading ? (
-        <Text c="dimmed">Chargement…</Text>
+        <Text c="dimmed">{voc("Chargement…")}</Text>
       ) : (
         <>
           {libelleNiveauCourant && !resolu?.personnalise && (
             <Text size="sm" c="dimmed" mb="sm">
-              {libelleNiveauCourant} utilise actuellement la grille héritée — modifie les paliers ci-dessous et
-              enregistre pour lui créer une grille propre.
+              {libelleNiveauCourant} {voc("utilise actuellement la grille héritée — modifie les paliers ci-dessous et enregistre pour lui créer une grille propre.")}
             </Text>
           )}
           {libelleNiveauCourant && resolu?.personnalise && (
@@ -363,7 +362,7 @@ function GrilleInterpretationCard() {
                 onClick={handleRevenirHeritage}
                 loading={enregistrer.isPending}
               >
-                Revenir à la grille héritée
+                {voc("Revenir à la grille héritée")}
               </Button>
             </Group>
           )}
@@ -374,7 +373,7 @@ function GrilleInterpretationCard() {
               return (
                 <Group key={index} align="flex-end" wrap="nowrap">
                   <NumberInput
-                    label="Seuil bas (%)"
+                    label={voc("Seuil bas (%)")}
                     description={intervalleTexte(lignesTriees, position)}
                     value={ligne.borne_min}
                     onChange={(v) => modifierLigne(index, "borne_min", v)}
@@ -383,13 +382,13 @@ function GrilleInterpretationCard() {
                     w={110}
                   />
                   <TextInput
-                    label="Libellé"
+                    label={voc("Libellé")}
                     value={ligne.libelle}
                     onChange={(e) => modifierLigne(index, "libelle", e.currentTarget.value)}
                     style={{ flex: 1 }}
                   />
                   <Stack gap={4}>
-                    <Text size="xs" c="dimmed">Couleur</Text>
+                    <Text size="xs" c="dimmed">{voc("Couleur")}</Text>
                     <SelecteurCouleur value={ligne.couleur} onChange={(v) => modifierLigne(index, "couleur", v)} />
                   </Stack>
                   <ApercuBadge libelle={ligne.libelle} couleur={ligne.couleur} />
@@ -402,11 +401,11 @@ function GrilleInterpretationCard() {
           </Stack>
 
           <Button variant="light" size="xs" leftSection={<Plus size={14} />} onClick={ajouterLigne} mt="md">
-            Ajouter un palier
+            {voc("Ajouter un palier")}
           </Button>
 
           <Group justify="flex-end" mt="lg">
-            <Button onClick={handleEnregistrer} loading={enregistrer.isPending}>Enregistrer</Button>
+            <Button onClick={handleEnregistrer} loading={enregistrer.isPending}>{voc("Enregistrer")}</Button>
           </Group>
         </>
       )}
@@ -423,14 +422,14 @@ function RappelsAdateFixeListe() {
       <Divider my="lg" />
       <Group gap="xs" mb="xs">
         <CalendarClock size={16} />
-        <Text fw={600} size="sm">Rappels à date calendaire programmés</Text>
+        <Text fw={600} size="sm">{voc("Rappels à date calendaire programmés")}</Text>
       </Group>
       <Text size="sm" c="dimmed" mb="sm">
         {voc("En plus du seuil en jours ci-dessus, chaque activité ou projet peut avoir sa propre date de rappel fixe (indépendante du nombre de jours) — à définir directement dans sa fiche, champ « Date de rappel ». Voici celles actuellement programmées :")}</Text>
       {isLoading ? (
-        <Text size="sm" c="dimmed">Chargement…</Text>
+        <Text size="sm" c="dimmed">{voc("Chargement…")}</Text>
       ) : rappels.length === 0 ? (
-        <Text size="sm" c="dimmed">Aucune date de rappel fixe n'est programmée pour le moment.</Text>
+        <Text size="sm" c="dimmed">{voc("Aucune date de rappel fixe n'est programmée pour le moment.")}</Text>
       ) : (
         <Stack gap={4}>
           {rappels.map((r) => (
@@ -464,7 +463,7 @@ function RappelsEcheanceCard() {
       await update.mutateAsync({ seuil_echeance_jours: seuilEcheanceJours === "" ? 7 : Number(seuilEcheanceJours) });
       notifications.show({ message: voc("Paramètres d'alerte enregistrés"), color: "green" });
     } catch {
-      notifications.show({ message: "Erreur lors de l'enregistrement", color: "red" });
+      notifications.show({ message: voc("Erreur lors de l'enregistrement"), color: "red" });
     }
   }
 
@@ -472,15 +471,15 @@ function RappelsEcheanceCard() {
     <Card withBorder padding="lg" radius="md">
       <Group gap="xs" mb="md">
         <BellRing size={18} />
-        <Text fw={600}>Rappels d'échéance</Text>
+        <Text fw={600}>{voc("Rappels d'échéance")}</Text>
       </Group>
 
       {isLoading ? (
-        <Text c="dimmed">Chargement…</Text>
+        <Text c="dimmed">{voc("Chargement…")}</Text>
       ) : (
         <>
           <NumberInput
-            label="Alerter avant l'échéance (jours)"
+            label={voc("Alerter avant l'échéance (jours)")}
             description={voc("Seuil global par défaut : une activité, une sous-activité ou un projet non terminé déclenche une notification (et un email) dès que son échéance tombe dans cette fenêtre — et reste alerté si l'échéance est déjà dépassée.")}
             value={seuilEcheanceJours}
             onChange={setSeuilEcheanceJours}
@@ -489,7 +488,7 @@ function RappelsEcheanceCard() {
             w={280}
           />
           <Group justify="flex-end" mt="lg">
-            <Button onClick={handleEnregistrer} loading={update.isPending}>Enregistrer</Button>
+            <Button onClick={handleEnregistrer} loading={update.isPending}>{voc("Enregistrer")}</Button>
           </Group>
         </>
       )}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button, Group, MultiSelect, Stack, TextInput } from "@mantine/core";
 import type { Intervenant } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 /**
  * Choix de plusieurs personnes déjà enregistrées (recherche parmi les
@@ -46,7 +47,7 @@ export function IntervenantsMultiples({
       <MultiSelect
         label={label}
         description={description}
-        placeholder="Choisir une ou plusieurs personnes déjà enregistrées…"
+        placeholder={voc("Choisir une ou plusieurs personnes déjà enregistrées…")}
         data={intervenants.map((i) => ({
           value: String(i.id),
           label: `${i.nom} ${i.prenom}${i.fonction ? " — " + i.fonction : ""}`,
@@ -58,9 +59,9 @@ export function IntervenantsMultiples({
       />
       {modeCreation ? (
         <Group gap={6} align="flex-end" wrap="wrap">
-          <TextInput size="xs" label="Nom" value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
-          <TextInput size="xs" label="Prénom" value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} />
-          <Button size="xs" onClick={ajouter} loading={creating}>Ajouter</Button>
+          <TextInput size="xs" label={voc("Nom")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
+          <TextInput size="xs" label={voc("Prénom")} value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} />
+          <Button size="xs" onClick={ajouter} loading={creating}>{voc("Ajouter")}</Button>
           <Button
             size="xs"
             variant="subtle"
@@ -71,12 +72,12 @@ export function IntervenantsMultiples({
               setPrenom("");
             }}
           >
-            Annuler
+            {voc("Annuler")}
           </Button>
         </Group>
       ) : (
         <Button size="xs" variant="subtle" onClick={() => setModeCreation(true)}>
-          + Créer une nouvelle personne
+          {voc("+ Créer une nouvelle personne")}
         </Button>
       )}
     </Stack>

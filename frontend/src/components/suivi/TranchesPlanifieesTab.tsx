@@ -12,9 +12,9 @@ import type { TranchePlanifiee } from "../../types";
 import { voc } from "../../utils/vocabulaire";
 
 const LIBELLE_STATUT: Record<TranchePlanifiee["statut"], string> = {
-  ATTEINTE: "Atteinte",
-  EN_RETARD: "En retard",
-  EN_COURS: "En cours",
+  ATTEINTE: voc("Atteinte"),
+  EN_RETARD: voc("En retard"),
+  EN_COURS: voc("En cours"),
 };
 
 const TONE_STATUT: Record<TranchePlanifiee["statut"], StatusTone> = {
@@ -51,7 +51,7 @@ export function TranchesPlanifieesTab({
 
   async function ajouter() {
     if (!libelle.trim() || !debut || !fin || cible === "") {
-      notifications.show({ message: "Libellé, dates et cible sont requis.", color: "orange" });
+      notifications.show({ message: voc("Libellé, dates et cible sont requis."), color: "orange" });
       return;
     }
     try {
@@ -63,13 +63,13 @@ export function TranchesPlanifieesTab({
         periode_fin: fin,
         cible: Number(cible),
       });
-      notifications.show({ message: "Tranche ajoutée", color: "green" });
+      notifications.show({ message: voc("Tranche ajoutée"), color: "green" });
       setLibelle("");
       setDebut(null);
       setFin(null);
       setCible("");
     } catch (error) {
-      notifications.show({ message: messageErreurApi(error, "Erreur lors de l'ajout de la tranche"), color: "red" });
+      notifications.show({ message: messageErreurApi(error, voc("Erreur lors de l'ajout de la tranche")), color: "red" });
     }
   }
 
@@ -79,9 +79,9 @@ export function TranchesPlanifieesTab({
       onConfirm: async () => {
         try {
           await deleteTranche.mutateAsync(tranche.id);
-          notifications.show({ message: "Tranche supprimée", color: "green" });
+          notifications.show({ message: voc("Tranche supprimée"), color: "green" });
         } catch (error) {
-          notifications.show({ message: messageErreurApi(error, "Erreur lors de la suppression"), color: "red" });
+          notifications.show({ message: messageErreurApi(error, voc("Erreur lors de la suppression")), color: "red" });
         }
       },
     });
@@ -90,29 +90,29 @@ export function TranchesPlanifieesTab({
   return (
     <Card withBorder padding="md" radius="md">
       <Group align="flex-end" mb="md" wrap="wrap">
-        <TextInput label="Période" placeholder="Ex : Année 1, T1 2026…" value={libelle} onChange={(e) => setLibelle(e.currentTarget.value)} />
-        <DateInput label="Du" value={debut} onChange={setDebut} />
-        <DateInput label="Au" value={fin} onChange={setFin} />
-        <NumberInput label={`Cible${unite ? ` (${unite})` : ""}`} value={cible} onChange={setCible} min={0} w={140} />
+        <TextInput label={voc("Période")} placeholder={voc("Ex : Année 1, T1 2026…")} value={libelle} onChange={(e) => setLibelle(e.currentTarget.value)} />
+        <DateInput label={voc("Du")} value={debut} onChange={setDebut} />
+        <DateInput label={voc("Au")} value={fin} onChange={setFin} />
+        <NumberInput label={voc`Cible${unite ? ` (${unite})` : ""}`} value={cible} onChange={setCible} min={0} w={140} />
         <Button leftSection={<Plus size={16} />} onClick={ajouter} loading={createTranche.isPending}>
-          Ajouter
+          {voc("Ajouter")}
         </Button>
       </Group>
 
       {isLoading ? (
-        <Text c="dimmed">Chargement…</Text>
+        <Text c="dimmed">{voc("Chargement…")}</Text>
       ) : !tranches || tranches.length === 0 ? (
-        <EmptyState message="Aucune tranche définie — la cible reste suivie uniquement en cumul global." />
+        <EmptyState message={voc("Aucune tranche définie — la cible reste suivie uniquement en cumul global.")} />
       ) : (
         <>
           <Table.ScrollContainer minWidth={600}>
             <Table verticalSpacing="sm" striped highlightOnHover>
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th tt="uppercase" fz="xs" c="dimmed">Période</Table.Th>
-                  <Table.Th tt="uppercase" fz="xs" c="dimmed">Dates</Table.Th>
-                  <Table.Th tt="uppercase" fz="xs" c="dimmed">Progression</Table.Th>
-                  <Table.Th tt="uppercase" fz="xs" c="dimmed">Statut</Table.Th>
+                  <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Période")}</Table.Th>
+                  <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Dates")}</Table.Th>
+                  <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Progression")}</Table.Th>
+                  <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Statut")}</Table.Th>
                   <Table.Th />
                 </Table.Tr>
               </Table.Thead>
@@ -135,7 +135,7 @@ export function TranchesPlanifieesTab({
                       <StatusBadge tone={TONE_STATUT[t.statut]}>{LIBELLE_STATUT[t.statut]}</StatusBadge>
                     </Table.Td>
                     <Table.Td>
-                      <Tooltip label="Supprimer">
+                      <Tooltip label={voc("Supprimer")}>
                         <ActionIcon variant="subtle" color="red" onClick={() => supprimer(t)}>
                           <Trash2 size={16} />
                         </ActionIcon>
@@ -147,7 +147,7 @@ export function TranchesPlanifieesTab({
             </Table>
           </Table.ScrollContainer>
           <Text size="xs" c="dimmed" mt="sm">
-            Somme des cibles de toutes les tranches : {sommeCibles}{unite ? ` ${unite}` : ""} {voc(" — à comparer à la cible globale de l'activité/indicateur.")}</Text>
+            {voc("Somme des cibles de toutes les tranches :")} {sommeCibles}{unite ? ` ${unite}` : ""} {voc(" — à comparer à la cible globale de l'activité/indicateur.")}</Text>
         </>
       )}
     </Card>

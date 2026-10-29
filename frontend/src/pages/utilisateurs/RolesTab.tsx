@@ -7,6 +7,7 @@ import { confirmerSuppression } from "../../components/common/confirmerSuppressi
 import { messageErreurApi } from "../../utils/erreurs";
 import type { RoleUtilisateur } from "../../types";
 import { voc } from "../../utils/vocabulaire";
+import { libelleRole } from "../../utils/roles";
 
 const LIBELLE_VISIBILITE = voc("Voit tous les projets");
 const LIBELLE_TABLEAU_DE_BORD = voc("Peut personnaliser le tableau de bord");
@@ -46,40 +47,40 @@ export function ModifierRoleModal({ role, onClose }: { role: RoleUtilisateur | n
           peut_approuver: approuver,
         },
       });
-      notifications.show({ message: "Rôle modifié", color: "green" });
+      notifications.show({ message: voc("Rôle modifié"), color: "green" });
       onClose();
     } catch (error) {
-      notifications.show({ message: messageErreurApi(error, "Erreur lors de la modification du rôle"), color: "red" });
+      notifications.show({ message: messageErreurApi(error, voc("Erreur lors de la modification du rôle")), color: "red" });
     }
   }
 
   return (
-    <Modal opened={!!role} onClose={onClose} title={`Modifier le rôle — ${role?.libelle ?? ""}`}>
+    <Modal opened={!!role} onClose={onClose} title={voc`Modifier le rôle — ${role?.libelle ?? ""}`}>
       <Stack gap="sm">
-        <TextInput label="Libellé" value={libelle} onChange={(e) => setLibelle(e.currentTarget.value)} required />
+        <TextInput label={voc("Libellé")} value={libelle} onChange={(e) => setLibelle(e.currentTarget.value)} required />
         <Switch
           label={LIBELLE_VISIBILITE}
-          description={estAdmin ? "Toujours actif pour l'Administrateur" : AIDE_VISIBILITE}
+          description={estAdmin ? voc("Toujours actif pour l'Administrateur") : AIDE_VISIBILITE}
           checked={estAdmin || visibiliteGlobale}
           disabled={estAdmin}
           onChange={(e) => setVisibiliteGlobale(e.currentTarget.checked)}
         />
         <Switch
           label={LIBELLE_TABLEAU_DE_BORD}
-          description={estAdmin ? "Toujours actif pour l'Administrateur" : AIDE_TABLEAU_DE_BORD}
+          description={estAdmin ? voc("Toujours actif pour l'Administrateur") : AIDE_TABLEAU_DE_BORD}
           checked={estAdmin || tableauDeBord}
           disabled={estAdmin}
           onChange={(e) => setTableauDeBord(e.currentTarget.checked)}
         />
         <Switch
           label={LIBELLE_APPROUVER}
-          description={estAdmin ? "Toujours actif pour l'Administrateur" : AIDE_APPROUVER}
+          description={estAdmin ? voc("Toujours actif pour l'Administrateur") : AIDE_APPROUVER}
           checked={estAdmin || approuver}
           disabled={estAdmin}
           onChange={(e) => setApprouver(e.currentTarget.checked)}
         />
         <Group justify="flex-end" mt="sm">
-          <Button onClick={handleEnregistrer} loading={updateRole.isPending}>Enregistrer</Button>
+          <Button onClick={handleEnregistrer} loading={updateRole.isPending}>{voc("Enregistrer")}</Button>
         </Group>
       </Stack>
     </Modal>
@@ -99,7 +100,7 @@ export function RolesTab() {
 
   async function handleCreer() {
     if (!libelle.trim()) {
-      notifications.show({ message: "Indique le libellé du rôle.", color: "orange" });
+      notifications.show({ message: voc("Indique le libellé du rôle."), color: "orange" });
       return;
     }
     try {
@@ -113,21 +114,21 @@ export function RolesTab() {
       setVisibiliteGlobale(false);
       setTableauDeBord(false);
       setApprouver(false);
-      notifications.show({ message: "Rôle créé", color: "green" });
+      notifications.show({ message: voc("Rôle créé"), color: "green" });
     } catch (error) {
-      notifications.show({ message: messageErreurApi(error, "Erreur lors de la création du rôle"), color: "red" });
+      notifications.show({ message: messageErreurApi(error, voc("Erreur lors de la création du rôle")), color: "red" });
     }
   }
 
   function handleSupprimer(role: RoleUtilisateur) {
     confirmerSuppression({
-      message: `Supprimer le rôle "${role.libelle}" ?`,
+      message: voc`Supprimer le rôle "${role.libelle}" ?`,
       onConfirm: async () => {
         try {
           await deleteRole.mutateAsync(role.id);
-          notifications.show({ message: "Rôle supprimé", color: "green" });
+          notifications.show({ message: voc("Rôle supprimé"), color: "green" });
         } catch (error) {
-          notifications.show({ message: messageErreurApi(error, "Erreur lors de la suppression du rôle"), color: "red" });
+          notifications.show({ message: messageErreurApi(error, voc("Erreur lors de la suppression du rôle")), color: "red" });
         }
       },
     });
@@ -140,8 +141,8 @@ export function RolesTab() {
 
       <Group align="flex-end">
         <TextInput
-          label="Nouveau rôle"
-          placeholder="Ex : Superviseur régional"
+          label={voc("Nouveau rôle")}
+          placeholder={voc("Ex : Superviseur régional")}
           value={libelle}
           onChange={(e) => setLibelle(e.currentTarget.value)}
           onKeyDown={(e) => e.key === "Enter" && handleCreer()}
@@ -160,20 +161,20 @@ export function RolesTab() {
           mb={8}
         />
         <Switch label={LIBELLE_APPROUVER} checked={approuver} onChange={(e) => setApprouver(e.currentTarget.checked)} mb={8} />
-        <Button onClick={handleCreer} loading={createRole.isPending}>Ajouter</Button>
+        <Button onClick={handleCreer} loading={createRole.isPending}>{voc("Ajouter")}</Button>
       </Group>
 
       {isLoading ? (
-        <div>Chargement…</div>
+        <div>{voc("Chargement…")}</div>
       ) : (
         <Table striped highlightOnHover>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th>Libellé</Table.Th>
-              <Table.Th>Code</Table.Th>
-              <Table.Th>Visibilité</Table.Th>
+              <Table.Th>{voc("Libellé")}</Table.Th>
+              <Table.Th>{voc("Code")}</Table.Th>
+              <Table.Th>{voc("Visibilité")}</Table.Th>
               <Table.Th>{voc("Tableau de bord")}</Table.Th>
-              <Table.Th>Approbations</Table.Th>
+              <Table.Th>{voc("Approbations")}</Table.Th>
               <Table.Th>{voc("Utilisateurs")}</Table.Th>
               <Table.Th w={40} />
             </Table.Tr>
@@ -184,11 +185,11 @@ export function RolesTab() {
                 <Table.Td>
                   <Group gap={6} wrap="nowrap">
                     {r.systeme && (
-                      <Tooltip label="Rôle système">
+                      <Tooltip label={voc("Rôle système")}>
                         <Lock size={13} />
                       </Tooltip>
                     )}
-                    <Text size="sm">{r.libelle}</Text>
+                    <Text size="sm">{libelleRole(r.libelle)}</Text>
                   </Group>
                 </Table.Td>
                 <Table.Td><Text size="xs" c="dimmed">{r.code}</Text></Table.Td>
@@ -199,18 +200,18 @@ export function RolesTab() {
                 </Table.Td>
                 <Table.Td>
                   <Badge variant="light" color={r.code === "ADMIN" || r.peut_personnaliser_tableau_de_bord ? "indigo" : "gray"}>
-                    {r.code === "ADMIN" || r.peut_personnaliser_tableau_de_bord ? "Peut personnaliser" : "Consultation"}
+                    {r.code === "ADMIN" || r.peut_personnaliser_tableau_de_bord ? voc("Peut personnaliser") : voc("Consultation")}
                   </Badge>
                 </Table.Td>
                 <Table.Td>
                   {(r.code === "ADMIN" || r.peut_approuver) && (
-                    <Badge variant="light" color="grape">Approuve</Badge>
+                    <Badge variant="light" color="grape">{voc("Approuve")}</Badge>
                   )}
                 </Table.Td>
                 <Table.Td>{r.nb_utilisateurs}</Table.Td>
                 <Table.Td>
                   <Group gap={4} wrap="nowrap">
-                    <Tooltip label="Modifier">
+                    <Tooltip label={voc("Modifier")}>
                       <ActionIcon size="sm" variant="subtle" onClick={() => setRoleEnEdition(r)}>
                         <Pencil size={13} />
                       </ActionIcon>
@@ -218,10 +219,10 @@ export function RolesTab() {
                     <Tooltip
                       label={
                         r.systeme
-                          ? "Rôle système : non supprimable"
+                          ? voc("Rôle système : non supprimable")
                           : r.nb_utilisateurs > 0
                             ? voc("Des utilisateurs ont ce rôle")
-                            : "Supprimer"
+                            : voc("Supprimer")
                       }
                     >
                       <ActionIcon

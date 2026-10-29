@@ -1,6 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
 import { cheminApi, usePartage } from "../utils/partage";
+import type { Langue } from "../utils/i18n";
 import type { Vocabulaire } from "../utils/vocabulaire";
 import type {
   ConfigurationTableauDeBord,
@@ -67,6 +68,8 @@ export interface ConfigurationMenu {
   /** Nom d'une icône de ICONES_MENU (utils/iconesMenu). */
   icones: Record<string, string>;
   vocabulaire: Vocabulaire;
+  /** Langue proposée aux utilisateurs qui n'en ont pas choisi (voir utils/i18n). */
+  langue_defaut: Langue;
   peut_modifier: boolean;
 }
 

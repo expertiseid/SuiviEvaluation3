@@ -13,6 +13,8 @@ from decimal import Decimal
 
 from django.db.models import Max, Min, Q, Sum
 
+from apps.projects.attributs import ordonner
+
 
 def valeur_attendue_a(date, debut, fin, depart, arrivee):
     """
@@ -203,6 +205,7 @@ def construire_dashboard_suivi(projet) -> dict:
                     "unite_quantite": sous_activite.unite_quantite,
                     "date_debut": sous_activite.date_debut,
                     "date_fin": sous_activite.date_fin,
+                    "attributs": {n: sous_activite.attributs[n] for n in ordonner(sous_activite.attributs or {}, projet.ordre_attributs)},
                     "historique": sous_historique,
                 }
             )
@@ -214,6 +217,7 @@ def construire_dashboard_suivi(projet) -> dict:
                 "id": activite.id,
                 "code_activite": activite.code_activite,
                 "libelle": activite.libelle,
+                "attributs": {n: activite.attributs[n] for n in ordonner(activite.attributs or {}, projet.ordre_attributs)},
                 "statut": activite.statut,
                 "valeur_reference": activite.valeur_reference,
                 "quantite_prevue": activite.quantite_prevue,

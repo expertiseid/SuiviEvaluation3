@@ -65,11 +65,11 @@ export function IndicateursListPage() {
   return (
     <Stack gap="md">
       <Group justify="space-between">
-        <TitreRubrique route="/indicateurs" defaut="Indicateurs" />
+        <TitreRubrique route="/indicateurs" defaut={voc("Indicateurs")} />
         <Group gap="xs">
           <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />
           <Button variant="light" leftSection={<FileSpreadsheet size={16} />} onClick={() => setModalImportOuvert(true)}>
-            Importer depuis Excel
+            {voc("Importer depuis Excel")}
           </Button>
           <Button onClick={() => setModalOpen(true)}>{voc("Nouvel indicateur")}</Button>
         </Group>
@@ -84,7 +84,7 @@ export function IndicateursListPage() {
       />
 
       {isLoading ? (
-        <div>Chargement…</div>
+        <div>{voc("Chargement…")}</div>
       ) : groupes.length === 0 ? (
         <Text c="dimmed" size="sm">
           {recherche ? voc("Aucun indicateur ne correspond à la recherche.") : voc("Aucun indicateur pour le moment.")}
@@ -99,11 +99,11 @@ export function IndicateursListPage() {
               <Table striped highlightOnHover>
                 <Table.Thead>
                   <Table.Tr>
-                    <Table.Th>Libellé</Table.Th>
-                    <Table.Th>Unité</Table.Th>
-                    <Table.Th>Valeur de base</Table.Th>
-                    <Table.Th>Cible</Table.Th>
-                    <Table.Th>Statut</Table.Th>
+                    <Table.Th>{voc("Libellé")}</Table.Th>
+                    <Table.Th>{voc("Unité")}</Table.Th>
+                    <Table.Th>{voc("Valeur de base")}</Table.Th>
+                    <Table.Th>{voc("Cible")}</Table.Th>
+                    <Table.Th>{voc("Statut")}</Table.Th>
                     <Table.Th />
                   </Table.Tr>
                 </Table.Thead>

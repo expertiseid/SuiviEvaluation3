@@ -3,6 +3,8 @@ import datetime
 
 from django.utils.html import escape
 
+from apps.core.vocabulaire import v
+
 NIVEAUX = {
     "CRITIQUE": ("Critique", "#c92a2a"),
     "ELEVE": ("Élevé", "#e8590c"),
@@ -37,7 +39,7 @@ def html_registre_risques(projet) -> str:
     # Résumé par niveau (risques encore ouverts).
     ouverts = [r for r in risques if r.statut in ("ACTIF", "SURVENU")]
     resume = " · ".join(
-        f"{sum(1 for r in ouverts if r.niveau == cle)} {libelle.lower()}" for cle, (libelle, _c) in NIVEAUX.items()
+        f"{sum(1 for r in ouverts if r.niveau == cle)} {v(libelle).lower()}" for cle, (libelle, _c) in NIVEAUX.items()
     )
 
     # Matrice : impact en colonnes, probabilité en lignes (5 en haut).

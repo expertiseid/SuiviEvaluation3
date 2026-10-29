@@ -14,7 +14,10 @@ from openpyxl.comments import Comment
 from openpyxl.styles import Alignment, Font, PatternFill
 
 from apps.core.excel_utils import figer_entete, quadriller
+from apps.core.langues import vers_francais
 from apps.core.vocabulaire import adapter_classeur, ramener_classeur, v
+
+from .attributs import champ_connu, nom_de_colonne, retenir_ordre
 
 
 def _normaliser_entete(texte: str) -> str:
@@ -40,7 +43,6 @@ CHAMPS_PROJET = [
     ("Date de fin (AAAA-MM-JJ)", "2027-12-31"),
     ("Statut (EN_PREPARATION/EN_COURS/CLOTURE)", "EN_PREPARATION"),
     ("Type de mise en œuvre (DIRECT/CONSORTIUM)", "DIRECT"),
-    ("Bailleur", "Fondation Grameen"),
     ("Partenaire de mise en œuvre", "ONG Sahel Solidarité"),
     ("Partenaires du consortium (séparés par ;)", ""),
     ("Chef de projet", "OUEDRAOGO Fatimata"),
@@ -51,6 +53,17 @@ CHAMPS_PROJET = [
     ("Cible jeunes", 300),
     ("Cible PDI", 100),
 ]
+
+# Feuille « Financements » : un bailleur par ligne avec le montant qu'il apporte (autant de lignes
+# que de bailleurs). Le coût total du projet devient fonds propres + somme de ces montants.
+COLONNES_FINANCEMENTS = ["Bailleur", "Type de bailleur", "Montant financé (FCFA)"]
+LIGNES_EXEMPLE_FINANCEMENTS = [
+    ["Union européenne", "Institutionnel", 60000000],
+    ["Fondation Grameen", "Fondation", 30000000],
+]
+# Ancien champ « Bailleur » de la feuille Projet (un seul nom, sans montant) : encore lu pour
+# les fichiers remplis avant la feuille « Financements ».
+CHAMP_BAILLEUR_UNIQUE = "Bailleur"
 
 # Les colonnes placées AVANT « Sous-activité » (sauf « Code ») sont les niveaux
 # de la planification : leurs noms et leur nombre sont libres. Le modèle propose
@@ -74,6 +87,19 @@ COLONNES_PLANIFICATION = [
     "Poids (%)",
 ]
 
+# Exemple d'attribut dans le modèle : une information sur l'élément de la ligne, pas un niveau, même
+# placée avant « Sous-activité » (voir apps.projects.attributs). Pas dans COLONNES_PLANIFICATION :
+# son nom est libre, il n'est jamais ramené au français à l'import.
+COLONNE_ATTRIBUT_EXEMPLE = "Attribut : Responsable"
+COLONNES_MODELE = [*COLONNES_PLANIFICATION[:4], COLONNE_ATTRIBUT_EXEMPLE, *COLONNES_PLANIFICATION[4:]]
+COULEUR_ATTRIBUT = "DDEBF7"
+COMMENTAIRE_ATTRIBUT = (
+    "Attribut : une information sur l'élément de la même ligne (texte libre), jamais un niveau. Renommez "
+    "après « Attribut : » (ex : « Attribut : Lieu »), ajoutez-en autant que vous voulez, où vous voulez. "
+    "« Attribut : Description », « Attribut : Sources de vérification » et « Attribut : Hypothèses » "
+    "remplissent ces champs de l'élément."
+)
+
 # Repère visuel des colonnes de niveau dans le modèle (en-têtes renommables).
 COULEUR_NIVEAU = "FFF2CC"
 COLONNES_NIVEAUX_MODELE = ("Objectif général", "Objectif spécifique", "Activité")
@@ -87,13 +113,14 @@ COMMENTAIRE_NIVEAU = (
 )
 
 LIGNES_EXEMPLE_PLANIFICATION = [
-    ["Améliorer la sécurité alimentaire des ménages vulnérables"] + [""] * 13,
-    ["", "Renforcer les capacités techniques des producteurs"] + [""] * 12,
+    ["Améliorer la sécurité alimentaire des ménages vulnérables"] + [""] * 14,
+    ["", "Renforcer les capacités techniques des producteurs"] + [""] * 13,
     [
         "",
         "",
         "A1.1",
         "Former les producteurs aux techniques agroécologiques",
+        "Cellule technique agricole",
         "",
         0,
         2000000,
@@ -106,12 +133,12 @@ LIGNES_EXEMPLE_PLANIFICATION = [
         "",
     ],
     [
-        "", "", "", "", "Session de formation en zone rurale", "", "", 100, "producteurs", "2026-02-01", "2026-03-31", "",
-        "", 60,
+        "", "", "", "", "", "Session de formation en zone rurale", "", "", 100, "producteurs", "2026-02-01", "2026-03-31",
+        "", "", 60,
     ],
     [
-        "", "", "", "", "Suivi des parcelles de démonstration", "", "", 20, "parcelles", "2026-04-01", "2026-06-30", "",
-        "", 40,
+        "", "", "", "", "", "Suivi des parcelles de démonstration", "", "", 20, "parcelles", "2026-04-01", "2026-06-30",
+        "", "", 40,
     ],
 ]
 
@@ -129,9 +156,89 @@ def generer_feuille_projet(wb):
     return feuille
 
 
+def generer_feuille_financements(wb, avec_exemple=True):
+    from openpyxl.worksheet.datavalidation import DataValidation
+
+    from apps.partners.models import Bailleur
+
+    feuille = wb.create_sheet("Financements")
+    feuille.append(COLONNES_FINANCEMENTS)
+    for cellule in feuille[1]:
+        cellule.font = Font(bold=True)
+    if avec_exemple:
+        for ligne in LIGNES_EXEMPLE_FINANCEMENTS:
+            feuille.append(ligne)
+    for _ in range(10):
+        feuille.append([""] * len(COLONNES_FINANCEMENTS))
+    quadriller(feuille, max_col=len(COLONNES_FINANCEMENTS))
+    figer_entete(feuille)
+    liste = DataValidation(type="list", formula1='"' + ",".join(Bailleur.TypeBailleur.labels) + '"', allow_blank=True)
+    liste.add(f"B2:B{feuille.max_row}")
+    feuille.add_data_validation(liste)
+    for colonne, largeur in zip("ABC", (40, 26, 24)):
+        feuille.column_dimensions[colonne].width = largeur
+    for ligne in feuille.iter_rows(min_row=2, min_col=3, max_col=3):
+        ligne[0].number_format = "#,##0"
+    return feuille
+
+
+def importer_financements(feuille, projet) -> list[dict]:
+    """
+    Crée un Financement par ligne (bailleur retrouvé par son nom, sinon créé) puis met à jour le
+    coût total du projet (fonds propres + financements). Renvoie les erreurs ligne par ligne :
+    une ligne invalide est ignorée sans bloquer les autres.
+    """
+    from decimal import Decimal, InvalidOperation
+
+    from apps.partners.models import Bailleur, Financement
+
+    lignes = list(feuille.iter_rows(values_only=True))
+    if not lignes:
+        return []
+    entetes = {_normaliser_entete(str(c)): i for i, c in enumerate(lignes[0]) if c not in (None, "")}
+    i_nom, i_type, i_montant = (entetes.get(_normaliser_entete(c)) for c in COLONNES_FINANCEMENTS)
+    if i_nom is None or i_montant is None:
+        return [{"ligne": 1, "message": "[Financements] Colonnes « Bailleur » et « Montant financé (FCFA) » introuvables."}]
+    types = {_normaliser_entete(label): code for code, label in Bailleur.TypeBailleur.choices}
+    erreurs, deja = [], set()
+    for numero, ligne in enumerate(lignes[1:], start=2):
+        def cellule(i):
+            return ligne[i] if i is not None and i < len(ligne) else None
+
+        nom = str(cellule(i_nom) or "").strip()
+        brut = cellule(i_montant)
+        if not nom and brut in (None, ""):
+            continue
+        if not nom:
+            erreurs.append({"ligne": numero, "message": "[Financements] Nom du bailleur manquant — ligne ignorée."})
+            continue
+        try:
+            montant = Decimal(str(brut).replace(" ", "").replace("\u202f", "").replace(",", "."))
+        except InvalidOperation:
+            montant = None
+        if montant is None or montant < 0:
+            erreurs.append({"ligne": numero, "message": f"[Financements] Montant invalide pour « {nom} » — ligne ignorée."})
+            continue
+        if nom.lower() in deja:
+            erreurs.append({"ligne": numero, "message": f"[Financements] Bailleur « {nom} » déjà présent plus haut — ligne ignorée."})
+            continue
+        deja.add(nom.lower())
+        bailleur = Bailleur.objects.filter(nom__iexact=nom).first()
+        if bailleur is None:
+            type_ = types.get(_normaliser_entete(str(cellule(i_type) or "")), Bailleur.TypeBailleur.AUTRE)
+            bailleur = Bailleur.objects.create(nom=nom, type=type_)
+        Financement.objects.update_or_create(projet=projet, bailleur=bailleur, defaults={"montant_finance": montant})
+    if projet.financements.exists():
+        # fonds_propres peut encore être le float lu dans le fichier : on repart de la base.
+        projet.refresh_from_db(fields=["fonds_propres"])
+        projet.budget_total = projet.fonds_propres + projet.financement_bailleurs_total
+        projet.save(update_fields=["budget_total"])
+    return erreurs
+
+
 def generer_feuille_planification(wb, avec_exemple=True):
     feuille = wb.create_sheet("Planification")
-    nb_colonnes = len(COLONNES_PLANIFICATION)
+    nb_colonnes = len(COLONNES_MODELE)
 
     # Ligne 1 : légende ; ligne 2 : en-têtes (l'import retrouve seul la ligne
     # d'en-têtes, voir _ligne_entetes). Les en-têtes de niveau sont en jaune et
@@ -144,12 +251,15 @@ def generer_feuille_planification(wb, avec_exemple=True):
     legende.alignment = Alignment(wrap_text=True, vertical="center")
     feuille.row_dimensions[1].height = 32
 
-    feuille.append(COLONNES_PLANIFICATION)
+    feuille.append(COLONNES_MODELE)
     for cellule in feuille[2]:
         cellule.font = Font(bold=True)
         if cellule.value in COLONNES_NIVEAUX_MODELE:
             cellule.fill = PatternFill("solid", fgColor=COULEUR_NIVEAU)
             cellule.comment = Comment(COMMENTAIRE_NIVEAU, "Plateforme S&E")
+        elif cellule.value == COLONNE_ATTRIBUT_EXEMPLE:
+            cellule.fill = PatternFill("solid", fgColor=COULEUR_ATTRIBUT)
+            cellule.comment = Comment(COMMENTAIRE_ATTRIBUT, "Plateforme S&E")
     if avec_exemple:
         for ligne in LIGNES_EXEMPLE_PLANIFICATION:
             feuille.append(ligne)
@@ -170,15 +280,17 @@ def generer_feuille_planification(wb, avec_exemple=True):
 
     from .models import MethodeCalcul
 
-    colonne = get_column_letter(COLONNES_PLANIFICATION.index("Méthode de calcul") + 1)
+    colonne = get_column_letter(COLONNES_MODELE.index("Méthode de calcul") + 1)
     liste = DataValidation(type="list", formula1='"' + ",".join(MethodeCalcul.labels) + '"', allow_blank=True)
     liste.add(f"{colonne}3:{colonne}{feuille.max_row}")
     feuille.add_data_validation(liste)
 
-    largeurs = {"A": 34, "B": 34, "C": 14, "D": 40, "E": 34, "F": 14, "G": 16, "H": 14, "I": 14, "J": 16, "K": 16,
-                "L": 24, "M": 24, "N": 11}
-    for colonne, largeur in largeurs.items():
-        feuille.column_dimensions[colonne].width = largeur
+    largeurs = {"Objectif général": 34, "Objectif spécifique": 34, "Code activité": 14, "Activité": 40,
+                COLONNE_ATTRIBUT_EXEMPLE: 26, "Sous-activité": 34, "Valeur de base": 14, "Budget alloué (FCFA)": 16,
+                "Quantité prévue": 14, "Unité": 14, "Date début (AAAA-MM-JJ)": 16, "Date fin (AAAA-MM-JJ)": 16,
+                "Commentaire": 24, "Méthode de calcul": 24, "Poids (%)": 11}
+    for nom, largeur in largeurs.items():
+        feuille.column_dimensions[get_column_letter(COLONNES_MODELE.index(nom) + 1)].width = largeur
 
     return feuille
 
@@ -188,6 +300,7 @@ def generer_modele_import_projet() -> bytes:
 
     wb = Workbook()
     generer_feuille_projet(wb)
+    generer_feuille_financements(wb)
     generer_feuille_planification(wb)
     generer_feuille_paliers_alerte(wb)
 
@@ -196,6 +309,7 @@ def generer_modele_import_projet() -> bytes:
     instructions.append(["- Feuille « Projet » : une ligne = un champ (colonne A = nom du champ, colonne B = valeur)."])
     instructions.append(["- Nom du projet, Code du projet, Date de début et Date de fin sont obligatoires."])
     instructions.append(["- Le code du projet doit être unique — l'import est refusé s'il existe déjà."])
+    instructions.append([INSTRUCTION_FINANCEMENTS])
     instructions.append([
         "- « Utilisateurs affectés » : identifiants (username) de comptes déjà créés sur la plateforme, séparés "
         "par « ; ». C'est ce qui donne réellement accès au projet une fois connecté — le champ « Chef de "
@@ -217,8 +331,15 @@ def generer_modele_import_projet() -> bytes:
         "(le dernier élément du niveau immédiatement supérieur renseigné au-dessus)."
     ])
     instructions.append([
-        "- Une colonne de note ou de remarque doit être placée APRÈS « Commentaire », sinon elle serait lue "
-        "comme un niveau."
+        "- Attributs (en bleu) : une colonne dont l'en-tête commence par « Attribut : » (ex : « Attribut : "
+        "Responsable », « Attribut : Lieu ») n'est jamais un niveau, même placée avant « Sous-activité ». Sa "
+        "valeur s'applique à l'élément ou à la sous-activité de la même ligne. Ajoutez-en autant que vous "
+        "voulez ; « Attribut : Description », « Attribut : Sources de vérification » et « Attribut : "
+        "Hypothèses » remplissent ces champs de l'élément."
+    ])
+    instructions.append([
+        "- Toute autre colonne placée avant « Sous-activité » est lue comme un niveau : une note ou une "
+        "remarque se met en attribut, ou APRÈS « Commentaire »."
     ])
     instructions.append([
         "- Les colonnes Code / Valeur de base / Budget alloué / Quantité prévue / Unité / Date début / Date fin / "
@@ -251,6 +372,13 @@ def generer_modele_import_projet() -> bytes:
     adapter_classeur(wb)
     wb.save(buffer)
     return buffer.getvalue()
+
+
+INSTRUCTION_FINANCEMENTS = (
+    "- Feuille « Financements » : une ligne par bailleur (autant de lignes que de bailleurs), avec le "
+    "montant qu'il apporte. Un bailleur inconnu est créé avec le type choisi. Dès qu'un montant est "
+    "renseigné, le coût total du projet = fonds propres + somme des financements."
+)
 
 
 def _texte(champs, cle, defaut=""):
@@ -317,7 +445,7 @@ def methode_depuis_texte(texte):
     """
     from .models import MethodeCalcul
 
-    saisi = _normaliser_entete(str(texte))
+    saisi = _normaliser_entete(vers_francais(str(texte)))
     for code, libelle in MethodeCalcul.choices:
         if saisi in (_normaliser_entete(code), _normaliser_entete(libelle)):
             return code
@@ -380,6 +508,9 @@ def importer_planification(feuille, projet) -> dict:
     idx_commentaire = index("Commentaire")
     idx_methode = index("Méthode de calcul")
     idx_poids = index("Poids (%)")
+    # Colonnes « Attribut : … » : jamais des niveaux, où qu'elles soient (voir apps.projects.attributs).
+    attributs_par_colonne = {i: nom for i, e in enumerate(entetes) if (nom := nom_de_colonne(e))}
+    retenir_ordre(projet, attributs_par_colonne.values())
 
     colonnes_donnees = {
         i
@@ -396,7 +527,10 @@ def importer_planification(feuille, projet) -> dict:
     idx_niveaux = [
         i
         for i in range(0, borne_fin)
-        if i not in colonnes_donnees and entetes[i] and not entetes_normalises[i].startswith("code")
+        if i not in colonnes_donnees
+        and i not in attributs_par_colonne
+        and entetes[i]
+        and not entetes_normalises[i].startswith("code")
     ]
     resultat["niveaux"] = [entetes[i] for i in idx_niveaux]
 
@@ -415,6 +549,20 @@ def importer_planification(feuille, projet) -> dict:
         if idx is None or idx >= len(ligne):
             return None
         return ligne[idx]
+
+    def renseigner_attributs(objet, ligne, champs_connus=True):
+        """Attributs de la ligne : un champ de l'élément s'il porte ce nom, sinon un attribut libre."""
+        libres = dict(objet.attributs or {})
+        for idx, nom in attributs_par_colonne.items():
+            texte = str(valeur(ligne, idx) or "").strip()
+            if not texte:
+                continue
+            champ = champ_connu(nom) if champs_connus else None
+            if champ:
+                setattr(objet, champ, texte)
+            else:
+                libres[nom] = texte
+        objet.attributs = libres
 
     def date_cellule(ligne, idx):
         v = valeur(ligne, idx)
@@ -490,6 +638,7 @@ def importer_planification(feuille, projet) -> dict:
                     element.methode_calcul = methode
             if valeur(ligne, idx_poids) not in (None, ""):
                 element.poids = valeur(ligne, idx_poids)
+            renseigner_attributs(element, ligne)
             try:
                 element.clean()
             except Exception as exc:  # ValidationError du modèle
@@ -527,6 +676,8 @@ def importer_planification(feuille, projet) -> dict:
             date_fin = date_cellule(ligne, idx_fin)
             if date_fin:
                 sa.date_fin = date_fin
+            # Une sous-activité n'a ni description ni cadre logique : tout attribut y reste libre.
+            renseigner_attributs(sa, ligne, champs_connus=False)
             sa.save()
             if not existant:
                 resultat["sous_activites_creees"] += 1
@@ -635,7 +786,7 @@ def importer_projet_depuis_wb(wb, cadre_strategique_impose=None) -> dict:
         type_brut if type_brut in dict(Projet.TypeMiseEnOeuvre.choices) else Projet.TypeMiseEnOeuvre.DIRECT
     )
 
-    bailleur = _resoudre_partenaire(_texte(champs, "Bailleur"), "BAILLEUR")
+    bailleur = _resoudre_partenaire(_texte(champs, CHAMP_BAILLEUR_UNIQUE), "BAILLEUR")
     partenaire_mise_en_oeuvre = _resoudre_partenaire(_texte(champs, "Partenaire de mise en œuvre"), "MISE_EN_OEUVRE")
     noms_consortium = [c.strip() for c in _texte(champs, "Partenaires du consortium (séparés par ;)").split(";") if c.strip()]
     partenaires_consortium = [p for p in (_resoudre_partenaire(n, "MISE_EN_OEUVRE") for n in noms_consortium) if p]
@@ -680,6 +831,9 @@ def importer_projet_depuis_wb(wb, cadre_strategique_impose=None) -> dict:
         projet.partenaires_consortium.set(partenaires_consortium)
     if utilisateurs_affectes:
         projet.utilisateurs_affectes.set(utilisateurs_affectes)
+
+    if "Financements" in wb.sheetnames:
+        erreurs += importer_financements(wb["Financements"], projet)
 
     resultat_plan = {"elements_crees": 0, "sous_activites_creees": 0, "niveaux": [], "erreurs": []}
     if "Planification" in wb.sheetnames:

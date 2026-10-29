@@ -1,3 +1,4 @@
+import { voc } from "./vocabulaire";
 export interface FenetreAttendue {
   debut: string;
   fin: string;
@@ -31,7 +32,7 @@ export function ecartTexte(valeurReelle: number | null, valeurAttendue: number |
   if (valeurReelle === null || valeurAttendue === null) return null;
   const ecart = Math.round((valeurReelle - valeurAttendue) * 10) / 10;
   const suffixe = unite ? ` ${unite}` : "";
-  if (ecart > 0) return `${ecart}${suffixe} de plus que prévu à cette date`;
-  if (ecart < 0) return `${Math.abs(ecart)}${suffixe} de moins que prévu à cette date`;
-  return "exactement comme prévu à cette date";
+  if (ecart > 0) return voc`${ecart}${suffixe} de plus que prévu à cette date`;
+  if (ecart < 0) return voc`${Math.abs(ecart)}${suffixe} de moins que prévu à cette date`;
+  return voc("exactement comme prévu à cette date");
 }

@@ -9,7 +9,10 @@
  * le/la/l', ce/cette, du/de la/de l'...). Les adjectifs placés après ne sont pas accordés.
  *
  * Doit rester identique à backend/apps/core/vocabulaire.py.
+ *
+ * Dans une autre langue que le français, `voc` (alias `t`) traduit le texte (utils/i18n).
  */
+import { langue, traduire } from "./i18n";
 
 export interface ChoixTerme {
   singulier: string;
@@ -139,6 +142,13 @@ export function definirVocabulaire(vocabulaire: Vocabulaire | undefined) {
 export function voc(texte: string): string;
 export function voc(morceaux: TemplateStringsArray, ...valeurs: unknown[]): string;
 export function voc(texteOuMorceaux: string | TemplateStringsArray, ...valeurs: unknown[]): string {
+  // Autre langue que le français : traduction (le vocabulaire, propre au français, ne s'applique pas).
+  if (langue() !== "fr") {
+    if (typeof texteOuMorceaux === "string") return traduire(texteOuMorceaux);
+    // Gabarit : clé « Projet {0} créé », traduite puis complétée avec les valeurs.
+    const cle = texteOuMorceaux.reduce((r, m, i) => r + m + (i < valeurs.length ? `{${i}}` : ""), "");
+    return traduire(cle).replace(/\{(\d+)\}/g, (_m, i: string) => String(valeurs[Number(i)] ?? ""));
+  }
   if (typeof texteOuMorceaux === "string") return adapterTexte(texteOuMorceaux, vocabulaireCourant);
   return texteOuMorceaux.reduce(
     (resultat, morceau, i) =>
@@ -146,3 +156,6 @@ export function voc(texteOuMorceaux: string | TemplateStringsArray, ...valeurs: 
     "",
   );
 }
+
+/** Texte de l'interface : traduit, et adapté au vocabulaire de l'organisation en français. */
+export const t = voc;

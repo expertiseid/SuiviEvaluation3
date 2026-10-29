@@ -9,6 +9,7 @@ import { messageErreurApi } from "../../utils/erreurs";
 import { voc } from "../../utils/vocabulaire";
 import type { DemandeModification, SaisieAApprouver } from "../../types";
 
+import { locale } from "../../utils/i18n";
 const TYPES_SAISIE: Record<SaisieAApprouver["type"], string> = {
   point: "Suivi",
   valeur: "Valeur d'indicateur",
@@ -22,7 +23,7 @@ const COULEURS_ACTION: Record<DemandeModification["action"], string> = {
 };
 
 function fmtDateHeure(iso: string) {
-  return new Date(iso).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
+  return new Date(iso).toLocaleString(locale(), { dateStyle: "short", timeStyle: "short" });
 }
 
 function texte(valeur: unknown): string {
@@ -32,13 +33,13 @@ function texte(valeur: unknown): string {
 }
 
 function EtatBadge({ etat, motif }: { etat: string; motif: string }) {
-  if (etat === "REJETEE") return <Badge color="red" variant="light" title={motif}>Rejetée</Badge>;
-  return <Badge color="orange" variant="light">En attente</Badge>;
+  if (etat === "REJETEE") return <Badge color="red" variant="light" title={motif}>{voc("Rejetée")}</Badge>;
+  return <Badge color="orange" variant="light">{voc("En attente")}</Badge>;
 }
 
 /** Détail d'une demande : champs changés (avant → après), ou valeurs d'un ajout. */
 function DetailDemande({ demande }: { demande: DemandeModification }) {
-  if (demande.action === "SUPPRESSION") return <Text size="xs" c="dimmed">Suppression de l'élément et de tout ce qui est en dessous.</Text>;
+  if (demande.action === "SUPPRESSION") return <Text size="xs" c="dimmed">{voc("Suppression de l'élément et de tout ce qui est en dessous.")}</Text>;
   const lignes =
     demande.action === "MODIFICATION"
       ? demande.changements.map((c) => `${c.champ} : ${texte(c.avant)} → ${texte(c.apres)}`)
@@ -64,7 +65,7 @@ export function ApprobationsPage() {
   const [rejet, setRejet] = useState<{ saisie?: SaisieAApprouver; demande?: DemandeModification } | null>(null);
   const [motif, setMotif] = useState("");
 
-  if (isLoading || !data) return <Text>Chargement…</Text>;
+  if (isLoading || !data) return <Text>{voc("Chargement…")}</Text>;
   const approbateur = data.peut_approuver;
 
   const resultat = (message: string) => ({
@@ -78,23 +79,23 @@ export function ApprobationsPage() {
 
   function confirmerRejet() {
     if (!motif.trim()) {
-      notifications.show({ message: "Indique le motif du rejet.", color: "orange" });
+      notifications.show({ message: voc("Indique le motif du rejet."), color: "orange" });
       return;
     }
     if (rejet?.saisie) {
-      traiterSaisie.mutate({ type: rejet.saisie.type, id: rejet.saisie.id, approuver: false, motif }, resultat("Saisie rejetée"));
+      traiterSaisie.mutate({ type: rejet.saisie.type, id: rejet.saisie.id, approuver: false, motif }, resultat(voc("Saisie rejetée")));
     } else if (rejet?.demande) {
-      traiterDemande.mutate({ id: rejet.demande.id, approuver: false, motif }, resultat("Demande rejetée"));
+      traiterDemande.mutate({ id: rejet.demande.id, approuver: false, motif }, resultat(voc("Demande rejetée")));
     }
   }
 
   const boutons = (approuver: () => void, rejeter: () => void) => (
     <Group gap={4} wrap="nowrap">
       <Button size="xs" color="teal" leftSection={<Check size={14} />} onClick={approuver}>
-        Approuver
+        {voc("Approuver")}
       </Button>
       <Button size="xs" variant="light" color="red" leftSection={<X size={14} />} onClick={rejeter}>
-        Rejeter
+        {voc("Rejeter")}
       </Button>
     </Group>
   );
@@ -102,7 +103,7 @@ export function ApprobationsPage() {
   return (
     <Stack gap="md">
       <div>
-        <TitreRubrique route="/approbations" defaut="Approbations" />
+        <TitreRubrique route="/approbations" defaut={voc("Approbations")} />
         <Text size="sm" c="dimmed">
           {approbateur
             ? voc("Saisies et changements en attente sur les projets qui exigent une approbation : ils ne comptent (ou ne s'appliquent) qu'une fois approuvés. Un rejet demande un motif, montré à l'auteur.")
@@ -113,17 +114,17 @@ export function ApprobationsPage() {
       <Card withBorder padding="md">
         <Title order={4} mb="xs">{voc("Saisies de réalisations")} ({data.saisies.length})</Title>
         {data.saisies.length === 0 ? (
-          <Text size="sm" c="dimmed">Rien en attente.</Text>
+          <Text size="sm" c="dimmed">{voc("Rien en attente.")}</Text>
         ) : (
           <Table fz="sm" verticalSpacing={6} highlightOnHover>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>{voc("Projet")}</Table.Th>
-                <Table.Th>Élément</Table.Th>
-                <Table.Th>Saisie</Table.Th>
-                <Table.Th>Période</Table.Th>
-                <Table.Th>Valeur</Table.Th>
-                <Table.Th>Par</Table.Th>
+                <Table.Th>{voc("Élément")}</Table.Th>
+                <Table.Th>{voc("Saisie")}</Table.Th>
+                <Table.Th>{voc("Période")}</Table.Th>
+                <Table.Th>{voc("Valeur")}</Table.Th>
+                <Table.Th>{voc("Par")}</Table.Th>
                 <Table.Th />
               </Table.Tr>
             </Table.Thead>
@@ -141,7 +142,7 @@ export function ApprobationsPage() {
                   <Table.Td style={{ whiteSpace: "nowrap" }}>{s.periode}</Table.Td>
                   <Table.Td>
                     {s.valeur || "—"}
-                    {s.budget && <Text size="xs" c="dimmed">{Number(s.budget).toLocaleString("fr-FR")} FCFA</Text>}
+                    {s.budget && <Text size="xs" c="dimmed">{Number(s.budget).toLocaleString(locale())} {voc("FCFA")}</Text>}
                   </Table.Td>
                   <Table.Td>
                     <Text size="sm">{s.saisi_par_nom}</Text>
@@ -150,7 +151,7 @@ export function ApprobationsPage() {
                   <Table.Td>
                     {approbateur ? (
                       boutons(
-                        () => traiterSaisie.mutate({ type: s.type, id: s.id, approuver: true }, resultat("Saisie approuvée")),
+                        () => traiterSaisie.mutate({ type: s.type, id: s.id, approuver: true }, resultat(voc("Saisie approuvée"))),
                         () => setRejet({ saisie: s }),
                       )
                     ) : (
@@ -170,16 +171,16 @@ export function ApprobationsPage() {
       <Card withBorder padding="md">
         <Title order={4} mb="xs">{voc("Changements de planification")} ({data.demandes.length})</Title>
         {data.demandes.length === 0 ? (
-          <Text size="sm" c="dimmed">Rien en attente.</Text>
+          <Text size="sm" c="dimmed">{voc("Rien en attente.")}</Text>
         ) : (
           <Table fz="sm" verticalSpacing={6} highlightOnHover>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>{voc("Projet")}</Table.Th>
-                <Table.Th>Demande</Table.Th>
-                <Table.Th>Élément</Table.Th>
-                <Table.Th>Détail</Table.Th>
-                <Table.Th>Par</Table.Th>
+                <Table.Th>{voc("Demande")}</Table.Th>
+                <Table.Th>{voc("Élément")}</Table.Th>
+                <Table.Th>{voc("Détail")}</Table.Th>
+                <Table.Th>{voc("Par")}</Table.Th>
                 <Table.Th />
               </Table.Tr>
             </Table.Thead>
@@ -202,7 +203,7 @@ export function ApprobationsPage() {
                   <Table.Td>
                     {approbateur ? (
                       boutons(
-                        () => traiterDemande.mutate({ id: d.id, approuver: true }, resultat("Changement approuvé et appliqué")),
+                        () => traiterDemande.mutate({ id: d.id, approuver: true }, resultat(voc("Changement approuvé et appliqué"))),
                         () => setRejet({ demande: d }),
                       )
                     ) : (
@@ -219,14 +220,14 @@ export function ApprobationsPage() {
         )}
       </Card>
 
-      <Modal opened={rejet !== null} onClose={() => setRejet(null)} title="Rejeter">
+      <Modal opened={rejet !== null} onClose={() => setRejet(null)} title={voc("Rejeter")}>
         <Stack gap="sm">
           <Text size="sm">
             {rejet?.saisie ? `${TYPES_SAISIE[rejet.saisie.type]} — ${rejet.saisie.element}` : `${rejet?.demande?.action_libelle} — ${rejet?.demande?.libelle}`}
           </Text>
           <Textarea
-            label="Motif du rejet"
-            description="Montré à l'auteur, pour qu'il corrige."
+            label={voc("Motif du rejet")}
+            description={voc("Montré à l'auteur, pour qu'il corrige.")}
             autosize
             minRows={2}
             value={motif}
@@ -235,7 +236,7 @@ export function ApprobationsPage() {
           />
           <Group justify="flex-end">
             <Button color="red" onClick={confirmerRejet} loading={traiterSaisie.isPending || traiterDemande.isPending}>
-              Rejeter
+              {voc("Rejeter")}
             </Button>
           </Group>
         </Stack>

@@ -9,6 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.accounts.constants import ROLE_ADMIN, ROLES_NOTIFIEES_MODIFICATION_ACTIVITE
+from apps.core.langues import dans_la_langue_demandee
 from apps.core.models import EtatApprobation
 from apps.core.permissions import (
     HasGlobalVisibilityOrAssigned,
@@ -126,6 +127,7 @@ class ProjetViewSet(viewsets.ModelViewSet):
         return response
 
     @action(detail=False, methods=["get"], url_path="modele-import")
+    @dans_la_langue_demandee
     def modele_import(self, request):
         contenu = generer_modele_import_projet()
         response = HttpResponse(

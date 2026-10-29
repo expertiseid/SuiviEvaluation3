@@ -29,7 +29,7 @@ function Champ({ variable, valeur, onChange }: { variable: VariableBeneficiaire;
       return (
         <Select
           {...commun}
-          data={[{ value: "oui", label: "Oui" }, { value: "non", label: "Non" }]}
+          data={[{ value: "oui", label: voc("Oui") }, { value: "non", label: voc("Non") }]}
           value={valeur === undefined ? null : valeur ? "oui" : "non"}
           onChange={(v) => onChange(v === null ? undefined : v === "oui")}
           clearable
@@ -74,7 +74,7 @@ export function ChampsVariables({ projetIds, value, onChange }: { projetIds: num
       {autres.length > 0 && (
         <>
           <Button size="compact-xs" variant="subtle" onClick={() => setAutresVisibles((x) => !x)} style={{ alignSelf: "flex-start" }}>
-            {autresVisibles ? "Masquer" : "Afficher"} {voc("les variables d'autres projets")} ({autres.length})
+            {autresVisibles ? voc("Masquer") : voc("Afficher")} {voc("les variables d'autres projets")} ({autres.length})
           </Button>
           {autresVisibles && (
             <SimpleGrid cols={{ base: 1, sm: 2 }}>

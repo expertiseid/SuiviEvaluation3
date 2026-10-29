@@ -34,7 +34,7 @@ function CarteImportSepare({
       <Text fw={600} size="sm">{titre}</Text>
       <Text size="xs" c="dimmed" mt={4} mb="sm">{description}</Text>
       <Button component={Link} to={lien} variant="light" size="xs" fullWidth>
-        Ouvrir cet écran
+        {voc("Ouvrir cet écran")}
       </Button>
     </Card>
   );
@@ -47,7 +47,7 @@ export function PlanificationImportPage() {
 
   async function handleImporter() {
     if (!fichier) {
-      notifications.show({ message: "Choisis d'abord un fichier Excel.", color: "orange" });
+      notifications.show({ message: voc("Choisis d'abord un fichier Excel."), color: "orange" });
       return;
     }
     const formData = new FormData();
@@ -59,14 +59,14 @@ export function PlanificationImportPage() {
         notifications.show({ message: voc`Planification importée — projet « ${res.projet_code} » créé`, color: "green" });
       }
     } catch {
-      notifications.show({ message: "Erreur lors de l'import — vérifie le format du fichier.", color: "red" });
+      notifications.show({ message: voc("Erreur lors de l'import — vérifie le format du fichier."), color: "red" });
     }
   }
 
   return (
     <Stack gap="lg">
       <div>
-        <TitreRubrique route="/planification" defaut="Planification complète" />
+        <TitreRubrique route="/planification" defaut={voc("Planification complète")} />
         <Text c="dimmed" size="sm">
           {voc("Nous chargeons ici, en un seul classeur Excel, un cadre stratégique complet (objectifs, axes...), un projet (modalités, budget, planification), ses indicateurs et ses bénéficiaires. Pour importer chaque élément séparément, utilise plutôt les écrans listés plus bas.")}</Text>
       </div>
@@ -74,7 +74,7 @@ export function PlanificationImportPage() {
       <Card withBorder padding="lg" radius="md">
         <Group gap="xs" mb="sm">
           <FileSpreadsheet size={18} />
-          <Text fw={600}>Import combiné — un seul fichier Excel</Text>
+          <Text fw={600}>{voc("Import combiné — un seul fichier Excel")}</Text>
         </Group>
 
         <Alert color="blue" variant="light" mb="md">
@@ -86,59 +86,59 @@ export function PlanificationImportPage() {
           onClick={() => telechargerModeleImportComplet()}
           mb="md"
         >
-          Télécharger le modèle Excel complet
+          {voc("Télécharger le modèle Excel complet")}
         </Button>
 
         <Group align="flex-end">
           <FileInput
-            label="Fichier à importer"
-            placeholder="Choisir un fichier .xlsx"
+            label={voc("Fichier à importer")}
+            placeholder={voc("Choisir un fichier .xlsx")}
             accept=".xlsx"
             value={fichier}
             onChange={setFichier}
             style={{ flex: 1 }}
           />
           <Button leftSection={<Upload size={16} />} onClick={handleImporter} loading={importer.isPending}>
-            Importer
+            {voc("Importer")}
           </Button>
         </Group>
 
         {resultat && (
           <Stack gap="xs" mt="md">
-            <Alert color={resultat.projet_id ? "green" : "orange"} title="Résultat de l'import">
+            <Alert color={resultat.projet_id ? "green" : "orange"} title={voc("Résultat de l'import")}>
               <Group gap="xs" mb={6}>
-                {resultat.cadre_strategique_id && <Badge variant="light">Cadre : {resultat.cadre_strategique_nom}</Badge>}
+                {resultat.cadre_strategique_id && <Badge variant="light">{voc("Cadre :")} {resultat.cadre_strategique_nom}</Badge>}
                 {resultat.projet_id && <Badge variant="light" color="teal">{voc("Projet : ")}{resultat.projet_code}</Badge>}
               </Group>
               <Text size="sm">
                 {resultat.elements_strategiques_crees > 0 && (
-                  <>· <strong>{resultat.elements_strategiques_crees}</strong> élément(s) stratégique(s) créé(s)<br /></>
+                  <>· <strong>{resultat.elements_strategiques_crees}</strong> {voc("élément(s) stratégique(s) créé(s)")}<br /></>
                 )}
-                · <strong>{resultat.elements_crees}</strong> {voc(" élément(s) de planification")}{resultat.niveaux.length > 0 && <> (niveaux : {resultat.niveaux.join(" › ")})</>},{" "}
-                <strong>{resultat.sous_activites_creees}</strong> sous-activité(s)
+                · <strong>{resultat.elements_crees}</strong> {voc(" élément(s) de planification")}{resultat.niveaux.length > 0 && <> {voc("(niveaux :")} {resultat.niveaux.join(" › ")})</>},{" "}
+                <strong>{resultat.sous_activites_creees}</strong> {voc("sous-activité(s)")}
                 <br />
                 · <strong>{resultat.indicateurs_crees}</strong> {voc(" indicateur(s) créé(s)")}<br />
                 · <strong>{resultat.beneficiaires_crees}</strong> {voc(" bénéficiaire(s) créé(s) et inscrit(s) au projet")}{resultat.doublons_detectes > 0 && (
-                  <> (dont <strong>{resultat.doublons_detectes}</strong> {voc(" doublon(s) potentiel(s) — à traiter dans « Doublons d'enregistrement »)")}</>
+                  <> {voc("(dont")} <strong>{resultat.doublons_detectes}</strong> {voc(" doublon(s) potentiel(s) — à traiter dans « Doublons d'enregistrement »)")}</>
                 )}
               </Text>
             </Alert>
 
             {resultat.erreurs.length > 0 && (
-              <Alert color="red" title={`${resultat.erreurs.length} erreur(s)`}>
+              <Alert color="red" title={voc`${resultat.erreurs.length} erreur(s)`}>
                 <List size="sm">
                   {resultat.erreurs.map((e, i) => (
-                    <List.Item key={i}>Ligne {e.ligne} : {e.message}</List.Item>
+                    <List.Item key={i}>{voc("Ligne")} {e.ligne} : {e.message}</List.Item>
                   ))}
                 </List>
               </Alert>
             )}
 
             {resultat.avertissements.length > 0 && (
-              <Alert color="yellow" title={`${resultat.avertissements.length} avertissement(s)`}>
+              <Alert color="yellow" title={voc`${resultat.avertissements.length} avertissement(s)`}>
                 <List size="sm">
                   {resultat.avertissements.map((a, i) => (
-                    <List.Item key={i}>Ligne {a.ligne} : {a.message}</List.Item>
+                    <List.Item key={i}>{voc("Ligne")} {a.ligne} : {a.message}</List.Item>
                   ))}
                 </List>
               </Alert>
@@ -148,7 +148,7 @@ export function PlanificationImportPage() {
       </Card>
 
       <div>
-        <Title order={4} mb="sm">Ou importer séparément</Title>
+        <Title order={4} mb="sm">{voc("Ou importer séparément")}</Title>
         <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }}>
           <CarteImportSepare
             titre={voc("Cadre stratégique")}

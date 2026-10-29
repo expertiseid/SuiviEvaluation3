@@ -75,7 +75,7 @@ function GroupeBeneficiaires({
           <Text fw={600} size="sm">{titre}</Text>
           {data && (
             <Badge variant="light" color={projetId ? "teal" : "gray"} size="sm">
-              {data.count} {voc(" bénéficiaire")}{data.count > 1 ? "s" : ""}
+              {data.count > 1 ? voc`${data.count} bénéficiaires` : voc`${data.count} bénéficiaire`}
             </Badge>
           )}
         </Group>
@@ -102,7 +102,7 @@ function GroupeBeneficiaires({
           </Group>
         )}
         {isLoading ? (
-          <Text size="sm" c="dimmed">Chargement…</Text>
+          <Text size="sm" c="dimmed">{voc("Chargement…")}</Text>
         ) : data?.count === 0 ? (
           <Text size="sm" c="dimmed">{voc("Aucun bénéficiaire associé à ce projet pour l'instant.")}</Text>
         ) : (
@@ -110,13 +110,13 @@ function GroupeBeneficiaires({
           <Table striped highlightOnHover>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Identifiant</Table.Th>
-                <Table.Th>Nom</Table.Th>
-                <Table.Th>Sexe</Table.Th>
-                <Table.Th>Tranche d'âge</Table.Th>
-                <Table.Th>Téléphone</Table.Th>
-                <Table.Th>Zone</Table.Th>
-                <Table.Th>Statut particulier</Table.Th>
+                <Table.Th>{voc("Identifiant")}</Table.Th>
+                <Table.Th>{voc("Nom")}</Table.Th>
+                <Table.Th>{voc("Sexe")}</Table.Th>
+                <Table.Th>{voc("Tranche d'âge")}</Table.Th>
+                <Table.Th>{voc("Téléphone")}</Table.Th>
+                <Table.Th>{voc("Zone")}</Table.Th>
+                <Table.Th>{voc("Statut particulier")}</Table.Th>
                 {projetId && <Table.Th>{voc("Autres projets")}</Table.Th>}
                 <Table.Th w={40} />
               </Table.Tr>
@@ -154,12 +154,12 @@ function GroupeBeneficiaires({
                     {projetId && <Table.Td>{autresProjets.join(", ") || "—"}</Table.Td>}
                     <Table.Td>
                       <Group gap={4} wrap="nowrap">
-                        <Tooltip label="Modifier">
+                        <Tooltip label={voc("Modifier")}>
                           <ActionIcon size="sm" variant="subtle" onClick={() => actions.onModifier(b)}>
                             <Pencil size={13} />
                           </ActionIcon>
                         </Tooltip>
-                        <Tooltip label="Supprimer">
+                        <Tooltip label={voc("Supprimer")}>
                           <ActionIcon
                             size="sm"
                             variant="subtle"
@@ -237,7 +237,7 @@ export function BeneficiairesListPage() {
   return (
     <Stack gap="md">
       <Group justify="space-between">
-        <TitreRubrique route="/beneficiaires" defaut="Bénéficiaires" />
+        <TitreRubrique route="/beneficiaires" defaut={voc("Bénéficiaires")} />
         <Group gap="xs">
           {user?.role === "ADMIN" && (
             <Button variant="light" color="grape" leftSection={<ListChecks size={16} />} onClick={() => setModalVariablesOpen(true)}>
@@ -245,13 +245,13 @@ export function BeneficiairesListPage() {
             </Button>
           )}
           <Button component={Link} to="/carte" variant="light" color="teal" leftSection={<MapIcon size={16} />}>
-            Carte
+            {voc("Carte")}
           </Button>
           <Button variant="light" leftSection={<Download size={16} />} onClick={() => setModalExportOpen(true)}>
-            Exporter
+            {voc("Exporter")}
           </Button>
           <Button variant="light" leftSection={<Upload size={16} />} onClick={() => setModalImportOpen(true)}>
-            Importer depuis Excel
+            {voc("Importer depuis Excel")}
           </Button>
           <Button onClick={() => setModalOpen(true)}>{voc("Nouveau bénéficiaire")}</Button>
         </Group>
@@ -259,12 +259,12 @@ export function BeneficiairesListPage() {
 
       <Group justify="space-between" align="flex-end">
         <TextInput
-          placeholder="Rechercher par nom, téléphone, pièce d'identité…"
+          placeholder={voc("Rechercher par nom, téléphone, pièce d'identité…")}
           value={search}
           onChange={(e) => setSearch(e.currentTarget.value)}
           w={400}
         />
-        {total && <Text size="sm" c="dimmed">{total.count} {voc(" bénéficiaire")}{total.count > 1 ? "s" : ""} au total</Text>}
+        {total && <Text size="sm" c="dimmed">{total.count > 1 ? voc`${total.count} bénéficiaires au total` : voc`${total.count} bénéficiaire au total`}</Text>}
       </Group>
 
       <Accordion
@@ -299,7 +299,7 @@ export function BeneficiairesListPage() {
       <Modal
         opened={!!beneficiaireEnEdition}
         onClose={() => setBeneficiaireEnEdition(null)}
-        title={`Modifier — ${beneficiaireEnEdition?.nom ?? ""} ${beneficiaireEnEdition?.prenom ?? ""}`}
+        title={voc`Modifier — ${beneficiaireEnEdition?.nom ?? ""} ${beneficiaireEnEdition?.prenom ?? ""}`}
         size="lg"
       >
         {beneficiaireEnEdition && (

@@ -9,6 +9,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
+from apps.core.langues import dans_la_langue_demandee
 from apps.core.permissions import AvertissementsSaisieMixin, HasGlobalVisibilityOrAssigned, SuppressionAtomiqueMixin
 from apps.core.vocabulaire import v
 from apps.projects.models import Projet
@@ -108,6 +109,7 @@ class PeriodePlanificationViewSet(viewsets.ModelViewSet):
         return Response(construire_planification_periode(self.get_object()))
 
     @action(detail=True, methods=["get"], url_path="exporter/excel")
+    @dans_la_langue_demandee
     def exporter_excel(self, request, pk=None):
         periode = self.get_object()
         response = HttpResponse(
@@ -118,6 +120,7 @@ class PeriodePlanificationViewSet(viewsets.ModelViewSet):
         return response
 
     @action(detail=True, methods=["get"], url_path="exporter/pdf")
+    @dans_la_langue_demandee
     def exporter_pdf(self, request, pk=None):
         periode = self.get_object()
         response = HttpResponse(exporter_periode_pdf(periode), content_type="application/pdf")
@@ -125,6 +128,7 @@ class PeriodePlanificationViewSet(viewsets.ModelViewSet):
         return response
 
     @action(detail=True, methods=["get"], url_path="exporter/word")
+    @dans_la_langue_demandee
     def exporter_word(self, request, pk=None):
         from apps.reports.word import reponse_docx
 
@@ -132,6 +136,7 @@ class PeriodePlanificationViewSet(viewsets.ModelViewSet):
         return reponse_docx(html_periode(periode), self._nom_fichier(periode))
 
     @action(detail=True, methods=["get"], url_path="exporter-suivi/excel")
+    @dans_la_langue_demandee
     def exporter_suivi_excel(self, request, pk=None):
         """Export du suivi par période (module Suivi) — même présentation que l'export du suivi global."""
         periode = self.get_object()
@@ -143,6 +148,7 @@ class PeriodePlanificationViewSet(viewsets.ModelViewSet):
         return response
 
     @action(detail=True, methods=["get"], url_path="exporter-suivi/pdf")
+    @dans_la_langue_demandee
     def exporter_suivi_pdf(self, request, pk=None):
         periode = self.get_object()
         response = HttpResponse(exporter_suivi_periode_pdf(periode), content_type="application/pdf")
@@ -150,6 +156,7 @@ class PeriodePlanificationViewSet(viewsets.ModelViewSet):
         return response
 
     @action(detail=True, methods=["get"], url_path="exporter-suivi/word")
+    @dans_la_langue_demandee
     def exporter_suivi_word(self, request, pk=None):
         from apps.reports.word import reponse_docx
 
@@ -197,6 +204,7 @@ def suivi_dashboard_projet(request, projet_id):
 
 @api_view(["GET"])
 @permission_classes([HasGlobalVisibilityOrAssigned])
+@dans_la_langue_demandee
 def suivi_exporter_excel(request, projet_id):
     projet = _projet_visible_ou_404(request, projet_id)
     if projet is None:
@@ -212,6 +220,7 @@ def suivi_exporter_excel(request, projet_id):
 
 @api_view(["GET"])
 @permission_classes([HasGlobalVisibilityOrAssigned])
+@dans_la_langue_demandee
 def suivi_exporter_pdf(request, projet_id):
     projet = _projet_visible_ou_404(request, projet_id)
     if projet is None:
@@ -225,6 +234,7 @@ def suivi_exporter_pdf(request, projet_id):
 
 @api_view(["GET"])
 @permission_classes([HasGlobalVisibilityOrAssigned])
+@dans_la_langue_demandee
 def suivi_exporter_word(request, projet_id):
     """Fiche de suivi du projet au format Word : même contenu que le PDF."""
     from apps.reports.word import reponse_docx
@@ -240,6 +250,7 @@ def suivi_exporter_word(request, projet_id):
 
 @api_view(["GET"])
 @permission_classes([HasGlobalVisibilityOrAssigned])
+@dans_la_langue_demandee
 def canevas_suivi(request, projet_id):
     projet = _projet_visible_ou_404(request, projet_id)
     if projet is None:
@@ -293,6 +304,7 @@ def canevas_suivi_importer(request, projet_id):
 @api_view(["POST"])
 @permission_classes([HasGlobalVisibilityOrAssigned])
 @parser_classes([MultiPartParser, FormParser])
+@dans_la_langue_demandee
 def canevas_suivi_rapport_erreurs(request, projet_id):
     """Le fichier reçu avec les cellules en erreur surlignées et commentées, plus une feuille « Erreurs »."""
     contenu, erreur = _traiter_canevas(request, projet_id, rapport_erreurs)

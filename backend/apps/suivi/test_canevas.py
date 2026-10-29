@@ -150,3 +150,28 @@ def test_erreurs_signalees_par_cellule_et_rapport(contexte):
     # Import : seules les lignes valides sont enregistrées.
     _envoyer(c, wb, "importer")
     assert PointSuivi.objects.count() == 1
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("langue", ["en", "ar", "es", "de"])
+def test_canevas_dans_une_autre_langue(contexte, langue):
+    """Canevas téléchargé dans une autre langue, rempli dans cette langue (« Yes », « Ja »…), réimporté."""
+    from apps.core.langues import en_langue, titre_feuille, traduire
+
+    c = contexte
+    c["client"].credentials(HTTP_ACCEPT_LANGUAGE=langue)
+    wb = _canevas(c)
+    with en_langue(langue):
+        t = {texte: traduire(texte) for texte in (
+            "Suivi", "Jalons et livrables", "Période début (AAAA-MM-JJ)", "Période fin (AAAA-MM-JJ)",
+            "Quantité réalisée sur la période", "Validé (Oui / Non)", "Oui",
+        )}
+    assert "Suivi" not in wb.sheetnames
+    _remplir(wb[titre_feuille(t["Suivi"])], f"E{c['former'].id}", **{t["Période début (AAAA-MM-JJ)"]: "2026-01-01",
+             t["Période fin (AAAA-MM-JJ)"]: "2026-03-31", t["Quantité réalisée sur la période"]: 30})
+    _remplir(wb[titre_feuille(t["Jalons et livrables"])], f"J{c['livrable'].id}", **{t["Validé (Oui / Non)"]: t["Oui"]})
+    resultat = _envoyer(c, wb, "importer").data
+    assert resultat["totaux"] == {"ajout": 2, "modification": 0, "ignoree": 0, "erreur": 0}, resultat
+    c["former"].refresh_from_db()
+    c["livrable"].refresh_from_db()
+    assert float(c["former"].quantite_realisee) == 30 and c["livrable"].valide

@@ -65,7 +65,7 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
   /** Position actuelle de l'appareil (téléphone sur le terrain), via le navigateur. */
   function positionActuelle() {
     if (!navigator.geolocation) {
-      notifications.show({ message: "Ce navigateur ne donne pas accès à la position.", color: "orange" });
+      notifications.show({ message: voc("Ce navigateur ne donne pas accès à la position."), color: "orange" });
       return;
     }
     setLocalisationEnCours(true);
@@ -76,7 +76,7 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
         setLocalisationEnCours(false);
       },
       () => {
-        notifications.show({ message: "Position indisponible (autorisation refusée ?).", color: "orange" });
+        notifications.show({ message: voc("Position indisponible (autorisation refusée ?)."), color: "orange" });
         setLocalisationEnCours(false);
       },
       { enableHighAccuracy: true, timeout: 15000 },
@@ -127,7 +127,7 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
       const cree = await createStatutParticulier.mutateAsync({ code: codeDepuisLibelle(libelle), libelle });
       return String(cree.id);
     } catch (error) {
-      notifications.show({ message: messageErreurApi(error, "Erreur lors de la création du statut"), color: "red" });
+      notifications.show({ message: messageErreurApi(error, voc("Erreur lors de la création du statut")), color: "red" });
       return null;
     }
   }
@@ -137,14 +137,14 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
       const cree = await createTypeActivite.mutateAsync({ code: codeDepuisLibelle(libelle), libelle });
       return String(cree.id);
     } catch (error) {
-      notifications.show({ message: messageErreurApi(error, "Erreur lors de la création du type d'activité"), color: "red" });
+      notifications.show({ message: messageErreurApi(error, voc("Erreur lors de la création du type d'activité")), color: "red" });
       return null;
     }
   }
 
   async function handleSubmit() {
     if (!nom || !prenom) {
-      notifications.show({ message: "Nom et prénom requis.", color: "orange" });
+      notifications.show({ message: voc("Nom et prénom requis."), color: "orange" });
       return;
     }
     const zone = zoneResolueDe(zoneCascade, niveaux ?? []);
@@ -170,7 +170,7 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
         notifications.show({ message: voc("Bénéficiaire modifié"), color: "green" });
         onDone();
       } catch (error) {
-        notifications.show({ message: messageErreurApi(error, "Erreur lors de la modification"), color: "red" });
+        notifications.show({ message: messageErreurApi(error, voc("Erreur lors de la modification")), color: "red" });
       }
       return;
     }
@@ -190,7 +190,7 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
         notifications.show({ message: voc("Bénéficiaire créé, aucun doublon détecté."), color: "green" });
       }
     } catch {
-      notifications.show({ message: "Erreur lors de la création.", color: "red" });
+      notifications.show({ message: voc("Erreur lors de la création."), color: "red" });
     }
   }
 
@@ -207,7 +207,7 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
         {doublonsDetectes && (
           <Alert color="orange" title={voc("Doublons potentiels détectés")}>
             {doublonsDetectes.map((d) => (
-              <div key={d.id}>{d.beneficiaire_1_nom} / {d.beneficiaire_2_nom} — score {d.score}</div>
+              <div key={d.id}>{d.beneficiaire_1_nom} / {d.beneficiaire_2_nom} {voc("— score")} {d.score}</div>
             ))}
           </Alert>
         )}
@@ -215,12 +215,12 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
           <Title order={4} mb="xs">{voc("Bénéficiaire enregistré")}</Title>
           <Text fw={600}>{beneficiaireCree.nom} {beneficiaireCree.prenom}</Text>
           <Text size="sm" c="dimmed">
-            {beneficiaireCree.sexe === "F" ? "Féminin" : "Masculin"}
+            {beneficiaireCree.sexe === "F" ? voc("Féminin") : voc("Masculin")}
             {beneficiaireCree.tranche_age && ` · ${beneficiaireCree.tranche_age}`}
           </Text>
           {libellesStatuts.length > 0 && (
             <Group gap={6} mt="sm">
-              <Text size="xs" c="dimmed" fw={600} tt="uppercase">Statuts :</Text>
+              <Text size="xs" c="dimmed" fw={600} tt="uppercase">{voc("Statuts :")}</Text>
               {libellesStatuts.map((l) => (
                 <Badge key={l} variant="light" color="grape">{l}</Badge>
               ))}
@@ -228,7 +228,7 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
           )}
           {libellesTypesActivite.length > 0 && (
             <Group gap={6} mt="sm">
-              <Text size="xs" c="dimmed" fw={600} tt="uppercase">Activités :</Text>
+              <Text size="xs" c="dimmed" fw={600} tt="uppercase">{voc("Activités :")}</Text>
               {libellesTypesActivite.map((l) => (
                 <Badge key={l} variant="light" color="teal">{l}</Badge>
               ))}
@@ -237,7 +237,7 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
         </Card>
         <Group justify="flex-end">
           <Button variant="light" onClick={reinitialiserFormulaire}>{voc("Ajouter un autre bénéficiaire")}</Button>
-          <Button onClick={onDone}>Terminer</Button>
+          <Button onClick={onDone}>{voc("Terminer")}</Button>
         </Group>
       </Stack>
     );
@@ -245,9 +245,9 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
 
   return (
     <Stack gap="sm">
-      <Divider label="Localisation" labelPosition="left" />
+      <Divider label={voc("Localisation")} labelPosition="left" />
       <Select
-        label="Pays"
+        label={voc("Pays")}
         data={PAYS_MONDE.map((p) => ({ value: p.code, label: p.nom }))}
         value={pays}
         onChange={(v) => {
@@ -259,28 +259,28 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
       />
       <ZoneCascadeFields pays={pays} value={zoneCascade} onChange={setZoneCascade} />
       <Group align="flex-end" wrap="nowrap">
-        <NumberInput style={{ flex: 1 }} label="Latitude" description="Facultatif (carte)" placeholder="12.3714" decimalScale={6} min={-90} max={90} value={latitude} onChange={setLatitude} />
-        <NumberInput style={{ flex: 1 }} label="Longitude" description="Facultatif (carte)" placeholder="-1.5197" decimalScale={6} min={-180} max={180} value={longitude} onChange={setLongitude} />
+        <NumberInput style={{ flex: 1 }} label={voc("Latitude")} description={voc("Facultatif (carte)")} placeholder="12.3714" decimalScale={6} min={-90} max={90} value={latitude} onChange={setLatitude} />
+        <NumberInput style={{ flex: 1 }} label={voc("Longitude")} description={voc("Facultatif (carte)")} placeholder="-1.5197" decimalScale={6} min={-180} max={180} value={longitude} onChange={setLongitude} />
         <Button variant="light" leftSection={<Crosshair size={15} />} loading={localisationEnCours} onClick={positionActuelle}>
-          Ma position actuelle
+          {voc("Ma position actuelle")}
         </Button>
       </Group>
-      <Divider label="Identité" labelPosition="left" />
+      <Divider label={voc("Identité")} labelPosition="left" />
       <Group grow>
-        <TextInput label="Nom" value={nom} onChange={(e) => setNom(e.currentTarget.value)} required />
-        <TextInput label="Prénom" value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} required />
+        <TextInput label={voc("Nom")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} required />
+        <TextInput label={voc("Prénom")} value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} required />
       </Group>
       <Group grow>
-        <Select label="Sexe" data={[{ value: "F", label: "Féminin" }, { value: "M", label: "Masculin" }]} value={sexe} onChange={setSexe} />
-        <DateInput label="Date de naissance" value={dateNaissance} onChange={setDateNaissance} />
+        <Select label={voc("Sexe")} data={[{ value: "F", label: voc("Féminin") }, { value: "M", label: voc("Masculin") }]} value={sexe} onChange={setSexe} />
+        <DateInput label={voc("Date de naissance")} value={dateNaissance} onChange={setDateNaissance} />
       </Group>
       <Group grow>
-        <TextInput label="Téléphone" value={telephone} onChange={(e) => setTelephone(e.currentTarget.value)} />
-        <TextInput label="N° pièce d'identité" value={numeroPiece} onChange={(e) => setNumeroPiece(e.currentTarget.value)} />
+        <TextInput label={voc("Téléphone")} value={telephone} onChange={(e) => setTelephone(e.currentTarget.value)} />
+        <TextInput label={voc("N° pièce d'identité")} value={numeroPiece} onChange={(e) => setNumeroPiece(e.currentTarget.value)} />
       </Group>
       <MultiSelectOrCreate
-        label="Statuts particuliers"
-        description="PDI, jeune, femme cheffe de ménage, personne handicapée... — tape un nouveau statut s'il manque à la liste."
+        label={voc("Statuts particuliers")}
+        description={voc("PDI, jeune, femme cheffe de ménage, personne handicapée... — tape un nouveau statut s'il manque à la liste.")}
         data={statuts?.map((s) => ({ value: String(s.id), label: s.libelle })) ?? []}
         value={statutsSelectionnes}
         onChange={setStatutsSelectionnes}
@@ -288,8 +288,8 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
         creating={createStatutParticulier.isPending}
       />
       <MultiSelectOrCreate
-        label="Types d'activité menée"
-        description="Maraîchage, élevage, petit commerce... — tape un nouveau type s'il manque à la liste."
+        label={voc("Types d'activité menée")}
+        description={voc("Maraîchage, élevage, petit commerce... — tape un nouveau type s'il manque à la liste.")}
         data={typesActivite?.map((t) => ({ value: String(t.id), label: t.libelle })) ?? []}
         value={typesActiviteSelectionnes}
         onChange={setTypesActiviteSelectionnes}
@@ -306,7 +306,7 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
           onClick={handleSubmit}
           loading={createBeneficiaire.isPending || verifierDoublons.isPending || updateBeneficiaire.isPending}
         >
-          {enEdition ? "Enregistrer" : "Créer"}
+          {enEdition ? voc("Enregistrer") : voc("Créer")}
         </Button>
       </Group>
     </Stack>

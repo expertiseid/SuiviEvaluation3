@@ -37,14 +37,14 @@ function LigneEquipe({
     try {
       return await createIntervenant.mutateAsync({ nom: nomP, prenom, projets_associes: [projetId], activites_associees: [] });
     } catch {
-      notifications.show({ message: "Erreur lors de la création de la personne", color: "red" });
+      notifications.show({ message: voc("Erreur lors de la création de la personne"), color: "red" });
       return null;
     }
   }
 
   async function enregistrer() {
     if (!nom.trim()) {
-      notifications.show({ message: "Le nom de l'équipe est requis.", color: "orange" });
+      notifications.show({ message: voc("Le nom de l'équipe est requis."), color: "orange" });
       return;
     }
     try {
@@ -52,22 +52,22 @@ function LigneEquipe({
         id: equipe.id,
         payload: { nom: nom.trim(), membres, date_debut_contrat: dateDebutContrat, date_fin_contrat: dateFinContrat },
       });
-      notifications.show({ message: "Équipe modifiée", color: "green" });
+      notifications.show({ message: voc("Équipe modifiée"), color: "green" });
       setEnEdition(false);
     } catch (error) {
-      notifications.show({ message: messageErreurApi(error, "Erreur lors de la modification de l'équipe"), color: "red" });
+      notifications.show({ message: messageErreurApi(error, voc("Erreur lors de la modification de l'équipe")), color: "red" });
     }
   }
 
   function supprimer() {
     confirmerSuppression({
-      message: `Supprimer définitivement l'équipe "${equipe.nom}" ? Les activités qui l'utilisent perdront ce rattachement. Cette action est irréversible.`,
+      message: voc`Supprimer définitivement l'équipe "${equipe.nom}" ? Les activités qui l'utilisent perdront ce rattachement. Cette action est irréversible.`,
       onConfirm: async () => {
         try {
           await deleteEquipe.mutateAsync(equipe.id);
-          notifications.show({ message: "Équipe supprimée", color: "green" });
+          notifications.show({ message: voc("Équipe supprimée"), color: "green" });
         } catch {
-          notifications.show({ message: "Erreur lors de la suppression de l'équipe", color: "red" });
+          notifications.show({ message: voc("Erreur lors de la suppression de l'équipe"), color: "red" });
         }
       },
     });
@@ -76,9 +76,9 @@ function LigneEquipe({
   if (enEdition) {
     return (
       <Stack gap={4}>
-        <TextInput size="xs" label="Nom de l'équipe" value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
+        <TextInput size="xs" label={voc("Nom de l'équipe")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
         <IntervenantsMultiples
-          label="Membres"
+          label={voc("Membres")}
           value={membres}
           onChange={setMembres}
           intervenants={intervenants}
@@ -86,11 +86,11 @@ function LigneEquipe({
           creating={createIntervenant.isPending}
         />
         <Group grow>
-          <DateInput size="xs" label="Date de début de contrat" value={dateDebutContrat} onChange={setDateDebutContrat} />
-          <DateInput size="xs" label="Date de fin de contrat" value={dateFinContrat} onChange={setDateFinContrat} />
+          <DateInput size="xs" label={voc("Date de début de contrat")} value={dateDebutContrat} onChange={setDateDebutContrat} />
+          <DateInput size="xs" label={voc("Date de fin de contrat")} value={dateFinContrat} onChange={setDateFinContrat} />
         </Group>
         <Group gap={6}>
-          <Button size="xs" onClick={enregistrer} loading={updateEquipe.isPending}>Enregistrer</Button>
+          <Button size="xs" onClick={enregistrer} loading={updateEquipe.isPending}>{voc("Enregistrer")}</Button>
           <Button
             size="xs"
             variant="subtle"
@@ -103,7 +103,7 @@ function LigneEquipe({
               setEnEdition(false);
             }}
           >
-            Annuler
+            {voc("Annuler")}
           </Button>
         </Group>
       </Stack>
@@ -116,12 +116,12 @@ function LigneEquipe({
         <Text size="sm" fw={500}>{equipe.nom}</Text>
         {editionActive && (
         <Group gap={4} wrap="nowrap">
-          <Tooltip label="Modifier l'équipe">
+          <Tooltip label={voc("Modifier l'équipe")}>
             <ActionIcon size="sm" variant="subtle" onClick={() => setEnEdition(true)}>
               <Pencil size={13} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Supprimer l'équipe">
+          <Tooltip label={voc("Supprimer l'équipe")}>
             <ActionIcon size="sm" variant="subtle" color="red" loading={deleteEquipe.isPending} onClick={supprimer}>
               <Trash2 size={13} />
             </ActionIcon>
@@ -131,7 +131,7 @@ function LigneEquipe({
       </Group>
       {(equipe.date_debut_contrat || equipe.date_fin_contrat) && (
         <Text size="xs" c="dimmed">
-          Contrat : {equipe.date_debut_contrat ?? "?"} → {equipe.date_fin_contrat ?? "?"}
+          {voc("Contrat :")} {equipe.date_debut_contrat ?? "?"} → {equipe.date_fin_contrat ?? "?"}
         </Text>
       )}
       {equipe.membres_noms.length > 0 ? (
@@ -141,7 +141,7 @@ function LigneEquipe({
           ))}
         </Group>
       ) : (
-        <Text size="xs" c="dimmed">Aucun membre renseigné pour cette équipe.</Text>
+        <Text size="xs" c="dimmed">{voc("Aucun membre renseigné pour cette équipe.")}</Text>
       )}
     </div>
   );
@@ -166,7 +166,7 @@ function LigneMembre({
 
   async function enregistrer() {
     if (!nom.trim() || !prenom.trim()) {
-      notifications.show({ message: "Nom et prénom requis.", color: "orange" });
+      notifications.show({ message: voc("Nom et prénom requis."), color: "orange" });
       return;
     }
     try {
@@ -174,10 +174,10 @@ function LigneMembre({
         id: membre.id,
         payload: { nom: nom.trim(), prenom: prenom.trim(), fonction, contact },
       });
-      notifications.show({ message: "Membre modifié", color: "green" });
+      notifications.show({ message: voc("Membre modifié"), color: "green" });
       setEnEdition(false);
     } catch {
-      notifications.show({ message: "Erreur lors de la modification", color: "red" });
+      notifications.show({ message: voc("Erreur lors de la modification"), color: "red" });
     }
   }
 
@@ -189,7 +189,7 @@ function LigneMembre({
       });
       notifications.show({ message: voc("Retiré de l'équipe du projet"), color: "green" });
     } catch {
-      notifications.show({ message: "Erreur lors du retrait", color: "red" });
+      notifications.show({ message: voc("Erreur lors du retrait"), color: "red" });
     }
   }
 
@@ -199,9 +199,9 @@ function LigneMembre({
       onConfirm: async () => {
         try {
           await deleteIntervenant.mutateAsync(membre.id);
-          notifications.show({ message: "Membre supprimé", color: "green" });
+          notifications.show({ message: voc("Membre supprimé"), color: "green" });
         } catch {
-          notifications.show({ message: "Erreur lors de la suppression", color: "red" });
+          notifications.show({ message: voc("Erreur lors de la suppression"), color: "red" });
         }
       },
     });
@@ -212,12 +212,12 @@ function LigneMembre({
       <Table.Tr>
         <Table.Td colSpan={5}>
           <Group align="flex-end" wrap="wrap">
-            <TextInput size="xs" label="Nom" value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
-            <TextInput size="xs" label="Prénom" value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} />
-            <TextInput size="xs" label="Fonction" value={fonction} onChange={(e) => setFonction(e.currentTarget.value)} />
-            <TextInput size="xs" label="Contact" value={contact} onChange={(e) => setContact(e.currentTarget.value)} />
-            <Button size="xs" onClick={enregistrer} loading={updateIntervenant.isPending}>Enregistrer</Button>
-            <Button size="xs" variant="subtle" color="gray" onClick={() => setEnEdition(false)}>Annuler</Button>
+            <TextInput size="xs" label={voc("Nom")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
+            <TextInput size="xs" label={voc("Prénom")} value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} />
+            <TextInput size="xs" label={voc("Fonction")} value={fonction} onChange={(e) => setFonction(e.currentTarget.value)} />
+            <TextInput size="xs" label={voc("Contact")} value={contact} onChange={(e) => setContact(e.currentTarget.value)} />
+            <Button size="xs" onClick={enregistrer} loading={updateIntervenant.isPending}>{voc("Enregistrer")}</Button>
+            <Button size="xs" variant="subtle" color="gray" onClick={() => setEnEdition(false)}>{voc("Annuler")}</Button>
           </Group>
         </Table.Td>
       </Table.Tr>
@@ -233,7 +233,7 @@ function LigneMembre({
       <Table.Td>
         <Group gap={4} wrap="nowrap">
           {editionActive && (
-            <Tooltip label="Modifier">
+            <Tooltip label={voc("Modifier")}>
               <ActionIcon variant="subtle" onClick={() => setEnEdition(true)}>
                 <Pencil size={15} />
               </ActionIcon>
@@ -245,7 +245,7 @@ function LigneMembre({
             </ActionIcon>
           </Tooltip>
           {editionActive && (
-            <Tooltip label="Supprimer définitivement">
+            <Tooltip label={voc("Supprimer définitivement")}>
               <ActionIcon variant="subtle" color="red" loading={deleteIntervenant.isPending} onClick={supprimerDefinitivement}>
                 <Trash2 size={15} />
               </ActionIcon>
@@ -327,7 +327,7 @@ export function EquipeTab({ projetId }: { projetId: number }) {
     const intervenant = tousIntervenants?.find((i) => String(i.id) === selection);
     if (!intervenant) return;
     if (equipeCibleObj?.membres.includes(intervenant.id)) {
-      notifications.show({ message: "Cette personne est déjà dans l'équipe.", color: "orange" });
+      notifications.show({ message: voc("Cette personne est déjà dans l'équipe."), color: "orange" });
       return;
     }
     try {
@@ -339,13 +339,13 @@ export function EquipeTab({ projetId }: { projetId: number }) {
       notifications.show({ message: voc("Ajouté à l'équipe du projet"), color: "green" });
       setSelection(null);
     } catch {
-      notifications.show({ message: "Erreur lors de l'ajout", color: "red" });
+      notifications.show({ message: voc("Erreur lors de l'ajout"), color: "red" });
     }
   }
 
   async function creerEtAjouter() {
     if (!nom.trim() || !prenom.trim()) {
-      notifications.show({ message: "Nom et prénom requis.", color: "orange" });
+      notifications.show({ message: voc("Nom et prénom requis."), color: "orange" });
       return;
     }
     try {
@@ -358,13 +358,13 @@ export function EquipeTab({ projetId }: { projetId: number }) {
         activites_associees: [],
       });
       await rattacherAEquipeCible(cree.id);
-      notifications.show({ message: "Membre ajouté à l'équipe", color: "green" });
+      notifications.show({ message: voc("Membre ajouté à l'équipe"), color: "green" });
       setNom("");
       setPrenom("");
       setFonction("");
       setContact("");
     } catch {
-      notifications.show({ message: "Erreur lors de la création", color: "red" });
+      notifications.show({ message: voc("Erreur lors de la création"), color: "red" });
     }
   }
 
@@ -388,12 +388,12 @@ export function EquipeTab({ projetId }: { projetId: number }) {
       )}
 
       <Card withBorder padding="md" radius="md">
-        <Text size="sm" fw={600} mb="xs">Ajouter un membre existant</Text>
+        <Text size="sm" fw={600} mb="xs">{voc("Ajouter un membre existant")}</Text>
         {equipesDuProjet.length > 0 && (
           <Select
-            label="Rattacher aussi à une équipe"
-            description="Présélectionnée automatiquement — change-la ou vide-la si tu ne veux pas rattacher la personne à une équipe précise."
-            placeholder="Aucune équipe précise…"
+            label={voc("Rattacher aussi à une équipe")}
+            description={voc("Présélectionnée automatiquement — change-la ou vide-la si tu ne veux pas rattacher la personne à une équipe précise.")}
+            placeholder={voc("Aucune équipe précise…")}
             data={equipesDuProjet.map((e) => ({ value: String(e.id), label: e.nom }))}
             value={equipeCible}
             onChange={setEquipeCible}
@@ -404,41 +404,41 @@ export function EquipeTab({ projetId }: { projetId: number }) {
         )}
         <Group align="flex-end">
           <Select
-            placeholder="Choisir une personne déjà enregistrée…"
+            placeholder={voc("Choisir une personne déjà enregistrée…")}
             data={nonMembres}
             value={selection}
             onChange={setSelection}
             searchable
             style={{ flex: 1 }}
           />
-          <Button onClick={ajouterExistant} loading={updateIntervenant.isPending}>Ajouter à l'équipe</Button>
+          <Button onClick={ajouterExistant} loading={updateIntervenant.isPending}>{voc("Ajouter à l'équipe")}</Button>
         </Group>
 
-        <Divider my="sm" label="ou créer une nouvelle personne" labelPosition="left" />
+        <Divider my="sm" label={voc("ou créer une nouvelle personne")} labelPosition="left" />
         <Group align="flex-end" wrap="wrap">
-          <TextInput label="Nom" value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
-          <TextInput label="Prénom" value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} />
-          <TextInput label="Fonction" value={fonction} onChange={(e) => setFonction(e.currentTarget.value)} />
-          <TextInput label="Contact" value={contact} onChange={(e) => setContact(e.currentTarget.value)} />
+          <TextInput label={voc("Nom")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
+          <TextInput label={voc("Prénom")} value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} />
+          <TextInput label={voc("Fonction")} value={fonction} onChange={(e) => setFonction(e.currentTarget.value)} />
+          <TextInput label={voc("Contact")} value={contact} onChange={(e) => setContact(e.currentTarget.value)} />
           <Button variant="light" onClick={creerEtAjouter} loading={createIntervenant.isPending}>
-            Créer et ajouter
+            {voc("Créer et ajouter")}
           </Button>
         </Group>
       </Card>
 
       <Card withBorder padding="md" radius="md">
         {isLoading ? (
-          <Text c="dimmed">Chargement…</Text>
+          <Text c="dimmed">{voc("Chargement…")}</Text>
         ) : !equipe || equipe.length === 0 ? (
           <EmptyState icon={<UserRound size={32} strokeWidth={1.5} />} message={voc("Aucun membre affecté à ce projet pour le moment.")} />
         ) : (
           <Table striped highlightOnHover>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th tt="uppercase" fz="xs" c="dimmed">Nom</Table.Th>
-                <Table.Th tt="uppercase" fz="xs" c="dimmed">Fonction</Table.Th>
-                <Table.Th tt="uppercase" fz="xs" c="dimmed">Contact</Table.Th>
-                <Table.Th tt="uppercase" fz="xs" c="dimmed">Compte lié</Table.Th>
+                <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Nom")}</Table.Th>
+                <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Fonction")}</Table.Th>
+                <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Contact")}</Table.Th>
+                <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Compte lié")}</Table.Th>
                 <Table.Th />
               </Table.Tr>
             </Table.Thead>

@@ -1,5 +1,6 @@
 import { ActionIcon, Group, Table, Text, Tooltip } from "@mantine/core";
 import { Pencil, Trash2 } from "lucide-react";
+import { voc } from "../../utils/vocabulaire";
 
 export interface LigneHistoriqueSuivi {
   id: number;
@@ -18,7 +19,7 @@ export function HistoriqueSuiviTable({
   onDelete,
   editable,
   libelleStatut = "Statut",
-  messageVide = "Aucune saisie pour le moment.",
+  messageVide = voc("Aucune saisie pour le moment."),
 }: {
   lignes: LigneHistoriqueSuivi[];
   onEdit?: (id: number) => void;
@@ -46,11 +47,11 @@ export function HistoriqueSuiviTable({
     <Table fz="sm" verticalSpacing={4} withRowBorders={false} mt={6}>
       <Table.Thead>
         <Table.Tr>
-          <Table.Th fw={600} c="dimmed" tt="none">Période</Table.Th>
-          {aValeur && <Table.Th fw={600} c="dimmed" tt="none">Cette période</Table.Th>}
-          {aCumule && <Table.Th fw={600} c="dimmed" tt="none">Cumul</Table.Th>}
-          {aDetail && <Table.Th fw={600} c="dimmed" tt="none">Budget</Table.Th>}
-          {aAttendu && <Table.Th fw={600} c="dimmed" tt="none">Attendu</Table.Th>}
+          <Table.Th fw={600} c="dimmed" tt="none">{voc("Période")}</Table.Th>
+          {aValeur && <Table.Th fw={600} c="dimmed" tt="none">{voc("Cette période")}</Table.Th>}
+          {aCumule && <Table.Th fw={600} c="dimmed" tt="none">{voc("Cumul")}</Table.Th>}
+          {aDetail && <Table.Th fw={600} c="dimmed" tt="none">{voc("Budget")}</Table.Th>}
+          {aAttendu && <Table.Th fw={600} c="dimmed" tt="none">{voc("Attendu")}</Table.Th>}
           {aStatut && <Table.Th fw={600} c="dimmed" tt="none">{libelleStatut}</Table.Th>}
           <Table.Th />
         </Table.Tr>
@@ -68,14 +69,14 @@ export function HistoriqueSuiviTable({
               {editable && (onEdit || onDelete) && (
                 <Group gap={2} wrap="nowrap" justify="flex-end">
                   {onEdit && (
-                    <Tooltip label="Modifier cette saisie">
+                    <Tooltip label={voc("Modifier cette saisie")}>
                       <ActionIcon size="sm" variant="subtle" onClick={() => onEdit(ligne.id)}>
                         <Pencil size={14} />
                       </ActionIcon>
                     </Tooltip>
                   )}
                   {onDelete && (
-                    <Tooltip label="Supprimer cette saisie">
+                    <Tooltip label={voc("Supprimer cette saisie")}>
                       <ActionIcon size="sm" variant="subtle" color="red" onClick={() => onDelete(ligne.id)}>
                         <Trash2 size={14} />
                       </ActionIcon>

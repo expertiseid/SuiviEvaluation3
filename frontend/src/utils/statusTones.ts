@@ -1,5 +1,6 @@
 import type { StatusTone } from "../components/common/StatusBadge";
 import type { StatutActivite, StatutProjet } from "../types";
+import { voc } from "./vocabulaire";
 
 export const PROJET_STATUT_TONE: Record<StatutProjet, StatusTone> = {
   EN_PREPARATION: "neutral",
@@ -8,9 +9,9 @@ export const PROJET_STATUT_TONE: Record<StatutProjet, StatusTone> = {
 };
 
 export const PROJET_STATUT_LABEL: Record<StatutProjet, string> = {
-  EN_PREPARATION: "En préparation",
-  EN_COURS: "En cours",
-  CLOTURE: "Clôturé",
+  EN_PREPARATION: voc("En préparation"),
+  EN_COURS: voc("En cours"),
+  CLOTURE: voc("Clôturé"),
 };
 
 export const ACTIVITE_STATUT_TONE: Record<StatutActivite, StatusTone> = {
@@ -20,15 +21,15 @@ export const ACTIVITE_STATUT_TONE: Record<StatutActivite, StatusTone> = {
 };
 
 export const ACTIVITE_STATUT_LABEL: Record<StatutActivite, string> = {
-  NON_REALISEE: "Non réalisée",
-  EN_COURS: "En cours",
-  REALISEE: "Réalisée",
+  NON_REALISEE: voc("Non réalisée"),
+  EN_COURS: voc("En cours"),
+  REALISEE: voc("Réalisée"),
 };
 
 export const SOUS_ACTIVITE_STATUT_LABEL: Record<string, string> = {
-  PLANIFIEE: "Planifiée",
-  EN_COURS: "En cours",
-  TERMINEE: "Terminée",
+  PLANIFIEE: voc("Planifiée"),
+  EN_COURS: voc("En cours"),
+  TERMINEE: voc("Terminée"),
 };
 
 export const SUIVI_STATUT_GLOBAL_TONE: Record<string, StatusTone> = {
@@ -38,7 +39,7 @@ export const SUIVI_STATUT_GLOBAL_TONE: Record<string, StatusTone> = {
 };
 
 export const SUIVI_STATUT_GLOBAL_LABEL: Record<string, string> = {
-  ATTEINT: "Atteint",
-  EN_COURS: "En cours",
-  EN_RETARD: "En retard",
+  ATTEINT: voc("Atteint"),
+  EN_COURS: voc("En cours"),
+  EN_RETARD: voc("En retard"),
 };

@@ -15,7 +15,9 @@ import {
   optionsAgregation,
   optionsMethode,
 } from "../../utils/methodesCalcul";
-import { useCreatePartenaire } from "../../api/referentiels";
+import { useCreatePartenaire, useEnregistrerFinancements, useFinancements } from "../../api/referentiels";
+import { BailleursMontants } from "./BailleursMontants";
+import { type LigneBailleur, nouvelleLigneBailleur, totalBailleurs } from "./lignesBailleurs";
 import { useEnregistrerPartiePrenante, usePartiesPrenantes, useStructures, useTousPartenaires } from "../../api/organisation";
 import { optionsStructures } from "../../utils/organisation";
 import { useNiveauxAdministratifs, useZones } from "../../api/geo";
@@ -83,7 +85,11 @@ const ONGLET_PAR_CHAMP: Record<string, string> = {
 export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => void }) {
   const enEdition = !!projet;
   const { data: partenaires } = useTousPartenaires();
-  const partenairesBailleurs = useMemo(() => (partenaires ?? []).filter((p) => p.type === "BAILLEUR"), [partenaires]);
+  // Bailleurs du projet et leurs montants (un Financement par bailleur), enregistrés après le projet.
+  const { data: financements } = useFinancements(projet?.id);
+  const enregistrerFinancements = useEnregistrerFinancements();
+  const [lignesBailleurs, setLignesBailleurs] = useState<LigneBailleur[]>([]);
+  const [bailleursInitialises, setBailleursInitialises] = useState(!projet);
   // Une même organisation peut être de mise en œuvre sur un projet et du consortium sur un autre :
   // les deux listes proposent tous les partenaires (hors bailleurs), ceux du type attendu d'abord.
   const partenairesDuType = (type: "MISE_EN_OEUVRE" | "CONSORTIUM") =>
@@ -146,6 +152,14 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
     );
     setZonesInitialisees(true);
   }, [enEdition, zonesInitialisees, zones, projet]);
+
+  useEffect(() => {
+    if (bailleursInitialises || !financements) return;
+    setLignesBailleurs(
+      financements.map((f) => nouvelleLigneBailleur(f.bailleur_nom, Number(f.montant_finance), Number(f.montant_rallonges))),
+    );
+    setBailleursInitialises(true);
+  }, [bailleursInitialises, financements]);
 
   useEffect(() => {
     if (!enEdition || consortiumInitialise || !partenaires) return;
@@ -250,11 +264,20 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
   }, [tousElements, elementPrincipal]);
 
   async function enregistrer(values: FormValues) {
+    const bailleursSaisis = lignesBailleurs.filter((l) => l.nom.trim());
+    const nomsSaisis = bailleursSaisis.map((l) => l.nom.trim().toLocaleLowerCase());
+    const doublon = bailleursSaisis.find((_, i) => nomsSaisis.indexOf(nomsSaisis[i]) !== i);
+    if (doublon) {
+      setOngletActif("general");
+      notifications.show({ message: voc`Le bailleur « ${doublon.nom.trim()} » est saisi deux fois.`, color: "red" });
+      return;
+    }
     const payload = {
       nom: values.nom,
       code: values.code,
       pays: values.pays ?? [],
-      budget_total: values.budget_total,
+      // Avec des bailleurs, le coût total = fonds propres + leurs financements (recalculé aussi par le serveur).
+      budget_total: bailleursSaisis.length ? values.fonds_propres + totalBailleurs(bailleursSaisis) : values.budget_total,
       fonds_propres: values.fonds_propres,
       date_debut: values.date_debut,
       date_fin: values.date_fin,
@@ -289,13 +312,17 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
       elements_capitalisation: values.elements_capitalisation ?? "",
     };
     try {
-      if (enEdition) {
-        await updateProjet.mutateAsync({ id: projet.id, payload: payload as never });
-        notifications.show({ message: voc("Projet modifié"), color: "green" });
-      } else {
-        await createProjet.mutateAsync(payload as never);
-        notifications.show({ message: voc("Projet créé"), color: "green" });
+      const enregistre = enEdition
+        ? await updateProjet.mutateAsync({ id: projet.id, payload: payload as never })
+        : await createProjet.mutateAsync(payload as never);
+      if (bailleursInitialises) {
+        await enregistrerFinancements.mutateAsync({
+          projetId: enEdition ? projet.id : enregistre.id,
+          lignes: bailleursSaisis.map((l) => ({ nom: l.nom.trim(), montant: l.montant ?? 0 })),
+          existants: financements ?? [],
+        });
       }
+      notifications.show({ message: enEdition ? voc("Projet modifié") : voc("Projet créé"), color: "green" });
       onDone();
     } catch {
       notifications.show({
@@ -313,7 +340,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
           <Text size="sm">
             {voc("Vous n'avez pas associé de cadre stratégique à ce projet. Voulez-vous continuer sans cadre stratégique, ou l'associer d'abord ?")}</Text>
         ),
-        labels: { confirm: "Continuer", cancel: "Associer un cadre" },
+        labels: { confirm: voc("Continuer"), cancel: voc("Associer un cadre") },
         onConfirm: () => enregistrer(values),
         onCancel: () => setOngletActif("strategie"),
       });
@@ -322,7 +349,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
     enregistrer(values);
   }
 
-  const enCours = createProjet.isPending || updateProjet.isPending;
+  const enCours = createProjet.isPending || updateProjet.isPending || enregistrerFinancements.isPending;
 
   function onInvalid(formErrors: typeof errors) {
     const premierChamp = Object.keys(formErrors)[0] as keyof FormValues | undefined;
@@ -330,8 +357,8 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
     if (onglet) setOngletActif(onglet);
     const messageChamp = premierChamp ? formErrors[premierChamp]?.message : undefined;
     notifications.show({
-      title: "Champ obligatoire manquant",
-      message: messageChamp ?? "Merci de compléter les champs obligatoires — voir l'onglet mis en évidence.",
+      title: voc("Champ obligatoire manquant"),
+      message: messageChamp ?? voc("Merci de compléter les champs obligatoires — voir l'onglet mis en évidence."),
       color: "red",
       autoClose: 8000,
     });
@@ -341,29 +368,39 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
     <form onSubmit={handleSubmit(onSubmit, onInvalid)}>
       <Tabs value={ongletActif} onChange={setOngletActif}>
         <Tabs.List>
-          <Tabs.Tab value="general">Général</Tabs.Tab>
+          <Tabs.Tab value="general">{voc("Général")}</Tabs.Tab>
           <Tabs.Tab value="cibles">{voc("Cibles bénéficiaires")}</Tabs.Tab>
-          <Tabs.Tab value="strategie">Stratégie & capitalisation</Tabs.Tab>
-          <Tabs.Tab value="organisation">Organisation</Tabs.Tab>
+          <Tabs.Tab value="strategie">{voc("Stratégie & capitalisation")}</Tabs.Tab>
+          <Tabs.Tab value="organisation">{voc("Organisation")}</Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="general" pt="sm">
           <Stack gap="sm">
             <TextInput label={voc("Nom du projet")} {...register("nom")} error={errors.nom?.message} required />
-            <TextInput label="Code" {...register("code")} error={errors.code?.message} required />
+            <TextInput label={voc("Code")} {...register("code")} error={errors.code?.message} required />
             <Group grow>
               <Controller
                 control={control}
                 name="budget_total"
-                render={({ field }) => (
-                  <NumberInput label="Budget total (FCFA)" value={field.value} onChange={(v) => field.onChange(Number(v) || 0)} min={0} />
-                )}
+                render={({ field }) =>
+                  totalBailleurs(lignesBailleurs) > 0 ? (
+                    <NumberInput
+                      label={voc("Budget total (FCFA)")}
+                      description={voc("Fonds propres + financements des bailleurs")}
+                      value={(watch("fonds_propres") || 0) + totalBailleurs(lignesBailleurs)}
+                      thousandSeparator=" "
+                      disabled
+                    />
+                  ) : (
+                    <NumberInput label={voc("Budget total (FCFA)")} value={field.value} onChange={(v) => field.onChange(Number(v) || 0)} min={0} />
+                  )
+                }
               />
               <Controller
                 control={control}
                 name="fonds_propres"
                 render={({ field }) => (
-                  <NumberInput label="Fonds propres (FCFA)" value={field.value} onChange={(v) => field.onChange(Number(v) || 0)} min={0} />
+                  <NumberInput label={voc("Fonds propres (FCFA)")} value={field.value} onChange={(v) => field.onChange(Number(v) || 0)} min={0} />
                 )}
               />
             </Group>
@@ -372,14 +409,14 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
                 control={control}
                 name="date_debut"
                 render={({ field }) => (
-                  <DateInput label="Date de début prévue" value={field.value} onChange={field.onChange} error={errors.date_debut?.message} required />
+                  <DateInput label={voc("Date de début prévue")} value={field.value} onChange={field.onChange} error={errors.date_debut?.message} required />
                 )}
               />
               <Controller
                 control={control}
                 name="date_fin"
                 render={({ field }) => (
-                  <DateInput label="Date de fin prévue" value={field.value} onChange={field.onChange} error={errors.date_fin?.message} required />
+                  <DateInput label={voc("Date de fin prévue")} value={field.value} onChange={field.onChange} error={errors.date_fin?.message} required />
                 )}
               />
             </Group>
@@ -388,7 +425,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
               name="date_rappel"
               render={({ field }) => (
                 <DateInput
-                  label="Date de rappel (optionnel)"
+                  label={voc("Date de rappel (optionnel)")}
                   description={voc("Déclenche une alerte à cette date précise, indépendamment du seuil de jours avant l'échéance.")}
                   value={field.value ?? null}
                   onChange={field.onChange}
@@ -402,7 +439,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
                 name="statut"
                 render={({ field }) => (
                   <Select
-                    label="Statut"
+                    label={voc("Statut")}
                     data={Object.entries(PROJET_STATUT_LABEL).map(([value, label]) => ({ value, label }))}
                     value={field.value}
                     onChange={(v) => field.onChange(v ?? "EN_PREPARATION")}
@@ -414,8 +451,8 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
                 name="type_mise_en_oeuvre"
                 render={({ field }) => (
                   <Select
-                    label="Type de mise en œuvre"
-                    data={[{ value: "DIRECT", label: "Direct" }, { value: "CONSORTIUM", label: "En consortium" }]}
+                    label={voc("Type de mise en œuvre")}
+                    data={[{ value: "DIRECT", label: voc("Direct") }, { value: "CONSORTIUM", label: voc("En consortium") }]}
                     value={field.value}
                     onChange={(v) => field.onChange(v ?? "DIRECT")}
                   />
@@ -451,34 +488,13 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
                 />
               )}
             />
-            <Controller
-              control={control}
-              name="partenaire_bailleur"
-              render={({ field }) => (
-                <SelectOrCreate
-                  label="Bailleur"
-                  data={partenairesBailleurs.map((p) => ({ value: String(p.id), label: p.nom }))}
-                  value={field.value ?? null}
-                  onChange={field.onChange}
-                  clearable
-                  creating={createPartenaire.isPending}
-                  onCreate={async (nom) => {
-                    try {
-                      const cree = await createPartenaire.mutateAsync({ nom, type: "BAILLEUR" });
-                      field.onChange(String(cree.id));
-                    } catch {
-                      notifications.show({ message: "Erreur lors de la création du bailleur", color: "red" });
-                    }
-                  }}
-                />
-              )}
-            />
+            <BailleursMontants lignes={lignesBailleurs} onChange={setLignesBailleurs} />
             <Controller
               control={control}
               name="partenaire_mise_en_oeuvre"
               render={({ field }) => (
                 <SelectOrCreate
-                  label="Partenaire de mise en œuvre"
+                  label={voc("Partenaire de mise en œuvre")}
                   data={partenairesDuType("MISE_EN_OEUVRE")}
                   value={field.value ?? null}
                   onChange={field.onChange}
@@ -489,7 +505,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
                       const cree = await createPartenaire.mutateAsync({ nom, type: "MISE_EN_OEUVRE" });
                       field.onChange(String(cree.id));
                     } catch {
-                      notifications.show({ message: "Erreur lors de la création du partenaire", color: "red" });
+                      notifications.show({ message: voc("Erreur lors de la création du partenaire"), color: "red" });
                     }
                   }}
                 />
@@ -498,7 +514,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
             {watch("type_mise_en_oeuvre") === "CONSORTIUM" && (
               <div>
                 <SelectOrCreate
-                  label="Partenaires du consortium"
+                  label={voc("Partenaires du consortium")}
                   data={partenairesDuType("CONSORTIUM")}
                   value={partenaireConsortiumChoisi}
                   onChange={setPartenaireConsortiumChoisi}
@@ -511,7 +527,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
                         setPartenairesConsortium((prev) => [...prev, { id: cree.id, label: cree.nom }]);
                       }
                     } catch {
-                      notifications.show({ message: "Erreur lors de la création du partenaire", color: "red" });
+                      notifications.show({ message: voc("Erreur lors de la création du partenaire"), color: "red" });
                     }
                   }}
                 />
@@ -528,7 +544,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
                       setPartenaireConsortiumChoisi(null);
                     }}
                   >
-                    Ajouter ce partenaire
+                    {voc("Ajouter ce partenaire")}
                   </Button>
                 </Group>
                 {partenairesConsortium.length > 0 && (
@@ -552,8 +568,8 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
               name="pays"
               render={({ field }) => (
                 <MultiSelect
-                  label="Pays d'intervention"
-                  placeholder="Rechercher un ou plusieurs pays…"
+                  label={voc("Pays d'intervention")}
+                  placeholder={voc("Rechercher un ou plusieurs pays…")}
                   data={PAYS_MONDE.map((p) => ({ value: p.code, label: p.nom }))}
                   value={field.value ?? []}
                   onChange={(v) => {
@@ -570,9 +586,9 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
             />
 
             <div>
-              <Text size="sm" fw={500} mb={4}>Zones d'intervention</Text>
+              <Text size="sm" fw={500} mb={4}>{voc("Zones d'intervention")}</Text>
               <Checkbox
-                label="Tout le pays (ensemble du territoire des pays d'intervention)"
+                label={voc("Tout le pays (ensemble du territoire des pays d'intervention)")}
                 checked={toutLePays}
                 onChange={(e) => setToutLePays(e.currentTarget.checked)}
                 mb="xs"
@@ -582,7 +598,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
                   {(watch("pays")?.length ?? 0) > 1 && (
                     <Select
                       size="xs"
-                      label="Pays de la zone à ajouter"
+                      label={voc("Pays de la zone à ajouter")}
                       data={(watch("pays") ?? []).map((code) => ({
                         value: code,
                         label: PAYS_MONDE.find((p) => p.code === code)?.nom ?? code,
@@ -599,7 +615,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
                   <ZoneCascadeFields pays={paysZoneActif} value={zoneCascade} onChange={setZoneCascade} />
                   <Group justify="flex-end" mt={4}>
                     <Button size="xs" variant="light" onClick={handleAjouterZone}>
-                      Ajouter cette zone
+                      {voc("Ajouter cette zone")}
                     </Button>
                   </Group>
                   {zonesAjoutees.length > 0 && (
@@ -623,7 +639,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
               control={control}
               name="cible_totale"
               render={({ field }) => (
-                <NumberInput label="Cible totale" value={field.value ?? ""} onChange={(v) => field.onChange(v === "" ? null : Number(v))} min={0} />
+                <NumberInput label={voc("Cible totale")} value={field.value ?? ""} onChange={(v) => field.onChange(v === "" ? null : Number(v))} min={0} />
               )}
             />
             <Group grow>
@@ -631,14 +647,14 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
                 control={control}
                 name="cible_hommes"
                 render={({ field }) => (
-                  <NumberInput label="Dont hommes" value={field.value ?? ""} onChange={(v) => field.onChange(v === "" ? null : Number(v))} min={0} />
+                  <NumberInput label={voc("Dont hommes")} value={field.value ?? ""} onChange={(v) => field.onChange(v === "" ? null : Number(v))} min={0} />
                 )}
               />
               <Controller
                 control={control}
                 name="cible_femmes"
                 render={({ field }) => (
-                  <NumberInput label="Dont femmes" value={field.value ?? ""} onChange={(v) => field.onChange(v === "" ? null : Number(v))} min={0} />
+                  <NumberInput label={voc("Dont femmes")} value={field.value ?? ""} onChange={(v) => field.onChange(v === "" ? null : Number(v))} min={0} />
                 )}
               />
             </Group>
@@ -647,14 +663,14 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
                 control={control}
                 name="cible_jeunes"
                 render={({ field }) => (
-                  <NumberInput label="Dont jeunes" value={field.value ?? ""} onChange={(v) => field.onChange(v === "" ? null : Number(v))} min={0} />
+                  <NumberInput label={voc("Dont jeunes")} value={field.value ?? ""} onChange={(v) => field.onChange(v === "" ? null : Number(v))} min={0} />
                 )}
               />
               <Controller
                 control={control}
                 name="cible_pdi"
                 render={({ field }) => (
-                  <NumberInput label="Dont PDI" value={field.value ?? ""} onChange={(v) => field.onChange(v === "" ? null : Number(v))} min={0} />
+                  <NumberInput label={voc("Dont PDI")} value={field.value ?? ""} onChange={(v) => field.onChange(v === "" ? null : Number(v))} min={0} />
                 )}
               />
             </Group>
@@ -676,7 +692,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
                 <MultiSelect
                   label={voc("Services chargés du projet")}
                   description={voc("Directions, services… de l'organisation (paramétrés dans Organisation). Une partie du projet peut être confiée à un autre service depuis sa planification.")}
-                  placeholder="Aucun"
+                  placeholder={voc("Aucun")}
                   data={optionsStructures(structures ?? [])}
                   value={field.value ?? []}
                   onChange={field.onChange}
@@ -690,9 +706,9 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
               name="parties_prenantes"
               render={({ field }) => (
                 <MultiSelect
-                  label="Parties prenantes"
+                  label={voc("Parties prenantes")}
                   description={voc("Choisies dans le répertoire des parties prenantes ; taper un nom absent pour l'ajouter.")}
-                  placeholder="Aucune"
+                  placeholder={voc("Aucune")}
                   data={(partiesPrenantes ?? []).map((p) => ({
                     value: String(p.id),
                     label: p.categorie_nom ? `${p.nom} (${p.categorie_nom})` : p.nom,
@@ -715,7 +731,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
                           setRecherchePartie("");
                         }}
                       >
-                        Ajouter « {recherchePartie.trim()} »
+                        {voc("Ajouter «")} {recherchePartie.trim()} »
                       </Button>
                     ) : undefined
                   }
@@ -775,9 +791,9 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
               name="elements_strategiques_secondaires"
               render={({ field }) => (
                 <MultiSelect
-                  label="Contribue aussi à"
+                  label={voc("Contribue aussi à")}
                   description={voc("Autres éléments stratégiques (de ce cadre ou d'un autre document) auxquels le projet contribue. Seul le rattachement ci-dessus compte dans les budgets et les taux : ces liens sont informatifs, pour éviter le double compte.")}
-                  placeholder="Aucun"
+                  placeholder={voc("Aucun")}
                   data={optionsLiensSecondaires}
                   value={field.value ?? []}
                   onChange={field.onChange}
@@ -792,10 +808,10 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
                 name="methode_calcul"
                 render={({ field }) => (
                   <Select
-                    label="Méthode de calcul des taux"
+                    label={voc("Méthode de calcul des taux")}
                     description={voc("Pour tous les éléments du projet qui ne fixent pas la leur.")}
                     data={optionsMethode(
-                      `Hériter de l'organisation (${parametresCalcul ? LIBELLES_METHODE[parametresCalcul.methode_calcul] : "…"})`,
+                      voc`Hériter de l'organisation (${parametresCalcul ? LIBELLES_METHODE[parametresCalcul.methode_calcul] : "…"})`,
                     )}
                     value={field.value ?? ""}
                     onChange={(v) => field.onChange(v ?? "")}
@@ -815,7 +831,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
                         : voc("Calcul du taux global à partir des éléments de la planification.")
                     }
                     data={optionsAgregation(
-                      `Hériter de l'organisation (${parametresCalcul ? LIBELLES_AGREGATION[parametresCalcul.methode_agregation] : "…"})`,
+                      voc`Hériter de l'organisation (${parametresCalcul ? LIBELLES_AGREGATION[parametresCalcul.methode_agregation] : "…"})`,
                     )}
                     value={field.value ?? ""}
                     onChange={(v) => field.onChange(v ?? "")}
@@ -830,18 +846,18 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
                   label={voc("Ouverture de la saisie du projet")}
                   description={voc("Périodes de rapportage : voir Paramètres. « Fermée » : seules les périodes propres au projet l'ouvrent.")}
                   data={[
-                    { value: "HERITE", label: "Selon le réglage général" },
-                    { value: "OUVERTE", label: "Toujours ouverte" },
-                    { value: "FERMEE", label: "Fermée, sauf pendant les périodes propres au projet" },
+                    { value: "HERITE", label: voc("Selon le réglage général") },
+                    { value: "OUVERTE", label: voc("Toujours ouverte") },
+                    { value: "FERMEE", label: voc("Fermée, sauf pendant les périodes propres au projet") },
                   ]}
                   value={saisie}
                   onChange={(v) => v && setSaisie(v as SaisieProjet)}
                   allowDeselect={false}
                 />
                 <Select
-                  label="Hors période de rapportage, fermer"
+                  label={voc("Hors période de rapportage, fermer")}
                   data={[
-                    { value: "", label: "Selon le réglage général" },
+                    { value: "", label: voc("Selon le réglage général") },
                     ...Object.entries(LIBELLES_PERIMETRE).map(([value, label]) => ({ value, label })),
                   ]}
                   value={perimetreFermeture}
@@ -852,7 +868,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
             )}
             {user?.role === "ADMIN" && (
               <Stack gap={6}>
-                <Text size="sm" fw={500}>Approbations</Text>
+                <Text size="sm" fw={500}>{voc("Approbations")}</Text>
                 <Checkbox
                   label={voc("Les saisies de réalisations doivent être approuvées")}
                   description={voc("Suivis, valeurs d'indicateurs et taux manuels ne comptent qu'une fois approuvés (écran Approbations).")}
@@ -868,7 +884,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
               </Stack>
             )}
             <Textarea
-              label="Éléments de capitalisation"
+              label={voc("Éléments de capitalisation")}
               description={voc("À compléter en fin de projet : leçons apprises, bonnes pratiques.")}
               minRows={3}
               {...register("elements_capitalisation")}
@@ -878,7 +894,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
       </Tabs>
 
       <Group justify="flex-end" mt="md">
-        <Button type="submit" loading={enCours}>{enEdition ? "Enregistrer" : "Créer"}</Button>
+        <Button type="submit" loading={enCours}>{enEdition ? voc("Enregistrer") : voc("Créer")}</Button>
       </Group>
     </form>
   );

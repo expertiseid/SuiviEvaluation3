@@ -62,7 +62,7 @@ export function BeneficiairesTab({
         message:
           echecs.length === selection.length
             ? messageErreurApi(premierEchec.reason, voc("Erreur lors de l'association des bénéficiaires"))
-            : `${selection.length - echecs.length} associé(s), ${echecs.length} en échec.`,
+            : voc`${selection.length - echecs.length} associé(s), ${echecs.length} en échec.`,
         color: echecs.length === selection.length ? "red" : "orange",
       });
     }
@@ -72,7 +72,7 @@ export function BeneficiairesTab({
 
   function handleSupprimer(participation: { id: number; beneficiaire_nom: string }) {
     confirmerSuppression({
-      message: `Retirer "${participation.beneficiaire_nom}" de cette liste ? Cette action est irréversible.`,
+      message: voc`Retirer "${participation.beneficiaire_nom}" de cette liste ? Cette action est irréversible.`,
       onConfirm: async () => {
         try {
           await deleteParticipation.mutateAsync(participation.id);
@@ -92,7 +92,7 @@ export function BeneficiairesTab({
       <Group align="flex-end" mb="md">
         <TextInput
           label={voc("Rechercher un bénéficiaire")}
-          placeholder="Nom, prénom, téléphone…"
+          placeholder={voc("Nom, prénom, téléphone…")}
           value={recherche}
           onChange={(e) => setRecherche(e.currentTarget.value)}
           style={{ flex: 1 }}
@@ -112,12 +112,12 @@ export function BeneficiairesTab({
           loading={createParticipation.isPending}
           disabled={selection.length === 0}
         >
-          Associer{selection.length > 0 ? ` (${selection.length})` : ""}
+          {voc("Associer")}{selection.length > 0 ? ` (${selection.length})` : ""}
         </Button>
       </Group>
 
       {isLoading ? (
-        <Text c="dimmed">Chargement…</Text>
+        <Text c="dimmed">{voc("Chargement…")}</Text>
       ) : !participations || participations.length === 0 ? (
         <EmptyState icon={<Users size={32} strokeWidth={1.5} />} message={voc("Aucun bénéficiaire associé pour le moment.")} />
       ) : (
@@ -125,8 +125,8 @@ export function BeneficiairesTab({
           <Table verticalSpacing="sm" striped highlightOnHover>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th tt="uppercase" fz="xs" c="dimmed">Nom</Table.Th>
-                <Table.Th tt="uppercase" fz="xs" c="dimmed">Date d'inscription</Table.Th>
+                <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Nom")}</Table.Th>
+                <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Date d'inscription")}</Table.Th>
                 <Table.Th />
               </Table.Tr>
             </Table.Thead>
@@ -138,7 +138,7 @@ export function BeneficiairesTab({
                   </Table.Td>
                   <Table.Td>{p.date_inscription}</Table.Td>
                   <Table.Td>
-                    <Tooltip label="Retirer">
+                    <Tooltip label={voc("Retirer")}>
                       <ActionIcon variant="subtle" color="red" onClick={() => handleSupprimer(p)}>
                         <Trash2 size={16} />
                       </ActionIcon>

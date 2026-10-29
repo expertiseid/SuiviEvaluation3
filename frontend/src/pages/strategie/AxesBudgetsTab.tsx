@@ -8,22 +8,15 @@ import { STATUS_HEX } from "../../components/common/statusPalette";
 import { toneDeTaux } from "../../components/suivi/BarreProgression";
 import type { RecapAxesCadreStrategique, TypeNiveau } from "../../types";
 import { voc } from "../../utils/vocabulaire";
+import { nombre, totaux } from "./calculsAxes";
 
+import { locale } from "../../utils/i18n";
 type Activite = RecapAxesCadreStrategique["activites"][number];
 
 const CLE_NON_RATTACHEES = -1;
 
-function nombre(v: string | number | null): number {
-  return v === null ? 0 : Number(v);
-}
-
-function moyenne(valeurs: (number | null)[]): number | null {
-  const definies = valeurs.filter((v): v is number => v !== null);
-  return definies.length ? Math.round((definies.reduce((s, v) => s + v, 0) / definies.length) * 10) / 10 : null;
-}
-
 function fcfa(v: number): string {
-  return v.toLocaleString("fr-FR");
+  return v.toLocaleString(locale());
 }
 
 function Taux({ taux }: { taux: number | null }) {
@@ -34,24 +27,6 @@ function Taux({ taux }: { taux: number | null }) {
       <Progress value={Math.min(100, taux)} color={STATUS_HEX[toneDeTaux(taux)]} size={6} w={54} radius="xl" />
     </Group>
   );
-}
-
-/**
- * Ligne de totaux d'un groupe d'activités : nombre, budgets additionnés sans double compte
- * (budget d'un niveau ignoré quand le détail est saisi en dessous), taux = moyenne des
- * éléments les plus bas du groupe (un niveau dont un élément en dessous est aussi dans le
- * groupe est déjà compté à travers lui).
- */
-function totaux(activites: Activite[]) {
-  const auDessus = new Set(activites.flatMap((a) => a.ancetres));
-  const derniers = activites.filter((a) => !auDessus.has(a.id));
-  return {
-    nombre: activites.length,
-    alloue: activites.reduce((s, a) => s + nombre(a.budget_alloue_compte), 0),
-    depense: activites.reduce((s, a) => s + nombre(a.budget_realise_compte), 0),
-    tauxPhysique: moyenne(derniers.map((a) => a.taux_physique)),
-    tauxFinancier: moyenne(derniers.map((a) => a.taux_financier)),
-  };
 }
 
 type Element = RecapAxesCadreStrategique["elements"][number];
@@ -129,8 +104,8 @@ function LigneActivite({ a, profondeur }: { a: Activite; profondeur: number }) {
       <Table.Td {...CHIFFRE}>
         {a.budget_alloue !== null ? fcfa(nombre(a.budget_alloue)) : "—"}
         {nombre(a.budget_alloue) !== 0 && nombre(a.budget_alloue_compte) === 0 && (
-          <Tooltip label="Le détail de ce budget est saisi sur les éléments en dessous : il n'est pas compté une seconde fois dans les totaux.">
-            <Text size="xs" c="dimmed">non additionné</Text>
+          <Tooltip label={voc("Le détail de ce budget est saisi sur les éléments en dessous : il n'est pas compté une seconde fois dans les totaux.")}>
+            <Text size="xs" c="dimmed">{voc("non additionné")}</Text>
           </Tooltip>
         )}
       </Table.Td>
@@ -243,7 +218,7 @@ export function AxesBudgetsTab({ cadreId, niveaux }: { cadreId: number; niveaux:
     return { enfants, directes, cumul, racines, nonRattachees };
   }, [data, niveau]);
 
-  if (isLoading || !data) return <Text c="dimmed">Chargement…</Text>;
+  if (isLoading || !data) return <Text c="dimmed">{voc("Chargement…")}</Text>;
   if (!niveau) {
     return (
       <EmptyState
@@ -271,7 +246,7 @@ export function AxesBudgetsTab({ cadreId, niveaux }: { cadreId: number; niveaux:
     <Stack gap="md">
       {niveauxTries.length > 1 && (
         <Group gap="sm">
-          <Text size="sm" fw={600}>Regrouper par :</Text>
+          <Text size="sm" fw={600}>{voc("Regrouper par :")}</Text>
           {/* Au-delà de 4 niveaux, une liste déroulante plutôt qu'une rangée de boutons trop large. */}
           {niveauxTries.length <= 4 ? (
             <SegmentedControl value={String(niveau.id)} onChange={choisirNiveau} data={choixNiveaux} />
@@ -287,11 +262,11 @@ export function AxesBudgetsTab({ cadreId, niveaux }: { cadreId: number; niveaux:
             <Table.Thead>
               <Table.Tr>
                 <Table.Th {...ENTETE}>{niveau.nom_niveau}</Table.Th>
-                <Table.Th {...ENTETE} ta="right">Nombre d'activités</Table.Th>
-                <Table.Th {...ENTETE} ta="right">Budget alloué (FCFA)</Table.Th>
-                <Table.Th {...ENTETE} ta="right">Budget dépensé (FCFA)</Table.Th>
-                <Table.Th {...ENTETE} ta="right">Taux physique moyen</Table.Th>
-                <Table.Th {...ENTETE} ta="right">Taux financier moyen</Table.Th>
+                <Table.Th {...ENTETE} ta="right">{voc("Nombre d'activités")}</Table.Th>
+                <Table.Th {...ENTETE} ta="right">{voc("Budget alloué (FCFA)")}</Table.Th>
+                <Table.Th {...ENTETE} ta="right">{voc("Budget dépensé (FCFA)")}</Table.Th>
+                <Table.Th {...ENTETE} ta="right">{voc("Taux physique moyen")}</Table.Th>
+                <Table.Th {...ENTETE} ta="right">{voc("Taux financier moyen")}</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -301,7 +276,7 @@ export function AxesBudgetsTab({ cadreId, niveaux }: { cadreId: number; niveaux:
               {arbre.nonRattachees.length > 0 && (
                 <LigneGroupe
                   cle={CLE_NON_RATTACHEES}
-                  libelle={<Text size="sm" fw={600} c="orange.8" fs="italic">Activités non rattachées à un(e) {niveau.nom_niveau.toLowerCase()}</Text>}
+                  libelle={<Text size="sm" fw={600} c="orange.8" fs="italic">{voc("Activités non rattachées à un(e)")} {niveau.nom_niveau.toLowerCase()}</Text>}
                   activites={arbre.nonRattachees}
                   profondeur={0}
                   ouvert={ouverts.includes(CLE_NON_RATTACHEES)}
@@ -313,7 +288,7 @@ export function AxesBudgetsTab({ cadreId, niveaux }: { cadreId: number; niveaux:
             </Table.Tbody>
             <Table.Tfoot bg="gray.1">
               <Table.Tr>
-                <Table.Th>Total</Table.Th>
+                <Table.Th>{voc("Total")}</Table.Th>
                 <Table.Th {...CHIFFRE}>{total.nombre}</Table.Th>
                 <Table.Th {...CHIFFRE}>{fcfa(total.alloue)}</Table.Th>
                 <Table.Th {...CHIFFRE}>{fcfa(total.depense)}</Table.Th>
@@ -324,15 +299,15 @@ export function AxesBudgetsTab({ cadreId, niveaux }: { cadreId: number; niveaux:
           </Table>
         </Table.ScrollContainer>
         <Text size="xs" c="dimmed" mt="xs">
-          Budgets : sommes des activités. Taux : moyenne des taux des activités (chaque activité compte pour une).
-          Cliquer sur une ligne pour la déplier : ses sous-éléments (avec leurs propres totaux) puis ses activités.
+          {voc("Budgets : sommes des activités. Taux : moyenne des taux des activités (chaque activité compte pour une). Cliquer sur une ligne pour la déplier : ses sous-éléments (avec leurs propres totaux) puis ses activités.")}
         </Text>
       </Card>
 
       {nbNonRattachees > 0 && (
         <Text size="sm" c="orange.8">
-          {nbNonRattachees} activité{nbNonRattachees > 1 ? "s" : ""} {voc(" des projets de ce cadre n'")}{nbNonRattachees > 1 ? "ont" : "a"} pas encore d'élément stratégique : à renseigner dans la fiche de
-          l'activité (champ « Élément stratégique »).
+          {nbNonRattachees > 1
+            ? voc`${nbNonRattachees} activités des projets de ce cadre n'ont pas encore d'élément stratégique : à renseigner dans la fiche de l'activité (champ « Élément stratégique »).`
+            : voc`${nbNonRattachees} activité des projets de ce cadre n'a pas encore d'élément stratégique : à renseigner dans la fiche de l'activité (champ « Élément stratégique »).`}
         </Text>
       )}
     </Stack>

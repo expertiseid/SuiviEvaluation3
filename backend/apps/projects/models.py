@@ -241,6 +241,9 @@ class Projet(TimestampedModel):
     cible_femmes = models.PositiveIntegerField(null=True, blank=True)
     cible_jeunes = models.PositiveIntegerField(null=True, blank=True)
     cible_pdi = models.PositiveIntegerField(null=True, blank=True, verbose_name="Cible PDI")
+    # Ordre des attributs libres de la planification (colonnes du fichier importé, puis ceux ajoutés
+    # par la fiche) : les attributs eux-mêmes sont stockés sans ordre (JSON), voir projects.attributs.
+    ordre_attributs = models.JSONField(default=list, blank=True)
 
     elements_capitalisation = models.TextField(
         blank=True, help_text="Saisi en fin de projet : leçons apprises, bonnes pratiques."
@@ -334,6 +337,9 @@ class Activite(TimestampedModel):
     hypotheses = models.TextField(
         blank=True, help_text="Cadre logique : hypothèses et risques extérieurs dont dépend la réussite."
     )
+    # Attributs libres propres à l'organisation (« Responsable », « Lieu »…) : {nom: texte}.
+    # Renseignés par la fiche ou par l'import (colonnes « Attribut : … » de la feuille Planification).
+    attributs = models.JSONField(default=dict, blank=True)
     axe_strategique = models.ForeignKey(
         "strategy.ElementStrategique", null=True, blank=True, on_delete=models.SET_NULL, related_name="activites"
     )
@@ -504,6 +510,7 @@ class SousActivite(TimestampedModel):
     date_debut = models.DateField(null=True, blank=True)
     date_fin = models.DateField(null=True, blank=True)
     statut = models.CharField(max_length=20, choices=Statut.choices, default=Statut.PLANIFIEE)
+    attributs = models.JSONField(default=dict, blank=True, help_text="Attributs libres {nom: texte}, comme Activite.")
     # Méthode « tâches pondérées » de l'activité : chaque sous-activité est une tâche.
     poids = models.DecimalField(
         max_digits=6, decimal_places=2, null=True, blank=True, help_text="Poids de la tâche (les poids totalisent 100)."

@@ -1,6 +1,7 @@
 import { createContext, useEffect, useState, type ReactNode } from "react";
 import { apiClient, tokenStorage } from "../api/client";
 import type { User } from "../types";
+import { appliquerLangueDuCompte } from "../utils/i18n";
 
 interface AuthContextValue {
   user: User | null;
@@ -15,8 +16,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function fetchMe() {
+  async function fetchMe(destination?: string) {
     const { data } = await apiClient.get<User>("/utilisateurs/me/");
+    // La langue choisie dans son compte l'emporte (la page est rechargée si elle diffère).
+    appliquerLangueDuCompte(data.langue, destination);
     setUser(data);
   }
 
@@ -33,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function login(username: string, password: string) {
     const { data } = await apiClient.post("/auth/token/", { username, password });
     tokenStorage.set(data.access, data.refresh);
-    await fetchMe();
+    await fetchMe("/");
   }
 
   function logout() {

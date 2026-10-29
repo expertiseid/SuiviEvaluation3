@@ -3,9 +3,10 @@ import { AlertTriangle, BellRing } from "lucide-react";
 import { Group, Text, UnstyledButton } from "@mantine/core";
 import { useEcheances } from "../../api/dashboard";
 import type { Echeance } from "../../types";
+import { voc } from "../../utils/vocabulaire";
 
 function texteEcheance(echeance: Echeance): string {
-  const prefixe = echeance.est_rappel ? "Rappel" : echeance.en_retard ? "En retard" : "Échéance proche";
+  const prefixe = echeance.est_rappel ? voc("Rappel") : echeance.en_retard ? voc("En retard") : voc("Échéance proche");
   return `${prefixe} · ${echeance.libelle} (${echeance.projet_nom}) — ${echeance.date_fin}`;
 }
 

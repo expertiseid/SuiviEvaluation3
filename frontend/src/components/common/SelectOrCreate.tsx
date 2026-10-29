@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button, Group, Select, Stack, TextInput } from "@mantine/core";
+import { voc } from "../../utils/vocabulaire";
 
 interface Option {
   value: string;
@@ -33,10 +34,10 @@ export function SelectOrCreate({
 
   return (
     <Stack gap={4}>
-      <Select label={label} placeholder="Choisir…" data={data} value={value} onChange={onChange} searchable clearable={clearable} />
+      <Select label={label} placeholder={voc("Choisir…")} data={data} value={value} onChange={onChange} searchable clearable={clearable} />
       <Group gap={6} wrap="nowrap">
         <TextInput
-          placeholder={`Ou créer un nouveau — nom…`}
+          placeholder={voc("Ou créer un nouveau — nom…")}
           size="xs"
           value={nouveauNom}
           onChange={(e) => setNouveauNom(e.currentTarget.value)}
@@ -53,7 +54,7 @@ export function SelectOrCreate({
             }
           }}
         >
-          + Créer
+          {voc("+ Créer")}
         </Button>
       </Group>
     </Stack>

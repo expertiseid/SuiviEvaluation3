@@ -11,6 +11,7 @@ from django.utils.html import escape
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font
 
+from apps.core.langues import traduire_classeur, traduire_html
 from apps.core.vocabulaire import v
 from apps.projects.taux import libelle_methode
 
@@ -123,6 +124,7 @@ def exporter_periode_excel(periode) -> bytes:
     _largeurs(feuille_indic, [60, 12, 14, 14, 14, 10, 18, 40])
 
     buffer = io.BytesIO()
+    traduire_classeur(wb)
     wb.save(buffer)
     return buffer.getvalue()
 
@@ -222,7 +224,7 @@ def html_periode(periode) -> str:
 def exporter_periode_pdf(periode) -> bytes:
     from weasyprint import HTML
 
-    return HTML(string=html_periode(periode)).write_pdf()
+    return HTML(string=traduire_html(html_periode(periode))).write_pdf()
 
 
 # ---------------------------------------------------------------------------
@@ -391,6 +393,7 @@ def exporter_suivi_periode_excel(periode) -> bytes:
     _largeurs(indic_hist, [50, 13, 13, 14, 13, 10, 12, 34, 34])
 
     buffer = io.BytesIO()
+    traduire_classeur(wb)
     wb.save(buffer)
     return buffer.getvalue()
 
@@ -561,4 +564,4 @@ def html_suivi_periode(periode) -> str:
 def exporter_suivi_periode_pdf(periode) -> bytes:
     from weasyprint import HTML
 
-    return HTML(string=html_suivi_periode(periode)).write_pdf()
+    return HTML(string=traduire_html(html_suivi_periode(periode))).write_pdf()

@@ -8,6 +8,7 @@ import { messageErreurApi } from "../../utils/erreurs";
 import { voc } from "../../utils/vocabulaire";
 import type { MethodeCalcul } from "../../types";
 
+import { locale } from "../../utils/i18n";
 /**
  * Méthode de calcul d'une activité, expliquée en une phrase, et modifiable sur place
  * (pour qui a le droit de modifier) — page Suivi.
@@ -38,7 +39,7 @@ export function MethodeCalculLigne({
     explication = voc("Calculé à partir des éléments placés en dessous.");
   } else if (methode === "QUANTITE") {
     explication = activite.quantite_prevue
-      ? `${Number(activite.quantite_realisee ?? 0).toLocaleString("fr-FR")} ${activite.unite_quantite} réalisé(s) sur ${Number(activite.quantite_prevue).toLocaleString("fr-FR")} prévu(s).`
+      ? voc`${Number(activite.quantite_realisee ?? 0).toLocaleString(locale())} ${activite.unite_quantite} réalisé(s) sur ${Number(activite.quantite_prevue).toLocaleString(locale())} prévu(s).`
       : voc("Aucune quantité prévue : renseigne-la dans la planification pour obtenir un taux.");
   } else {
     explication = AIDES_METHODE[methode];
@@ -48,18 +49,18 @@ export function MethodeCalculLigne({
     <Stack gap={2} mb="xs">
       <Group gap={6}>
         <Text size="sm" c="dimmed">
-          Méthode de calcul :
+          {voc("Méthode de calcul :")}
         </Text>
         <Badge variant="light" color="indigo">
           {libelleMethodeEffective(methode)}
         </Badge>
         {!activite.methode_calcul && methode !== "AGREGATION" && (
-          <Text size="xs" c="dimmed">(héritée du projet ou de l'organisation)</Text>
+          <Text size="xs" c="dimmed">{voc("(héritée du projet ou de l'organisation)")}</Text>
         )}
         {modifiable && (
           <Popover opened={ouvert} onChange={setOuvert} position="bottom-start" withArrow shadow="md">
             <Popover.Target>
-              <Tooltip label="Changer la méthode de calcul">
+              <Tooltip label={voc("Changer la méthode de calcul")}>
                 <ActionIcon size="sm" variant="subtle" onClick={() => setOuvert((o) => !o)}>
                   <Pencil size={13} />
                 </ActionIcon>
@@ -68,15 +69,15 @@ export function MethodeCalculLigne({
             <Popover.Dropdown maw={360}>
               <Stack gap="xs">
                 <Select
-                  label="Méthode de calcul"
-                  data={optionsMethode("Hériter (niveau au-dessus / projet)")}
+                  label={voc("Méthode de calcul")}
+                  data={optionsMethode(voc("Hériter (niveau au-dessus / projet)"))}
                   value={choix}
                   onChange={(v) => setChoix(v ?? "")}
                   allowDeselect={false}
                   comboboxProps={{ withinPortal: false }}
                 />
                 <Text size="xs" c="dimmed">
-                  {choix ? AIDES_METHODE[choix as MethodeCalcul] : "Celle du niveau au-dessus, sinon du projet, sinon de l'organisation."}
+                  {choix ? AIDES_METHODE[choix as MethodeCalcul] : voc("Celle du niveau au-dessus, sinon du projet, sinon de l'organisation.")}
                 </Text>
                 <Group justify="flex-end">
                   <Button
@@ -89,17 +90,17 @@ export function MethodeCalculLigne({
                           onSuccess: () => {
                             setOuvert(false);
                             notifications.show({
-                              message: `Méthode : ${choix ? LIBELLES_METHODE[choix as MethodeCalcul] : "héritée"}`,
+                              message: voc`Méthode : ${choix ? LIBELLES_METHODE[choix as MethodeCalcul] : "héritée"}`,
                               color: "green",
                             });
                           },
                           onError: (error) =>
-                            notifications.show({ message: messageErreurApi(error, "Erreur lors du changement"), color: "red" }),
+                            notifications.show({ message: messageErreurApi(error, voc("Erreur lors du changement")), color: "red" }),
                         },
                       )
                     }
                   >
-                    Enregistrer
+                    {voc("Enregistrer")}
                   </Button>
                 </Group>
               </Stack>
