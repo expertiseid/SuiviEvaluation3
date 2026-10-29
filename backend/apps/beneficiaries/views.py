@@ -214,46 +214,84 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
         ceux qui ont une position GPS (points), les autres regroupés au centre de leur localité
         ou, à défaut, de la zone parente placée la plus proche ; plus le nombre sans localisation.
         """
-        from .services.carte_donnees import donnees_carte
+        from apps.projects.queryset_filters import visible_projets_ids
 
-        return Response(donnees_carte(self.get_queryset(), self._zone_filtre()))
+        from .services.carte_donnees import donnees_carte, projets_de_la_zone
+
+        zone = self._zone_filtre()
+        donnees = donnees_carte(self.get_queryset(), zone)
+        # Projets présents dans la zone (indépendamment du filtre projet), pour filtrer la liste.
+        donnees["projets_zone"] = projets_de_la_zone(zone, list(visible_projets_ids(request.user))) if zone else None
+        return Response(donnees)
 
     @action(detail=False, methods=["get"], url_path="carte/export")
     def carte_export(self, request):
         """
         Carte imprimable (modèle des cartes officielles HIMO) : mêmes filtres que la carte
         (?projet=, ?zone=), plus sortie=pdf|png, papier=A0|A1|A3|A4,
-        orientation=auto|portrait|paysage, couches=regions,provinces,communes,routes,villages,noms
-        et importees=1,2 (couches importées).
+        orientation=auto|portrait|paysage, fond=neutre|osm|satellite|aucun,
+        etendue=pays|beneficiaires (sans zone choisie : tout le pays, ou autour des bénéficiaires),
+        titre= et sous_titre= (sinon déduits du contenu de la carte),
+        couches=regions,provinces,communes,routes,villages,noms,beneficiaires (noms des bénéficiaires)
+        importees=1,2 (couches importées), et par_zone=projets|beneficiaires|budget|taux_physique|
+        taux_financier avec niveau_zone=1|2|3 pour colorer les régions, provinces ou communes.
         """
         from apps.geo.models import CoucheImportee
         from apps.projects.models import Projet
 
         from .services.carte_donnees import donnees_carte
-        from .services.carte_officielle import COUCHES, PAPIERS, rendre_carte
+        from .services.carte_officielle import COUCHES, FONDS, PAPIERS, rendre_carte
 
         p = request.query_params
         sortie, papier, orientation = p.get("sortie", "pdf"), p.get("papier", "A3").upper(), p.get("orientation", "auto")
-        if sortie not in ("pdf", "png") or papier not in PAPIERS or orientation not in ("auto", "portrait", "paysage"):
-            raise ValidationError({"detail": "Paramètres invalides (sortie, papier ou orientation)."})
-        couches = {c: True for c in p.get("couches", "regions,provinces,routes,noms").split(",") if c in COUCHES}
+        fond = p.get("fond", "aucun")
+        etendue = p.get("etendue", "pays")
+        if sortie not in ("pdf", "png") or papier not in PAPIERS or orientation not in ("auto", "portrait", "paysage") or fond not in FONDS:
+            raise ValidationError({"detail": "Paramètres invalides (sortie, papier, orientation ou fond)."})
+        couches = {c: True for c in p.get("couches", "points,regions,provinces,routes,noms").split(",") if c in COUCHES}
         ids = [i for i in p.get("importees", "").split(",") if i.isdigit()]
         couches["importees"] = list(CoucheImportee.objects.filter(id__in=ids))
         zone = self._zone_filtre()
         donnees = donnees_carte(self.get_queryset(), zone)
         projet = Projet.objects.filter(id=p.get("projet")).first() if p.get("projet") else None
-        portee = " — ".join(x for x in [projet.code if projet else "", zone.nom if zone else ""] if x)
+        portee = zone.nom if zone else ""
+        if projet:
+            donnees["projet"], donnees["projet_nom"] = projet.code, projet.nom
+        par_zone = None
+        if p.get("par_zone"):
+            from apps.geo.services.synthese import INDICATEURS, synthese_par_zone
+            from apps.projects.queryset_filters import visible_projets_ids
+
+            if p["par_zone"] not in INDICATEURS:
+                raise ValidationError({"detail": "Indicateur par zone inconnu."})
+            synthese = synthese_par_zone(donnees["pays"], int(p.get("niveau_zone") or 1), list(visible_projets_ids(request.user)),
+                                         projet=projet.id if projet else None, dans_zone=zone)
+            if synthese["niveau"]:
+                courts = {"projets": "Projets", "beneficiaires": "Bénéficiaires", "budget": "Budget",
+                          "taux_physique": "Exécution physique", "taux_financier": "Exécution financière"}
+                entetes = {"projets": "Projets", "beneficiaires": "Bénéf.", "budget": "Budget",
+                           "taux_physique": "Physique", "taux_financier": "Financier"}
+                par_zone = {"indicateur": p["par_zone"], "libelle_court": courts[p["par_zone"]], "entete": entetes[p["par_zone"]],
+                            "synthese": synthese}
 
         verrou = BeneficiaireViewSet._GENERATIONS
         if not verrou.acquire(timeout=5):
             return Response({"detail": "Des cartes sont en cours de génération, réessayez dans une minute."}, status=503)
         try:
-            contenu = rendre_carte(donnees, couches, papier=papier, orientation=orientation, sortie=sortie, titre_portee=portee)
+            contenu = rendre_carte(donnees, couches, papier=papier, orientation=orientation, sortie=sortie, titre_portee=portee, fond=fond,
+                                   par_zone=par_zone, etendue=etendue,
+                                   titre=(p.get("titre") or "").strip()[:120], sous_titre=(p.get("sous_titre") or "").strip()[:200])
         except ValueError as exc:
             raise ValidationError({"detail": str(exc)})
         finally:
             verrou.release()
-        nom = "_".join(x for x in ["carte_beneficiaires", projet.code if projet else "", zone.nom if zone else "", papier] if x)
+        if p.get("titre"):
+            sujet = "carte_" + p["titre"].strip()[:60]
+        elif par_zone:
+            sujet = f"carte_{par_zone['indicateur']}_par_{par_zone['synthese']['niveau']['nom'].lower()}"
+        else:
+            sujet = "carte"
+        nom = "_".join(x for x in [sujet, projet.code if projet else "", zone.nom if zone else "", papier] if x)
         nom = "".join(c if c.isalnum() or c in "-_" else "_" for c in nom)
         reponse = HttpResponse(contenu, content_type="image/png" if sortie == "png" else "application/pdf")
         reponse["Content-Disposition"] = f'attachment; filename="{nom}.{sortie}"'

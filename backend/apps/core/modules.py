@@ -36,7 +36,7 @@ API_PAR_MODULE = {
     "/indicateurs": ["/api/v1/indicateurs", "/api/v1/valeurs-indicateurs"],
     "/suivi": ["/api/v1/points-suivi", "/api/v1/taux-manuels", "/api/v1/suivi/"],
     # Avant « /beneficiaires » : la carte des bénéficiaires relève de la rubrique Carte.
-    "/carte": ["/api/v1/couches-importees", "/api/v1/beneficiaires/carte"],
+    "/carte": ["/api/v1/couches-importees", "/api/v1/beneficiaires/carte", "/api/v1/carte/"],
     "/beneficiaires": [
         "/api/v1/beneficiaires", "/api/v1/participations-projet", "/api/v1/signalements-doublons",
         "/api/v1/variables-beneficiaires",

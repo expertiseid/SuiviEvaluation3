@@ -17,8 +17,19 @@ os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
 
 PAPIERS = {"A0": (841, 1189), "A1": (594, 841), "A3": (297, 420), "A4": (210, 297)}  # mm (petit, grand côté)
 DPI_PNG = {"A0": 150, "A1": 150, "A3": 200, "A4": 200}
-ECHELLES = [25, 50, 60, 75, 80, 100, 120, 125, 150, 175, 200, 250, 300, 400, 500, 750, 1000, 1500, 2000, 3000, 5000]  # milliers
-COUCHES = ("regions", "provinces", "communes", "routes", "villages", "noms")
+ECHELLES = [25, 50, 60, 75, 80, 100, 120, 125, 150, 175, 200, 250, 300, 400, 500, 750, 1000, 1250, 1500, 1750, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 6000, 7500, 10000]  # milliers
+COUCHES = ("points", "regions", "provinces", "communes", "routes", "villages", "noms", "beneficiaires")
+# Fonds de carte (tuiles), comme à l'écran ; « aucun » : fond clair uni.
+FONDS = {
+    "neutre": ("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}", "© Esri"),
+    # Les serveurs d'OpenStreetMap interdisent le téléchargement de tuiles par une application
+    # pour produire des cartes (ils renvoient des tuiles « Access blocked ») : à l'impression, le
+    # fond « OpenStreetMap » est la carte routière d'Esri, de même usage et autorisée.
+    "osm": ("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+            "Esri World Street Map (© Esri, HERE, Garmin, contributeurs OpenStreetMap)"),
+    "satellite": ("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", "Imagerie © Esri, Maxar, Earthstar Geographics"),
+    "aucun": None,
+}
 
 BLEU = "#0b4f3c"  # vert foncé de la plateforme
 C_GPS = "#c2410c"
@@ -26,6 +37,60 @@ C_ZONE = "#12b886"
 STYLE_ROUTES = {"DEPARTEMENTALE": ("#ca8a04", 1.2, (0, (3, 2)), "Route départementale"),
                 "REGIONALE": ("#ea580c", 1.8, "-", "Route régionale"),
                 "NATIONALE": ("#dc2626", 2.8, "-", "Route nationale")}
+
+
+# Carte par zone : mêmes dégradés et classes qu'à l'écran (frontend utils/carteParZone.ts).
+DEGRADES = {
+    "projets": ["#dbeafe", "#93c5fd", "#3b82f6", "#1d4ed8", "#1e3a8a"],
+    "beneficiaires": ["#d1fae5", "#6ee7b7", "#10b981", "#047857", "#064e3b"],
+    "budget": ["#fef3c7", "#fcd34d", "#f59e0b", "#b45309", "#78350f"],
+    "taux_physique": ["#fee2e2", "#fdba74", "#fde047", "#86efac", "#16a34a"],
+    "taux_financier": ["#fee2e2", "#fdba74", "#fde047", "#86efac", "#16a34a"],
+}
+SANS_DONNEE = "#f1f3f5"
+POURCENTAGES = ("taux_physique", "taux_financier")
+ENTIERS = ("projets", "beneficiaires")
+
+
+def classes_zone(indicateur, zones):
+    if indicateur in POURCENTAGES:
+        return [20, 40, 60, 80]
+    maximum = max([z[indicateur] or 0 for z in zones] or [0])
+    if maximum <= 0:
+        return [1, 2, 3, 4]
+    bornes = [maximum * k / 5 for k in (1, 2, 3, 4)]
+    if indicateur in ENTIERS:
+        import math
+
+        return [max(math.ceil(b), i + 2) for i, b in enumerate(bornes)]
+    return bornes
+
+
+def couleur_zone(indicateur, valeur, bornes):
+    if valeur is None or (indicateur not in POURCENTAGES and valeur <= 0):
+        return SANS_DONNEE
+    i = next((i for i, b in enumerate(bornes) if valeur < b), 4)
+    return DEGRADES[indicateur][i]
+
+
+def valeur_zone(indicateur, v):
+    if v is None:
+        return "—"
+    if indicateur in POURCENTAGES:
+        return f"{v:.1f} %".replace(".", ",")
+    if indicateur == "budget":
+        return f"{v / 1e9:.2f} Md".replace(".", ",") if v >= 1e9 else (f"{v / 1e6:.1f} M".replace(".", ",") if v >= 1e6 else fr(v))
+    return fr(v)
+
+
+def libelles_classes(indicateur, bornes):
+    if indicateur in ENTIERS:
+        return ([("1" if bornes[0] - 1 <= 1 else f"1 – {bornes[0] - 1}")]
+                + [(f"{b} – {bornes[i + 1] - 1}" if bornes[i + 1] - 1 > b else f"{b}") for i, b in enumerate(bornes[:3])]
+                + [f"{bornes[3]} et plus"])
+    return ([f"< {valeur_zone(indicateur, bornes[0])}"]
+            + [f"{valeur_zone(indicateur, b)} – {valeur_zone(indicateur, bornes[i + 1])}" for i, b in enumerate(bornes[:3])]
+            + [f"≥ {valeur_zone(indicateur, bornes[3])}"])
 
 
 def fr(x, d=0):
@@ -104,10 +169,97 @@ def _cadre(w, h, pw):
     return fx, fy, w - marge - pw - 10 - fx, h - marge - hh - 12 - fy
 
 
-def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf", titre_portee="", organisation=""):
+def _ajouter_fond(ax, fond, crs, fenetre_ll, largeur_mm):
+    """
+    Tuiles du fond choisi sous la carte, à un niveau de zoom adapté à la taille imprimée
+    (≈ 200 points par pouce en A4/A3, 100 au-delà, 300 tuiles au plus). Renvoie la mention de source, ou None si le fond n'a pas pu être
+    téléchargé (la carte reste produite sur fond clair).
+    """
+    import math
+
+    import contextily
+
+    url, attribution = FONDS[fond]
+    ouest, sud, est, nord = fenetre_ll.bounds
+    # Petits formats (A4, A3) : tuiles plus fines (peu nombreuses) ; grands formats : 100 points par pouce.
+    pixels = largeur_mm / 25.4 * (200 if largeur_mm < 400 else 100)
+    zoom = int(math.floor(math.log2(pixels * 360 / (256 * max(est - ouest, 1e-6)))))
+    zoom = max(3, min(zoom, 17))
+    # Pas plus de ~300 tuiles (A0 très zoomé) : on descend d'un niveau tant qu'il le faut.
+    while zoom > 3:
+        n = 2 ** zoom
+        tuiles_x = (est - ouest) / 360 * n + 1
+        y = lambda lat: (1 - math.log(math.tan(math.radians(lat)) + 1 / math.cos(math.radians(lat))) / math.pi) / 2 * n
+        tuiles_y = abs(y(sud) - y(nord)) + 1
+        if tuiles_x * tuiles_y <= 300:
+            break
+        zoom -= 1
+    if not _tuile_valide(url, zoom, (ouest + est) / 2, (sud + nord) / 2):
+        return None
+    try:
+        contextily.add_basemap(ax, crs=f"EPSG:{crs}", source=url, zoom=zoom, attribution=False, reset_extent=True, zorder=0.5)
+    except Exception:  # pas d'accès Internet, service indisponible…
+        return None
+    return attribution
+
+
+def _tuile_valide(url, zoom, longitude, latitude) -> bool:
+    """
+    Le service répond-il vraiment ? Une tuile du centre doit arriver en 200 et être une image :
+    certains serveurs renvoient sinon une image d'erreur que la carte afficherait telle quelle.
+    """
+    import math
+    import urllib.request
+
+    n = 2 ** zoom
+    x = int((longitude + 180) / 360 * n)
+    y = int((1 - math.log(math.tan(math.radians(latitude)) + 1 / math.cos(math.radians(latitude))) / math.pi) / 2 * n)
+    requete = urllib.request.Request(url.format(z=zoom, x=x, y=y), headers={"User-Agent": "plateforme-suivi-evaluation (carte imprimable)"})
+    try:
+        with urllib.request.urlopen(requete, timeout=15) as reponse:
+            return reponse.status == 200 and reponse.headers.get_content_type().startswith("image/")
+    except Exception:
+        return False
+
+
+def titre_par_defaut(donnees, couches, par_zone, portee=""):
+    """
+    Titre et sous-titre selon ce que montre la carte : la carte par zone (« BUDGET PAR
+    PROVINCE »), sinon le projet choisi, sinon les bénéficiaires s'ils sont la seule
+    information, sinon « carte des interventions ».
+    """
+    zf = donnees.get("zone_filtre")
+    if par_zone:
+        titre = f"{par_zone['libelle_court']} par {par_zone['synthese']['niveau']['nom']}"
+    elif donnees.get("projet"):
+        titre = f"Projet {donnees['projet']}"
+    elif couches.get("points") and not couches.get("importees"):
+        titre = "Carte des bénéficiaires"
+    else:
+        titre = "Carte des interventions"
+    if portee and not donnees.get("projet"):
+        titre += f" — {portee}"
+    elements = []
+    if donnees.get("projet_nom"):
+        elements.append(donnees["projet_nom"])
+    if zf:
+        elements.append(f"{zf['niveau']} : {zf['nom']}")
+    if couches.get("points"):
+        elements.append(f"{fr(donnees['total'])} bénéficiaire(s)")
+    if par_zone:
+        presents = sum(1 for z in par_zone["synthese"]["zones"] if z["projets"])
+        elements.append(f"{presents} {par_zone['synthese']['niveau']['nom'].lower()}(s) avec au moins un projet")
+    elements += [c.nom for c in couches.get("importees", [])][:3]
+    return titre.upper(), " · ".join(elements)
+
+
+def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf", titre_portee="", organisation="", fond="aucun", par_zone=None,
+                 etendue="pays", titre="", sous_titre=""):
     """
     `donnees` : celles de l'écran (services.carte_donnees) ; `couches` : {nom: True} parmi COUCHES,
-    plus `importees` : [CoucheImportee] à dessiner. Renvoie les octets du PDF ou du PNG.
+    plus `importees` : [CoucheImportee] à dessiner ; `par_zone` : carte par zone facultative
+    ({indicateur, libelle, niveau, synthese} : zones colorées et tableau par zone). Renvoie les
+    octets du PDF ou du PNG.
     """
     import geopandas as gpd
     import matplotlib
@@ -137,16 +289,20 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
 
     pays = donnees["pays"]
     limites = {l.niveau: l for l in LimiteAdministrative.objects.filter(pays=pays, niveau__in=(1, 2, 3))}
-    # Emprise : la zone filtrée, sinon les bénéficiaires, sinon le pays.
+    # Emprise : la zone filtrée ; sinon tout le pays, ou les bénéficiaires si demandé (et localisés).
     positions = [(p["lng"], p["lat"]) for p in donnees["points"]] + [(z["lng"], z["lat"]) for z in donnees["zones"]]
     contour = (donnees.get("zone_filtre") or {}).get("contour")
+    ordre_pz = par_zone["synthese"]["niveau"]["ordre"] if par_zone else None
     if contour:
         ouest, sud, est, nord = shape(contour).bounds
-    elif positions:
+    elif etendue == "beneficiaires" and positions and not par_zone:
         xs, ys = zip(*positions)
         ouest, sud, est, nord = min(xs), min(ys), max(xs), max(ys)
     elif 1 in limites:
         ouest, sud, est, nord = _gdf(limites[1].geojson["features"], 4326).total_bounds
+    elif positions:
+        xs, ys = zip(*positions)
+        ouest, sud, est, nord = min(xs), min(ys), max(xs), max(ys)
     else:
         raise ValueError("Rien à cartographier : aucun bénéficiaire localisé ni contour.")
     crs = _epsg_utm((ouest + est) / 2, (sud + nord) / 2)
@@ -187,16 +343,23 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
         s.set_visible(False)
 
     legende = []  # (symbole, couleur, libellé, épaisseur)
+    notes = []
+    source_fond = None
+    if FONDS.get(fond):
+        source_fond = _ajouter_fond(ax, fond, crs, fenetre_ll, fw * k)
+        ax.set_xlim(ext[0], ext[1]), ax.set_ylim(ext[2], ext[3])
+        if source_fond is None:
+            notes.append("Fond de carte indisponible (pas d'accès au service de tuiles) : carte produite sur fond clair.")
 
     def niveau(n):
         return _gdf(limites[n].geojson["features"], crs) if n in limites else None
 
     # --- fond : limites administratives ---------------------------------------------------
     regions, provinces, communes = niveau(1), niveau(2), niveau(3)
-    if regions is not None:
+    if regions is not None and not source_fond:
         regions.plot(ax=ax, facecolor="#f1f0ec", edgecolor="none", zorder=1)
     if contour:
-        gpd.GeoSeries([shape(contour)], crs=4326).to_crs(crs).plot(ax=ax, facecolor="#e6f4ee", edgecolor="none", zorder=1.1)
+        gpd.GeoSeries([shape(contour)], crs=4326).to_crs(crs).plot(ax=ax, facecolor="#e6f4ee", edgecolor="none", alpha=0.35 if source_fond else 1, zorder=1.1)
         legende.append(("rect", "#e6f4ee", f"{donnees['zone_filtre']['niveau']} {donnees['zone_filtre']['nom']}", 1))
     if couches.get("communes") and communes is not None:
         communes.boundary.plot(ax=ax, color="#bdbdb6", linewidth=LW(0.5), zorder=1.3)
@@ -211,8 +374,30 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
     if contour:
         # Hors de la zone choisie : voile blanc, pour que la zone ressorte.
         zone_m = gpd.GeoSeries([shape(contour)], crs=4326).to_crs(crs).make_valid().union_all()
-        gpd.GeoSeries([fenetre.difference(zone_m)], crs=crs).plot(ax=ax, facecolor="white", edgecolor="none", alpha=0.55, zorder=3.5)
+        gpd.GeoSeries([fenetre.difference(zone_m)], crs=crs).plot(ax=ax, facecolor="white", edgecolor="none", alpha=0.35 if source_fond else 0.55, zorder=3.5)
         gpd.GeoSeries([zone_m.boundary], crs=crs).plot(ax=ax, color="#0c8a5f", linewidth=LW(3), zorder=3.6)
+
+    # --- carte par zone (projets, bénéficiaires, budget, taux) -----------------------------
+    if par_zone:
+        from apps.geo.services.limites import normaliser_nom
+
+        indicateur = par_zone["indicateur"]
+        zones_pz = par_zone["synthese"]["zones"]
+        bornes = classes_zone(indicateur, zones_pz)
+        par_nom = {normaliser_nom(z["nom"]): z for z in zones_pz}
+        par_nom.update({normaliser_nom(z["nom_contour"]): z for z in zones_pz if z["nom_contour"]})
+        ordre_pz = par_zone["synthese"]["niveau"]["ordre"]
+        if ordre_pz in limites:
+            contours = [f for f in limites[ordre_pz].geojson["features"] if normaliser_nom(f["properties"].get("shapeName", "")) in par_nom]
+            gdf_pz = _gdf(contours, crs)
+            if len(gdf_pz):
+                gdf_pz["couleur"] = [
+                    couleur_zone(indicateur, par_nom[normaliser_nom(n)][indicateur], bornes) for n in gdf_pz["shapeName"]
+                ]
+                gdf_pz.plot(ax=ax, color=gdf_pz["couleur"], alpha=0.55 if source_fond else 0.8, edgecolor="#374151", linewidth=LW(1), zorder=1.2)
+        for couleur_classe, libelle in zip(DEGRADES[indicateur], libelles_classes(indicateur, bornes)):
+            legende.append(("rect", couleur_classe, f"{par_zone['libelle_court']} : {libelle}", 1))
+        legende.append(("rect", SANS_DONNEE, f"{par_zone['libelle_court']} : aucun", 1))
 
     if couches.get("routes"):
         couche = CoucheCarte.objects.filter(pays=pays, cle="routes").first()
@@ -244,6 +429,9 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
         couche._gdf = gdf  # pour les étiquettes
 
     # --- bénéficiaires --------------------------------------------------------------------
+    # Bénéficiaires (couche « points ») : on peut les retirer, notamment sur une carte par zone.
+    if not couches.get("points"):
+        donnees = {**donnees, "zones": [], "points": []}
     nb_max = max([z["nombre"] for z in donnees["zones"]] or [1])
     if donnees["zones"]:
         xs, ys = vers_m.transform([z["lng"] for z in donnees["zones"]], [z["lat"] for z in donnees["zones"]])
@@ -258,16 +446,35 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
     # --- étiquettes -------------------------------------------------------------------------
     pl = Placeur(fig, ax)
     halo = [pe.withStroke(linewidth=LW(3.2), foreground="white")]
+    if par_zone:
+        indicateur = par_zone["indicateur"]
+        zones_pz = [z for z in par_zone["synthese"]["zones"] if z["lat"] is not None and z[indicateur] not in (None, 0)]
+        if zones_pz:
+            xs, ys = vers_m.transform([z["lng"] for z in zones_pz], [z["lat"] for z in zones_pz])
+            for z, x, y in zip(zones_pz, xs, ys):
+                pl.essayer(x, y, f"{z['nom'].upper()}\n{valeur_zone(indicateur, z[indicateur])}", force=True, fontsize=F(14), fontweight="bold", color="#111827",
+                           ha="center", va="center", zorder=9,
+                           bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="#6b7280", lw=LW(0.8), alpha=0.9))
     if donnees["zones"]:
         xs, ys = vers_m.transform([z["lng"] for z in donnees["zones"]], [z["lat"] for z in donnees["zones"]])
         for z, x, y in zip(donnees["zones"], xs, ys):
             pl.essayer(x + 3 * mm, y + 3 * mm, f"{z['nom']} ({z['nombre']})", fontsize=F(14), fontweight="bold",
                        color="#064e3b", ha="left", va="bottom", zorder=8, path_effects=halo)
+    if couches.get("beneficiaires") and donnees["points"]:
+        if len(donnees["points"]) <= 400:
+            xs, ys = vers_m.transform([p["lng"] for p in donnees["points"]], [p["lat"] for p in donnees["points"]])
+            for p, x, y in zip(donnees["points"], xs, ys):
+                for dx, ha in [(1.8 * mm, "left"), (-1.8 * mm, "right")]:
+                    if pl.essayer(x + dx, y, p["nom"], fontsize=F(12), color="#7c2d12", ha=ha, va="center", zorder=8, path_effects=halo):
+                        break
+        else:
+            notes.append(f"{len(donnees['points'])} bénéficiaires positionnés par GPS : trop nombreux pour écrire leurs noms.")
     if couches.get("noms"):
-        for gdf, champ, taille, couleur in (
-            (regions, "shapeName", 30, "#1f3a5f"), (provinces if couches.get("provinces") else None, "shapeName", 20, "#7a5a4d"),
+        for niveau_noms, gdf, champ, taille, couleur in (
+            (1, regions, "shapeName", 30, "#1f3a5f"), (2, provinces if couches.get("provinces") else None, "shapeName", 20, "#7a5a4d"),
         ):
-            if gdf is None:
+            # Carte par zone : le nom des zones colorées est déjà écrit avec leur valeur.
+            if gdf is None or niveau_noms == ordre_pz:
                 continue
             for _, r in gdf.iterrows():
                 g = r.geometry.intersection(fenetre)
@@ -342,9 +549,9 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
 
     # --- en-tête ------------------------------------------------------------------------------
     haut = H - marge
-    titre = "CARTE DES BÉNÉFICIAIRES" + (f" — {titre_portee.upper()}" if titre_portee else "")
-    zf = donnees.get("zone_filtre")
-    sous = f"{fr(donnees['total'])} bénéficiaire(s)" + (f" · {zf['niveau']} : {zf['nom']}" if zf else "")
+    titre_auto, sous = titre_par_defaut(donnees, couches, par_zone, titre_portee)
+    titre = titre.upper() if titre else titre_auto
+    sous = sous_titre or sous
     ov.add_patch(Rectangle((marge, haut - hh), W - 2 * marge, hh, fc=BLEU, ec="none"))
     ov.text(marge + 10, haut - 11, (organisation or "Plateforme de suivi-évaluation").upper(), color="#ccfbf1", fontsize=F(17), va="center", ha="left")
     fs_titre = 40 if len(titre) <= 62 else 40 * 62 / len(titre)
@@ -419,9 +626,22 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
             x += w
         return y - H_LIGNE
 
-    notes = []
     place = int((cur - fy - 22) / H_LIGNE) - 3
-    if donnees["zones"] and place > 2:
+    if par_zone and place > 2:
+        indicateur = par_zone["indicateur"]
+        cur = titre_bloc(cur, f"PAR {par_zone['synthese']['niveau']['nom'].upper()}")
+        # 4e colonne : l'indicateur choisi (le budget quand c'est déjà le nombre de projets).
+        colonne = "budget" if indicateur == "projets" else indicateur
+        cur = ligne_tab(cur, [par_zone["synthese"]["niveau"]["nom"], "Projets", "Bénéf.", "Budget" if indicateur == "projets" else par_zone["entete"]], True, "#334155")
+        lignes = sorted(par_zone["synthese"]["zones"], key=lambda z: -(z[indicateur] or 0))
+        lignes = [z for z in lignes if z["projets"] or z["beneficiaires"]]
+        if len(lignes) > place:
+            notes.append(f"Tableau limité aux {place - 1} premières zones sur {len(lignes)}.")
+            lignes = lignes[: place - 1]
+        for i, z in enumerate(lignes):
+            cur = ligne_tab(cur, [tronc(z["nom"], 34), z["projets"], z["beneficiaires"], valeur_zone(colonne, z[colonne])], fond="#f8fafc" if i % 2 == 0 else None)
+        notes.append("Un projet compte dans chaque zone où il intervient (son budget n'est pas réparti entre les zones).")
+    elif donnees["zones"] and place > 2:
         cur = titre_bloc(cur, "BÉNÉFICIAIRES PAR LOCALITÉ")
         cur = ligne_tab(cur, ["Localité", "Femmes", "Hommes", "Total"], True, "#334155")
         lignes = donnees["zones"]
@@ -433,7 +653,7 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
         if donnees["points"]:
             cur = ligne_tab(cur, ["Positionnés par GPS", "", "", len(donnees["points"])])
         cur = ligne_tab(cur, ["TOTAL LOCALISÉ", "", "", localises], True, "#cbd5e1")
-    if donnees["non_localises"]:
+    if donnees["non_localises"] and couches.get("points"):
         notes.append(f"{donnees['non_localises']} bénéficiaire(s) sans localisation ne figurent pas sur la carte.")
     if notes:
         ov.text(px0, cur - 7, "\n".join(textwrap.fill("• " + n, 62, subsequent_indent="  ") for n in notes),
@@ -443,8 +663,9 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
     date = datetime.now().strftime("%d/%m/%Y")
     zone_utm = crs % 100
     sources_limites = {l.source for l in limites.values()} or {"—"}
+    fond_txt = f"\nFond : {source_fond}" if source_fond else ""
     cases = [
-        ("SOURCE DES DONNÉES", f"Plateforme de suivi-évaluation (bénéficiaires)\nLimites : {', '.join(sorted(sources_limites))}\nÉdition du {date}"),
+        ("SOURCE DES DONNÉES", f"Plateforme de suivi-évaluation (bénéficiaires)\nLimites : {', '.join(sorted(sources_limites))}{fond_txt}\nÉdition du {date}"),
         ("PROJECTION", f"WGS 84 / UTM zone {zone_utm}{'N' if crs < 32700 else 'S'} (EPSG:{crs})\nGrille : degrés-minutes (WGS 84)\nÉchelle : 1 : {fr(ech)} (format {papier})"),
         ("RÉALISATION", f"{organisation or 'Plateforme de suivi-évaluation'}\nCarte générée le {date}"),
         ("NOTE", "Bénéficiaires sans GPS placés au centre de leur localité ;\nlimites administratives à titre indicatif."),

@@ -36,8 +36,8 @@ export function ImportCoucheModal({ onClose }: { onClose: () => void }) {
   const [resultat, setResultat] = useState<CoucheImportee | null>(null);
 
   async function valider() {
-    if (!fichier) {
-      notifications.show({ message: "Choisissez un fichier.", color: "orange" });
+    if (!fichier || !nom.trim()) {
+      notifications.show({ message: "Choisissez un fichier et le nom de la couche.", color: "orange" });
       return;
     }
     try {
@@ -69,15 +69,19 @@ export function ImportCoucheModal({ onClose }: { onClose: () => void }) {
             placeholder="Choisir un fichier…"
             accept=".zip,.gpkg,.geojson,.json,.kml"
             value={fichier}
-            onChange={(f) => {
-              setFichier(f);
-              if (f && !nom) setNom(f.name.replace(/\.[^.]+$/, ""));
-            }}
+            onChange={setFichier}
             leftSection={<Upload size={14} />}
             required
           />
           <SimpleGrid cols={{ base: 1, xs: 2 }}>
-            <TextInput label="Nom de la couche" placeholder="Ex : Points d'eau réalisés" value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
+            <TextInput
+              label="Nom affiché dans les couches"
+              description="C'est ce nom qui apparaît pour cocher la couche sur la carte."
+              placeholder="Ex : Forages réalisés"
+              required
+              value={nom}
+              onChange={(e) => setNom(e.currentTarget.value)}
+            />
             <ColorInput label="Couleur" value={couleur} onChange={setCouleur} swatches={COULEURS} format="hex" />
           </SimpleGrid>
           <Group justify="flex-end">
@@ -137,17 +141,25 @@ export function GererCouchesModal({ couches, onClose }: { couches: CoucheImporte
 }
 
 const COUCHES_FOND = [
+  { value: "points", label: "Bénéficiaires" },
   { value: "regions", label: "Régions" },
   { value: "provinces", label: "Provinces" },
   { value: "communes", label: "Communes" },
   { value: "routes", label: "Routes" },
   { value: "villages", label: "Villes et villages" },
   { value: "noms", label: "Noms" },
+  { value: "beneficiaires", label: "Noms des bénéficiaires (GPS)" },
+];
+const FONDS_CARTE = [
+  { value: "neutre", label: "Neutre" },
+  { value: "osm", label: "OpenStreetMap" },
+  { value: "satellite", label: "Satellite" },
+  { value: "aucun", label: "Aucun" },
 ];
 
 /** Carte imprimable : formats A0 à A4, PDF ou PNG, couches et filtres de la carte à l'écran. */
 export function TelechargerCarteModal({ options, couchesImportees, onClose }: {
-  options: Pick<OptionsCarteImprimable, "projet" | "zone" | "couches" | "importees">;
+  options: Pick<OptionsCarteImprimable, "projet" | "zone" | "couches" | "importees" | "fond" | "parZone" | "niveauZone">;
   couchesImportees: CoucheImportee[];
   onClose: () => void;
 }) {
@@ -155,13 +167,23 @@ export function TelechargerCarteModal({ options, couchesImportees, onClose }: {
   const [orientation, setOrientation] = useState<OptionsCarteImprimable["orientation"]>("auto");
   const [sortie, setSortie] = useState<OptionsCarteImprimable["sortie"]>("pdf");
   const [couches, setCouches] = useState(options.couches.filter((c) => COUCHES_FOND.some((f) => f.value === c)));
+  const [fond, setFond] = useState(options.fond);
+  const [parZone, setParZone] = useState(options.parZone);
+  const [niveauZone, setNiveauZone] = useState(String(options.niveauZone));
+  const [etendue, setEtendue] = useState<OptionsCarteImprimable["etendue"]>("pays");
+  const [titre, setTitre] = useState("");
+  const [sousTitre, setSousTitre] = useState("");
+  const [tente, setTente] = useState(false);
+  const complet = titre.trim() !== "" && sousTitre.trim() !== "";
   const [importees, setImportees] = useState(options.importees.map(String));
   const [enCours, setEnCours] = useState(false);
 
   async function telecharger() {
+    setTente(true);
+    if (!complet) return;
     setEnCours(true);
     try {
-      await telechargerCarteImprimable({ ...options, papier, orientation, sortie, couches, importees: importees.map(Number) });
+      await telechargerCarteImprimable({ ...options, papier, orientation, sortie, fond, parZone, etendue, titre: titre.trim(), sousTitre: sousTitre.trim(), niveauZone: Number(niveauZone), couches, importees: importees.map(Number) });
     } catch {
       notifications.show({ message: "La carte n'a pas pu être générée (réessayez dans un instant).", color: "red" });
     } finally {
@@ -176,6 +198,27 @@ export function TelechargerCarteModal({ options, couchesImportees, onClose }: {
           Carte à l'échelle avec grille de coordonnées, légende, situation, chiffres clés, tableau des localités et cartouche ;
           mêmes filtres (projet, zone) que la carte à l'écran.
         </Text>
+        <SimpleGrid cols={{ base: 1, sm: 2 }}>
+          <TextInput
+            label="Titre de la carte"
+            placeholder="Ex. : Budget des projets par province"
+            required
+            value={titre}
+            onChange={(e) => setTitre(e.currentTarget.value)}
+            error={tente && !titre.trim() ? "Indiquez le titre de la carte." : undefined}
+            maxLength={120}
+            data-autofocus
+          />
+          <TextInput
+            label="Sous-titre"
+            placeholder="Ex. : Situation au 31 octobre 2026"
+            required
+            value={sousTitre}
+            onChange={(e) => setSousTitre(e.currentTarget.value)}
+            error={tente && !sousTitre.trim() ? "Indiquez le sous-titre." : undefined}
+            maxLength={200}
+          />
+        </SimpleGrid>
         <SimpleGrid cols={{ base: 1, sm: 3 }}>
           <div>
             <Text size="sm" fw={500} mb={4}>Format papier</Text>
@@ -192,6 +235,43 @@ export function TelechargerCarteModal({ options, couchesImportees, onClose }: {
               data={[{ value: "pdf", label: "PDF" }, { value: "png", label: "Image PNG" }]} />
           </div>
         </SimpleGrid>
+        <SimpleGrid cols={{ base: 1, sm: 2 }}>
+          <Select
+            label="Colorier les zones selon"
+            value={parZone}
+            onChange={(v) => setParZone(v ?? "aucun")}
+            allowDeselect={false}
+            data={[
+              { value: "aucun", label: "Rien (carte des bénéficiaires)" },
+              { value: "projets", label: "Nombre de projets" },
+              { value: "beneficiaires", label: "Bénéficiaires" },
+              { value: "budget", label: "Budget" },
+              { value: "taux_physique", label: "Exécution physique" },
+              { value: "taux_financier", label: "Exécution financière" },
+            ]}
+          />
+          {parZone !== "aucun" && (
+            <div>
+              <Text size="sm" fw={500} mb={4}>Par</Text>
+              <SegmentedControl fullWidth value={niveauZone} onChange={setNiveauZone}
+                data={[{ value: "1", label: "Région" }, { value: "2", label: "Province" }, { value: "3", label: "Commune" }]} />
+            </div>
+          )}
+        </SimpleGrid>
+        {options.zone ? (
+          <Text size="xs" c="dimmed">Étendue : la zone choisie dans le filtre.</Text>
+        ) : (
+          <div>
+            <Text size="sm" fw={500} mb={4}>Étendue</Text>
+            <SegmentedControl fullWidth value={etendue} onChange={(v) => setEtendue(v as OptionsCarteImprimable["etendue"])}
+              data={[{ value: "pays", label: "Tout le pays" }, { value: "beneficiaires", label: "Autour des bénéficiaires" }]}
+              disabled={parZone !== "aucun"} />
+          </div>
+        )}
+        <div>
+          <Text size="sm" fw={500} mb={4}>Fond de carte</Text>
+          <SegmentedControl fullWidth value={fond} onChange={setFond} data={FONDS_CARTE} />
+        </div>
         <div>
           <Text size="sm" fw={500} mb={4}>Couches</Text>
           <Checkbox.Group value={couches} onChange={setCouches}>
@@ -207,10 +287,10 @@ export function TelechargerCarteModal({ options, couchesImportees, onClose }: {
             </Checkbox.Group>
           )}
         </div>
-        {papier === "A0" && <Text size="xs" c="dimmed">Le format A0 peut prendre une à deux minutes.</Text>}
+        {(papier === "A0" || papier === "A1") && <Text size="xs" c="dimmed">Les grands formats peuvent prendre une à deux minutes, surtout avec un fond de carte.</Text>}
         <Group justify="flex-end">
           <Button variant="subtle" onClick={onClose}>Fermer</Button>
-          <Button leftSection={<FileDown size={16} />} loading={enCours} onClick={telecharger}>Télécharger</Button>
+          <Button leftSection={<FileDown size={16} />} loading={enCours} onClick={telecharger} disabled={!complet}>Télécharger</Button>
         </Group>
       </Stack>
     </Modal>

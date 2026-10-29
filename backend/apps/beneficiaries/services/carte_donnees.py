@@ -4,6 +4,12 @@ au centre des localités, et filtre facultatif sur une zone (région, province, 
 """
 from collections import Counter
 
+from ..serializers import calculer_age, tranche_age_de
+
+
+# Bénéficiaires listés par localité (au-delà, la liste est tronquée : voir l'écran Bénéficiaires).
+LISTE_MAX = 300
+
 
 def zones_du_sous_arbre(zone) -> set:
     from apps.geo.models import Zone
@@ -35,7 +41,7 @@ def donnees_carte(beneficiaires, zone=None) -> dict:
     """`beneficiaires` : queryset déjà limité (droits, projet) ; `zone` : filtre facultatif."""
     from apps.geo.services.limites import _dans_polygone
 
-    beneficiaires = beneficiaires.select_related("zone")
+    beneficiaires = beneficiaires.select_related("zone").prefetch_related("participations__projet")
     if zone is not None:
         ids = zones_du_sous_arbre(zone)
         contour = contour_zone(zone)
@@ -52,6 +58,14 @@ def donnees_carte(beneficiaires, zone=None) -> dict:
 
     points, par_zone, non_localises, positions = [], {}, 0, {}
 
+    def fiche(b):
+        """Ce qu'on montre d'un bénéficiaire sur la carte (survol, liste, carte imprimée)."""
+        return {
+            "id": b.id, "nom": str(b), "identifiant": b.identifiant, "sexe": b.sexe,
+            "tranche_age": tranche_age_de(calculer_age(b.date_naissance)), "telephone": b.telephone,
+            "projets": sorted({p.projet.code for p in b.participations.all()}), "localite": b.zone.nom if b.zone else "",
+        }
+
     def position(z):
         depart = z
         while z is not None:
@@ -64,10 +78,7 @@ def donnees_carte(beneficiaires, zone=None) -> dict:
 
     for b in beneficiaires:
         if b.latitude is not None and b.longitude is not None:
-            points.append({
-                "id": b.id, "nom": str(b), "identifiant": b.identifiant, "sexe": b.sexe,
-                "lat": float(b.latitude), "lng": float(b.longitude),
-            })
+            points.append({**fiche(b), "lat": float(b.latitude), "lng": float(b.longitude)})
             continue
         z = positions[b.zone_id] if b.zone_id in positions else (position(b.zone) if b.zone else None)
         if z is None:
@@ -75,9 +86,11 @@ def donnees_carte(beneficiaires, zone=None) -> dict:
             continue
         groupe = par_zone.setdefault(z.id, {
             "zone": z.id, "nom": z.nom, "lat": float(z.latitude), "lng": float(z.longitude),
-            "nombre": 0, "femmes": 0, "hommes": 0,
+            "nombre": 0, "femmes": 0, "hommes": 0, "beneficiaires": [],
         })
         groupe["nombre"] += 1
+        if len(groupe["beneficiaires"]) < LISTE_MAX:
+            groupe["beneficiaires"].append(fiche(b))
         groupe["femmes" if b.sexe == "F" else "hommes"] += 1
     pays = Counter(b.pays for b in beneficiaires if b.pays).most_common(1)
     return {
@@ -93,3 +106,30 @@ def donnees_carte(beneficiaires, zone=None) -> dict:
             "ordre": zone.niveau_administratif.ordre, "contour": contour_zone(zone),
         } if zone else None,
     }
+
+
+def projets_de_la_zone(zone, projets_visibles) -> list:
+    """
+    Projets (visibles) qui interviennent dans la zone ou une zone en dessous : par leurs zones
+    d'intervention, « tout le pays », ou parce qu'ils ont des bénéficiaires qui y habitent —
+    avec le nombre de ces bénéficiaires (pour filtrer la carte projet par projet).
+    """
+    from django.db.models import Count, Q
+
+    from apps.projects.models import Projet
+
+    from ..models import ParticipationProjet
+
+    ids = zones_du_sous_arbre(zone)
+    pays = zone.niveau_administratif.pays
+    par_projet = dict(
+        ParticipationProjet.objects.filter(projet_id__in=projets_visibles, beneficiaire__zone_id__in=ids)
+        .values("projet").annotate(n=Count("beneficiaire", distinct=True)).values_list("projet", "n")
+    )
+    projets = Projet.objects.filter(id__in=projets_visibles).filter(
+        Q(zones__id__in=ids) | Q(id__in=par_projet) | Q(tout_le_pays=True, pays__contains=[pays])
+    ).distinct().order_by("code")
+    return [
+        {"id": p.id, "code": p.code, "nom": p.nom, "statut": p.statut, "beneficiaires": par_projet.get(p.id, 0)}
+        for p in projets
+    ]

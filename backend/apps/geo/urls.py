@@ -2,7 +2,15 @@ from rest_framework.routers import DefaultRouter
 
 from django.urls import path
 
-from .views import CoucheImporteeViewSet, NiveauAdministratifViewSet, ZoneViewSet, couche_carte, limites_administratives, localites
+from .views import (
+    CoucheImporteeViewSet,
+    NiveauAdministratifViewSet,
+    ZoneViewSet,
+    carte_synthese,
+    couche_carte,
+    limites_administratives,
+    localites,
+)
 
 router = DefaultRouter()
 router.register("zones", ZoneViewSet, basename="zone")
@@ -13,4 +21,5 @@ urlpatterns = router.urls + [
     path("limites-administratives/", limites_administratives, name="limites-administratives"),
     path("couches-carte/", couche_carte, name="couches-carte"),
     path("localites/", localites, name="localites"),
+    path("carte/synthese/", carte_synthese, name="carte-synthese"),
 ]

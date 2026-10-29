@@ -276,18 +276,32 @@ export function useSupprimerVariableBeneficiaire() {
   });
 }
 
+/** Ce que la carte montre d'un bénéficiaire. */
+export interface FicheCarte {
+  id: number;
+  nom: string;
+  identifiant: string;
+  sexe: string;
+  tranche_age: string | null;
+  telephone: string;
+  projets: string[];
+  localite: string;
+}
+
 export interface CarteBeneficiaires {
   pays: string;
   total: number;
   /** Bénéficiaires avec position GPS. */
-  points: { id: number; nom: string; identifiant: string; sexe: string; lat: number; lng: number }[];
+  points: (FicheCarte & { lat: number; lng: number })[];
   /** Les autres, regroupés au centre de leur localité (ou de la zone parente placée la plus proche). */
-  zones: { zone: number; nom: string; lat: number; lng: number; nombre: number; femmes: number; hommes: number }[];
+  zones: { zone: number; nom: string; lat: number; lng: number; nombre: number; femmes: number; hommes: number; beneficiaires: FicheCarte[] }[];
   non_localises: number;
   femmes: number;
   hommes: number;
   /** Zone choisie comme filtre (région, province…) et son contour. */
   zone_filtre: { id: number; nom: string; niveau: string; ordre: number; contour: GeoJSON.Geometry | null } | null;
+  /** Projets présents dans la zone choisie (zones d'intervention ou bénéficiaires sur place). */
+  projets_zone: { id: number; code: string; nom: string; statut: string; beneficiaires: number }[] | null;
 }
 
 export function useCarteBeneficiaires(projet: number | null, zone: number | null = null) {
@@ -305,6 +319,15 @@ export interface OptionsCarteImprimable {
   sortie: "pdf" | "png";
   papier: "A0" | "A1" | "A3" | "A4";
   orientation: "auto" | "portrait" | "paysage";
+  fond: string;
+  /** Carte par zone : indicateur colorié (« aucun » sinon) et niveau (1 = régions…). */
+  parZone: string;
+  niveauZone: number;
+  /** Sans zone choisie : tout le pays, ou autour des bénéficiaires. */
+  etendue: "pays" | "beneficiaires";
+  /** Vides : titre et sous-titre déduits du contenu de la carte. */
+  titre: string;
+  sousTitre: string;
   couches: string[];
   importees: number[];
 }
@@ -313,7 +336,8 @@ export interface OptionsCarteImprimable {
 export async function telechargerCarteImprimable(o: OptionsCarteImprimable) {
   const response = await apiClient.get("/beneficiaires/carte/export/", {
     params: {
-      projet: o.projet ?? undefined, zone: o.zone ?? undefined, sortie: o.sortie, papier: o.papier, orientation: o.orientation,
+      projet: o.projet ?? undefined, zone: o.zone ?? undefined, sortie: o.sortie, papier: o.papier, orientation: o.orientation, fond: o.fond,
+      etendue: o.etendue, titre: o.titre || undefined, sous_titre: o.sousTitre || undefined, par_zone: o.parZone !== "aucun" ? o.parZone : undefined, niveau_zone: o.parZone !== "aucun" ? o.niveauZone : undefined,
       couches: o.couches.join(","), importees: o.importees.join(","),
     },
     responseType: "blob",

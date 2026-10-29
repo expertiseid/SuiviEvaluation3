@@ -339,7 +339,26 @@ en attente avec ces règles et retire ceux qui ne tiennent plus.
   mise en page A0 mise à l'échelle pour A1/A3/A4, orientation la plus lisible ou imposée,
   échelle réelle, grille degrés-minutes, nord, situation, chiffres clés, légende, tableau des
   localités, cartouche ; projection UTM de la zone ; PDF vectoriel ou PNG ; deux générations
-  à la fois au plus.
+  à la fois au plus. Fond au choix comme à l'écran (`fond=neutre|osm|satellite|aucun`, tuiles
+  intégrées par contextily, ≈ 200 points par pouce en A4/A3 et 100 au-delà, 300 tuiles au
+  plus ; une tuile test est vérifiée d'abord : si le service refuse ou ne répond pas, la carte
+  sort sur fond clair avec une note). Les serveurs d'OpenStreetMap interdisent ce
+  téléchargement (tuiles « Access blocked ») : à l'impression, « OpenStreetMap » utilise la
+  carte routière Esri World Street Map ; noms des bénéficiaires GPS
+  (`couches=…,beneficiaires`).
+- **Bénéficiaires sur la carte** : au clic sur une localité, la liste nominative (identifiant,
+  sexe, tranche d'âge, téléphone, projets, lien vers la fiche ; 300 au plus) ; au clic sur un
+  point GPS, sa fiche ; couche « Noms des bénéficiaires ».
+- **Carte par zone** (`geo/services/synthese.py`, `carte/synthese/?pays=&niveau=&projet=&zone=`) :
+  régions, provinces ou communes coloriées selon le nombre de projets, les bénéficiaires, le
+  budget ou l'exécution physique / financière moyenne (5 classes, mêmes couleurs à l'écran et
+  sur la carte imprimée : `par_zone=…&niveau_zone=…`), valeur écrite sur chaque zone, et au clic
+  les projets présents (taux, budget, bénéficiaires). Un projet est présent dans sa zone, dans
+  les zones qu'elle contient ou qui la contiennent, sur tout le pays, ou là où habitent ses
+  bénéficiaires ; son budget n'est pas réparti entre les zones.
+- **Projets d'une zone** (`projets_zone` dans `beneficiaires/carte/?zone=`) : projets visibles
+  qui interviennent dans la zone (zones d'intervention, tout le pays, ou bénéficiaires sur
+  place) avec leur nombre de bénéficiaires ; la liste des projets de la carte s'y limite.
 - **Couches de la carte** au choix : régions, provinces, communes, routes, villes et villages
   (à partir du zoom 10), noms (selon le zoom : régions, puis provinces, communes, villages à
   partir du zoom 12) ; fond neutre sans noms (Esri, par défaut quand une base nationale est

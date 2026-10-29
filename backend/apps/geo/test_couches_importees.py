@@ -66,9 +66,50 @@ def test_import_et_carte_imprimable(tmp_path):
     Beneficiaire.objects.create(nom="C", prenom="c", sexe="M", latitude=14.0, longitude=0.5, pays="ZZ")  # hors région
     carte = client.get("/api/v1/beneficiaires/carte/", {"zone": zone.id}).data
     assert carte["total"] == 2 and carte["femmes"] == 1 and carte["zone_filtre"]["contour"] is not None
+    assert carte["projets_zone"] == [] and carte["zones"][0]["beneficiaires"][0]["nom"] == "A a"
     for sortie, debut in (("pdf", b"%PDF"), ("png", b"\x89PNG")):
         r = client.get("/api/v1/beneficiaires/carte/export/", {
-            "zone": zone.id, "papier": "A4", "sortie": sortie, "couches": "regions,noms", "importees": f"{CoucheImportee.objects.first().id},{forages['id']}",
+            "zone": zone.id, "papier": "A4", "sortie": sortie, "couches": "regions,noms,beneficiaires", "fond": "aucun", "importees": f"{CoucheImportee.objects.first().id},{forages['id']}",
         })
         assert r.status_code == 200 and r.content.startswith(debut), sortie
     assert client.get("/api/v1/beneficiaires/carte/export/", {"papier": "B5"}).status_code == 400
+    assert client.get("/api/v1/beneficiaires/carte/export/", {"fond": "inconnu"}).status_code == 400
+
+
+@pytest.mark.django_db
+def test_synthese_par_zone():
+    """Projets d'une région comptés dans ses provinces ; bénéficiaires selon leur localité."""
+    from apps.beneficiaries.models import ParticipationProjet
+    from apps.projects.models import Projet
+
+    client = APIClient()
+    client.force_authenticate(User.objects.create_user(username="adm_synth", password="x", role=ROLE_ADMIN))
+    region = NiveauAdministratif.objects.create(pays="ZZ", nom_niveau="Région", ordre=1)
+    province = NiveauAdministratif.objects.create(pays="ZZ", nom_niveau="Province", ordre=2, niveau_parent=region)
+    nord = Zone.objects.create(nom="Nord", niveau_administratif=region)
+    sud = Zone.objects.create(nom="Sud", niveau_administratif=region)
+    p1 = Zone.objects.create(nom="P1", niveau_administratif=province, parent=nord)
+    p2 = Zone.objects.create(nom="P2", niveau_administratif=province, parent=nord)
+    regional = Projet.objects.create(nom="Régional", code="SYN-1", date_debut="2026-01-01", date_fin="2026-12-31", budget_total=1000, pays=["ZZ"])
+    regional.zones.add(nord)
+    local = Projet.objects.create(nom="Local", code="SYN-2", date_debut="2026-01-01", date_fin="2026-12-31", budget_total=500, pays=["ZZ"])
+    local.zones.add(p2)
+    b = Beneficiaire.objects.create(nom="A", prenom="a", sexe="F", zone=p1, pays="ZZ")
+    ParticipationProjet.objects.create(beneficiaire=b, projet=local, date_inscription="2026-02-01")  # bénéficiaire hors des zones du projet : il y compte aussi
+
+    regions = {z["nom"]: z for z in client.get("/api/v1/carte/synthese/", {"pays": "ZZ", "niveau": 1}).data["zones"]}
+    assert (regions["Nord"]["projets"], regions["Nord"]["budget"], regions["Nord"]["beneficiaires"]) == (2, 1500, 1)
+    assert regions["Sud"]["projets"] == 0
+    provinces = {z["nom"]: z for z in client.get("/api/v1/carte/synthese/", {"pays": "ZZ", "niveau": 2, "zone": nord.id}).data["zones"]}
+    assert [p["code"] for p in provinces["P1"]["liste_projets"]] == ["SYN-1", "SYN-2"] and provinces["P1"]["femmes"] == 1
+    assert [p["code"] for p in provinces["P2"]["liste_projets"]] == ["SYN-1", "SYN-2"]
+    def contour(nom, ouest, sud):
+        geometrie = json.loads(gpd.GeoSeries([box(ouest, sud, ouest + 1, sud + 1)]).to_json())["features"][0]["geometry"]
+        return {"type": "Feature", "properties": {"shapeName": nom}, "geometry": geometrie}
+
+    LimiteAdministrative.objects.create(pays="ZZ", niveau=1, source="Test", geojson={"type": "FeatureCollection", "features": [
+        contour("Nord", -4, 12), contour("Sud", -4, 11),
+    ]})
+    r = client.get("/api/v1/beneficiaires/carte/export/", {"papier": "A4", "sortie": "png", "par_zone": "budget", "niveau_zone": 1})
+    assert r.status_code == 200 and "carte_budget_par_r" in r["Content-Disposition"]
+    assert client.get("/api/v1/beneficiaires/carte/export/", {"par_zone": "inconnu"}).status_code == 400

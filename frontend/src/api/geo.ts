@@ -203,3 +203,46 @@ export function useSupprimerCouche() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["couches-importees"] }),
   });
 }
+
+export type IndicateurZone = "projets" | "beneficiaires" | "budget" | "taux_physique" | "taux_financier";
+
+export interface SyntheseZone {
+  zone: number;
+  nom: string;
+  nom_contour: string | null;
+  lat: number | null;
+  lng: number | null;
+  projets: number;
+  beneficiaires: number;
+  femmes: number;
+  hommes: number;
+  budget: number;
+  taux_physique: number | null;
+  taux_financier: number | null;
+  liste_projets: {
+    id: number;
+    code: string;
+    nom: string;
+    statut: string;
+    budget: number;
+    taux_physique: number | null;
+    taux_financier: number | null;
+    beneficiaires: number;
+  }[];
+}
+
+/** Synthèse par zone (régions, provinces…) : projets présents, bénéficiaires, budget, taux. */
+export function useSyntheseCarte(pays: string | undefined, niveau: number, projet: number | null, zone: number | null, active: boolean) {
+  return useQuery({
+    queryKey: ["carte-synthese", pays, niveau, projet, zone],
+    queryFn: async () =>
+      (
+        await apiClient.get<{ niveau: { ordre: number; nom: string } | null; zones: SyntheseZone[]; indicateurs: Record<IndicateurZone, string> }>(
+          "/carte/synthese/",
+          { params: { pays, niveau, projet: projet ?? undefined, zone: zone ?? undefined } },
+        )
+      ).data,
+    enabled: !!pays && active,
+    placeholderData: (precedent) => precedent,
+  });
+}

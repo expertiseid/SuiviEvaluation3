@@ -1,7 +1,7 @@
 import os
 
 from rest_framework import viewsets
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
@@ -131,3 +131,25 @@ class CoucheImporteeViewSet(viewsets.ModelViewSet):
     def geojson(self, request, pk=None):
         couche = CoucheImportee.objects.only("geojson").get(pk=self.get_object().pk)
         return Response(couche.geojson)
+
+
+@api_view(["GET"])
+@permission_classes([HasGlobalVisibilityOrAssigned])
+def carte_synthese(request):
+    """
+    Synthèse par zone pour la carte : ?pays=BF&niveau=1 (1 = régions, 2 = provinces…),
+    facultativement ?projet= et ?zone= (zones situées dans celle-ci). Projets présents,
+    bénéficiaires, budget et taux d'exécution de chaque zone.
+    """
+    from apps.projects.queryset_filters import visible_projets_ids
+
+    from .services.synthese import INDICATEURS, synthese_par_zone
+
+    p = request.query_params
+    dans_zone = Zone.objects.select_related("niveau_administratif").filter(id=p.get("zone")).first() if p.get("zone") else None
+    donnees = synthese_par_zone(
+        (p.get("pays") or "BF").upper()[:2], int(p.get("niveau") or 1), list(visible_projets_ids(request.user)),
+        projet=int(p["projet"]) if p.get("projet", "").isdigit() else None, dans_zone=dans_zone,
+    )
+    donnees["indicateurs"] = INDICATEURS
+    return Response(donnees)
