@@ -112,6 +112,12 @@ def controler_projet(projet) -> list[dict]:
     if projet.date_fin < projet.date_debut:
         ajouter(ERREUR, "Planification", projet.code, "La date de fin du projet est avant sa date de début.")
 
+    # Chaîne des documents stratégiques : projet rattaché à un document qui n'est pas du dernier maillon.
+    from apps.strategy.chaine import avertissements_projet
+
+    for message in avertissements_projet(projet):
+        ajouter(ATTENTION, "Stratégie", projet.code, message, lien=f"/strategie/{projet.cadre_strategique_id}")
+
     activites = list(Activite.objects.filter(projet=projet).prefetch_related("sous_activites"))
     par_id = {a.id: a for a in activites}
     arbre = ArbreTaux(projet)

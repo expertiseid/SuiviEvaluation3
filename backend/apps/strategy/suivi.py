@@ -7,7 +7,7 @@ valeurs des indicateurs stratégiques, appréciations par période, pièces just
 from collections import defaultdict
 from decimal import Decimal
 
-from django.db.models import Q, Sum
+from django.db.models import Sum
 
 
 def sous_arbre(element) -> set:
@@ -22,21 +22,23 @@ def sous_arbre(element) -> set:
     return ids
 
 
-def contribution_projets(element, projets_visibles, arbres=None) -> dict:
+def contribution_projets(element, projets_visibles, arbres=None, rattachees_document=None) -> dict:
     """
-    Avancement calculé : activités et projets qui contribuent à l'élément (et à ceux en dessous).
-    `arbres` : cache {projet_id: ArbreTaux} partagé entre plusieurs éléments d'un même cadre.
+    Avancement calculé : activités et projets qui contribuent à l'élément (et à ceux en dessous),
+    y compris par les documents rattachés en dessous (chaîne des documents, voir chaine.py).
+    `arbres` : cache {projet_id: ArbreTaux} partagé entre plusieurs éléments d'un même cadre ;
+    `rattachees_document` : activites_rattachees() du document, à calculer une fois pour tous ses éléments.
     """
     from apps.projects.budgets import activites_comptees
     from apps.projects.models import Activite
     from apps.projects.taux import ArbreTaux
 
+    from .chaine import activites_rattachees
+
     ids = sous_arbre(element)
-    rattachees = list(
-        Activite.objects.filter(projet__id__in=projets_visibles)
-        .filter(Q(axe_strategique_id__in=ids) | Q(axe_strategique__isnull=True, projet__element_strategique_id__in=ids))
-        .select_related("projet")
-    )
+    if rattachees_document is None:
+        rattachees_document = activites_rattachees(element.type_niveau.cadre_strategique, projets_visibles)
+    rattachees = [a for a, atteint in rattachees_document if atteint in ids]
     if not rattachees:
         return {"projets": [], "nombre_activites": 0, "taux_physique": None, "budget_alloue": 0, "budget_realise": 0, "taux_financier": None}
 

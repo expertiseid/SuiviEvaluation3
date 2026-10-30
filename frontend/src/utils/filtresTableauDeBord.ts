@@ -36,3 +36,8 @@ export function versParametres(f: EtatFiltres): FiltresDashboard {
   params.periode = f.periode;
   return params;
 }
+
+/** Paramètres de requête des filtres (statuts séparés par des virgules), pour les autres écrans (carte). */
+export function parametresRequete(f: FiltresDashboard) {
+  return { ...f, statuts: f.statuts?.length ? f.statuts.join(",") : undefined };
+}

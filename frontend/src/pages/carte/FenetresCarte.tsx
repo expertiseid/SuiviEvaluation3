@@ -11,6 +11,7 @@ import {
   Group,
   Modal,
   Paper,
+  MultiSelect,
   SegmentedControl,
   Select,
   SimpleGrid,
@@ -26,6 +27,7 @@ import { messageErreurApi } from "../../utils/erreurs";
 
 import { locale } from "../../utils/i18n";
 import { voc } from "../../utils/vocabulaire";
+import { optionsIndicateursZone } from "../../utils/carteParZone";
 const GEOMETRIES = { POINT: "Points", LIGNE: "Lignes", POLYGONE: "Polygones" } as const;
 const COULEURS = ["#7048e8", "#e8590c", "#1c7ed6", "#c2255c", "#2f9e44", "#f08c00", "#0c8599", "#495057"];
 
@@ -180,7 +182,7 @@ function Reglage({ label, children }: { label: string; children: ReactNode }) {
 
 /** Carte imprimable : formats A0 à A4, PDF ou PNG, couches et filtres de la carte à l'écran. */
 export function TelechargerCarteModal({ options, couchesImportees, onClose }: {
-  options: Pick<OptionsCarteImprimable, "projet" | "zone" | "couches" | "importees" | "fond" | "parZone" | "niveauZone">;
+  options: Pick<OptionsCarteImprimable, "projets" | "zones" | "filtres" | "couches" | "importees" | "fond" | "parZone" | "niveauZone">;
   couchesImportees: CoucheImportee[];
   onClose: () => void;
 }) {
@@ -259,26 +261,24 @@ export function TelechargerCarteModal({ options, couchesImportees, onClose }: {
         <Bloc titre={voc("Contenu")}>
           <Stack gap="sm">
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-              <Select
-                label={voc("Colorier les zones selon")}
+              <MultiSelect
+                label={voc("Indicateurs par zone")}
+                description={voc("Le premier colorie les zones ; tous sont écrits sur chaque zone et dans le tableau.")}
+                placeholder={parZone.length ? "" : voc("Rien (carte des bénéficiaires)")}
                 value={parZone}
-                onChange={(v) => setParZone(v ?? "aucun")}
-                allowDeselect={false}
-                data={[
-                  { value: "aucun", label: voc("Rien (carte des bénéficiaires)") },
-                  { value: "projets", label: voc("Nombre de projets") },
-                  { value: "beneficiaires", label: voc("Bénéficiaires") },
-                  { value: "budget", label: voc("Budget") },
-                  { value: "taux_physique", label: voc("Exécution physique") },
-                  { value: "taux_financier", label: voc("Exécution financière") },
-                ]}
+                onChange={setParZone}
+                data={optionsIndicateursZone()}
+                clearable
+                searchable
+                maxDropdownHeight={320}
+                comboboxProps={{ zIndex: 1000 }}
               />
-              {parZone !== "aucun" ? (
+              {parZone.length > 0 ? (
                 <Reglage label={voc("Par")}>
                   <SegmentedControl fullWidth value={niveauZone} onChange={setNiveauZone}
                     data={[{ value: "1", label: voc("Région") }, { value: "2", label: voc("Province") }, { value: "3", label: voc("Commune") }]} />
                 </Reglage>
-              ) : options.zone ? (
+              ) : options.zones.length > 0 ? (
                 <Reglage label={voc("Étendue")}>
                   <Text size="sm" c="dimmed" mt={6}>{voc("Étendue : la zone choisie dans le filtre.")}</Text>
                 </Reglage>

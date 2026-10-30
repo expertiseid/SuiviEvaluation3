@@ -13,6 +13,7 @@ import textwrap
 from datetime import datetime
 
 from apps.core.langues import traduire, traduire_figure, traduire_modele
+from apps.geo.services.synthese import COURTS
 
 os.environ.setdefault("MPLBACKEND", "Agg")
 os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
@@ -41,27 +42,45 @@ STYLE_ROUTES = {"DEPARTEMENTALE": ("#ca8a04", 1.2, (0, (3, 2)), "Route départem
                 "NATIONALE": ("#dc2626", 2.8, "-", "Route nationale")}
 
 
-# Carte par zone : mêmes dégradés et classes qu'à l'écran (frontend utils/carteParZone.ts).
+# Carte par zone : mêmes dégradés et classes qu'à l'écran (frontend utils/carteParZone.ts), par
+# famille d'indicateurs (catalogue apps.geo.services.synthese).
 DEGRADES = {
     "projets": ["#dbeafe", "#93c5fd", "#3b82f6", "#1d4ed8", "#1e3a8a"],
     "beneficiaires": ["#d1fae5", "#6ee7b7", "#10b981", "#047857", "#064e3b"],
     "budget": ["#fef3c7", "#fcd34d", "#f59e0b", "#b45309", "#78350f"],
-    "taux_physique": ["#fee2e2", "#fdba74", "#fde047", "#86efac", "#16a34a"],
-    "taux_financier": ["#fee2e2", "#fdba74", "#fde047", "#86efac", "#16a34a"],
+    "taux": ["#fee2e2", "#fdba74", "#fde047", "#86efac", "#16a34a"],
 }
 SANS_DONNEE = "#f1f3f5"
-POURCENTAGES = ("taux_physique", "taux_financier")
-ENTIERS = ("projets", "beneficiaires")
+
+
+def _type(indicateur):
+    """Type de valeur de l'indicateur : entier, montant ou pourcentage."""
+    from apps.geo.services.synthese import TYPES
+
+    return TYPES.get(indicateur, "entier")
+
+
+def degrade(indicateur):
+    """Les 5 couleurs (du plus faible au plus fort) de la famille de l'indicateur."""
+    from apps.geo.services.synthese import FAMILLES
+
+    return DEGRADES[FAMILLES.get(indicateur, "projets")]
+
+
+def valeur_de(z, indicateur):
+    """Valeur d'un indicateur pour une zone de la synthèse."""
+    return (z.get("valeurs") or {}).get(indicateur, z.get(indicateur))
 
 
 def classes_zone(indicateur, zones):
-    if indicateur in POURCENTAGES:
+    """Bornes des 5 classes : seuils fixes pour les taux, sinon classes égales jusqu'au maximum."""
+    if _type(indicateur) == "pourcentage":
         return [20, 40, 60, 80]
-    maximum = max([z[indicateur] or 0 for z in zones] or [0])
+    maximum = max([valeur_de(z, indicateur) or 0 for z in zones] or [0])
     if maximum <= 0:
         return [1, 2, 3, 4]
     bornes = [maximum * k / 5 for k in (1, 2, 3, 4)]
-    if indicateur in ENTIERS:
+    if _type(indicateur) == "entier":
         import math
 
         return [max(math.ceil(b), i + 2) for i, b in enumerate(bornes)]
@@ -69,24 +88,37 @@ def classes_zone(indicateur, zones):
 
 
 def couleur_zone(indicateur, valeur, bornes):
-    if valeur is None or (indicateur not in POURCENTAGES and valeur <= 0):
+    """Couleur de la classe d'une valeur (gris sans donnée)."""
+    if valeur is None or (_type(indicateur) != "pourcentage" and valeur <= 0):
         return SANS_DONNEE
     i = next((i for i, b in enumerate(bornes) if valeur < b), 4)
-    return DEGRADES[indicateur][i]
+    return degrade(indicateur)[i]
 
 
 def valeur_zone(indicateur, v):
+    """Valeur écrite sur la carte : « 45,2 % », « 2,38 Md », « 1 250 »."""
     if v is None:
         return "—"
-    if indicateur in POURCENTAGES:
+    if _type(indicateur) == "pourcentage":
         return f"{v:.1f} %".replace(".", ",")
-    if indicateur == "budget":
+    if _type(indicateur) == "montant":
         return f"{v / 1e9:.2f} Md".replace(".", ",") if v >= 1e9 else (f"{v / 1e6:.1f} M".replace(".", ",") if v >= 1e6 else fr(v))
     return fr(v)
 
 
+# En-têtes du tableau par zone, plus courts que les libellés courts quand la place manque.
+ENTETES_COURTES = {"beneficiaires": "Bénéf."}
+
+
+def lignes_valeurs(z, indicateurs):
+    """Valeurs écrites sur une zone : la valeur seule, ou « libellé court : valeur » s'il y en a plusieurs."""
+    if len(indicateurs) == 1:
+        return [valeur_zone(indicateurs[0], valeur_de(z, indicateurs[0]))]
+    return [f"{traduire(COURTS[i])} : {valeur_zone(i, valeur_de(z, i))}" for i in indicateurs]
+
+
 def libelles_classes(indicateur, bornes):
-    if indicateur in ENTIERS:
+    if _type(indicateur) == "entier":
         return ([("1" if bornes[0] - 1 <= 1 else f"1 – {bornes[0] - 1}")]
                 + [(f"{b} – {bornes[i + 1] - 1}" if bornes[i + 1] - 1 > b else f"{b}") for i, b in enumerate(bornes[:3])]
                 + [f"{bornes[3]} et plus"])
@@ -395,10 +427,10 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
             gdf_pz = _gdf(contours, crs)
             if len(gdf_pz):
                 gdf_pz["couleur"] = [
-                    couleur_zone(indicateur, par_nom[normaliser_nom(n)][indicateur], bornes) for n in gdf_pz["shapeName"]
+                    couleur_zone(indicateur, valeur_de(par_nom[normaliser_nom(n)], indicateur), bornes) for n in gdf_pz["shapeName"]
                 ]
                 gdf_pz.plot(ax=ax, color=gdf_pz["couleur"], alpha=0.55 if source_fond else 0.8, edgecolor="#374151", linewidth=LW(1), zorder=1.2)
-        for couleur_classe, libelle in zip(DEGRADES[indicateur], libelles_classes(indicateur, bornes)):
+        for couleur_classe, libelle in zip(degrade(indicateur), libelles_classes(indicateur, bornes)):
             legende.append(("rect", couleur_classe, f"{traduire(par_zone['libelle_court'])} : {libelle}", 1))
         legende.append(("rect", SANS_DONNEE, traduire_modele("{0} : aucun", traduire(par_zone["libelle_court"])), 1))
 
@@ -450,12 +482,16 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
     pl = Placeur(fig, ax)
     halo = [pe.withStroke(linewidth=LW(3.2), foreground="white")]
     if par_zone:
-        indicateur = par_zone["indicateur"]
-        zones_pz = [z for z in par_zone["synthese"]["zones"] if z["lat"] is not None and z[indicateur] not in (None, 0)]
+        def lignes_zone(z):
+            """Lignes écrites sur une zone : un indicateur choisi par ligne."""
+            return lignes_valeurs(z, par_zone["indicateurs"])
+
+        zones_pz = [z for z in par_zone["synthese"]["zones"]
+                    if z["lat"] is not None and any(valeur_de(z, i) not in (None, 0) for i in par_zone["indicateurs"])]
         if zones_pz:
             xs, ys = vers_m.transform([z["lng"] for z in zones_pz], [z["lat"] for z in zones_pz])
             for z, x, y in zip(zones_pz, xs, ys):
-                pl.essayer(x, y, f"{z['nom'].upper()}\n{valeur_zone(indicateur, z[indicateur])}", force=True, fontsize=F(14), fontweight="bold", color="#111827",
+                pl.essayer(x, y, "\n".join([z["nom"].upper(), *lignes_zone(z)]), force=True, fontsize=F(14), fontweight="bold", color="#111827",
                            ha="center", va="center", zorder=9,
                            bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="#6b7280", lw=LW(0.8), alpha=0.9))
     if donnees["zones"]:
@@ -633,16 +669,25 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
     if par_zone and place > 2:
         indicateur = par_zone["indicateur"]
         cur = titre_bloc(cur, traduire_modele("Par {0}", traduire(par_zone["synthese"]["niveau"]["nom"])).upper())
-        # 4e colonne : l'indicateur choisi (le budget quand c'est déjà le nombre de projets).
-        colonne = "budget" if indicateur == "projets" else indicateur
-        cur = ligne_tab(cur, [par_zone["synthese"]["niveau"]["nom"], "Projets", "Bénéf.", "Budget" if indicateur == "projets" else par_zone["entete"]], True, "#334155")
-        lignes = sorted(par_zone["synthese"]["zones"], key=lambda z: -(z[indicateur] or 0))
+        # Colonnes : les indicateurs choisis (4 au plus) ; avec un seul, projets, bénéficiaires et
+        # cet indicateur (le budget quand c'est déjà le nombre de projets).
+        if len(par_zone["indicateurs"]) > 1:
+            colonnes = par_zone["indicateurs"][:4]
+            if len(par_zone["indicateurs"]) > 4:
+                notes.append("Tableau limité aux 4 premiers indicateurs choisis (tous figurent sur la carte).")
+        else:
+            colonnes = ["projets", "beneficiaires", "budget" if indicateur == "projets" else indicateur]
+        largeurs[:] = [w * pw / 275 for w in [275 - 46 * len(colonnes), *[46] * len(colonnes)]]
+        cur = ligne_tab(cur, [par_zone["synthese"]["niveau"]["nom"], *[ENTETES_COURTES.get(c, COURTS[c]) for c in colonnes]], True, "#334155")
+        lignes = sorted(par_zone["synthese"]["zones"], key=lambda z: -(valeur_de(z, indicateur) or 0))
         lignes = [z for z in lignes if z["projets"] or z["beneficiaires"]]
         if len(lignes) > place:
             notes.append(f"Tableau limité aux {place - 1} premières zones sur {len(lignes)}.")
             lignes = lignes[: place - 1]
         for i, z in enumerate(lignes):
-            cur = ligne_tab(cur, [tronc(z["nom"], 34), z["projets"], z["beneficiaires"], valeur_zone(colonne, z[colonne])], fond="#f8fafc" if i % 2 == 0 else None)
+            cur = ligne_tab(cur, [tronc(z["nom"], 34 if len(colonnes) <= 3 else 22), *[valeur_zone(c, valeur_de(z, c)) for c in colonnes]],
+                            fond="#f8fafc" if i % 2 == 0 else None)
+        largeurs[:] = [w * pw / 275 for w in [137, 46, 46, 46]]
         notes.append("Un projet compte dans chaque zone où il intervient (son budget n'est pas réparti entre les zones).")
     elif donnees["zones"] and place > 2:
         cur = titre_bloc(cur, "BÉNÉFICIAIRES PAR LOCALITÉ")

@@ -162,6 +162,17 @@ export interface RallongeFinancement {
   created_at: string;
 }
 
+/** Maillon de la chaîne des documents stratégiques (Cadre stratégique, Programme, Pilier…) : une rubrique du menu. */
+export interface TypeDocument {
+  id: number;
+  nom: string;
+  nom_pluriel: string;
+  /** 1 = maillon le plus haut. */
+  ordre: number;
+  icone: string;
+  nombre_documents: number;
+}
+
 export interface CadreStrategique {
   id: number;
   nom: string;
@@ -171,6 +182,28 @@ export interface CadreStrategique {
   structures_noms?: string[];
   parties_prenantes?: number[];
   parties_prenantes_noms?: string[];
+  /** Maillon de la chaîne (vide = premier maillon). */
+  type_document?: number | null;
+  type_document_nom?: string | null;
+  /** Rattachement à un document d'un maillon au-dessus, et éventuellement à l'un de ses éléments. */
+  document_parent?: number | null;
+  document_parent_nom?: string | null;
+  document_parent_type?: string | null;
+  element_parent?: number | null;
+  element_parent_nom?: string | null;
+  documents_rattaches?: { id: number; nom: string; type_document_nom: string | null; element_parent_nom: string | null }[];
+  /** Sauts de maillons, rattachement manquant… */
+  alertes_chaine?: string[];
+}
+
+export interface ImportChaineResultat {
+  maillons_crees: number;
+  documents_crees: number;
+  documents_mis_a_jour: number;
+  elements_crees: number;
+  elements_mis_a_jour: number;
+  erreurs: { ligne: number; message: string }[];
+  avertissements: { ligne: number; message: string }[];
 }
 
 export interface RecapCadreStrategique {
@@ -187,6 +220,10 @@ export interface RecapCadreStrategique {
     date_debut: string;
     date_fin: string;
     chef_de_projet_nom: string;
+    /** Élément du document auquel le projet arrive, et document par lequel il arrive (chaîne). */
+    element_strategique?: number | null;
+    element_strategique_nom?: string | null;
+    via_document?: string | null;
     bailleur_nom: string | null;
     budget_total: string;
     budget_activites_alloue_total: string;
@@ -271,6 +308,12 @@ export interface ElementStrategique {
   structures_noms?: string[];
   parties_prenantes?: number[];
   parties_prenantes_noms?: string[];
+  /** Document auquel appartient l'élément. */
+  cadre_strategique?: number;
+  /** Élément d'un document d'un maillon au-dessus auquel celui-ci (et ce qui est en dessous) contribue. */
+  contribue_a?: number | null;
+  contribue_a_nom?: string | null;
+  alertes_chaine?: string[];
 }
 
 export interface Intervenant {
@@ -505,6 +548,9 @@ export interface Projet {
   /** Éléments de premier niveau de la planification, chacun avec ses `enfants`. */
   activites: Activite[];
 }
+
+/** Projet tel que renvoyé par la liste : sans planification ni services (voir useProjets). */
+export type ProjetResume = Omit<Projet, "activites" | "services_detail">;
 
 export type ProjetInput = Omit<
   Projet,

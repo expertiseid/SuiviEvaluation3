@@ -1,6 +1,5 @@
 import { useMemo } from "react";
-import { useProjets } from "../../api/projects";
-import type { Activite } from "../../types";
+import { useArborescenceActivites, useProjets } from "../../api/projects";
 
 /**
  * Options de rattachement d'un indicateur : les projets, puis, pour chaque
@@ -10,6 +9,7 @@ import type { Activite } from "../../types";
  */
 export function useHierarchyOptions() {
   const { data: projets } = useProjets();
+  const { data: arborescence } = useArborescenceActivites();
 
   return useMemo(() => {
     const listeProjets: { value: string; label: string }[] = [];
@@ -20,23 +20,29 @@ export function useHierarchyOptions() {
     // pertinents à ce projet.
     const cadreParProjetId = new Map<number, number | null>();
     const projetIdParActivite = new Map<number, number>();
+    // Éléments regroupés par « projet:parent », dans l'ordre de création.
+    const enfants = new Map<string, { id: number; libelle: string }[]>();
+    for (const a of arborescence ?? []) {
+      const cle = `${a.projet}:${a.activite_parent}`;
+      enfants.set(cle, [...(enfants.get(cle) ?? []), a]);
+    }
 
     for (const projet of projets ?? []) {
       listeProjets.push({ value: String(projet.id), label: `${projet.code} · ${projet.nom}` });
       cadreParProjetId.set(projet.id, projet.cadre_strategique);
 
       const options: { value: string; label: string }[] = [];
-      const parcourir = (elements: Activite[], chemin: string[]) => {
-        for (const element of elements) {
+      const parcourir = (parent: number | null, chemin: string[]) => {
+        for (const element of enfants.get(`${projet.id}:${parent}`) ?? []) {
           const cheminElement = [...chemin, element.libelle];
           options.push({ value: String(element.id), label: cheminElement.join(" › ") });
           projetIdParActivite.set(element.id, projet.id);
-          parcourir(element.enfants, cheminElement);
+          parcourir(element.id, cheminElement);
         }
       };
-      parcourir(projet.activites, []);
+      parcourir(null, []);
       if (options.length > 0) elementsParProjet.push({ projetLabel: projet.code, options });
     }
     return { projets: listeProjets, elementsParProjet, cadreParProjetId, projetIdParActivite };
-  }, [projets]);
+  }, [projets, arborescence]);
 }

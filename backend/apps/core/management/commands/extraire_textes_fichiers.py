@@ -32,6 +32,7 @@ MODULES = [
     "indicators/import_excel.py",
     "planification/services.py",
     "projects/import_excel.py",
+    "strategy/import_chaine.py",
     "projects/taux.py",
     "reports/cadre_logique.py",
     "reports/financier.py",
@@ -160,7 +161,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         racine = Path(settings.BASE_DIR) / "apps"
-        textes = _libelles_des_choix() | set(TEXTES_SUPPLEMENTAIRES)
+        from apps.geo.services.synthese import COURTS
+
+        # Libellés courts des indicateurs par zone : imprimés sur la carte (légende, tableau).
+        textes = _libelles_des_choix() | set(TEXTES_SUPPLEMENTAIRES) | set(COURTS.values())
         for module in MODULES:
             textes |= _textes_du_module(racine / module)
         liste = sorted(textes)

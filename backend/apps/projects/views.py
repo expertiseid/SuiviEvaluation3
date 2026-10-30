@@ -92,6 +92,22 @@ class ProjetViewSet(viewsets.ModelViewSet):
             .filter(id__in=visible_projets_ids(self.request.user))
         )
 
+    def get_serializer_context(self):
+        contexte = super().get_serializer_context()
+        # La liste ne renvoie ni la planification complète ni les services de chaque projet
+        # (plusieurs centaines de Ko par projet) : seule la fiche, ou ?planification=1, les demande.
+        contexte["sans_detail"] = self.action == "list" and self.request.query_params.get("planification") != "1"
+        return contexte
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        if self.action == "list":
+            queryset = queryset.select_related("cadre_strategique").prefetch_related(
+                "partenaires_consortium", "elements_strategiques_secondaires", "structures", "parties_prenantes",
+                "zones", "utilisateurs_affectes",
+            )
+        return queryset
+
     def get_serializer_class(self):
         if self.action in ("create", "update", "partial_update"):
             return ProjetWriteSerializer
@@ -235,6 +251,16 @@ class ActiviteViewSet(DemandeApprobationMixin, viewsets.ModelViewSet):
             return Response([])
         activites = self.get_queryset().filter(projet__id=projet_id).order_by("libelle")
         return Response([{"id": a.id, "libelle": a.libelle} for a in activites])
+
+    @action(detail=False, methods=["get"])
+    def arborescence(self, request):
+        """
+        Tous les éléments de planification des projets visibles, en version allégée (id, projet,
+        parent, libellé), non paginée : de quoi reconstruire les chemins dans un sélecteur sans
+        charger la planification complète de chaque projet.
+        """
+        lignes = self.get_queryset().order_by("id").values("id", "projet", "activite_parent", "libelle")
+        return Response(list(lignes))
 
     @action(detail=True, methods=["post"])
     def dupliquer(self, request, pk=None):

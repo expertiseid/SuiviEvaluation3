@@ -11,6 +11,7 @@ import type {
   ParametresCalcul,
   ParametresRapportage,
   Projet,
+  ProjetResume,
   ProjetInput,
   TauxManuel,
 } from "../types";
@@ -39,10 +40,21 @@ export function useImporterProjet() {
   });
 }
 
+/** Tous les projets visibles, sans leur planification (voir useProjetsAvecPlanification). */
 export function useProjets() {
   return useQuery({
     queryKey: ["projets"],
-    queryFn: async () => (await apiClient.get<Paginated<Projet>>("/projets/")).data.results,
+    queryFn: async () =>
+      (await apiClient.get<Paginated<ProjetResume>>("/projets/", { params: { page_size: 1000 } })).data.results,
+  });
+}
+
+/** Éléments de planification de tous les projets visibles, allégés (id, projet, parent, libellé). */
+export function useArborescenceActivites() {
+  return useQuery({
+    queryKey: ["projets", "arborescence-activites"], // sous « projets » : rafraîchi avec la planification
+    queryFn: async () =>
+      (await apiClient.get<{ id: number; projet: number; activite_parent: number | null; libelle: string }[]>("/activites/arborescence/")).data,
   });
 }
 

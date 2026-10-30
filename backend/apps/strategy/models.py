@@ -4,6 +4,28 @@ from django.db import models
 from apps.core.models import TimestampedModel
 
 
+class TypeDocument(TimestampedModel):
+    """
+    Maillon de la chaîne des documents stratégiques, propre à l'organisation (ex : « Cadre
+    stratégique » → « Programme » → « Pilier 1 » → « Pilier 2 » → « Pilier 3 », puis les projets).
+    Chaque maillon est une rubrique à part du menu ; ses documents (CadreStrategique) ont leurs
+    propres niveaux et éléments, et se rattachent à un document d'un maillon au-dessus.
+    """
+
+    nom = models.CharField(max_length=100, help_text="Au singulier : « Programme », « Pilier 1 »…")
+    nom_pluriel = models.CharField(max_length=100, help_text="Nom de la rubrique du menu : « Programmes »…")
+    ordre = models.PositiveSmallIntegerField(help_text="Position dans la chaîne : 1 = maillon le plus haut.")
+    icone = models.CharField(max_length=50, blank=True, help_text="Icône du menu (voir ICONES_MENU de l'interface).")
+
+    class Meta:
+        ordering = ("ordre", "id")
+        verbose_name = "Type de document stratégique"
+        verbose_name_plural = "Types de documents stratégiques"
+
+    def __str__(self):
+        return self.nom
+
+
 class CadreStrategique(TimestampedModel):
     """
     Conteneur racine d'une structuration stratégique complète et
@@ -16,6 +38,20 @@ class CadreStrategique(TimestampedModel):
     description = models.TextField(blank=True)
     structures = models.ManyToManyField("partners.StructureOrganisation", blank=True, related_name="cadres_strategiques")
     parties_prenantes = models.ManyToManyField("partners.PartiePrenante", blank=True, related_name="cadres_strategiques")
+    # Chaîne des documents (voir TypeDocument) : maillon du document et rattachement à un document
+    # d'un maillon au-dessus — au document lui-même, ou à l'un de ses éléments. Sauter un ou
+    # plusieurs maillons est permis (avertissement, voir apps.strategy.chaine).
+    type_document = models.ForeignKey(
+        TypeDocument, null=True, blank=True, on_delete=models.PROTECT, related_name="documents",
+        help_text="Maillon de la chaîne ; vide = premier maillon.",
+    )
+    document_parent = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.PROTECT, related_name="documents_rattaches",
+    )
+    element_parent = models.ForeignKey(
+        "ElementStrategique", null=True, blank=True, on_delete=models.SET_NULL, related_name="documents_rattaches",
+        help_text="Élément du document parent auquel ce document est rattaché (vide = le document lui-même).",
+    )
 
     class Meta:
         ordering = ("-created_at",)
@@ -97,6 +133,11 @@ class ElementStrategique(TimestampedModel):
     )
     structures = models.ManyToManyField("partners.StructureOrganisation", blank=True, related_name="elements_strategiques")
     parties_prenantes = models.ManyToManyField("partners.PartiePrenante", blank=True, related_name="elements_strategiques")
+    contribue_a = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="contributions",
+        help_text="Élément d'un document d'un maillon au-dessus auquel celui-ci (et ce qui est en dessous) "
+        "contribue ; vide = le rattachement du document.",
+    )
 
     class Meta:
         # Tri par id (= ordre de création) et non par code/nom : un import

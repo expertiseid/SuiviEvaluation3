@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
-import type { NiveauAdministratif, Paginated, Zone } from "../types";
+import type { FiltresDashboard, NiveauAdministratif, Paginated, Zone } from "../types";
+import { parametresRequete } from "../utils/filtresTableauDeBord";
 
 /** Pays dont le découpage administratif est configuré (codes ISO). */
 export function usePaysAvecNiveaux() {
@@ -204,7 +205,8 @@ export function useSupprimerCouche() {
   });
 }
 
-export type IndicateurZone = "projets" | "beneficiaires" | "budget" | "taux_physique" | "taux_financier";
+/** Code d'un indicateur par zone (catalogue : utils/carteParZone.ts). */
+export type IndicateurZone = string;
 
 export interface SyntheseZone {
   zone: number;
@@ -219,6 +221,8 @@ export interface SyntheseZone {
   budget: number;
   taux_physique: number | null;
   taux_financier: number | null;
+  /** Tous les indicateurs du catalogue pour cette zone. */
+  valeurs: Record<string, number | null>;
   liste_projets: {
     id: number;
     code: string;
@@ -232,14 +236,14 @@ export interface SyntheseZone {
 }
 
 /** Synthèse par zone (régions, provinces…) : projets présents, bénéficiaires, budget, taux. */
-export function useSyntheseCarte(pays: string | undefined, niveau: number, projet: number | null, zone: number | null, active: boolean) {
+export function useSyntheseCarte(pays: string | undefined, niveau: number, projets: number[], zones: number[], filtres: FiltresDashboard, active: boolean) {
   return useQuery({
-    queryKey: ["carte-synthese", pays, niveau, projet, zone],
+    queryKey: ["carte-synthese", pays, niveau, projets, zones, filtres],
     queryFn: async () =>
       (
         await apiClient.get<{ niveau: { ordre: number; nom: string } | null; zones: SyntheseZone[]; indicateurs: Record<IndicateurZone, string> }>(
           "/carte/synthese/",
-          { params: { pays, niveau, projet: projet ?? undefined, zone: zone ?? undefined } },
+          { params: { pays, niveau, projet: projets.join(",") || undefined, zone: zones.join(",") || undefined, ...parametresRequete(filtres) } },
         )
       ).data,
     enabled: !!pays && active,

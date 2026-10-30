@@ -9,6 +9,7 @@ import {
   FileText,
   FolderKanban,
   Gauge,
+  Layers,
   LayoutDashboard,
   LogOut,
   Map as MapIcon,
@@ -57,6 +58,8 @@ import { langue } from "../utils/i18n";
 import { EcheancesBanner } from "../components/notifications/EcheancesBanner";
 import { useAccesModules } from "../utils/modules";
 import { libelleRole } from "../utils/roles";
+import { useTypesDocuments } from "../api/strategy";
+import { routeMaillon } from "../utils/chaineDocuments";
 
 type NavItem = { to: string; label: string; icon: LucideIcon };
 
@@ -280,12 +283,20 @@ function PersonnalisationMenuModal({
 }
 
 function renderNavLink(item: NavItem, pathname: string) {
-  const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+  const active =
+    item.to === "/"
+      ? pathname === "/"
+      : item.to === "/strategie"
+        ? // Les maillons suivants de la chaîne ont leur propre rubrique (/strategie/type/…).
+          pathname.startsWith(item.to) && !pathname.startsWith("/strategie/type/")
+        : pathname.startsWith(item.to);
   return (
     <NavLink
       key={item.to}
       component={RouterNavLink}
       to={item.to}
+      // Le lien de React Router ne se marque pas actif tout seul : seul `active` (ci-dessus) compte.
+      end
       label={item.label}
       leftSection={<item.icon size={17} strokeWidth={2} />}
       active={active}
@@ -326,6 +337,16 @@ export function AppLayout() {
     label: (langue() === "fr" && libelles[item.to]) || voc(item.label),
     icon: ICONES_MENU[icones[item.to]] ?? item.icon,
   });
+
+  // Chaîne des documents stratégiques : chaque maillon après le premier est une rubrique à part,
+  // placée juste sous « Cadre stratégique » (mêmes droits que celle-ci).
+  const { data: maillons } = useTypesDocuments();
+  const itemsMaillons: NavItem[] = (maillons ?? []).slice(1).map((m) => ({
+    to: routeMaillon(m.id),
+    label: m.nom_pluriel,
+    icon: ICONES_MENU[m.icone] ?? Layers,
+  }));
+  const itemsPrincipaux = ITEMS_PRINCIPAUX.flatMap((item) => (item.to === "/strategie" ? [item, ...itemsMaillons] : [item]));
 
   const surTableauDeBord = pathname === "/";
   const afficherBandeau = surTableauDeBord && !!echeances && echeances.length > 0;
@@ -391,7 +412,9 @@ export function AppLayout() {
         <ScrollArea>
           {renderNavLink(avecLibelle(ITEM_ACCUEIL), pathname)}
           <Divider my={4} />
-          {ITEMS_PRINCIPAUX.filter((item) => !estMasque(item.to)).map((item) => renderNavLink(avecLibelle(item), pathname))}
+          {itemsPrincipaux
+            .filter((item) => !estMasque(item.to.startsWith("/strategie") ? "/strategie" : item.to))
+            .map((item) => renderNavLink(item.to.startsWith("/strategie/type/") ? item : avecLibelle(item), pathname))}
           {user?.role === "ADMIN" && (
             <>
               {ITEMS_ADMIN.map((item) => renderNavLink(avecLibelle(item), pathname))}

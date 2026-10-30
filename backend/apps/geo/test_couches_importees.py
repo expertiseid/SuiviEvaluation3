@@ -103,6 +103,20 @@ def test_synthese_par_zone():
     provinces = {z["nom"]: z for z in client.get("/api/v1/carte/synthese/", {"pays": "ZZ", "niveau": 2, "zone": nord.id}).data["zones"]}
     assert [p["code"] for p in provinces["P1"]["liste_projets"]] == ["SYN-1", "SYN-2"] and provinces["P1"]["femmes"] == 1
     assert [p["code"] for p in provinces["P2"]["liste_projets"]] == ["SYN-1", "SYN-2"]
+    # Indicateurs du catalogue dans `valeurs` ; plusieurs projets et plusieurs zones à la fois.
+    from apps.partners.models import Bailleur, Financement
+
+    bailleur = Bailleur.objects.create(nom="Bailleur Z")
+    Financement.objects.create(projet=regional, bailleur=bailleur, montant_finance=800)
+    Financement.objects.create(projet=local, bailleur=bailleur, montant_finance=300)
+    nord_valeurs = {z["nom"]: z for z in client.get("/api/v1/carte/synthese/", {"pays": "ZZ", "niveau": 1}).data["zones"]}["Nord"]["valeurs"]
+    assert (nord_valeurs["financements"], nord_valeurs["bailleurs"], nord_valeurs["femmes"]) == (1100, 1, 1)
+    seul = client.get("/api/v1/carte/synthese/", {"pays": "ZZ", "niveau": 2, "projet": f"{local.id}", "zone": f"{p1.id},{p2.id}"}).data["zones"]
+    assert sorted(z["nom"] for z in seul) == ["P1", "P2"] and all(z["projets"] == 1 for z in seul)
+    deux = client.get("/api/v1/carte/synthese/", {"pays": "ZZ", "niveau": 1, "projet": f"{local.id},{regional.id}", "zone": f"{nord.id},{sud.id}"}).data["zones"]
+    assert {z["nom"]: z["projets"] for z in deux} == {"Nord": 2, "Sud": 0}
+    carte = client.get("/api/v1/beneficiaires/carte/", {"zone": f"{p1.id},{p2.id}"}).data
+    assert carte["total"] == 1 and carte["zone_filtre"]["nom"] == "P1, P2" and {p["code"] for p in carte["projets_zone"]} == {"SYN-2"}
     def contour(nom, ouest, sud):
         geometrie = json.loads(gpd.GeoSeries([box(ouest, sud, ouest + 1, sud + 1)]).to_json())["features"][0]["geometry"]
         return {"type": "Feature", "properties": {"shapeName": nom}, "geometry": geometrie}
@@ -113,3 +127,12 @@ def test_synthese_par_zone():
     r = client.get("/api/v1/beneficiaires/carte/export/", {"papier": "A4", "sortie": "png", "par_zone": "budget", "niveau_zone": 1})
     assert r.status_code == 200 and "carte_budget_par_r" in r["Content-Disposition"]
     assert client.get("/api/v1/beneficiaires/carte/export/", {"par_zone": "inconnu"}).status_code == 400
+    # Plusieurs indicateurs à l'impression ; filtres du tableau de bord sur les projets retenus.
+    r = client.get("/api/v1/beneficiaires/carte/export/", {"papier": "A4", "sortie": "png", "par_zone": "projets,financements,femmes", "niveau_zone": 1})
+    assert r.status_code == 200
+    Projet.objects.filter(id=local.id).update(statut="CLOTURE")
+    filtre = {z["nom"]: z for z in client.get("/api/v1/carte/synthese/", {"pays": "ZZ", "niveau": 1, "statuts": "CLOTURE"}).data["zones"]}
+    assert filtre["Nord"]["projets"] == 1 and filtre["Nord"]["valeurs"]["projets_clotures"] == 1
+    carte = client.get("/api/v1/beneficiaires/carte/", {"statuts": "EN_PREPARATION"}).data
+    assert carte["total"] == 0 and carte["projets_retenus"] == [regional.id]
+    assert client.get("/api/v1/beneficiaires/carte/", {"statuts": "CLOTURE"}).data["total"] == 1

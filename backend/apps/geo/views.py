@@ -138,18 +138,21 @@ class CoucheImporteeViewSet(viewsets.ModelViewSet):
 def carte_synthese(request):
     """
     Synthèse par zone pour la carte : ?pays=BF&niveau=1 (1 = régions, 2 = provinces…),
-    facultativement ?projet= et ?zone= (zones situées dans celle-ci). Projets présents,
-    bénéficiaires, budget et taux d'exécution de chaque zone.
+    facultativement ?projet= et ?zone= (un ou plusieurs, séparés par des virgules ; zones situées
+    dans celles-ci). Pour chaque zone, les indicateurs du catalogue (projets, bénéficiaires,
+    budgets, financements, activités, cibles, taux…) dans `valeurs`. Filtres du tableau de bord
+    (?statuts=, ?annee= ou ?date_debut=&date_fin=, ?periode=) sur les projets pris en compte.
     """
+    from apps.dashboard.filtres import projets_retenus
     from apps.projects.queryset_filters import visible_projets_ids
 
-    from .services.synthese import INDICATEURS, synthese_par_zone
+    from .services.synthese import INDICATEURS, ids_parametre, synthese_par_zone
 
     p = request.query_params
-    dans_zone = Zone.objects.select_related("niveau_administratif").filter(id=p.get("zone")).first() if p.get("zone") else None
+    dans_zones = list(Zone.objects.select_related("niveau_administratif").filter(id__in=ids_parametre(p, "zone")))
     donnees = synthese_par_zone(
-        (p.get("pays") or "BF").upper()[:2], int(p.get("niveau") or 1), list(visible_projets_ids(request.user)),
-        projet=int(p["projet"]) if p.get("projet", "").isdigit() else None, dans_zone=dans_zone,
+        (p.get("pays") or "BF").upper()[:2], int(p.get("niveau") or 1), projets_retenus(visible_projets_ids(request.user), p),
+        projets=ids_parametre(p, "projet"), dans_zones=dans_zones,
     )
     donnees["indicateurs"] = INDICATEURS
     return Response(donnees)

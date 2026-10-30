@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { ArrowDown, ArrowLeft, ArrowUp, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Download, FileSpreadsheet, Gauge, Layers, ListTree, Pencil, Plus, Search, Settings2, Trash2, Wallet } from "lucide-react";
 import {
   ActionIcon,
+  Alert,
   Badge,
   Box,
   Button,
@@ -28,12 +29,14 @@ import {
 import { notifications } from "@mantine/notifications";
 import {
   useCadreStrategique,
+  useCadresStrategiques,
   useCreateElementStrategique,
   useCreateTypeNiveau,
   useDeleteElementStrategique,
   useDeleteTypeNiveau,
   useElementsStrategiques,
   useRecapCadreStrategique,
+  useTypesDocuments,
   useTypesNiveaux,
   useUpdateElementStrategique,
   useUpdateTypeNiveau,
@@ -50,7 +53,7 @@ import { correspond } from "../../utils/recherche";
 import { AxesBudgetsTab } from "./AxesBudgetsTab";
 import { SuiviStrategiqueTab } from "./SuiviStrategiqueTab";
 import { ImportStructurationModal } from "./ImportStructurationModal";
-import type { ElementStrategique, RecapCadreStrategique, TypeNiveau } from "../../types";
+import type { ElementStrategique, RecapCadreStrategique, StatutProjet, TypeNiveau } from "../../types";
 import { voc } from "../../utils/vocabulaire";
 import { messageErreurApi } from "../../utils/erreurs";
 import { usePartiesPrenantes, useStructures } from "../../api/organisation";
@@ -59,6 +62,8 @@ import { useAccesModules } from "../../utils/modules";
 import { type ModeAffichage, useModeAffichage } from "../../utils/affichage";
 
 import { locale } from "../../utils/i18n";
+import { PROJET_STATUT_LABEL } from "../../utils/statusTones";
+import { lienDocument, maillonsSautes, rangMaillon, routeMaillon } from "../../utils/chaineDocuments";
 // Une couleur par rang de niveau (pas par nom) — fixe et cohérente sur tout
 // l'écran, pour distinguer visuellement "à quel niveau appartient ce nœud"
 // d'un coup d'œil, quel que soit le nom que l'organisation lui a donné.
@@ -347,11 +352,32 @@ function ElementModal({
   const [parentsSecondaires, setParentsSecondaires] = useState<string[]>((elementExistant?.parents_secondaires ?? []).map(String));
   const [structuresIds, setStructuresIds] = useState<string[]>((elementExistant?.structures ?? []).map(String));
   const [partiesIds, setPartiesIds] = useState<string[]>((elementExistant?.parties_prenantes ?? []).map(String));
+  const [contribueA, setContribueA] = useState<string | null>(elementExistant?.contribue_a ? String(elementExistant.contribue_a) : null);
   const { data: structures } = useStructures();
   const { data: partiesPrenantes } = usePartiesPrenantes();
   const { data: tousElements } = useElementsStrategiques();
+  // Chaîne des documents : « Contribue à » un élément d'un document d'un maillon au-dessus.
+  const cadreId = niveaux[0]?.cadre_strategique;
+  const { data: maillons = [] } = useTypesDocuments();
+  const { data: documents = [] } = useCadresStrategiques();
+  const cadre = documents.find((d) => d.id === cadreId);
+  const rangCadre = rangMaillon(cadre?.type_document, maillons);
+  const rangDe = (documentId: number | undefined) => rangMaillon(documents.find((d) => d.id === documentId)?.type_document, maillons);
+  const optionsContribution = documents
+    .filter((d) => rangMaillon(d.type_document, maillons) < rangCadre)
+    .sort((a, b) => rangMaillon(b.type_document, maillons) - rangMaillon(a.type_document, maillons) || a.nom.localeCompare(b.nom))
+    .map((d) => ({
+      group: `${d.type_document_nom ?? ""} — ${d.nom}`,
+      items: (tousElements ?? [])
+        .filter((e) => e.cadre_strategique === d.id)
+        .map((e) => ({ value: String(e.id), label: `${e.type_niveau_nom} : ${e.code ? `${e.code} — ` : ""}${e.nom}` })),
+    }))
+    .filter((g) => g.items.length > 0);
+  const cibleContribution = (tousElements ?? []).find((e) => String(e.id) === contribueA);
+  const sautesContribution = cibleContribution ? maillonsSautes(rangDe(cibleContribution.cadre_strategique), rangCadre, maillons) : [];
 
   function reinitialiser() {
+    setContribueA(elementExistant?.contribue_a ? String(elementExistant.contribue_a) : null);
     setParentsSecondaires((elementExistant?.parents_secondaires ?? []).map(String));
     setStructuresIds((elementExistant?.structures ?? []).map(String));
     setPartiesIds((elementExistant?.parties_prenantes ?? []).map(String));
@@ -398,6 +424,7 @@ function ElementModal({
     parents_secondaires: parentsSecondaires.filter((id) => id !== parentPrincipal).map(Number),
     structures: structuresIds.map(Number),
     parties_prenantes: partiesIds.map(Number),
+    ...(rangCadre > 0 ? { contribue_a: contribueA ? Number(contribueA) : null } : {}),
   };
 
   async function handleSave() {
@@ -410,8 +437,9 @@ function ElementModal({
       return;
     }
     try {
+      let enregistre: ElementStrategique | undefined;
       if (elementExistant) {
-        await updateElement.mutateAsync({
+        enregistre = await updateElement.mutateAsync({
           id: elementExistant.id,
           payload: {
             code: code.trim(),
@@ -423,7 +451,7 @@ function ElementModal({
         });
         notifications.show({ message: voc("Élément modifié"), color: "green" });
       } else if (typeNiveau) {
-        await createElement.mutateAsync({
+        enregistre = await createElement.mutateAsync({
           type_niveau: typeNiveau.id,
           element_parent: elementParent?.id ?? null,
           code: code.trim(),
@@ -433,6 +461,8 @@ function ElementModal({
         });
         notifications.show({ message: voc("Élément ajouté"), color: "green" });
       }
+      // Saut de maillon ou contribution hors de la chaîne de rattachement : accepté, signalé.
+      for (const message of enregistre?.alertes_chaine ?? []) notifications.show({ message: voc(message), color: "orange", autoClose: 10000 });
       onClose();
     } catch (error) {
       notifications.show({ message: messageErreurApi(error, voc("Erreur lors de l'enregistrement")), color: "red" });
@@ -466,6 +496,25 @@ function ElementModal({
             searchable
             required
           />
+        )}
+        {rangCadre > 0 && (
+          <>
+            <Select
+              label={voc("Contribue à (maillon au-dessus)")}
+              description={voc("Élément d'un document au-dessus auquel cet élément et ce qui est en dessous contribuent. Vide : le rattachement du document.")}
+              placeholder={voc("Le rattachement du document")}
+              data={optionsContribution}
+              value={contribueA}
+              onChange={setContribueA}
+              searchable
+              clearable
+            />
+            {sautesContribution.length > 0 && (
+              <Alert color="orange" variant="light" py={6}>
+                {voc`Maillon(s) sauté(s) : ${sautesContribution.join(", ")}.`}
+              </Alert>
+            )}
+          </>
         )}
         <MultiSelect
           label={voc("Contribue aussi à")}
@@ -545,6 +594,12 @@ function ActionsElement({ element, onModifier }: { element: ElementStrategique; 
 function DetailsElement({ element }: { element: ElementStrategique }) {
   return (
     <>
+      {element.contribue_a_nom && (
+        <Text size="xs" c="grape.7">↑ {voc("Contribue à :")} {element.contribue_a_nom}</Text>
+      )}
+      {(element.alertes_chaine ?? []).map((m) => (
+        <Text key={m} size="xs" c="orange.8">⚠ {voc(m)}</Text>
+      ))}
       {(element.parents_secondaires_noms?.length ?? 0) > 0 && (
         <Text size="xs" c="dimmed">{voc("Contribue aussi à :")} {element.parents_secondaires_noms?.join(" · ")}</Text>
       )}
@@ -1001,12 +1056,19 @@ function CarteProjetRecap({ p }: { p: RecapCadreStrategique["projets"][number] }
           <Group gap={8}>
             <Text size="sm" c="dimmed" fw={500}>{p.code}</Text>
             <Text component={Link} to={`/projets/${p.id}`} fw={700} c="teal.8">{p.nom}</Text>
-            <Badge variant="light" size="sm">{p.statut}</Badge>
+            <Badge variant="light" size="sm">{PROJET_STATUT_LABEL[p.statut as StatutProjet] ?? p.statut}</Badge>
           </Group>
           <Text size="xs" c="dimmed" mt={2}>
             {p.chef_de_projet_nom || voc("Chef de projet non renseigné")} · {p.bailleur_nom || voc("Bailleur non renseigné")} ·{" "}
             {p.date_debut} → {p.date_fin}
           </Text>
+          {(p.via_document || p.element_strategique_nom) && (
+            <Text size="xs" c="grape.7" mt={2}>
+              {p.via_document ? voc`Par « ${p.via_document} »` : ""}
+              {p.via_document && p.element_strategique_nom ? " · " : ""}
+              {p.element_strategique_nom ? voc`arrive sur ${p.element_strategique_nom}` : ""}
+            </Text>
+          )}
         </div>
         <Group gap="lg">
           <div>
@@ -1097,6 +1159,11 @@ export function CadreStrategiqueDetailPage() {
   const { id } = useParams();
   const cadreId = Number(id);
   const { data: cadre } = useCadreStrategique(cadreId);
+  const { data: maillons = [] } = useTypesDocuments();
+  const { data: documents = [] } = useCadresStrategiques();
+  const rang = rangMaillon(cadre?.type_document, maillons);
+  const retour = rang === 0 ? "/strategie" : routeMaillon(maillons[rang].id);
+  const parent = documents.find((d) => d.id === cadre?.document_parent);
   const { data: niveaux, isLoading: chargementNiveaux } = useTypesNiveaux(cadreId);
   const { data: elements, isLoading: chargementElements } = useElementsStrategiques({ cadre_strategique: cadreId });
   const [modalImportOuvert, setModalImportOuvert] = useState(false);
@@ -1107,10 +1174,11 @@ export function CadreStrategiqueDetailPage() {
     <Stack gap="md">
       <Group justify="space-between">
         <Group gap="xs">
-          <ActionIcon component={Link} to="/strategie" variant="subtle" color="gray">
+          <ActionIcon component={Link} to={retour} variant="subtle" color="gray">
             <ArrowLeft size={18} />
           </ActionIcon>
           <Title order={2}>{cadre?.nom ?? voc("Cadre stratégique")}</Title>
+          {cadre?.type_document_nom && maillons.length > 1 && <Badge variant="light" color="grape">{cadre.type_document_nom}</Badge>}
         </Group>
         <Group gap="xs">
           <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />
@@ -1126,6 +1194,41 @@ export function CadreStrategiqueDetailPage() {
           </Button>
         </Group>
       </Group>
+
+      {(parent || (cadre?.documents_rattaches?.length ?? 0) > 0 || (cadre?.alertes_chaine?.length ?? 0) > 0) && (
+        <Stack gap={4}>
+          {parent && (
+            <Text size="sm" c="dimmed">
+              {voc("Rattaché à")} {cadre?.document_parent_type ? `${cadre.document_parent_type} ` : ""}
+              <Text component={Link} to={lienDocument(parent, maillons)} span fw={600} c="teal.8">{parent.nom}</Text>
+              {cadre?.element_parent_nom ? ` › ${cadre.element_parent_nom}` : ""}
+            </Text>
+          )}
+          {(cadre?.alertes_chaine ?? []).map((m) => (
+            <Alert key={m} color="orange" variant="light" py={4}>{voc(m)}</Alert>
+          ))}
+          {(cadre?.documents_rattaches?.length ?? 0) > 0 && (
+            <Group gap={6}>
+              <Text size="sm" c="dimmed">{voc("Documents rattachés :")}</Text>
+              {cadre!.documents_rattaches!.map((d) => {
+                const doc = documents.find((x) => x.id === d.id);
+                return (
+                  <Badge
+                    key={d.id}
+                    component={Link}
+                    to={doc ? lienDocument(doc, maillons) : `/strategie/${d.id}`}
+                    variant="outline"
+                    color="grape"
+                    style={{ cursor: "pointer", textTransform: "none" }}
+                  >
+                    {d.type_document_nom ? `${d.type_document_nom} · ` : ""}{d.nom}{d.element_parent_nom ? ` (${d.element_parent_nom})` : ""}
+                  </Badge>
+                );
+              })}
+            </Group>
+          )}
+        </Stack>
+      )}
 
       {chargementNiveaux || chargementElements ? (
         <Text c="dimmed">{voc("Chargement…")}</Text>

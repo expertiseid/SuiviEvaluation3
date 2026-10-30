@@ -45,6 +45,7 @@ import {
 } from "../../api/organisation";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
 import { TitreRubrique } from "../../components/common/TitreRubrique";
+import { usePreference } from "../../utils/affichage";
 import { messageErreurApi } from "../../utils/erreurs";
 import { voc } from "../../utils/vocabulaire";
 import { libelleStructure, structuresEnArbre } from "../../utils/organisation";
@@ -344,6 +345,106 @@ function BlocStructure({
   );
 }
 
+// Bandeaux par niveau, du plus haut au plus bas, comme les tableaux de la planification et du cadre.
+const FONDS_NIVEAUX = ["var(--mantine-color-blue-3)", "var(--mantine-color-blue-2)", "var(--mantine-color-blue-1)", "var(--mantine-color-blue-0)"];
+const ENTETE = { bg: "var(--mantine-color-green-1)", fz: "xs", style: { verticalAlign: "middle" as const } };
+
+/** Vue « tableau » : une ligne par structure, dans l'ordre de l'arbre, avec ses projets et ses membres. */
+function VueTableau({
+  structures,
+  onEditer,
+  onAffecter,
+  onSupprimer,
+}: {
+  structures: StructureOrganisation[];
+  onEditer: (s: Partial<StructureOrganisation>) => void;
+  onAffecter: (s: StructureOrganisation) => void;
+  onSupprimer: (s: StructureOrganisation) => void;
+}) {
+  const lignes = structuresEnArbre(structures);
+  // Projets de la structure et de tout ce qui est en dessous (sans doublon).
+  const projetsDessous = (s: StructureOrganisation): Set<number> => {
+    const ids = new Set(s.projets_resume.map((p) => p.id));
+    for (const e of structures.filter((x) => x.parent === s.id)) for (const id of projetsDessous(e)) ids.add(id);
+    return ids;
+  };
+  return (
+    <Table.ScrollContainer minWidth={900}>
+      <Table withTableBorder withColumnBorders verticalSpacing={6} fz="sm">
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th miw={280} {...ENTETE}>{voc("Structure")}</Table.Th>
+            <Table.Th w={110} {...ENTETE}>{voc("Type")}</Table.Th>
+            <Table.Th w={190} {...ENTETE}>{voc("Responsable")}</Table.Th>
+            <Table.Th w={90} ta="center" {...ENTETE}>{voc("Projets")}</Table.Th>
+            <Table.Th miw={260} {...ENTETE}>{voc("Projets affectés")}</Table.Th>
+            <Table.Th miw={160} {...ENTETE}>{voc("Membres")}</Table.Th>
+            <Table.Th w={150} {...ENTETE} />
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {lignes.map(({ structure: s, profondeur }) => {
+            const groupe = structures.some((x) => x.parent === s.id);
+            const total = projetsDessous(s).size;
+            return (
+              <Table.Tr key={s.id} bg={groupe ? FONDS_NIVEAUX[Math.min(profondeur, FONDS_NIVEAUX.length - 1)] : undefined}>
+                <Table.Td pl={12 + profondeur * 22} fw={groupe ? 700 : 500}>
+                  <Group gap={6} wrap="nowrap">
+                    {profondeur === 0 ? <Building2 size={15} /> : <Network size={14} />}
+                    {libelleStructure(s)}
+                  </Group>
+                </Table.Td>
+                <Table.Td>{s.type}</Table.Td>
+                <Table.Td>{s.responsable || <Text span c="dimmed">—</Text>}</Table.Td>
+                <Table.Td ta="center" fw={groupe ? 700 : undefined}>
+                  {groupe ? (
+                    <Tooltip label={voc`${s.projets_resume.length} affecté(s) directement, ${total} avec les services en dessous`}>
+                      <span>{total}</span>
+                    </Tooltip>
+                  ) : (
+                    s.projets_resume.length
+                  )}
+                </Table.Td>
+                <Table.Td>
+                  <Group gap={4}>
+                    {s.projets_resume.map((p) => (
+                      <Tooltip key={p.id} label={p.nom}>
+                        <Badge component={Link} to={`/projets/${p.id}`} size="sm" variant="outline" color="teal" bg="white" style={{ cursor: "pointer" }}>
+                          {p.code}
+                        </Badge>
+                      </Tooltip>
+                    ))}
+                    {s.projets_resume.length === 0 && <Text size="xs" c="dimmed">—</Text>}
+                  </Group>
+                </Table.Td>
+                <Table.Td>
+                  {s.utilisateurs_resume.map((u) => u.nom).join(", ") || <Text span size="xs" c="dimmed">—</Text>}
+                </Table.Td>
+                <Table.Td>
+                  <Group gap={2} wrap="nowrap">
+                    <Tooltip label={profondeur === 0 ? voc("Ajouter un service") : voc("Sous-service")}>
+                      <ActionIcon size="sm" variant="subtle" onClick={() => onEditer({ parent: s.id, type: "Service" })}><Plus size={13} /></ActionIcon>
+                    </Tooltip>
+                    <Tooltip label={voc("Projets et membres")}>
+                      <ActionIcon size="sm" variant="subtle" color="indigo" onClick={() => onAffecter(s)}><Link2 size={13} /></ActionIcon>
+                    </Tooltip>
+                    <Tooltip label={voc("Modifier")}>
+                      <ActionIcon size="sm" variant="subtle" onClick={() => onEditer(s)}><Pencil size={13} /></ActionIcon>
+                    </Tooltip>
+                    <Tooltip label={voc("Supprimer")}>
+                      <ActionIcon size="sm" variant="subtle" color="red" onClick={() => onSupprimer(s)}><Trash2 size={13} /></ActionIcon>
+                    </Tooltip>
+                  </Group>
+                </Table.Td>
+              </Table.Tr>
+            );
+          })}
+        </Table.Tbody>
+      </Table>
+    </Table.ScrollContainer>
+  );
+}
+
 /** Vue « par projet » : pour chaque projet, les services qui y travaillent et leurs membres. */
 function VueParProjet({ structures }: { structures: StructureOrganisation[] }) {
   const projets = new Map<number, { code: string; nom: string; services: StructureOrganisation[] }>();
@@ -393,12 +494,13 @@ function VueParProjet({ structures }: { structures: StructureOrganisation[] }) {
   );
 }
 
+/** Structure de l'organisation : organigramme, tableau (une ligne par structure) ou vue par projet. */
 function StructureTab() {
   const { data: structures = [], isLoading } = useStructures();
   const supprimer = useSupprimerStructure();
   const [edition, setEdition] = useState<Partial<StructureOrganisation> | null>(null);
   const [affectation, setAffectation] = useState<StructureOrganisation | null>(null);
-  const [vue, setVue] = useState("organigramme");
+  const [vue, setVue] = usePreference("organisation-structure", ["organigramme", "tableau", "projets"] as const);
 
   function handleSupprimer(s: StructureOrganisation) {
     confirmerSuppression({
@@ -423,9 +525,10 @@ function StructureTab() {
         <Group>
           <SegmentedControl
             value={vue}
-            onChange={setVue}
+            onChange={(v) => setVue(v as typeof vue)}
             data={[
               { value: "organigramme", label: voc("Organigramme") },
+              { value: "tableau", label: voc("Tableau") },
               { value: "projets", label: voc("Par projet") },
             ]}
           />
@@ -452,6 +555,8 @@ function StructureTab() {
               />
             ))}
         </Stack>
+      ) : vue === "tableau" ? (
+        <VueTableau structures={structures} onEditer={setEdition} onAffecter={setAffectation} onSupprimer={handleSupprimer} />
       ) : (
         <VueParProjet structures={structures} />
       )}

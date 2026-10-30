@@ -18,6 +18,7 @@ def _nombre(v):
 
 def html_suivi_strategique(cadre, projets_visibles) -> str:
     from apps.strategy.models import ElementStrategique
+    from apps.strategy.chaine import activites_rattachees
     from apps.strategy.suivi import contribution_projets, indicateurs_element
 
     elements = list(ElementStrategique.objects.filter(type_niveau__cadre_strategique=cadre).select_related("type_niveau"))
@@ -26,12 +27,13 @@ def html_suivi_strategique(cadre, projets_visibles) -> str:
         enfants.setdefault(e.element_parent_id, []).append(e)
     ids = {e.id for e in elements}
     arbres = {}
+    rattachees = activites_rattachees(cadre, projets_visibles)
     td = 'style="padding:4px 6px;border:1px solid #d0d7de;font-size:10px;vertical-align:top;"'
     th = 'style="text-align:left;padding:4px 6px;background:#DCE6F1;color:#1F4E78;font-size:10px;border:1px solid #d0d7de;"'
     blocs = []
 
     def bloc(e, profondeur):
-        calcule = contribution_projets(e, projets_visibles, arbres)
+        calcule = contribution_projets(e, projets_visibles, arbres, rattachees)
         indicateurs = indicateurs_element(e)
         derniere = e.appreciations.order_by("-periode_fin", "-id").first()
         projets = ", ".join(p["code"] for p in calcule["projets"]) or v("aucun projet")

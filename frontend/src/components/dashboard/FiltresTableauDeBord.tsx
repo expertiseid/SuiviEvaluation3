@@ -17,10 +17,13 @@ export function FiltresTableauDeBord({
   valeur,
   onChange,
   nombreProjets,
+  portee = voc(" — tous les chiffres et graphiques ci-dessous portent sur ces projets."),
 }: {
   valeur: EtatFiltres;
   onChange: (f: EtatFiltres) => void;
   nombreProjets: number | undefined;
+  /** Ce que les projets retenus déterminent sur l'écran (texte après leur nombre). */
+  portee?: string;
 }) {
   const anneeCourante = new Date().getFullYear();
   const annees = Array.from({ length: 12 }, (_, i) => String(anneeCourante + 3 - i));
@@ -91,7 +94,7 @@ export function FiltresTableauDeBord({
       </Group>
       {nombreProjets !== undefined && (
         <Text size="sm" c="dimmed" mt="sm">
-          {nombreProjets > 1 ? voc`${nombreProjets} projets retenus` : voc`${nombreProjets} projet retenu`}{voc(" — tous les chiffres et graphiques ci-dessous portent sur ces projets.")}{valeur.periode === "demarres_termines" && avecDates &&
+          {nombreProjets > 1 ? voc`${nombreProjets} projets retenus` : voc`${nombreProjets} projet retenu`}{portee}{valeur.periode === "demarres_termines" && avecDates &&
             voc(" « Terminé » = projet au statut Clôturé dont la date de fin tombe dans la période.")}
         </Text>
       )}

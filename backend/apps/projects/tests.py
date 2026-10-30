@@ -243,3 +243,25 @@ def test_modele_planification_methode_et_poids():
     assert ArbreTaux(projet).resultat(former.id).methode == MethodeCalcul.TACHES
     assert Activite.objects.get(projet=projet, libelle="Plaidoyer").methode_calcul == ""
     assert any("au doigt mouillé" in e["message"] for e in resultat["erreurs"])
+
+
+# --- Liste des projets allégée ------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_liste_des_projets_sans_planification_sauf_demande(admin_client):
+    from .models import Activite
+
+    projet = Projet.objects.create(nom="Projet L", code="PL-1", date_debut="2026-01-01", date_fin="2026-12-31")
+    racine = Activite.objects.create(projet=projet, libelle="Objectif")
+    Activite.objects.create(projet=projet, activite_parent=racine, libelle="Activité")
+
+    liste = admin_client.get("/api/v1/projets/").data["results"][0]
+    assert "activites" not in liste and "services_detail" not in liste
+    complete = admin_client.get("/api/v1/projets/?planification=1").data["results"][0]
+    assert complete["activites"][0]["libelle"] == "Objectif"
+    assert "activites" in admin_client.get(f"/api/v1/projets/{projet.id}/").data
+
+    lignes = admin_client.get("/api/v1/activites/arborescence/").data
+    assert [(ligne["libelle"], ligne["activite_parent"]) for ligne in lignes] == [("Objectif", None), ("Activité", racine.id)]
+    assert {ligne["projet"] for ligne in lignes} == {projet.id}

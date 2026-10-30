@@ -21,7 +21,8 @@ import { type LigneBailleur, nouvelleLigneBailleur, totalBailleurs } from "./lig
 import { useEnregistrerPartiePrenante, usePartiesPrenantes, useStructures, useTousPartenaires } from "../../api/organisation";
 import { optionsStructures } from "../../utils/organisation";
 import { useNiveauxAdministratifs, useZones } from "../../api/geo";
-import { useCadresStrategiques, useElementsStrategiques } from "../../api/strategy";
+import { useCadresStrategiques, useElementsStrategiques, useTypesDocuments } from "../../api/strategy";
+import { rangMaillon } from "../../utils/chaineDocuments";
 import {
   ZoneCascadeFields,
   ZONE_CASCADE_VIDE,
@@ -32,7 +33,7 @@ import { SelectOrCreate } from "../../components/common/SelectOrCreate";
 import { BeneficiairesProjetSection } from "./BeneficiairesProjetSection";
 import { PROJET_STATUT_LABEL } from "../../utils/statusTones";
 import { PAYS_MONDE } from "../../utils/pays";
-import type { PerimetreFermeture, Projet, SaisieProjet, StatutProjet } from "../../types";
+import type { PerimetreFermeture, ProjetResume, SaisieProjet, StatutProjet } from "../../types";
 import { useAuth } from "../../auth/useAuth";
 import { LIBELLES_PERIMETRE } from "../../utils/rapportage";
 import { voc } from "../../utils/vocabulaire";
@@ -82,7 +83,7 @@ const ONGLET_PAR_CHAMP: Record<string, string> = {
   cible_pdi: "cibles",
 };
 
-export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => void }) {
+export function ProjetForm({ projet, onDone }: { projet?: ProjetResume; onDone: () => void }) {
   const enEdition = !!projet;
   const { data: partenaires } = useTousPartenaires();
   // Bailleurs du projet et leurs montants (un Financement par bailleur), enregistrés après le projet.
@@ -98,6 +99,17 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
       .sort((a, b) => Number(b.type === type) - Number(a.type === type))
       .map((p) => ({ value: String(p.id), label: p.nom }));
   const { data: cadres } = useCadresStrategiques();
+  // Chaîne des documents : documents groupés par maillon, le dernier maillon (celui des projets) d'abord.
+  const { data: maillons = [] } = useTypesDocuments();
+  const optionsDocuments = [...maillons]
+    .reverse()
+    .map((m, i) => ({
+      group: m.nom_pluriel,
+      items: (cadres ?? [])
+        .filter((c) => rangMaillon(c.type_document, maillons) === maillons.length - 1 - i)
+        .map((c) => ({ value: String(c.id), label: c.nom })),
+    }))
+    .filter((g) => g.items.length > 0);
   const { data: parametresCalcul } = useParametresCalcul();
   const { data: utilisateurs } = useUtilisateurs();
   const optionsChefsDeProjet = useMemo(
@@ -752,7 +764,7 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
                     label={voc("Cadre stratégique")}
                     placeholder={voc("Choisir le cadre stratégique associé…")}
                     description={voc("Détermine les éléments (axes, orientations…) proposés ensuite pour les activités de ce projet.")}
-                    data={cadres?.map((c) => ({ value: String(c.id), label: c.nom })) ?? []}
+                    data={maillons.length > 1 ? optionsDocuments : (cadres ?? []).map((c) => ({ value: String(c.id), label: c.nom }))}
                     value={field.value ?? null}
                     onChange={(v) => {
                       field.onChange(v ?? "");
@@ -762,6 +774,14 @@ export function ProjetForm({ projet, onDone }: { projet?: Projet; onDone: () => 
                     searchable
                     clearable
                   />
+                  {(() => {
+                    // Projet rattaché à un document qui n'est pas du dernier maillon : maillons sautés.
+                    const choisi = (cadres ?? []).find((c) => String(c.id) === field.value);
+                    const sautes = choisi ? maillons.slice(rangMaillon(choisi.type_document, maillons) + 1).map((m) => m.nom) : [];
+                    return sautes.length > 0 ? (
+                      <Alert color="orange" variant="light" py={6}>{voc`Maillon(s) sauté(s) : ${sautes.join(", ")}.`}</Alert>
+                    ) : null;
+                  })()}
                   {!field.value && (
                     <Alert color="orange" variant="light" py={6}>
                       {voc("Aucun cadre stratégique choisi — tu peux quand même créer le projet, mais ses activités ne pourront pas être rattachées à une structuration stratégique tant qu'un cadre n'est pas renseigné.")}</Alert>

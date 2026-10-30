@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
+import { parametresRequete } from "../utils/filtresTableauDeBord";
 import type {
+  FiltresDashboard,
   Beneficiaire,
   ImportBeneficiairesResultat,
   Paginated,
@@ -299,29 +301,37 @@ export interface CarteBeneficiaires {
   femmes: number;
   hommes: number;
   /** Zone choisie comme filtre (région, province…) et son contour. */
-  zone_filtre: { id: number; nom: string; niveau: string; ordre: number; contour: GeoJSON.Geometry | null } | null;
-  /** Projets présents dans la zone choisie (zones d'intervention ou bénéficiaires sur place). */
+  /** Zone(s) choisie(s) : id vide quand il y en a plusieurs (voir ids), contour réunissant les leurs. */
+  zone_filtre: { id: number | null; ids: number[]; nom: string; niveau: string; ordre: number; contour: GeoJSON.Geometry | null } | null;
+  /** Projets présents dans les zones choisies (zones d'intervention ou bénéficiaires sur place). */
   projets_zone: { id: number; code: string; nom: string; statut: string; beneficiaires: number }[] | null;
+  /** Projets retenus par les filtres du tableau de bord (null sans filtre). */
+  projets_retenus: number[] | null;
 }
 
-export function useCarteBeneficiaires(projet: number | null, zone: number | null = null) {
+/** Carte des bénéficiaires, filtrée sur un ou plusieurs projets et une ou plusieurs zones. */
+export function useCarteBeneficiaires(projets: number[], zones: number[] = [], filtres: FiltresDashboard = {}) {
   return useQuery({
-    queryKey: ["beneficiaires", "carte", projet, zone],
+    queryKey: ["beneficiaires", "carte", projets, zones, filtres],
     queryFn: async () =>
-      (await apiClient.get<CarteBeneficiaires>("/beneficiaires/carte/", { params: { projet: projet ?? undefined, zone: zone ?? undefined } })).data,
+      (await apiClient.get<CarteBeneficiaires>("/beneficiaires/carte/", {
+        params: { projet: projets.join(",") || undefined, zone: zones.join(",") || undefined, ...parametresRequete(filtres) },
+      })).data,
     placeholderData: (precedent) => precedent,
   });
 }
 
 export interface OptionsCarteImprimable {
-  projet: number | null;
-  zone: number | null;
+  projets: number[];
+  zones: number[];
+  /** Filtres du tableau de bord (période, statuts). */
+  filtres: FiltresDashboard;
   sortie: "pdf" | "png";
   papier: "A0" | "A1" | "A3" | "A4";
   orientation: "auto" | "portrait" | "paysage";
   fond: string;
-  /** Carte par zone : indicateur colorié (« aucun » sinon) et niveau (1 = régions…). */
-  parZone: string;
+  /** Carte par zone : indicateurs (le premier colorie les zones ; vide = carte des bénéficiaires) et niveau (1 = régions…). */
+  parZone: string[];
   niveauZone: number;
   /** Sans zone choisie : tout le pays, ou autour des bénéficiaires. */
   etendue: "pays" | "beneficiaires";
@@ -336,8 +346,8 @@ export interface OptionsCarteImprimable {
 export async function telechargerCarteImprimable(o: OptionsCarteImprimable) {
   const response = await apiClient.get("/beneficiaires/carte/export/", {
     params: {
-      projet: o.projet ?? undefined, zone: o.zone ?? undefined, sortie: o.sortie, papier: o.papier, orientation: o.orientation, fond: o.fond,
-      etendue: o.etendue, titre: o.titre || undefined, sous_titre: o.sousTitre || undefined, par_zone: o.parZone !== "aucun" ? o.parZone : undefined, niveau_zone: o.parZone !== "aucun" ? o.niveauZone : undefined,
+      projet: o.projets.join(",") || undefined, zone: o.zones.join(",") || undefined, sortie: o.sortie, papier: o.papier, orientation: o.orientation, fond: o.fond,
+      etendue: o.etendue, titre: o.titre || undefined, sous_titre: o.sousTitre || undefined, par_zone: o.parZone.join(",") || undefined, niveau_zone: o.parZone.length ? o.niveauZone : undefined, ...parametresRequete(o.filtres),
       couches: o.couches.join(","), importees: o.importees.join(","),
     },
     responseType: "blob",

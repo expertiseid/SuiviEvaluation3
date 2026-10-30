@@ -25,6 +25,11 @@ bénéficiaires, documents, alertes et tableaux de bord.
 - **Cadre stratégique** : plusieurs cadres indépendants, niveaux librement nommés
   (Plan → Orientation → Axe…, ou tout autre découpage), arborescence des éléments,
   récapitulatif des axes et des budgets, import et export Excel.
+- **Chaîne des documents stratégiques** : maillons paramétrables (ex. Cadre stratégique →
+  Programme → Pilier 1 → Pilier 2 → Pilier 3, puis les projets), chacun une rubrique du menu
+  avec ses propres documents ; rattachement au document au-dessus ou à l'un de ses éléments,
+  et élément par élément (« Contribue à ») ; sauts de maillons permis avec avertissement ;
+  budgets, taux et projets remontés sur toute la chaîne ; toute la chaîne en un fichier Excel.
 - **Projets** : fiche projet (bailleurs, partenaires, budget, dates, zones, cibles),
   financements multi-bailleurs, équipe de projet, historique des modifications.
 - **Planification à niveaux libres** : aucun niveau imposé — chaque projet nomme et
@@ -50,6 +55,9 @@ bénéficiaires, documents, alertes et tableaux de bord.
   notifications dans l'application et par courriel.
 - **Tableau de bord** consolidé et par projet, filtres (année, dates, statuts), blocs et
   types de graphiques personnalisables.
+- **Carte** : bénéficiaires et zones (régions, provinces, communes) coloriées selon un ou
+  plusieurs indicateurs du tableau de bord, filtres sur plusieurs projets et plusieurs zones
+  et filtres de période et de statut ; carte imprimable (PDF/PNG) avec les mêmes choix.
 - **Utilisateurs et sécurité** : rôles personnalisables (visibilité globale ou limitée aux
   projets affectés), niveau d'accès lecture seule ou lecture-écriture, authentification
   JWT, historique de toutes les modifications.
@@ -135,6 +143,8 @@ docker compose exec backend pytest -q                         # tests backend
 docker compose exec backend python manage.py makemigrations   # après modification d'un modèle
 docker compose exec backend python manage.py migrate
 docker compose logs backend --tail 50                         # journaux d'un service
+docker compose exec backend python manage.py seed_50_projets         # démo : VIDE les données, 50 projets
+docker compose exec backend python manage.py seed_chaine_documents   # démo : programme et piliers
 
 cd frontend && npx tsc --noEmit -p . && npx oxlint src && npx vite build   # contrôles frontend
 ```

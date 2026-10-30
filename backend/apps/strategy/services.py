@@ -100,8 +100,13 @@ LIGNES_EXEMPLE = [
 def generer_modele_import(cadre_strategique) -> bytes:
     from .models import TypeNiveau
 
+    from .import_chaine import COLONNE_CONTRIBUTION
+
     niveaux = list(TypeNiveau.objects.filter(cadre_strategique=cadre_strategique).order_by("ordre"))
     noms_colonnes = [n.nom_niveau for n in niveaux] if niveaux else NOMS_NIVEAUX_EXEMPLE
+    # Document rattaché à un maillon au-dessus : chaque élément peut préciser à quoi il contribue.
+    if cadre_strategique.document_parent_id:
+        noms_colonnes = [*noms_colonnes, COLONNE_CONTRIBUTION]
 
     wb = Workbook()
     feuille = wb.active
@@ -123,6 +128,8 @@ def generer_modele_import(cadre_strategique) -> bytes:
     instructions.append(["  créé automatiquement lors de l'import."])
     instructions.append(["- Réimporter le même fichier met à jour les éléments déjà importés (même nom, même"])
     instructions.append(["  position) au lieu de les dupliquer."])
+    instructions.append(["- Colonne « Contribue à (code) » (dernière colonne, facultative) : code de l'élément d'un"])
+    instructions.append(["  document d'un maillon au-dessus auquel l'élément de la ligne contribue."])
 
     buffer = io.BytesIO()
     # Dans une autre langue, la légende et le nom de la feuille « Structuration » sont aussi traduits
@@ -140,15 +147,20 @@ def exporter_structuration(cadre_strategique) -> bytes:
     """
     from .models import ElementStrategique, TypeNiveau
 
+    from .import_chaine import COLONNE_CONTRIBUTION
+
     niveaux = list(TypeNiveau.objects.filter(cadre_strategique=cadre_strategique).order_by("ordre"))
     noms_colonnes = [n.nom_niveau for n in niveaux]
     colonne_par_niveau = {n.id: i for i, n in enumerate(niveaux)}
 
     elements = list(
         ElementStrategique.objects.filter(type_niveau__cadre_strategique=cadre_strategique).select_related(
-            "type_niveau"
+            "type_niveau", "contribue_a__type_niveau__cadre_strategique"
         )
     )
+    avec_contribution = bool(cadre_strategique.document_parent_id) or any(e.contribue_a_id for e in elements)
+    if avec_contribution:
+        noms_colonnes = [*noms_colonnes, COLONNE_CONTRIBUTION]
     enfants_par_parent: dict = {}
     for element in elements:
         enfants_par_parent.setdefault(element.element_parent_id, []).append(element)
@@ -169,6 +181,9 @@ def exporter_structuration(cadre_strategique) -> bytes:
         if colonne is not None:
             ligne = [""] * len(noms_colonnes)
             ligne[colonne] = f"{element.code} — {element.nom}" if element.code else element.nom
+            if avec_contribution and element.contribue_a_id:
+                cible = element.contribue_a
+                ligne[-1] = f"{cible.type_niveau.cadre_strategique.nom} / {cible.code or cible.nom}"
             feuille.append(ligne)
         for enfant in enfants_par_parent.get(element.id, []):
             visiter(enfant)
@@ -255,9 +270,17 @@ def importer_structuration_depuis_feuille(feuille, cadre_strategique) -> dict:
     if not lignes:
         return {"niveaux_crees": 0, "elements_crees": 0, "elements_mis_a_jour": 0, "erreurs": [], "avertissements": []}
 
+    from .import_chaine import COLONNE_CONTRIBUTION, resoudre_contribution
+
     noms_colonnes = [str(c).strip() if c else "" for c in lignes[0]]
     while noms_colonnes and not noms_colonnes[-1]:
         noms_colonnes.pop()
+    # Colonne « Contribue à (code) » : pas un niveau, lue à part (elle peut être traduite).
+    colonne_contribution = next(
+        (i for i, nom in enumerate(noms_colonnes) if str(vers_francais(nom)).strip().lower() == COLONNE_CONTRIBUTION.lower()), None
+    )
+    if colonne_contribution is not None:
+        noms_colonnes = noms_colonnes[:colonne_contribution]
 
     if not noms_colonnes:
         return {
@@ -330,6 +353,19 @@ def importer_structuration_depuis_feuille(feuille, cadre_strategique) -> dict:
             continue
 
         instance.save()
+        texte_contribution = ligne[colonne_contribution] if colonne_contribution is not None and colonne_contribution < len(ligne) else None
+        if texte_contribution not in (None, ""):
+            from .chaine import controler_contribution
+
+            cible, message = resoudre_contribution(cadre_strategique, texte_contribution)
+            erreurs_contribution = [message] if cible is None else controler_contribution(instance, cible)[0]
+            if erreurs_contribution:
+                erreurs.append({"ligne": numero, "message": f"{instance} : {' '.join(erreurs_contribution)}"})
+            else:
+                for message in controler_contribution(instance, cible)[1]:
+                    avertissements.append({"ligne": numero, "message": f"{instance} : {message}"})
+                instance.contribue_a = cible
+                instance.save(update_fields=["contribue_a", "updated_at"])
         elements_existants[cle] = instance
         dernier_par_colonne[idx] = instance
         for j in range(idx + 1, len(dernier_par_colonne)):

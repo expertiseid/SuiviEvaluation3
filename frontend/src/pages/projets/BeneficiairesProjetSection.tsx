@@ -6,7 +6,7 @@ import { notifications } from "@mantine/notifications";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBeneficiaires, useCreateParticipation } from "../../api/beneficiaries";
 import { ImportBeneficiairesModal } from "../beneficiaires/ImportBeneficiairesModal";
-import type { Beneficiaire, Projet } from "../../types";
+import type { Beneficiaire, ProjetResume } from "../../types";
 import { voc } from "../../utils/vocabulaire";
 
 const TAILLE_PAGE = 25;
@@ -17,7 +17,7 @@ const TAILLE_PAGE = 25;
  * Bénéficiaires), soit en les recherchant dans la base — ceux déjà associés
  * au projet sont grisés, les autres peuvent être cochés puis ajoutés d'un coup.
  */
-export function BeneficiairesProjetSection({ projet }: { projet: Projet }) {
+export function BeneficiairesProjetSection({ projet }: { projet: ProjetResume }) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [searchDebounce] = useDebouncedValue(search, 300);

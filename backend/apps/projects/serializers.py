@@ -368,6 +368,16 @@ class ProjetSerializer(serializers.ModelSerializer):
     services_detail = serializers.SerializerMethodField()
     activites = serializers.SerializerMethodField()
 
+    # Champs lourds (planification complète, services et leurs membres) : retirés de la liste
+    # des projets, sauf demande explicite (?planification=1) — voir ProjetViewSet.
+    CHAMPS_DETAIL = ("activites", "services_detail")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.context.get("sans_detail"):
+            for champ in self.CHAMPS_DETAIL:
+                self.fields.pop(champ, None)
+
     def get_services_detail(self, obj):
         """
         Services qui travaillent sur le projet (affectés au projet ou à une de ses parties), avec

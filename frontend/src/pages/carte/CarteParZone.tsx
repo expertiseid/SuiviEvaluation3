@@ -4,25 +4,42 @@ import { Group, Progress, Table, Text } from "@mantine/core";
 import { GeoJSON, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import { useLimitesAdministratives, type IndicateurZone, type SyntheseZone } from "../../api/geo";
-import { DEGRADES, SANS_DONNEE, classes, couleur, formatValeur, normaliser } from "../../utils/carteParZone";
+import { SANS_DONNEE, classes, couleur, degrade, entier, formatValeur, infoIndicateur, normaliser, valeurZone } from "../../utils/carteParZone";
 import { voc } from "../../utils/vocabulaire";
 
-function etiquetteValeur(nom: string, texte: string) {
+/** Étiquette d'une zone : son nom, puis une ligne par indicateur choisi. */
+function etiquetteValeur(nom: string, lignes: string[]) {
   const span = document.createElement("span");
   const petit = document.createElement("small");
   petit.textContent = nom;
-  span.append(petit, texte);
+  span.append(petit);
+  lignes.forEach((ligne, i) => {
+    if (i > 0) span.append(document.createElement("br"));
+    span.append(ligne);
+  });
   return L.divIcon({ className: "etiquette-carte valeur-zone", html: span.outerHTML, iconSize: [0, 0] });
 }
 
-/** Détail d'une zone : chiffres et projets présents. */
-function DetailZone({ z, niveau }: { z: SyntheseZone; niveau: string }) {
+/** Détail d'une zone : indicateurs choisis, chiffres et projets présents. */
+function DetailZone({ z, niveau, indicateurs }: { z: SyntheseZone; niveau: string; indicateurs: IndicateurZone[] }) {
   return (
     <div style={{ minWidth: 300 }}>
       <Text fw={700} size="sm">{niveau} {z.nom}</Text>
       <Text size="xs" c="dimmed" mb={6}>
         {z.projets} {z.projets > 1 ? voc("projets") : voc("projet")} · {z.beneficiaires} {z.beneficiaires > 1 ? voc("bénéficiaires") : voc("bénéficiaire")} ({voc`${z.femmes} F, ${z.hommes} H`}) · {voc("budget")} {formatValeur("budget", z.budget)} {voc("FCFA")}
       </Text>
+      {indicateurs.length > 0 && (
+        <Table fz="xs" verticalSpacing={2} horizontalSpacing={4} mb={6} withRowBorders={false}>
+          <Table.Tbody>
+            {indicateurs.map((i) => (
+              <Table.Tr key={i}>
+                <Table.Td c="dimmed">{infoIndicateur(i).libelle}</Table.Td>
+                <Table.Td ta="right" fw={700}>{formatValeur(i, valeurZone(z, i))}</Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      )}
       {z.liste_projets.length > 0 && (
         <div style={{ maxHeight: 240, overflowY: "auto" }}>
           <Table fz="xs" verticalSpacing={3} horizontalSpacing={4}>
@@ -61,16 +78,23 @@ function DetailZone({ z, niveau }: { z: SyntheseZone; niveau: string }) {
   );
 }
 
-/** Zones colorées selon l'indicateur choisi, valeur écrite dessus, détail au clic. */
-export function CarteParZone({ pays, niveau, nomNiveau, indicateur, zones }: {
+/**
+ * Zones colorées selon le premier indicateur choisi ; les valeurs de tous les indicateurs choisis
+ * sont écrites dessus (et au survol), le détail s'ouvre au clic.
+ */
+export function CarteParZone({ pays, niveau, nomNiveau, indicateurs, zones }: {
   pays: string | undefined;
   niveau: number;
   nomNiveau: string;
-  indicateur: IndicateurZone;
+  indicateurs: IndicateurZone[];
   zones: SyntheseZone[];
 }) {
   const { data: limites } = useLimitesAdministratives(pays, niveau);
-  if (!limites) return null;
+  if (!limites || indicateurs.length === 0) return null;
+  const indicateur = indicateurs[0];
+  const plusieurs = indicateurs.length > 1;
+  const texte = (z: SyntheseZone) =>
+    indicateurs.map((i) => (plusieurs ? `${infoIndicateur(i).court} : ${formatValeur(i, valeurZone(z, i))}` : formatValeur(i, valeurZone(z, i))));
   const parNom = new Map(zones.map((z) => [normaliser(z.nom), z]));
   const bornes = classes(indicateur, zones);
   const trouver = (nom: unknown) => {
@@ -82,21 +106,21 @@ export function CarteParZone({ pays, niveau, nomNiveau, indicateur, zones }: {
   return (
     <>
       <GeoJSON
-        key={`${niveau}-${indicateur}-${zones.map((z) => `${z.zone}:${z[indicateur]}`).join(",")}`}
+        key={`${niveau}-${indicateurs.join("+")}-${zones.map((z) => `${z.zone}:${valeurZone(z, indicateur)}`).join(",")}`}
         data={{ type: "FeatureCollection", features } as GeoJSON.FeatureCollection}
         style={(f) => {
           const z = trouver(f?.properties?.shapeName);
-          return { color: "#374151", weight: 1.2, fillColor: couleur(indicateur, z ? (z[indicateur] as number | null) : null, bornes), fillOpacity: 0.72 };
+          return { color: "#374151", weight: 1.2, fillColor: couleur(indicateur, z ? valeurZone(z, indicateur) : null, bornes), fillOpacity: 0.72 };
         }}
         onEachFeature={(f, calque) => {
           const z = trouver(f.properties?.shapeName);
-          if (z) calque.bindTooltip(`${z.nom} : ${formatValeur(indicateur, z[indicateur] as number | null)}`, { sticky: true });
+          if (z) calque.bindTooltip(`<b>${z.nom.replace(/</g, "&lt;")}</b><br>${texte(z).join("<br>")}`, { sticky: true });
         }}
       />
-      {zones.filter((z) => z.lat !== null && z[indicateur] !== null && (z[indicateur] as number) > 0).map((z) => (
-        <Marker key={`v-${z.zone}`} position={[z.lat!, z.lng!]} icon={etiquetteValeur(z.nom, formatValeur(indicateur, z[indicateur] as number | null))}>
+      {zones.filter((z) => z.lat !== null && indicateurs.some((i) => (valeurZone(z, i) ?? 0) > 0)).map((z) => (
+        <Marker key={`v-${z.zone}-${indicateurs.join("+")}`} position={[z.lat!, z.lng!]} icon={etiquetteValeur(z.nom, texte(z))}>
           <Popup maxWidth={380}>
-            <DetailZone z={z} niveau={nomNiveau} />
+            <DetailZone z={z} niveau={nomNiveau} indicateurs={indicateurs} />
           </Popup>
         </Marker>
       ))}
@@ -107,8 +131,7 @@ export function CarteParZone({ pays, niveau, nomNiveau, indicateur, zones }: {
 /** Légende des classes de couleur. */
 export function LegendeParZone({ indicateur, libelle, zones }: { indicateur: IndicateurZone; libelle: string; zones: SyntheseZone[] }) {
   const bornes = classes(indicateur, zones);
-  const entier = indicateur === "projets" || indicateur === "beneficiaires";
-  const libelles = entier
+  const libelles = entier(indicateur)
     ? [
         bornes[0] - 1 <= 1 ? "1" : `1 – ${bornes[0] - 1}`,
         ...bornes.slice(0, 3).map((b, i) => (bornes[i + 1] - 1 > b ? `${b} – ${bornes[i + 1] - 1}` : `${b}`)),
@@ -122,7 +145,7 @@ export function LegendeParZone({ indicateur, libelle, zones }: { indicateur: Ind
   return (
     <Group gap="sm">
       <Text size="xs" fw={600}>{libelle} :</Text>
-      {DEGRADES[indicateur].map((c, i) => (
+      {degrade(indicateur).map((c, i) => (
         <Group key={c} gap={4}>
           <span style={{ width: 16, height: 11, background: c, border: "1px solid #9ca3af", display: "inline-block" }} />
           <Text size="xs" c="dimmed">{libelles[i]}</Text>

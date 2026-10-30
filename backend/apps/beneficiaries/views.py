@@ -77,9 +77,11 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
 
         # Affichage groupé projet par projet (écran Bénéficiaires) : une
         # requête par groupe, filtrée sur un projet ou sur « sans projet ».
-        projet = self.request.query_params.get("projet")
-        if projet:
-            return queryset.filter(participations__projet=projet).distinct()
+        from apps.geo.services.synthese import ids_parametre
+
+        projets = ids_parametre(self.request.query_params, "projet")
+        if projets:
+            return queryset.filter(participations__projet__in=projets).distinct()
         if self.request.query_params.get("sans_projet") in ("1", "true"):
             return queryset.filter(participations__isnull=True)
 
@@ -200,32 +202,52 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
         reponse["Content-Disposition"] = 'attachment; filename="cartes_beneficiaires.pdf"'
         return reponse
 
-    def _zone_filtre(self):
+    def _zones_filtre(self):
+        """Zones choisies (?zone=1,2…), dans l'ordre demandé ; liste vide sans filtre."""
         from apps.geo.models import Zone
+        from apps.geo.services.synthese import ids_parametre
 
-        zone_id = self.request.query_params.get("zone")
-        if not zone_id:
-            return None
-        zone = Zone.objects.select_related("niveau_administratif").filter(id=zone_id).first()
-        if zone is None:
+        ids = ids_parametre(self.request.query_params, "zone")
+        zones = {z.id: z for z in Zone.objects.select_related("niveau_administratif").filter(id__in=ids)}
+        if len(zones) != len(set(ids)):
             raise NotFound("Zone inconnue.")
-        return zone
+        return [zones[i] for i in dict.fromkeys(ids)]
+
+    def _carte_selon_filtres(self):
+        """
+        Filtres du tableau de bord appliqués à la carte (?statuts=, ?annee= ou ?date_debut=&date_fin=,
+        ?periode=) : projets retenus parmi les visibles, et bénéficiaires inscrits à l'un d'eux
+        (tous les bénéficiaires visibles sans filtre).
+        """
+        from apps.dashboard.filtres import filtres_actifs, projets_retenus
+        from apps.projects.queryset_filters import visible_projets_ids
+
+        retenus = projets_retenus(visible_projets_ids(self.request.user), self.request.query_params)
+        beneficiaires = self.get_queryset()
+        if filtres_actifs(self.request.query_params):
+            beneficiaires = beneficiaires.filter(participations__projet__in=retenus).distinct()
+        return retenus, beneficiaires
 
     @action(detail=False, methods=["get"])
     def carte(self, request):
         """
-        Carte des bénéficiaires (?projet= pour un projet, ?zone= pour une région, province…) :
+        Carte des bénéficiaires (?projet= pour un ou plusieurs projets, ?zone= pour une ou plusieurs
+        régions, provinces… ; plusieurs valeurs séparées par des virgules ; filtres du tableau de bord
+        ?statuts=, ?annee= ou ?date_debut=&date_fin=, ?periode=) :
         ceux qui ont une position GPS (points), les autres regroupés au centre de leur localité
         ou, à défaut, de la zone parente placée la plus proche ; plus le nombre sans localisation.
         """
-        from apps.projects.queryset_filters import visible_projets_ids
+        from apps.dashboard.filtres import filtres_actifs
 
-        from .services.carte_donnees import donnees_carte, projets_de_la_zone
+        from .services.carte_donnees import donnees_carte, projets_des_zones
 
-        zone = self._zone_filtre()
-        donnees = donnees_carte(self.get_queryset(), zone)
-        # Projets présents dans la zone (indépendamment du filtre projet), pour filtrer la liste.
-        donnees["projets_zone"] = projets_de_la_zone(zone, list(visible_projets_ids(request.user))) if zone else None
+        zones = self._zones_filtre()
+        retenus, beneficiaires = self._carte_selon_filtres()
+        donnees = donnees_carte(beneficiaires, zones)
+        # Projets présents dans les zones (indépendamment du filtre projet), pour filtrer la liste.
+        donnees["projets_zone"] = projets_des_zones(zones, retenus) if zones else None
+        # Projets retenus par les filtres du tableau de bord (None sans filtre), pour la liste.
+        donnees["projets_retenus"] = retenus if filtres_actifs(request.query_params) else None
         return Response(donnees)
 
     @action(detail=False, methods=["get"], url_path="carte/export")
@@ -233,13 +255,14 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
     def carte_export(self, request):
         """
         Carte imprimable (modèle des cartes officielles HIMO) : mêmes filtres que la carte
-        (?projet=, ?zone=), plus sortie=pdf|png, papier=A0|A1|A3|A4,
+        (?projet=, ?zone=, filtres du tableau de bord), plus sortie=pdf|png, papier=A0|A1|A3|A4,
         orientation=auto|portrait|paysage, fond=neutre|osm|satellite|aucun,
         etendue=pays|beneficiaires (sans zone choisie : tout le pays, ou autour des bénéficiaires),
         titre= et sous_titre= (sinon déduits du contenu de la carte),
         couches=regions,provinces,communes,routes,villages,noms,beneficiaires (noms des bénéficiaires)
-        importees=1,2 (couches importées), et par_zone=projets|beneficiaires|budget|taux_physique|
-        taux_financier avec niveau_zone=1|2|3 pour colorer les régions, provinces ou communes.
+        importees=1,2 (couches importées), et par_zone=<indicateur(s) du catalogue, séparés par des
+        virgules, voir apps.geo.services.synthese> avec niveau_zone=1|2|3 : régions, provinces ou
+        communes coloriées selon le premier, tous écrits sur chaque zone et dans le tableau.
         """
         from apps.geo.models import CoucheImportee
         from apps.projects.models import Projet
@@ -256,28 +279,29 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
         couches = {c: True for c in p.get("couches", "points,regions,provinces,routes,noms").split(",") if c in COUCHES}
         ids = [i for i in p.get("importees", "").split(",") if i.isdigit()]
         couches["importees"] = list(CoucheImportee.objects.filter(id__in=ids))
-        zone = self._zone_filtre()
-        donnees = donnees_carte(self.get_queryset(), zone)
-        projet = Projet.objects.filter(id=p.get("projet")).first() if p.get("projet") else None
-        portee = zone.nom if zone else ""
+        from apps.geo.services.synthese import COURTS, INDICATEURS, ids_parametre, synthese_par_zone
+
+        zones = self._zones_filtre()
+        retenus, beneficiaires = self._carte_selon_filtres()
+        donnees = donnees_carte(beneficiaires, zones)
+        projets = list(Projet.objects.filter(id__in=ids_parametre(p, "projet")).filter(id__in=retenus).order_by("code"))
+        projet = projets[0] if len(projets) == 1 else None
+        portee = ", ".join(z.nom for z in zones)
         if projet:
             donnees["projet"], donnees["projet_nom"] = projet.code, projet.nom
+        elif projets:
+            donnees["projet_nom"] = ", ".join(x.code for x in projets)
         par_zone = None
-        if p.get("par_zone"):
-            from apps.geo.services.synthese import INDICATEURS, synthese_par_zone
-            from apps.projects.queryset_filters import visible_projets_ids
-
-            if p["par_zone"] not in INDICATEURS:
+        indicateurs = [i for i in p.get("par_zone", "").split(",") if i]
+        if indicateurs:
+            if any(i not in INDICATEURS for i in indicateurs):
                 raise ValidationError({"detail": "Indicateur par zone inconnu."})
-            synthese = synthese_par_zone(donnees["pays"], int(p.get("niveau_zone") or 1), list(visible_projets_ids(request.user)),
-                                         projet=projet.id if projet else None, dans_zone=zone)
+            synthese = synthese_par_zone(donnees["pays"], int(p.get("niveau_zone") or 1), retenus,
+                                         projets=[x.id for x in projets], dans_zones=zones)
             if synthese["niveau"]:
-                courts = {"projets": "Projets", "beneficiaires": "Bénéficiaires", "budget": "Budget",
-                          "taux_physique": "Exécution physique", "taux_financier": "Exécution financière"}
-                entetes = {"projets": "Projets", "beneficiaires": "Bénéf.", "budget": "Budget",
-                           "taux_physique": "Physique", "taux_financier": "Financier"}
-                par_zone = {"indicateur": p["par_zone"], "libelle_court": courts[p["par_zone"]], "entete": entetes[p["par_zone"]],
-                            "synthese": synthese}
+                # Zones coloriées selon le premier indicateur ; tous sont écrits sur la carte et dans le tableau.
+                par_zone = {"indicateur": indicateurs[0], "indicateurs": indicateurs, "libelle_court": COURTS[indicateurs[0]],
+                            "entete": COURTS[indicateurs[0]], "synthese": synthese}
 
         verrou = BeneficiaireViewSet._GENERATIONS
         if not verrou.acquire(timeout=5):
@@ -296,7 +320,7 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
             sujet = f"carte_{par_zone['indicateur']}_par_{par_zone['synthese']['niveau']['nom'].lower()}"
         else:
             sujet = "carte"
-        nom = "_".join(x for x in [sujet, projet.code if projet else "", zone.nom if zone else "", papier] if x)
+        nom = "_".join(x for x in [sujet, projet.code if projet else "", "_".join(z.nom for z in zones[:3]), papier] if x)
         nom = "".join(c if c.isalnum() or c in "-_" else "_" for c in nom)
         reponse = HttpResponse(contenu, content_type="image/png" if sortie == "png" else "application/pdf")
         reponse["Content-Disposition"] = f'attachment; filename="{nom}.{sortie}"'

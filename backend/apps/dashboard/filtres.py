@@ -39,6 +39,19 @@ def plage_depuis(params):
     return debut, fin
 
 
+def filtres_actifs(params) -> bool:
+    """Un filtre du tableau de bord (statuts, année ou dates) est-il demandé ?"""
+    return any(params.get(cle) for cle in ("statuts", "annee", "date_debut", "date_fin"))
+
+
+def projets_retenus(ids_visibles, params) -> list:
+    """Projets visibles qui passent les filtres du tableau de bord (tous sans filtre)."""
+    ids = list(ids_visibles)
+    if not filtres_actifs(params):
+        return ids
+    return list(filtrer_projets(Projet.objects.filter(id__in=ids), params).values_list("id", flat=True))
+
+
 def filtrer_projets(queryset, params):
     """Applique les filtres du tableau de bord à un queryset de Projet."""
     statuts = [s for s in params.get("statuts", "").split(",") if s]

@@ -1,4 +1,5 @@
 
+from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
@@ -16,11 +17,12 @@ from apps.projects.queryset_filters import visible_projets_ids
 from apps.projects.taux import ArbreTaux
 from apps.reports.services import taux_execution_financiere_global
 
-from .models import AppreciationStrategique, CadreStrategique, ElementStrategique, TypeNiveau
+from .models import AppreciationStrategique, CadreStrategique, ElementStrategique, TypeDocument, TypeNiveau
 from .serializers import (
     AppreciationStrategiqueSerializer,
     CadreStrategiqueSerializer,
     ElementStrategiqueSerializer,
+    TypeDocumentSerializer,
     TypeNiveauSerializer,
 )
 from .services import (
@@ -31,7 +33,28 @@ from .services import (
 )
 
 
+class TypeDocumentViewSet(viewsets.ModelViewSet):
+    """Maillons de la chaîne des documents stratégiques (une rubrique du menu chacun)."""
+
+    queryset = TypeDocument.objects.all()
+    serializer_class = TypeDocumentSerializer
+    permission_classes = (IsAdminOrReadOnly,)
+    pagination_class = None
+
+    def perform_destroy(self, instance):
+        if instance.documents.exists():
+            raise ValidationError({"detail": f"« {instance.nom} » contient des documents : les supprimer ou les déplacer d'abord."})
+        if TypeDocument.objects.count() <= 1:
+            raise ValidationError({"detail": "Il faut garder au moins un maillon."})
+        instance.delete()
+
+
 class CadreStrategiqueViewSet(viewsets.ModelViewSet):
+    """
+    Documents stratégiques, de tous les maillons de la chaîne (?type_document= pour un maillon) :
+    structuration, récapitulatifs (qui comptent aussi ce qui est rattaché en dessous, voir
+    chaine.py) et chaîne en Excel.
+    """
     serializer_class = CadreStrategiqueSerializer
     permission_classes = (IsAdminOrReadOnly,)
 
@@ -42,11 +65,24 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
         ceux rattachés à un projet auquel il est affecté — cohérent avec la
         restriction déjà appliquée sur les projets eux-mêmes.
         """
+        queryset = CadreStrategique.objects.select_related("type_document", "document_parent", "element_parent")
+        type_document = self.request.query_params.get("type_document")
+        if type_document:
+            # Maillon de la chaîne ; le premier maillon reprend aussi les documents sans type.
+            from .models import TypeDocument
+
+            premier = TypeDocument.objects.order_by("ordre", "id").first()
+            if premier and str(premier.id) == type_document:
+                queryset = queryset.filter(Q(type_document_id=type_document) | Q(type_document__isnull=True))
+            else:
+                queryset = queryset.filter(type_document_id=type_document)
         if has_global_visibility(self.request.user):
-            return CadreStrategique.objects.all()
-        return CadreStrategique.objects.filter(
-            projets__id__in=visible_projets_ids(self.request.user)
-        ).distinct()
+            return queryset
+        # Rôle restreint : les documents auxquels comptent ses projets (et ceux au-dessus d'eux).
+        from .chaine import documents_des_projets
+
+        projets = Projet.objects.filter(id__in=visible_projets_ids(self.request.user))
+        return queryset.filter(id__in=documents_des_projets(projets))
 
     def perform_destroy(self, instance):
         supprimer_cadre_strategique_cascade(instance)
@@ -61,6 +97,42 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
         response["Content-Disposition"] = f"attachment; filename=plan_strategique_{cadre.id}.xlsx"
         return response
 
+    def _fichier(self, contenu, nom):
+        """Réponse de téléchargement d'un classeur Excel."""
+        response = HttpResponse(contenu, content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response["Content-Disposition"] = f"attachment; filename={nom}"
+        return response
+
+    @action(detail=False, methods=["get"], url_path="chaine/modele")
+    @dans_la_langue_demandee
+    def modele_chaine(self, request):
+        """Modèle Excel de la chaîne des documents (maillons, documents, éléments)."""
+        from .import_chaine import generer_modele_chaine
+
+        return self._fichier(generer_modele_chaine(), "modele_chaine_documents.xlsx")
+
+    @action(detail=False, methods=["get"], url_path="chaine/export")
+    def export_chaine(self, request):
+        """Toute la chaîne actuelle au format du modèle (réimportable)."""
+        from .import_chaine import exporter_chaine
+
+        return self._fichier(exporter_chaine(), "chaine_documents.xlsx")
+
+    @action(detail=False, methods=["post"], url_path="chaine/importer", parser_classes=[MultiPartParser, FormParser])
+    def importer_chaine(self, request):
+        """Import de la chaîne : maillons, documents et leur rattachement, éléments et leurs contributions."""
+        from .import_chaine import importer_chaine
+
+        fichier = request.data.get("fichier")
+        if not fichier:
+            raise ValidationError({"fichier": "Un fichier Excel (.xlsx) est requis."})
+        try:
+            return Response(importer_chaine(fichier))
+        except ValidationError:
+            raise
+        except Exception as exc:  # fichier corrompu, mauvais format, etc.
+            raise ValidationError({"fichier": f"Impossible de lire ce fichier : {exc}"})
+
     @action(detail=True, methods=["get"], url_path="recap")
     def recap(self, request, pk=None):
         """
@@ -69,9 +141,19 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
         aux projets visibles par l'utilisateur (un chef de projet non
         affecté à un projet donné ne doit pas en voir le budget ici non plus).
         """
+        from .chaine import Chaine
+
         cadre = self.get_object()
         ids = visible_projets_ids(request.user)
-        projets = Projet.objects.filter(cadre_strategique=cadre, id__in=ids)
+        # Projets du document et ceux des documents rattachés en dessous (sur toute la chaîne).
+        chaine = Chaine()
+        projets, element_atteint = [], {}
+        for projet in Projet.objects.filter(id__in=ids).select_related("cadre_strategique", "partenaire_bailleur").order_by("code"):
+            compte, element = chaine.atteint(chaine.depart_projet(projet), cadre.id)
+            if compte:
+                projets.append(projet)
+                element_atteint[projet.id] = element
+        noms_elements = {e.id: str(e) for e in ElementStrategique.objects.filter(id__in=[e for e in element_atteint.values() if e])}
 
         lignes = []
         for projet in projets:
@@ -91,8 +173,11 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
                     "date_debut": projet.date_debut,
                     "date_fin": projet.date_fin,
                     "chef_de_projet_nom": projet.chef_de_projet_nom,
-                    "element_strategique": projet.element_strategique_id,
-                    "element_strategique_nom": str(projet.element_strategique) if projet.element_strategique else None,
+                    # Élément du document auquel le projet arrive (directement ou par la chaîne).
+                    "element_strategique": element_atteint[projet.id],
+                    "element_strategique_nom": noms_elements.get(element_atteint[projet.id]),
+                    # Document par lequel il arrive, quand ce n'est pas celui-ci.
+                    "via_document": projet.cadre_strategique.nom if projet.cadre_strategique_id != cadre.id else None,
                     "bailleur_nom": projet.partenaire_bailleur.nom if projet.partenaire_bailleur else None,
                     "budget_total": projet.budget_total,
                     "budget_activites_alloue_total": budget_activites_alloue_total,
@@ -153,10 +238,12 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
         """
         from apps.indicators.models import IndicateurElement
 
+        from .chaine import activites_rattachees
         from .suivi import contribution_projets
 
         cadre = self.get_object()
         ids = list(visible_projets_ids(request.user))
+        rattachees = activites_rattachees(cadre, ids)
         elements = list(ElementStrategique.objects.filter(type_niveau__cadre_strategique=cadre).select_related("type_niveau"))
         indicateurs = {}
         for element_id in IndicateurElement.objects.filter(element_strategique__in=elements).values_list("element_strategique_id", flat=True):
@@ -167,7 +254,7 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
         arbres = {}
         lignes = []
         for e in elements:
-            calcule = contribution_projets(e, ids, arbres)
+            calcule = contribution_projets(e, ids, arbres, rattachees)
             derniere = dernieres.get(e.id)
             lignes.append({
                 "id": e.id, "code": e.code, "nom": e.nom, "element_parent": e.element_parent_id,
@@ -187,29 +274,24 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
         activités qui y sont rattachées (Activite.axe_strategique) — plus
         celles des projets du cadre non encore rattachées à un élément. Une
         activité sans élément propre hérite de l'élément de rattachement de son
-        projet (Projet.element_strategique), s'il en a un. Le
+        projet (Projet.element_strategique), s'il en a un. Les activités des
+        documents rattachés en dessous (chaîne des documents, voir chaine.py)
+        arrivent sur l'élément de ce document auquel elles remontent. Le
         regroupement par niveau (orientation, axe…) se fait à l'écran, un
         élément cumulant les activités de ses sous-éléments. Limité aux
         projets visibles par l'utilisateur.
         """
-        from django.db.models import Q
+        from .chaine import activites_rattachees
 
         cadre = self.get_object()
         ids = visible_projets_ids(request.user)
         elements = ElementStrategique.objects.filter(type_niveau__cadre_strategique=cadre).select_related("type_niveau")
-        activites = (
-            Activite.objects.filter(projet__id__in=ids)
-            .filter(
-                Q(axe_strategique__type_niveau__cadre_strategique=cadre)
-                | Q(projet__cadre_strategique=cadre, axe_strategique__isnull=True)
-            )
-            .select_related("projet__element_strategique__type_niveau")
-            .order_by("projet__code", "code_activite", "libelle")
-        )
+        rattachees = activites_rattachees(cadre, ids)
+        element_de = {a.id: element for a, element in rattachees}
         arbres_taux = _ArbresTaux()
         # Budgets sans double compte : calculés sur toutes les activités des projets concernés
         # (un niveau parent peut être rattaché à un autre élément du cadre que ses activités).
-        activites = list(activites)
+        activites = [a for a, _ in rattachees]
         toutes = list(
             Activite.objects.filter(projet__id__in={a.projet_id for a in activites}).only(
                 "id", "activite_parent_id", "budget_alloue", "budget_realise"
@@ -245,7 +327,7 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
                         "libelle": a.libelle,
                         "projet_id": a.projet.id,
                         "projet_code": a.projet.code,
-                        "axe": a.axe_strategique_id or _element_du_projet_dans_cadre(a.projet, cadre),
+                        "axe": element_de[a.id],
                         "budget_alloue": a.budget_alloue,
                         "budget_realise": a.budget_realise,
                         # Part comptée dans les totaux (0 si le détail est saisi en dessous).
@@ -277,13 +359,6 @@ class _ArbresTaux:
         return self.arbres[activite.projet_id].resultat(activite.id).taux
 
 
-def _element_du_projet_dans_cadre(projet, cadre):
-    element = projet.element_strategique
-    if element is not None and element.type_niveau.cadre_strategique_id == cadre.id:
-        return element.id
-    return None
-
-
 class TypeNiveauViewSet(viewsets.ModelViewSet):
     queryset = TypeNiveau.objects.select_related("niveau_parent", "cadre_strategique")
     serializer_class = TypeNiveauSerializer
@@ -304,7 +379,9 @@ class ElementStrategiqueViewSet(viewsets.ModelViewSet):
         return Response(suivi_element(self.get_object(), list(visible_projets_ids(request.user)), request))
 
     def get_queryset(self):
-        qs = ElementStrategique.objects.select_related("type_niveau", "element_parent").prefetch_related(
+        qs = ElementStrategique.objects.select_related(
+            "type_niveau__cadre_strategique__type_document", "element_parent", "contribue_a__type_niveau__cadre_strategique__type_document"
+        ).prefetch_related(
             "parents_secondaires", "structures", "parties_prenantes"
         )
         cadre_id = self.request.query_params.get("cadre_strategique")

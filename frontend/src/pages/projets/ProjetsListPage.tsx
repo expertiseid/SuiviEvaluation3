@@ -12,7 +12,7 @@ import { confirmerSuppression } from "../../components/common/confirmerSuppressi
 import { PROJET_STATUT_LABEL, PROJET_STATUT_TONE } from "../../utils/statusTones";
 import { correspond } from "../../utils/recherche";
 import { BoutonModeEdition } from "../../components/common/BoutonModeEdition";
-import type { Projet } from "../../types";
+import type { ProjetResume } from "../../types";
 import { TitreRubrique } from "../../components/common/TitreRubrique";
 import { voc } from "../../utils/vocabulaire";
 
@@ -21,7 +21,7 @@ export function ProjetsListPage() {
   const deleteProjet = useDeleteProjet();
   const [modalOpen, setModalOpen] = useState(false);
   const [modalImportOuvert, setModalImportOuvert] = useState(false);
-  const [projetEnEdition, setProjetEnEdition] = useState<Projet | null>(null);
+  const [projetEnEdition, setProjetEnEdition] = useState<ProjetResume | null>(null);
   const [recherche, setRecherche] = useState("");
   const [editionActive, setEditionActive] = useState(false);
 

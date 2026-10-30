@@ -153,7 +153,8 @@ NiveauAdministratif ── Zone (arborescence : parent)
 
 | Modèle | Champs principaux | Remarques |
 |---|---|---|
-| `CadreStrategique` | `nom`, `description` | Plusieurs cadres indépendants peuvent coexister |
+| `TypeDocument` | `nom`, `nom_pluriel`, `ordre`, `icone` | Maillon de la chaîne des documents (Cadre stratégique, Programme, Pilier…) : une rubrique du menu chacun |
+| `CadreStrategique` | `nom`, `description`, `type_document`, `document_parent`, `element_parent` | Document stratégique d'un maillon, rattaché à un document d'un maillon au-dessus (ou à l'un de ses éléments) |
 | `TypeNiveau` | `cadre_strategique`, `nom_niveau`, `ordre`, `niveau_parent`, `saut_niveau_autorise`, `aide_code` | Aucun nom de niveau imposé |
 | `ElementStrategique` | `type_niveau`, `element_parent`, `code`, `nom`, `description` | Tri par ordre de création, pour respecter l'ordre des fichiers importés |
 
@@ -281,6 +282,35 @@ Aucun niveau n'est imposé, ni au-dessus du projet ni en dessous :
   convertis par la migration `projects.0023` en éléments des deux premiers niveaux, nommés
   ainsi ; les indicateurs qui y étaient rattachés ont suivi.
 
+### 5.4 bis Chaîne des documents stratégiques
+
+- **Maillons** (`strategy.TypeDocument`, paramétrables : « Chaîne des documents » sur la page
+  des cadres stratégiques) : par exemple Cadre stratégique → Programme → Pilier 1 → Pilier 2 →
+  Pilier 3, puis les projets. Le premier maillon est la rubrique « Cadre stratégique »
+  (`/strategie`) ; chaque maillon suivant est une rubrique du menu à part
+  (`/strategie/type/<id>`, mêmes droits que « Cadre stratégique »), avec ses propres documents
+  (`CadreStrategique.type_document`), chacun avec ses propres niveaux et éléments.
+- **Rattachement** : un document se rattache à un document d'un maillon au-dessus
+  (`document_parent`), au document lui-même ou à l'un de ses éléments (`element_parent`). Chaque
+  élément peut préciser l'élément d'un document au-dessus auquel il contribue
+  (`ElementStrategique.contribue_a`, hérité par ce qui est en dessous) ; cela l'emporte sur le
+  rattachement du document. Les projets se rattachent au dernier maillon (`Projet.cadre_strategique`).
+- **Sauts de maillons** permis (un pilier 3 rattaché au programme, un projet rattaché à un
+  pilier 1…) et signalés : `alertes_chaine` du document ou de l'élément (le nom évite
+  `avertissements`, que l'interface notifie à chaque réponse), compte rendu d'import, contrôle
+  de cohérence du projet. Refusé : un rattachement vers un maillon égal ou en dessous, un élément
+  qui n'est pas du document parent.
+- **Remontée** (`strategy/chaine.py`) : partant de l'élément d'une activité (ou du rattachement de
+  son projet), on monte de document en document (contribution de l'élément ou de son plus proche
+  ancêtre, sinon rattachement du document). Axes & budgets, Projets & budgets (avec le document
+  par lequel arrive chaque projet) et Suivi stratégique d'un document comptent ainsi tout ce qui
+  est rattaché en dessous, sur toute la chaîne, sans double compte.
+- **Excel** : un seul fichier pour toute la chaîne (`cadres-strategiques/chaine/modele|export|importer`,
+  `strategy/import_chaine.py`) — feuilles « Maillons », « Documents » (document, maillon, document
+  parent, code de l'élément parent) et « Éléments » (document, niveau, code, nom, code parent,
+  « Contribue à (code) », éventuellement « Document / CODE »). La structuration d'un seul
+  document garde son format « plan », avec une dernière colonne facultative « Contribue à (code) ».
+
 ### 5.5 Suppressions protégées
 
 Les clés étrangères de la hiérarchie (projet, éléments de planification, niveaux du cadre,
@@ -341,8 +371,9 @@ en attente avec ces règles et retire ceux qui ne tiennent plus.
   (`localites/?bbox=`, 3 000 au plus, villes d'abord). Les fichiers sources ne sont pas
   versionnés.
 - **Rubrique « Carte »** (`/carte`, module `/carte` dans les droits ; l'ancienne adresse
-  `/beneficiaires/carte` y renvoie) : filtres par projet et par zone (`?zone=` : la zone et
-  celles en dessous, plus les points GPS sans localité tombant dans son contour ;
+  `/beneficiaires/carte` y renvoie) : filtres sur un ou plusieurs projets et une ou plusieurs
+  zones (`?projet=1,2&zone=3,4` : les zones et celles en dessous, plus les points GPS sans
+  localité tombant dans leurs contours, réunis pour le cadrage et la carte imprimée ;
   `beneficiaries/services/carte_donnees.py`).
 - **Couches importées** (`geo.CoucheImportee`, `geo/services/import_sig.py`) : shapefile en
   .zip (avec .prj), GeoPackage, GeoJSON ou KML, lus avec geopandas, reprojetés en WGS 84,
@@ -364,10 +395,19 @@ en attente avec ces règles et retire ceux qui ne tiennent plus.
   sexe, tranche d'âge, téléphone, projets, lien vers la fiche ; 300 au plus) ; au clic sur un
   point GPS, sa fiche ; couche « Noms des bénéficiaires ».
 - **Carte par zone** (`geo/services/synthese.py`, `carte/synthese/?pays=&niveau=&projet=&zone=`) :
-  régions, provinces ou communes coloriées selon le nombre de projets, les bénéficiaires, le
-  budget ou l'exécution physique / financière moyenne (5 classes, mêmes couleurs à l'écran et
-  sur la carte imprimée : `par_zone=…&niveau_zone=…`), valeur écrite sur chaque zone, et au clic
-  les projets présents (taux, budget, bénéficiaires). Un projet est présent dans sa zone, dans
+  régions, provinces ou communes coloriées selon un indicateur du catalogue `CATALOGUE`
+  (regroupé comme le tableau de bord : vue d'ensemble, budget et financements, projets,
+  bénéficiaires, évolution ; même catalogue dans `frontend/src/utils/carteParZone.ts`), valeurs
+  de chaque zone dans `valeurs`. À l'écran, plusieurs indicateurs à la fois : le premier colorie
+  les zones (5 classes, couleurs par famille, mêmes qu'à l'impression : `par_zone=…&niveau_zone=…`),
+  tous sont écrits sur chaque zone ; au clic, leurs valeurs et les projets présents (taux,
+  budget, bénéficiaires). Sommes projet par projet (budgets, activités, cibles…), bailleurs et
+  partenaires comptés sans doublon. La carte imprimée reprend les mêmes indicateurs
+  (`par_zone=projets,budget,…`) : couleur du premier, tous écrits sur chaque zone et dans le
+  tableau (4 colonnes au plus).
+- **Filtres du tableau de bord sur la carte** (`?statuts=`, `?annee=` ou `?date_debut=&date_fin=`,
+  `?periode=`, voir `dashboard/filtres.py` : `projets_retenus`) : la carte, la synthèse par
+  zone et la carte imprimée ne portent que sur les projets retenus et leurs bénéficiaires. Un projet est présent dans sa zone, dans
   les zones qu'elle contient ou qui la contiennent, sur tout le pays, ou là où habitent ses
   bénéficiaires ; son budget n'est pas réparti entre les zones.
 - **Projets d'une zone** (`projets_zone` dans `beneficiaires/carte/?zone=`) : projets visibles
@@ -749,6 +789,10 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 | GET / POST | `projets/modele-import/`, `projets/importer/` | Modèle et import Excel d'un projet et de sa planification |
 | GET | `projets/{id}/export/xlsform/` | Export du projet au format XLSForm (formulaire de collecte) |
 | GET | `activites/pour-projet/`, `indicateurs/pour-projet/` | Listes complètes d'un projet |
+| GET | `projets/` | Liste allégée, sans la planification ni les services de chaque projet (`?planification=1` pour les avoir) ; la fiche `projets/{id}/` les renvoie toujours |
+| GET / POST | `cadres-strategiques/chaine/modele/`, `…/chaine/export/`, `…/chaine/importer/` | Chaîne des documents en Excel (maillons, documents, éléments) |
+| CRUD | `types-documents/` | Maillons de la chaîne (écriture : Administrateur) |
+| GET | `activites/arborescence/` | Tous les éléments de planification visibles en version allégée (id, projet, parent, libellé), pour les sélecteurs |
 | GET / POST | `indicateurs/modele-import/`, `indicateurs/importer/` | Modèle et import Excel des indicateurs |
 | GET / PUT / PATCH | `parametres-alerte/` | Délai d'alerte avant échéance |
 | GET / PUT | `paliers-alerte/` | Grilles d'alerte (globale ou par portée) |
@@ -896,6 +940,8 @@ mutualisées) puis rejoue la requête, ou renvoie vers la page de connexion.
 | `seed_demo_users` | Crée un utilisateur de test par rôle (mot de passe `demo1234!`) |
 | `seed_demo_expertise_id` | **Vide les données métier** et charge un jeu de démonstration complet |
 | `seed_5_projets_complets` | **Vide les données métier** et charge 5 cadres et 5 projets complets |
+| `seed_50_projets` | **Vide les données métier** et charge 4 cadres stratégiques et 50 projets entièrement renseignés (planification par période, suivi, indicateurs, financements multi-bailleurs, partenaires, équipe, risques, documents, bénéficiaires) ; graine fixe |
+| `seed_chaine_documents` | Après `seed_50_projets` : chaîne des documents (Programme → Piliers 1 à 3, avec un saut de maillon), projets éducation et santé rattachés aux Piliers 3 et un projet complet au dernier maillon (PEQR-KOU-2025) ; rejouable |
 | `seed_projets_complementaires` | Ajoute 4 projets de démonstration, sans rien supprimer |
 | `seed_projets_filtres` | Ajoute (ou supprime avec `--supprimer`) des projets `TEST-…` pour tester les filtres |
 | `seed_points_suivi` | Ajoute des points de suivi de démonstration |

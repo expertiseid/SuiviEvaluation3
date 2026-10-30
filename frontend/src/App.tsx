@@ -55,6 +55,8 @@ export default function App() {
         <Route path="/approbations" element={<ApprobationsPage />} />
         <Route path="/strategie" element={<CadresStrategiquesListPage />} />
         <Route path="/strategie/:id" element={<CadreStrategiqueDetailPage />} />
+        <Route path="/strategie/type/:typeId" element={<CadresStrategiquesListPage />} />
+        <Route path="/strategie/type/:typeId/:id" element={<CadreStrategiqueDetailPage />} />
         <Route path="/zones-administratives" element={<ZonesAdministrativesPage />} />
         <Route path="/planification" element={<PlanificationImportPage />} />
         <Route path="/documents" element={<DocumentsGlobauxPage />} />

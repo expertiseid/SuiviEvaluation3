@@ -226,6 +226,7 @@ def libelles_des_modeles() -> set:
     from apps.indicators.import_excel import COLONNES_PALIERS
     from apps.planification.services import CHAMPS_CADRE
     from apps.projects.import_excel import CHAMP_BAILLEUR_UNIQUE, CHAMPS_PROJET, COLONNES_FINANCEMENTS, COLONNES_PLANIFICATION
+    from apps.strategy.import_chaine import COLONNES_DOCUMENTS, COLONNES_ELEMENTS, COLONNES_MAILLONS
     from apps.suivi.canevas import libelles_canevas
 
     return (
@@ -240,6 +241,7 @@ def libelles_des_modeles() -> set:
         | set(COLONNES_INDICATEURS)
         | set(COLONNES_PALIERS)
         | set(COLONNES_BENEFICIAIRES)
+        | {"Maillons", "Documents", "Éléments"} | set(COLONNES_MAILLONS) | set(COLONNES_DOCUMENTS) | set(COLONNES_ELEMENTS)
         | libelles_canevas()
     )
 

@@ -2,6 +2,9 @@
  " — à comparer à la cible globale de l'activité/indicateur.": [
   "components/suivi/TranchesPlanifieesTab.tsx"
  ],
+ " — la carte ne montre que ces projets et leurs bénéficiaires.": [
+  "pages/carte/CartePage.tsx"
+ ],
  " — les quantités réalisées se saisissent dans le module Suivi.": [
   "pages/projets/AvancementModal.tsx"
  ],
@@ -133,13 +136,22 @@
  "« {0} » : {1} caractères au plus pour le nom, {2} pour la valeur.": [
   "serveur"
  ],
+ "« {0} » contient des documents : les supprimer ou les déplacer d'abord.": [
+  "serveur"
+ ],
  "« {0} » créé": [
   "pages/projets/ProjetDetailPage.tsx"
  ],
  "« {0} » importée": [
   "pages/carte/FenetresCarte.tsx"
  ],
+ "« {0} » n'est pas d'un maillon au-dessus de « {1} ».": [
+  "serveur"
+ ],
  "« {0} » n'est pas d'un niveau supérieur à « {1} ».": [
+  "serveur"
+ ],
+ "« {0} » n'est pas dans la chaîne de rattachement de « {1} ».": [
   "serveur"
  ],
  "(dont": [
@@ -198,6 +210,9 @@
  "{0} activités/sous-activités en retard": [
   "pages/suivi/SuiviProjetDashboard.tsx"
  ],
+ "{0} affecté(s) directement, {1} avec les services en dessous": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
  "{0} associé(s), {1} en échec.": [
   "components/beneficiaires/BeneficiairesTab.tsx"
  ],
@@ -236,6 +251,9 @@
  ],
  "{0} déjà renseigné ({1}) — conservé (mode ajouter)": [
   "serveur"
+ ],
+ "{0} document(s) rattaché(s)": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
  ],
  "{0} doublon(s) potentiel(s) détecté(s) — à traiter dans l'écran « Doublons d'enregistrement ».": [
   "pages/beneficiaires/BeneficiaireForm.tsx"
@@ -291,6 +309,9 @@
  ],
  "{0} ligne(s) ignorée(s) : traduction vide, ou texte français qui n'existe plus dans la plateforme.": [
   "pages/langues/LanguesPage.tsx"
+ ],
+ "{0} maillon(s) créé(s) · {1} document(s) créé(s), {2} mis à jour · {3} élément(s) créé(s), {4} mis à jour": [
+  "pages/strategie/ChaineDocumentsModal.tsx"
  ],
  "{0} n'est ni un dossier ni une archive .zip.": [
   "serveur"
@@ -425,6 +446,9 @@
  "Achèvement (%)": [
   "pages/projets/AvancementModal.tsx"
  ],
+ "Act. en cours": [
+  "utils/carteParZone.ts"
+ ],
  "Actif": [
   "components/partage/BoutonPartage.tsx",
   "pages/projets/RisquesTab.tsx",
@@ -458,7 +482,8 @@
   "pages/parametres/ParametresAlertePage.tsx",
   "pages/strategie/CadreStrategiqueDetailPage.tsx",
   "pages/suivi/SuiviPeriodeTab.tsx",
-  "pages/suivi/SuiviProjetDashboard.tsx"
+  "pages/suivi/SuiviProjetDashboard.tsx",
+  "utils/carteParZone.ts"
  ],
  "Activités :": [
   "pages/beneficiaires/BeneficiaireForm.tsx"
@@ -466,14 +491,23 @@
  "Activités (": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
  ],
+ "Activités en cours": [
+  "utils/carteParZone.ts"
+ ],
  "Activités et indicateurs": [
   "components/partage/BoutonPartage.tsx"
  ],
  "Activités non rattachées à un(e)": [
   "pages/strategie/AxesBudgetsTab.tsx"
  ],
+ "Activités non réalisées": [
+  "utils/carteParZone.ts"
+ ],
  "Activités par statut, par projet": [
   "pages/DashboardConsolidePage.tsx"
+ ],
+ "Activités réalisées": [
+  "utils/carteParZone.ts"
  ],
  "Actualiser": [
   "pages/suivi/SuiviPage.tsx",
@@ -608,6 +642,9 @@
  "Ajouter un indicateur": [
   "pages/strategie/SuiviStrategiqueTab.tsx"
  ],
+ "Ajouter un maillon en bas": [
+  "pages/strategie/ChaineDocumentsModal.tsx"
+ ],
  "Ajouter un membre existant": [
   "pages/projets/EquipeTab.tsx"
  ],
@@ -735,6 +772,9 @@
   "pages/projets/ProjetDetailPage.tsx",
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
  ],
+ "arrive sur {0}": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
  "Associer": [
   "components/beneficiaires/BeneficiairesTab.tsx"
  ],
@@ -817,17 +857,11 @@
  "Aucun bloc affiché : l'administrateur a masqué tous les blocs du tableau de bord.": [
   "pages/DashboardConsolidePage.tsx"
  ],
- "Aucun cadre ne correspond à la recherche.": [
-  "pages/strategie/CadresStrategiquesListPage.tsx"
- ],
  "Aucun cadre stratégique associé": [
   "pages/projets/ProjetForm.tsx"
  ],
  "Aucun cadre stratégique choisi — tu peux quand même créer le projet, mais ses activités ne pourront pas être rattachées à une structuration stratégique tant qu'un cadre n'est pas renseigné.": [
   "pages/projets/ProjetForm.tsx"
- ],
- "Aucun cadre stratégique pour le moment — crée le premier pour définir sa structuration.": [
-  "pages/strategie/CadresStrategiquesListPage.tsx"
  ],
  "Aucun document dans ce dossier.": [
   "components/documents/DocumentsTab.tsx"
@@ -838,8 +872,14 @@
  "Aucun document lié à cette sous-activité.": [
   "components/documents/DocumentsTab.tsx"
  ],
+ "Aucun document ne correspond à la recherche.": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
  "Aucun document pour l'instant.": [
   "components/documents/DocumentsTab.tsx"
+ ],
+ "Aucun document pour le moment — crée le premier pour définir sa structuration.": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
  ],
  "Aucun doublon en attente de traitement.": [
   "pages/beneficiaires/DoublonsPage.tsx"
@@ -920,6 +960,9 @@
  ],
  "Aucun poids saisi : poids égaux.": [
   "pages/projets/AvancementModal.tsx"
+ ],
+ "Aucun pour l'instant": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
  ],
  "Aucun projet affecté à un service pour l'instant.": [
   "pages/organisation/OrganisationPage.tsx"
@@ -1152,6 +1195,9 @@
  "Avant le démarrage — l'activité se suit alors comme un indicateur.": [
   "pages/projets/ActiviteForm.tsx"
  ],
+ "Avertissements": [
+  "pages/strategie/ChaineDocumentsModal.tsx"
+ ],
  "Bailleur": [
   "pages/DashboardConsolidePage.tsx",
   "pages/organisation/OrganisationPage.tsx",
@@ -1163,6 +1209,9 @@
  ],
  "Bailleur non renseigné": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Bailleurs": [
+  "utils/carteParZone.ts"
  ],
  "Bailleurs ({0})": [
   "pages/organisation/OrganisationPage.tsx"
@@ -1221,6 +1270,7 @@
   "pages/carte/FenetresCarte.tsx",
   "pages/langues/LanguesPage.tsx",
   "pages/planification/PlanificationImportPage.tsx",
+  "utils/carteParZone.ts",
   "utils/modules.ts"
  ],
  "Bénéficiaires associés": [
@@ -1231,6 +1281,15 @@
  ],
  "Bénéficiaires enregistrés plusieurs fois sur la plateforme. Une paire n'est signalée que si elle a la même pièce d'identité, ou un nom et un prénom très proches confirmés par le même téléphone, la même date de naissance ou la même localité ; jamais si le sexe, l'année de naissance ou la pièce d'identité diffèrent. À confirmer avant de fusionner ou d'écarter.": [
   "pages/beneficiaires/DoublonsPage.tsx"
+ ],
+ "Bénéficiaires inscrites (femmes)": [
+  "utils/carteParZone.ts"
+ ],
+ "Bénéficiaires inscrits": [
+  "utils/carteParZone.ts"
+ ],
+ "Bénéficiaires inscrits (hommes)": [
+  "utils/carteParZone.ts"
  ],
  "Bénéficiaires inscrits par sexe": [
   "pages/DashboardConsolidePage.tsx"
@@ -1262,8 +1321,7 @@
  "Budget": [
   "components/suivi/HistoriqueSuiviTable.tsx",
   "pages/DashboardConsolidePage.tsx",
-  "pages/carte/CartePage.tsx",
-  "pages/carte/FenetresCarte.tsx"
+  "utils/carteParZone.ts"
  ],
  "Budget (FCFA)": [
   "pages/projets/PlanificationPeriodeTab.tsx"
@@ -1283,8 +1341,12 @@
  "Budget dépensé pendant cette période (FCFA)": [
   "components/suivi/SaisiePointSuiviForm.tsx"
  ],
+ "Budget des projets présents (FCFA)": [
+  "utils/carteParZone.ts"
+ ],
  "Budget et financements": [
-  "pages/DashboardConsolidePage.tsx"
+  "pages/DashboardConsolidePage.tsx",
+  "utils/carteParZone.ts"
  ],
  "Budget par projet (FCFA)": [
   "pages/DashboardConsolidePage.tsx"
@@ -1333,6 +1395,7 @@
   "pages/planification/PlanificationImportPage.tsx",
   "pages/projets/ProjetForm.tsx",
   "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/CadresStrategiquesListPage.tsx",
   "utils/modules.ts"
  ],
  "Cadre stratégique : {0}": [
@@ -1340,15 +1403,6 @@
  ],
  "Cadre stratégique « ": [
   "serveur"
- ],
- "Cadre stratégique créé": [
-  "pages/strategie/CadresStrategiquesListPage.tsx"
- ],
- "Cadre stratégique modifié": [
-  "pages/strategie/CadresStrategiquesListPage.tsx"
- ],
- "Cadre stratégique supprimé": [
-  "pages/strategie/CadresStrategiquesListPage.tsx"
  ],
  "Cadres stratégiques": [
   "pages/strategie/CadresStrategiquesListPage.tsx"
@@ -1524,6 +1578,12 @@
  "Cette saisie a été approuvée : seul un approbateur peut la supprimer.": [
   "serveur"
  ],
+ "Chaîne des documents": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Chaîne des documents stratégiques": [
+  "pages/strategie/ChaineDocumentsModal.tsx"
+ ],
  "Champ obligatoire manquant": [
   "pages/projets/ProjetForm.tsx"
  ],
@@ -1630,6 +1690,9 @@
  ],
  "Choisir le cadre stratégique associé…": [
   "pages/projets/ProjetForm.tsx"
+ ],
+ "Choisir le document auquel appartient l'élément de rattachement.": [
+  "serveur"
  ],
  "Choisir les bénéficiaires ou un projet.": [
   "serveur"
@@ -1749,7 +1812,8 @@
  "Cible": [
   "pages/indicateurs/IndicateursListPage.tsx",
   "pages/strategie/CadreStrategiqueDetailPage.tsx",
-  "pages/strategie/SuiviStrategiqueTab.tsx"
+  "pages/strategie/SuiviStrategiqueTab.tsx",
+  "utils/carteParZone.ts"
  ],
  "Cible : {0}{1}": [
   "components/suivi/BarreProgression.tsx"
@@ -1757,8 +1821,23 @@
  "Cible {0} enregistrée": [
   "pages/projets/PlanificationPeriodeTab.tsx"
  ],
+ "Cible femmes": [
+  "utils/carteParZone.ts"
+ ],
  "Cible globale": [
   "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Cible hommes": [
+  "utils/carteParZone.ts"
+ ],
+ "Cible jeunes": [
+  "utils/carteParZone.ts"
+ ],
+ "Cible PDI": [
+  "utils/carteParZone.ts"
+ ],
+ "Cible personnes déplacées (PDI)": [
+  "utils/carteParZone.ts"
  ],
  "Cible supérieure à 100 alors que l'indicateur est en %.": [
   "serveur"
@@ -1771,6 +1850,9 @@
  ],
  "Cible totale :": [
   "pages/DashboardConsolidePage.tsx"
+ ],
+ "Cible totale des projets": [
+  "utils/carteParZone.ts"
  ],
  "Cible{0}": [
   "components/suivi/TranchesPlanifieesTab.tsx"
@@ -1808,6 +1890,9 @@
  "Clôturé": [
   "utils/statusTones.ts"
  ],
+ "Clôturés": [
+  "utils/carteParZone.ts"
+ ],
  "Coche les blocs à afficher. Le type de chaque graphique se change avec le petit bouton en haut à droite du bloc. Ces choix s'appliquent au tableau de bord de tous les utilisateurs.": [
   "components/dashboard/PersonnalisationModal.tsx"
  ],
@@ -1836,9 +1921,6 @@
  ],
  "Colonnes empilées": [
   "components/charts/GraphiqueAdaptable.tsx"
- ],
- "Colorier les zones selon": [
-  "pages/carte/FenetresCarte.tsx"
  ],
  "Commentaire": [
   "components/indicators/SaisieValeurIndicateurForm.tsx",
@@ -1900,7 +1982,8 @@
  ],
  "Consortium": [
   "pages/organisation/OrganisationPage.tsx",
-  "pages/projets/PartenairesProjetTab.tsx"
+  "pages/projets/PartenairesProjetTab.tsx",
+  "utils/carteParZone.ts"
  ],
  "Consortium ({0})": [
   "pages/organisation/OrganisationPage.tsx"
@@ -1925,6 +2008,9 @@
  "Contenu partagé": [
   "components/partage/BoutonPartage.tsx"
  ],
+ "Contient des documents": [
+  "pages/strategie/ChaineDocumentsModal.tsx"
+ ],
  "Continuer": [
   "pages/projets/ProjetForm.tsx"
  ],
@@ -1939,6 +2025,12 @@
  ],
  "Contrat de l'équipe :": [
   "pages/projets/ActiviteForm.tsx"
+ ],
+ "Contribue à :": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Contribue à (maillon au-dessus)": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
  ],
  "Contribue aussi à": [
   "pages/projets/ActiviteForm.tsx",
@@ -2069,6 +2161,9 @@
  "Cumul réalisé": [
   "components/charts/EvolutionChart.tsx"
  ],
+ "Dans un même document, le rattachement passe par l'élément parent.": [
+  "serveur"
+ ],
  "Date": [
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
   "pages/langues/LanguesPage.tsx",
@@ -2144,6 +2239,9 @@
  "Dates prévues et commentaire — {0}": [
   "pages/projets/PlanificationPeriodeTab.tsx"
  ],
+ "De haut en bas : chaque maillon est une rubrique du menu, avec ses propres documents. Un document se rattache à un document d'un maillon au-dessus ; les projets se rattachent au dernier maillon.": [
+  "pages/strategie/ChaineDocumentsModal.tsx"
+ ],
  "Début – fin": [
   "pages/parametres/RapportageCard.tsx"
  ],
@@ -2182,14 +2280,26 @@
  "Dépensé (suivi)": [
   "pages/DashboardConsolidePage.tsx"
  ],
+ "Dépenses": [
+  "utils/carteParZone.ts"
+ ],
+ "Dépenses 12 mois": [
+  "utils/carteParZone.ts"
+ ],
  "Dépenses cumulées par projet (FCFA)": [
   "pages/DashboardConsolidePage.tsx"
+ ],
+ "Dépenses des 12 derniers mois (FCFA)": [
+  "utils/carteParZone.ts"
  ],
  "Dépenses et cumul, trimestre par trimestre.": [
   "pages/projets/RapportFinancierModal.tsx"
  ],
  "Dépenses par trimestre": [
   "pages/projets/RapportFinancierModal.tsx"
+ ],
+ "Dépenses réalisées (FCFA)": [
+  "utils/carteParZone.ts"
  ],
  "Déplier": [
   "pages/projets/ProjetDetailPage.tsx"
@@ -2206,7 +2316,8 @@
  ],
  "Descendre": [
   "pages/geo/ZonesAdministrativesPage.tsx",
-  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/ChaineDocumentsModal.tsx"
  ],
  "Description": [
   "pages/organisation/OrganisationPage.tsx",
@@ -2251,17 +2362,25 @@
  "Document ajouté": [
   "components/documents/DocumentsTab.tsx"
  ],
+ "Document d'un maillon au-dessus. Sauter un maillon est permis.": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Document enregistré": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
  "Document stratégique introuvable.": [
   "serveur"
  ],
  "Document supprimé": [
-  "components/documents/DocumentsTab.tsx"
+  "components/documents/DocumentsTab.tsx",
+  "pages/strategie/CadresStrategiquesListPage.tsx"
  ],
  "Documents": [
   "layouts/AppLayout.tsx",
   "pages/documents/DocumentsGlobauxPage.tsx",
   "pages/langues/LanguesPage.tsx",
   "pages/projets/ProjetDetailPage.tsx",
+  "pages/strategie/ChaineDocumentsModal.tsx",
   "utils/modules.ts"
  ],
  "Documents libres, sans rattachement à un projet en particulier.": [
@@ -2279,6 +2398,9 @@
  ],
  "Documents liés à la sous-activité": [
   "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Documents rattachés :": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
  ],
  "Domaine": [
   "pages/projets/CoherenceTab.tsx"
@@ -2390,6 +2512,12 @@
  "Élément créé": [
   "pages/projets/ActiviteForm.tsx"
  ],
+ "Élément d'un document au-dessus auquel cet élément et ce qui est en dessous contribuent. Vide : le rattachement du document.": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Élément de ce document": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
  "Élément de la planification le plus exposé": [
   "pages/projets/RisquesTab.tsx"
  ],
@@ -2463,6 +2591,7 @@
   "pages/DashboardConsolidePage.tsx",
   "pages/projets/AvancementModal.tsx",
   "pages/suivi/SuiviProjetDashboard.tsx",
+  "utils/carteParZone.ts",
   "utils/statusTones.ts"
  ],
  "En cours pendant la période": [
@@ -2478,6 +2607,7 @@
   "pages/parametres/ParametresAlertePage.tsx"
  ],
  "En préparation": [
+  "utils/carteParZone.ts",
   "utils/statusTones.ts"
  ],
  "En retard": [
@@ -2596,6 +2726,7 @@
   "pages/projets/RisquesTab.tsx",
   "pages/strategie/CadreStrategiqueDetailPage.tsx",
   "pages/strategie/CadresStrategiquesListPage.tsx",
+  "pages/strategie/ChaineDocumentsModal.tsx",
   "pages/strategie/SuiviStrategiqueTab.tsx"
  ],
  "Erreur lors de l'enregistrement de l'objectif": [
@@ -2625,6 +2756,7 @@
   "pages/indicateurs/ImportIndicateursModal.tsx",
   "pages/planification/PlanificationImportPage.tsx",
   "pages/projets/ImportProjetModal.tsx",
+  "pages/strategie/ChaineDocumentsModal.tsx",
   "pages/strategie/ImportStructurationModal.tsx"
  ],
  "Erreur lors de la création": [
@@ -2726,6 +2858,7 @@
   "pages/projets/NiveauxActiviteTab.tsx",
   "pages/projets/PlanificationPeriodeTab.tsx",
   "pages/projets/ProjetDetailPage.tsx",
+  "pages/strategie/CadresStrategiquesListPage.tsx",
   "pages/suivi/SuiviPeriodeTab.tsx",
   "pages/suivi/SuiviProjetDashboard.tsx"
  ],
@@ -2742,9 +2875,6 @@
  "Erreur lors de la suppression du bénéficiaire": [
   "pages/beneficiaires/BeneficiaireDetailPage.tsx",
   "pages/beneficiaires/BeneficiairesListPage.tsx"
- ],
- "Erreur lors de la suppression du cadre stratégique": [
-  "pages/strategie/CadresStrategiquesListPage.tsx"
  ],
  "Erreur lors de la suppression du document": [
   "components/documents/DocumentsTab.tsx"
@@ -2779,6 +2909,9 @@
  "Erreur lors du retrait du bénéficiaire": [
   "components/beneficiaires/BeneficiairesTab.tsx"
  ],
+ "Erreurs (lignes ignorées)": [
+  "pages/strategie/ChaineDocumentsModal.tsx"
+ ],
  "État": [
   "pages/parametres/RapportageCard.tsx"
  ],
@@ -2789,7 +2922,8 @@
   "pages/carte/FenetresCarte.tsx"
  ],
  "Évolution dans le temps": [
-  "pages/DashboardConsolidePage.tsx"
+  "pages/DashboardConsolidePage.tsx",
+  "utils/carteParZone.ts"
  ],
  "Ex : « Cadre stratégique 2022-2026 »": [
   "pages/strategie/CadresStrategiquesListPage.tsx"
@@ -2832,6 +2966,9 @@
  ],
  "Ex : OS1": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Ex : Pilier 3": [
+  "pages/strategie/ChaineDocumentsModal.tsx"
  ],
  "Ex : producteurs": [
   "pages/projets/ActiviteForm.tsx"
@@ -2888,8 +3025,7 @@
  ],
  "Exécution financière": [
   "pages/DashboardConsolidePage.tsx",
-  "pages/carte/CartePage.tsx",
-  "pages/carte/FenetresCarte.tsx"
+  "utils/carteParZone.ts"
  ],
  "Exécution financière :": [
   "pages/strategie/SuiviStrategiqueTab.tsx"
@@ -2900,6 +3036,9 @@
  "Exécution financière globale": [
   "pages/suivi/SuiviProjetDashboard.tsx"
  ],
+ "Exécution financière moyenne (%)": [
+  "utils/carteParZone.ts"
+ ],
  "Exécution par composante": [
   "pages/projets/RapportFinancierModal.tsx"
  ],
@@ -2908,8 +3047,7 @@
  ],
  "Exécution physique": [
   "pages/DashboardConsolidePage.tsx",
-  "pages/carte/CartePage.tsx",
-  "pages/carte/FenetresCarte.tsx"
+  "utils/carteParZone.ts"
  ],
  "Exécution physique (": [
   "pages/strategie/SuiviStrategiqueTab.tsx"
@@ -2919,6 +3057,9 @@
  ],
  "Exécution physique globale": [
   "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Exécution physique moyenne (%)": [
+  "utils/carteParZone.ts"
  ],
  "Exemple affiché comme indication (facultatif)": [
   "pages/geo/ZonesAdministrativesPage.tsx",
@@ -2947,6 +3088,9 @@
  ],
  "Exporter en Excel": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Exporter la chaîne actuelle": [
+  "pages/strategie/ChaineDocumentsModal.tsx"
  ],
  "Exporter le suivi de la période": [
   "pages/suivi/SuiviPeriodeTab.tsx"
@@ -3000,7 +3144,8 @@
   "pages/carte/CartePage.tsx"
  ],
  "Femmes": [
-  "pages/DashboardConsolidePage.tsx"
+  "pages/DashboardConsolidePage.tsx",
+  "utils/carteParZone.ts"
  ],
  "Fermée, sauf pendant les périodes propres au projet": [
   "pages/projets/ProjetForm.tsx"
@@ -3030,6 +3175,9 @@
   "pages/projets/ImportProjetModal.tsx",
   "pages/strategie/ImportStructurationModal.tsx"
  ],
+ "Fichier Excel (.xlsx)": [
+  "pages/strategie/ChaineDocumentsModal.tsx"
+ ],
  "Fin ({0}) avant le début ({1}).": [
   "serveur"
  ],
@@ -3050,12 +3198,18 @@
  "Financement ajouté": [
   "pages/projets/FinancementsTab.tsx"
  ],
+ "Financements": [
+  "utils/carteParZone.ts"
+ ],
  "Financements bailleurs": [
   "pages/DashboardConsolidePage.tsx",
   "pages/projets/FinancementsTab.tsx"
  ],
  "Financements bailleurs (dont {0} de rallonges)": [
   "pages/projets/FinancementsTab.tsx"
+ ],
+ "Financements des bailleurs (FCFA)": [
+  "utils/carteParZone.ts"
  ],
  "Finances": [
   "pages/projets/ProjetDetailPage.tsx"
@@ -3077,10 +3231,12 @@
  ],
  "Fonds propres": [
   "pages/DashboardConsolidePage.tsx",
-  "pages/projets/FinancementsTab.tsx"
+  "pages/projets/FinancementsTab.tsx",
+  "utils/carteParZone.ts"
  ],
  "Fonds propres (FCFA)": [
-  "pages/projets/ProjetForm.tsx"
+  "pages/projets/ProjetForm.tsx",
+  "utils/carteParZone.ts"
  ],
  "Fonds propres + financements des bailleurs": [
   "pages/projets/ProjetForm.tsx"
@@ -3170,7 +3326,8 @@
   "pages/carte/CartePage.tsx"
  ],
  "Hommes": [
-  "pages/DashboardConsolidePage.tsx"
+  "pages/DashboardConsolidePage.tsx",
+  "utils/carteParZone.ts"
  ],
  "Hors de ses dates dans la planification globale": [
   "pages/projets/PlanificationPeriodeTab.tsx"
@@ -3187,6 +3344,9 @@
  ],
  "Hypothèses / risques": [
   "pages/projets/CadreLogiqueTab.tsx"
+ ],
+ "Icône": [
+  "pages/strategie/ChaineDocumentsModal.tsx"
  ],
  "Identifiant": [
   "auth/LoginPage.tsx",
@@ -3205,6 +3365,9 @@
  "Ignorée": [
   "components/suivi/ImportCanevasSuiviModal.tsx"
  ],
+ "Il faut garder au moins un maillon.": [
+  "serveur"
+ ],
  "Il manque {0} : gardez-le tel quel, il sera remplacé par une valeur à l'affichage.": [
   "pages/langues/LanguesPage.tsx"
  ],
@@ -3213,6 +3376,9 @@
  ],
  "Impact": [
   "pages/projets/RisquesTab.tsx"
+ ],
+ "Import / export Excel": [
+  "pages/strategie/ChaineDocumentsModal.tsx"
  ],
  "Import combiné — un seul fichier Excel": [
   "pages/planification/PlanificationImportPage.tsx"
@@ -3230,6 +3396,7 @@
   "pages/langues/LanguesPage.tsx",
   "pages/planification/PlanificationImportPage.tsx",
   "pages/projets/ImportProjetModal.tsx",
+  "pages/strategie/ChaineDocumentsModal.tsx",
   "pages/strategie/ImportStructurationModal.tsx"
  ],
  "Importer depuis Excel": [
@@ -3334,6 +3501,7 @@
   "pages/strategie/SuiviStrategiqueTab.tsx",
   "pages/suivi/SuiviPeriodeTab.tsx",
   "pages/suivi/SuiviProjetDashboard.tsx",
+  "utils/carteParZone.ts",
   "utils/modules.ts"
  ],
  "Indicateurs — ": [
@@ -3347,6 +3515,9 @@
  ],
  "Indicateurs par statut": [
   "pages/DashboardConsolidePage.tsx"
+ ],
+ "Indicateurs par zone": [
+  "pages/carte/FenetresCarte.tsx"
  ],
  "Indicateurs seuls, rattachés à un projet déjà existant (par son code) ou stratégiques.": [
   "pages/planification/PlanificationImportPage.tsx"
@@ -3426,6 +3597,9 @@
  ],
  "Jeunes :": [
   "pages/DashboardConsolidePage.tsx"
+ ],
+ "L'élément « {0} » n'appartient pas à « {1} ».": [
+  "serveur"
  ],
  "L'élément concerné n'existe plus.": [
   "serveur"
@@ -3531,6 +3705,9 @@
  "Le détail de ce budget est saisi sur les éléments en dessous : il n'est pas compté une seconde fois dans les totaux.": [
   "pages/strategie/AxesBudgetsTab.tsx"
  ],
+ "Le document lui-même": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
  "Le fichier est un classeur à plusieurs feuilles (Cadre stratégique, Structuration, Projet, Planification, Indicateurs, Bénéficiaires), avec une colonne par niveau pour les hiérarchies. Seule la feuille « Projet » est obligatoire — les autres sections sont ignorées si elles sont laissées vides. Les bénéficiaires importés sont automatiquement inscrits au projet créé.": [
   "pages/planification/PlanificationImportPage.tsx"
  ],
@@ -3566,6 +3743,12 @@
  ],
  "Le parent principal n'a pas à être repris dans les autres liens.": [
   "serveur"
+ ],
+ "Le premier colorie les zones ; tous sont écrits sur chaque zone et dans le tableau.": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
+ "Le rattachement du document": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
  ],
  "Le réalisé de la période est calculé à partir des valeurs saisies dont les dates tombent dans la période.": [
   "pages/projets/PlanificationPeriodeTab.tsx"
@@ -3630,6 +3813,9 @@
  "les variables d'autres projets": [
   "pages/beneficiaires/ChampsVariables.tsx"
  ],
+ "Les zones sont colorées selon le premier indicateur choisi ; les autres sont écrits sur chaque zone.": [
+  "pages/carte/CartePage.tsx"
+ ],
  "Libellé": [
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
   "pages/indicateurs/IndicateurForm.tsx",
@@ -3677,6 +3863,9 @@
   "pages/projets/ImportProjetModal.tsx",
   "pages/strategie/ImportStructurationModal.tsx"
  ],
+ "Ligne {0}": [
+  "pages/strategie/ChaineDocumentsModal.tsx"
+ ],
  "Limité au cadre stratégique du projet choisi ci-dessus.": [
   "pages/indicateurs/IndicateurForm.tsx"
  ],
@@ -3716,6 +3905,17 @@
  ],
  "Ma position actuelle": [
   "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Maillon": [
+  "pages/strategie/ChaineDocumentsModal.tsx"
+ ],
+ "Maillon(s) sauté(s) : {0}.": [
+  "pages/projets/ProjetForm.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Maillons": [
+  "pages/strategie/ChaineDocumentsModal.tsx"
  ],
  "Maîtrisé": [
   "pages/projets/RisquesTab.tsx"
@@ -3852,7 +4052,8 @@
  ],
  "Mise en œuvre": [
   "pages/organisation/OrganisationPage.tsx",
-  "pages/projets/PartenairesProjetTab.tsx"
+  "pages/projets/PartenairesProjetTab.tsx",
+  "utils/carteParZone.ts"
  ],
  "Mise en œuvre ({0})": [
   "pages/organisation/OrganisationPage.tsx"
@@ -3891,6 +4092,7 @@
  ],
  "Modifier — {0}": [
   "pages/organisation/OrganisationPage.tsx",
+  "pages/strategie/CadresStrategiquesListPage.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
  "Modifier — {0} {1}": [
@@ -3935,9 +4137,6 @@
  ],
  "Modifier la zone": [
   "pages/geo/ZonesAdministrativesPage.tsx"
- ],
- "Modifier le cadre stratégique": [
-  "pages/strategie/CadresStrategiquesListPage.tsx"
  ],
  "Modifier le niveau": [
   "pages/geo/ZonesAdministrativesPage.tsx",
@@ -4001,7 +4200,8 @@
  ],
  "Monter": [
   "pages/geo/ZonesAdministrativesPage.tsx",
-  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/ChaineDocumentsModal.tsx"
  ],
  "Montré à l'auteur, pour qu'il corrige.": [
   "pages/approbations/ApprobationsPage.tsx"
@@ -4186,14 +4386,26 @@
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
  ],
  "Nombre d'activités": [
-  "pages/strategie/AxesBudgetsTab.tsx"
+  "pages/strategie/AxesBudgetsTab.tsx",
+  "utils/carteParZone.ts"
+ ],
+ "Nombre d'indicateurs": [
+  "utils/carteParZone.ts"
+ ],
+ "Nombre de bailleurs": [
+  "utils/carteParZone.ts"
  ],
  "Nombre de bénéficiaires ajoutés à chaque projet pendant le mois.": [
   "pages/DashboardConsolidePage.tsx"
  ],
+ "Nombre de partenaires de consortium": [
+  "utils/carteParZone.ts"
+ ],
+ "Nombre de partenaires de mise en œuvre": [
+  "utils/carteParZone.ts"
+ ],
  "Nombre de projets": [
-  "pages/carte/CartePage.tsx",
-  "pages/carte/FenetresCarte.tsx"
+  "utils/carteParZone.ts"
  ],
  "Noms": [
   "pages/carte/CartePage.tsx",
@@ -4225,7 +4437,8 @@
   "utils/statusTones.ts"
  ],
  "Non réalisées": [
-  "pages/DashboardConsolidePage.tsx"
+  "pages/DashboardConsolidePage.tsx",
+  "utils/carteParZone.ts"
  ],
  "Non traduit": [
   "pages/langues/LanguesPage.tsx"
@@ -4274,6 +4487,9 @@
  "Nouveau document": [
   "components/documents/DocumentsTab.tsx"
  ],
+ "Nouveau document — {0}": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
  "Nouveau dossier": [
   "components/documents/DocumentsTab.tsx"
  ],
@@ -4303,6 +4519,12 @@
  ],
  "Nouveau service de « {0} »": [
   "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Nouveaux bénéf.": [
+  "utils/carteParZone.ts"
+ ],
+ "Nouveaux bénéficiaires inscrits (12 derniers mois)": [
+  "utils/carteParZone.ts"
  ],
  "Nouveaux bénéficiaires inscrits par mois": [
   "pages/DashboardConsolidePage.tsx"
@@ -4467,6 +4689,9 @@
   "pages/carte/FenetresCarte.tsx",
   "pages/langues/LanguesPage.tsx"
  ],
+ "Par « {0} »": [
+  "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
  "Par défaut : {0}": [
   "layouts/AppLayout.tsx"
  ],
@@ -4572,6 +4797,9 @@
  ],
  "Pas de contact renseigné": [
   "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Pas encore rattaché à un document d'un maillon au-dessus.": [
+  "serveur"
  ],
  "Passée": [
   "pages/parametres/RapportageCard.tsx"
@@ -4933,13 +5161,18 @@
   "pages/langues/LanguesPage.tsx",
   "pages/organisation/OrganisationPage.tsx",
   "pages/parametres/RapportageCard.tsx",
-  "pages/projets/ProjetsListPage.tsx"
+  "pages/projets/ProjetsListPage.tsx",
+  "utils/carteParZone.ts"
  ],
  "Projets & budgets": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
  ],
  "Projets affectés": [
+  "pages/organisation/OrganisationPage.tsx",
   "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Projets clôturés": [
+  "utils/carteParZone.ts"
  ],
  "Projets concernés": [
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
@@ -4949,6 +5182,12 @@
  ],
  "Projets dont cette structure est chargée (un projet peut relever de plusieurs services). Une partie d'un projet s'affecte depuis sa planification.": [
   "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Projets en cours": [
+  "utils/carteParZone.ts"
+ ],
+ "Projets en préparation": [
+  "utils/carteParZone.ts"
  ],
  "Projets et membres": [
   "pages/organisation/OrganisationPage.tsx"
@@ -5052,10 +5291,18 @@
  ],
  "Rattaché à": [
   "components/documents/DocumentsTab.tsx",
-  "pages/indicateurs/IndicateurForm.tsx"
+  "pages/indicateurs/IndicateurForm.tsx",
+  "pages/strategie/CadreStrategiqueDetailPage.tsx",
+  "pages/strategie/CadresStrategiquesListPage.tsx"
  ],
  "Rattaché à ({0})": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Rattaché à (document)": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Rattaché directement à « {0} » : maillon(s) sauté(s) : {1}.": [
+  "serveur"
  ],
  "Rattachée à": [
   "pages/organisation/OrganisationPage.tsx"
@@ -5094,7 +5341,8 @@
   "utils/statusTones.ts"
  ],
  "Réalisées": [
-  "pages/DashboardConsolidePage.tsx"
+  "pages/DashboardConsolidePage.tsx",
+  "utils/carteParZone.ts"
  ],
  "Recherche de": [
   "pages/beneficiaires/BeneficiaireParIdentifiant.tsx"
@@ -5111,7 +5359,7 @@
  "Rechercher un bénéficiaire par nom, téléphone, pièce d'identité…": [
   "pages/projets/BeneficiairesProjetSection.tsx"
  ],
- "Rechercher un cadre stratégique…": [
+ "Rechercher un document…": [
   "pages/strategie/CadresStrategiquesListPage.tsx"
  ],
  "Rechercher un élément…": [
@@ -5380,6 +5628,9 @@
  ],
  "Rouvrir le projet": [
   "components/common/BandeauProjetCloture.tsx"
+ ],
+ "Rubrique du menu": [
+  "pages/strategie/ChaineDocumentsModal.tsx"
  ],
  "Saisie": [
   "pages/approbations/ApprobationsPage.tsx"
@@ -5666,6 +5917,7 @@
   "pages/projets/ProjetForm.tsx"
  ],
  "Structure": [
+  "pages/organisation/OrganisationPage.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
  "Structure de l'organisation": [
@@ -5715,6 +5967,9 @@
  "Suppression de l'élément et de tout ce qui est en dessous.": [
   "pages/approbations/ApprobationsPage.tsx"
  ],
+ "Suppression impossible": [
+  "pages/strategie/ChaineDocumentsModal.tsx"
+ ],
  "Suppression impossible : ce partenaire est utilisé par un projet.": [
   "pages/organisation/OrganisationPage.tsx"
  ],
@@ -5734,6 +5989,7 @@
   "pages/projets/RisquesTab.tsx",
   "pages/strategie/CadreStrategiqueDetailPage.tsx",
   "pages/strategie/CadresStrategiquesListPage.tsx",
+  "pages/strategie/ChaineDocumentsModal.tsx",
   "pages/strategie/SuiviStrategiqueTab.tsx",
   "pages/utilisateurs/RolesTab.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
@@ -5754,6 +6010,9 @@
  ],
  "Supprimer « {0} » ({1}) ainsi que tout ce qui se trouve en dessous (niveaux inférieurs, sous-activités, indicateurs liés) ? Cette action est irréversible.": [
   "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Supprimer « {0} » ainsi que tous ses niveaux et éléments ? Cette action est irréversible.": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
  ],
  "Supprimer ce « {0} »": [
   "pages/projets/ProjetDetailPage.tsx"
@@ -5851,9 +6110,6 @@
  "Supprimer le bénéficiaire": [
   "pages/beneficiaires/BeneficiaireDetailPage.tsx"
  ],
- "Supprimer le cadre stratégique « {0} » ainsi que tous ses niveaux et éléments ? Cette action est irréversible.": [
-  "pages/strategie/CadresStrategiquesListPage.tsx"
- ],
  "Supprimer le document \"{0}\" ainsi que toutes ses versions ? Cette action est irréversible.": [
   "components/documents/DocumentsTab.tsx"
  ],
@@ -5862,6 +6118,9 @@
  ],
  "Supprimer le lien": [
   "components/partage/BoutonPartage.tsx"
+ ],
+ "Supprimer le maillon « {0} » ?": [
+  "pages/strategie/ChaineDocumentsModal.tsx"
  ],
  "Supprimer le niveau « {0} » ? Cette action est irréversible.": [
   "pages/geo/ZonesAdministrativesPage.tsx",
@@ -5896,6 +6155,7 @@
  ],
  "Tableau": [
   "components/charts/GraphiqueAdaptable.tsx",
+  "pages/organisation/OrganisationPage.tsx",
   "pages/projets/ProjetDetailPage.tsx",
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
  ],
@@ -5973,6 +6233,9 @@
  ],
  "Télécharger le canevas de suivi": [
   "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Télécharger le modèle": [
+  "pages/strategie/ChaineDocumentsModal.tsx"
  ],
  "Télécharger le modèle Excel": [
   "pages/beneficiaires/ImportBeneficiairesModal.tsx",
@@ -6194,6 +6457,9 @@
  "Un dépassement de cible (ex : 130 %) reste affiché, mais compte pour 100 % dans les moyennes.": [
   "pages/parametres/ParametresAlertePage.tsx"
  ],
+ "Un document ne peut pas être rattaché à lui-même.": [
+  "serveur"
+ ],
  "Un élément de niveau « {0} » (niveau racine) ne peut pas avoir de parent.": [
   "serveur"
  ],
@@ -6235,6 +6501,9 @@
  ],
  "Un rôle avec le code « {0} » existe déjà.": [
   "serveur"
+ ],
+ "Un seul fichier pour toute la chaîne : feuille « Maillons » (les rubriques), « Documents » (chaque document et son rattachement) et « Éléments » (la structuration de chaque document et l'élément au-dessus auquel chacun contribue). Réimporter met à jour sans dupliquer.": [
+  "pages/strategie/ChaineDocumentsModal.tsx"
  ],
  "Un shapefile se compose de plusieurs fichiers : envoyez-les ensemble dans une archive .zip.": [
   "serveur"
@@ -6417,6 +6686,9 @@
  "Vide : celle du niveau au-dessus, sinon du projet, sinon de l'organisation.": [
   "pages/projets/ActiviteForm.tsx"
  ],
+ "Vide : rattaché au document lui-même.": [
+  "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
  "Villes et villages": [
   "pages/carte/CartePage.tsx",
   "pages/carte/FenetresCarte.tsx"
@@ -6456,6 +6728,9 @@
  ],
  "Vous n'avez pas le droit d'approuver.": [
   "serveur"
+ ],
+ "Vue d'ensemble": [
+  "utils/carteParZone.ts"
  ],
  "Word": [
   "pages/projets/CadreLogiqueTab.tsx",

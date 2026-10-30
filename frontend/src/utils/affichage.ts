@@ -24,7 +24,7 @@ export function usePreference<T extends string>(cle: string, choix: readonly T[]
   return [valeur, choisir];
 }
 
-/** Arbre ou tableau, mémorisé pour chaque écran (`cle`). */
+/** Arbre ou tableau (tableau par défaut), mémorisé pour chaque écran (`cle`). */
 export function useModeAffichage(cle: string) {
-  return usePreference<ModeAffichage>(cle, ["arbre", "tableau"]);
+  return usePreference<ModeAffichage>(cle, ["tableau", "arbre"]);
 }

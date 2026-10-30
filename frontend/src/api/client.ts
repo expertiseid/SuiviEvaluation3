@@ -57,10 +57,14 @@ apiClient.interceptors.response.use(
       notifications.show({ title: voc("Envoyé pour approbation"), message: voc(response.data.message), color: "orange", autoClose: 8000 });
     }
     // Incohérences repérées dans une saisie qu'on vient d'enregistrer (non bloquant).
-    if (Array.isArray(response.data?.avertissements) && response.data.avertissements.length > 0) {
+    // (textes seuls : les rapports d'import ont leurs propres avertissements, affichés par leur fenêtre).
+    const avertissements = Array.isArray(response.data?.avertissements)
+      ? response.data.avertissements.filter((a: unknown): a is string => typeof a === "string")
+      : [];
+    if (avertissements.length > 0) {
       notifications.show({
         title: voc("Saisie enregistrée — à vérifier"),
-        message: response.data.avertissements.map((a: string) => voc(a)).join("\n"),
+        message: avertissements.map((a: string) => voc(a)).join("\n"),
         color: "orange",
         autoClose: 12000,
         style: { whiteSpace: "pre-line" },

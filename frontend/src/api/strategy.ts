@@ -3,19 +3,86 @@ import { apiClient } from "./client";
 import type {
   CadreStrategique,
   ElementStrategique,
+  ImportChaineResultat,
   ImportStructurationResultat,
   Paginated,
   RecapAxesCadreStrategique,
   RecapCadreStrategique,
+  TypeDocument,
   TypeNiveau,
 } from "../types";
 
-export function useCadresStrategiques() {
+/** Documents stratégiques : tous, ou ceux d'un maillon de la chaîne (`typeDocument`). */
+export function useCadresStrategiques(typeDocument?: number) {
   return useQuery({
-    queryKey: ["cadres-strategiques"],
+    queryKey: ["cadres-strategiques", "liste", typeDocument ?? "tous"],
     queryFn: async () =>
-      (await apiClient.get<Paginated<CadreStrategique>>("/cadres-strategiques/", { params: { page_size: 200 } }))
-        .data.results,
+      (
+        await apiClient.get<Paginated<CadreStrategique>>("/cadres-strategiques/", {
+          params: { page_size: 1000, type_document: typeDocument },
+        })
+      ).data.results,
+  });
+}
+
+// ------------------------------------------------------------ Chaîne des documents (maillons)
+
+export function useTypesDocuments() {
+  return useQuery({
+    queryKey: ["types-documents"],
+    queryFn: async () => (await apiClient.get<TypeDocument[]>("/types-documents/")).data,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useEnregistrerTypeDocument() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...payload }: Partial<TypeDocument>) =>
+      id
+        ? (await apiClient.patch<TypeDocument>(`/types-documents/${id}/`, payload)).data
+        : (await apiClient.post<TypeDocument>("/types-documents/", payload)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["types-documents"] });
+      queryClient.invalidateQueries({ queryKey: ["cadres-strategiques"] });
+    },
+  });
+}
+
+export function useSupprimerTypeDocument() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => apiClient.delete(`/types-documents/${id}/`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["types-documents"] }),
+  });
+}
+
+/** Modèle (`modele`) ou export de la chaîne actuelle (`export`) en Excel. */
+export async function telechargerChaine(quoi: "modele" | "export") {
+  const response = await apiClient.get(`/cadres-strategiques/chaine/${quoi}/`, { responseType: "blob" });
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const lien = document.createElement("a");
+  lien.href = url;
+  lien.setAttribute("download", quoi === "modele" ? "modele_chaine_documents.xlsx" : "chaine_documents.xlsx");
+  document.body.appendChild(lien);
+  lien.click();
+  lien.remove();
+}
+
+export function useImporterChaine() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (formData: FormData) =>
+      (
+        await apiClient.post<ImportChaineResultat>("/cadres-strategiques/chaine/importer/", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        })
+      ).data,
+    onSuccess: () => {
+      for (const cle of ["types-documents", "cadres-strategiques", "types-niveaux", "elements-strategiques"]) {
+        queryClient.invalidateQueries({ queryKey: [cle] });
+      }
+    },
   });
 }
 
@@ -92,9 +159,10 @@ export function useDeleteTypeNiveau() {
   });
 }
 
-export function useElementsStrategiques(params?: Record<string, string | number>) {
+export function useElementsStrategiques(params?: Record<string, string | number>, actif = true) {
   return useQuery({
     queryKey: ["elements-strategiques", params],
+    enabled: actif,
     queryFn: async () =>
       (
         await apiClient.get<Paginated<ElementStrategique>>("/elements-strategiques/", {
