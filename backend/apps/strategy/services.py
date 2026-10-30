@@ -102,8 +102,18 @@ def generer_modele_import(cadre_strategique) -> bytes:
 
     from .import_chaine import COLONNE_CONTRIBUTION
 
+    from apps.core.langues import langue_active, traduire
+
+    from .fiche_excel import INSTRUCTIONS_FICHE, ajouter_feuilles_fiche, avec_fiche, traduire_classeur_document
+
+    fiche = avec_fiche(cadre_strategique)
     niveaux = list(TypeNiveau.objects.filter(cadre_strategique=cadre_strategique).order_by("ordre"))
-    noms_colonnes = [n.nom_niveau for n in niveaux] if niveaux else NOMS_NIVEAUX_EXEMPLE
+    # Programme, Pilier… sans niveaux : deux colonnes à renommer, sans exemple (il serait importé),
+    # nommées dans la langue du modèle (ce seront les noms des niveaux créés à l'import).
+    noms_colonnes = [n.nom_niveau for n in niveaux] if niveaux else (
+        [traduire("Action"), traduire("Intervention")] if fiche else NOMS_NIVEAUX_EXEMPLE)
+    if fiche and not cadre_strategique.document_parent_id:
+        noms_colonnes = [*noms_colonnes, COLONNE_CONTRIBUTION]
     # Document rattaché à un maillon au-dessus : chaque élément peut préciser à quoi il contribue.
     if cadre_strategique.document_parent_id:
         noms_colonnes = [*noms_colonnes, COLONNE_CONTRIBUTION]
@@ -111,9 +121,15 @@ def generer_modele_import(cadre_strategique) -> bytes:
     wb = Workbook()
     feuille = wb.active
     feuille.title = "Structuration"
-    remplir_feuille_structuration(feuille, noms_colonnes, [] if niveaux else LIGNES_EXEMPLE)
+    remplir_feuille_structuration(feuille, noms_colonnes, [] if niveaux or fiche else LIGNES_EXEMPLE)
 
     instructions = wb.create_sheet("Instructions")
+    if fiche:
+        # Même présentation que le modèle d'un projet : Fiche, Financements, Structuration, Instructions.
+        ajouter_feuilles_fiche(wb, cadre_strategique)
+        wb.active = 0
+        for ligne in [*INSTRUCTIONS_FICHE, ""]:
+            instructions.append([ligne])
     instructions.append([f"Cadre stratégique : {cadre_strategique.nom}"])
     instructions.append(["Consignes"])
     instructions.append(["- Une colonne = un niveau de la hiérarchie (dans l'ordre, de gauche à droite), en jaune."])
@@ -134,7 +150,12 @@ def generer_modele_import(cadre_strategique) -> bytes:
     buffer = io.BytesIO()
     # Dans une autre langue, la légende et le nom de la feuille « Structuration » sont aussi traduits
     # (pas les en-têtes : ce sont les noms des niveaux du cadre).
-    adapter_classeur(wb, feuilles=None if langue_active() != "fr" else {"Instructions"})
+    if fiche:
+        traduire_classeur_document(wb)
+        if langue_active() == "fr":
+            adapter_classeur(wb, feuilles={"Instructions"})
+    else:
+        adapter_classeur(wb, feuilles=None if langue_active() != "fr" else {"Instructions"})
     wb.save(buffer)
     return buffer.getvalue()
 
@@ -196,6 +217,19 @@ def exporter_structuration(cadre_strategique) -> bytes:
     quadriller(feuille, max_col=len(noms_colonnes))
     figer_entete(feuille)
 
+    from .fiche_excel import INSTRUCTIONS_FICHE, ajouter_feuilles_fiche, avec_fiche, traduire_classeur_document
+
+    if avec_fiche(cadre_strategique):
+        # Même format que le modèle (réimportable tel quel) : Fiche, Financements, Structuration.
+        ajouter_feuilles_fiche(wb, cadre_strategique)
+        instructions = wb.create_sheet("Instructions")
+        for ligne in INSTRUCTIONS_FICHE:
+            instructions.append([ligne])
+        instructions.column_dimensions["A"].width = 110
+        wb.active = 0
+    # Autre langue : la structure du fichier est traduite, les données restent telles quelles.
+    traduire_classeur_document(wb)
+
     buffer = io.BytesIO()
     wb.save(buffer)
     return buffer.getvalue()
@@ -253,9 +287,77 @@ def _niveaux_des_colonnes(noms_colonnes, cadre_strategique):
 
 
 def importer_structuration(fichier, cadre_strategique) -> dict:
+    """
+    Import de la structuration d'un document. Feuille lue : « Structuration », sinon la première
+    feuille qui n'est pas « Instructions » (jamais le mode d'emploi). Une feuille « Fiche » (modèle
+    d'un programme, d'un pilier…) renseigne aussi la fiche et les bailleurs du document, avant la
+    structuration. Un fichier de la chaîne des documents (feuilles « Documents » et « Éléments »)
+    importé ici est importé comme tel.
+    """
+    from .fiche_excel import FEUILLE_FICHE, FEUILLE_FINANCEMENTS, importer_fiche
+    from .import_chaine import FEUILLE_DOCUMENTS, FEUILLE_ELEMENTS, _trouver_feuille
+
     wb = load_workbook(fichier, data_only=True)
-    feuille = wb["Structuration"] if "Structuration" in wb.sheetnames else wb.worksheets[0]
-    return importer_structuration_depuis_feuille(feuille, cadre_strategique)
+    if _trouver_feuille(wb, FEUILLE_DOCUMENTS) is not None and _trouver_feuille(wb, FEUILLE_ELEMENTS) is not None:
+        return _importer_fichier_chaine(fichier)
+    erreurs_fiche, avertissements_fiche = [], []
+    if _trouver_feuille(wb, FEUILLE_FICHE) is not None:
+        erreurs_fiche, avertissements_fiche = importer_fiche(wb, cadre_strategique)
+    ignorees = {"instructions", FEUILLE_FICHE.lower(), FEUILLE_FINANCEMENTS.lower()}
+    feuille = _trouver_feuille(wb, "Structuration") or next(
+        (f for f in wb.worksheets if str(vers_francais(f.title)).strip().lower() not in ignorees), None
+    )
+    if feuille is not None and not _a_des_elements(feuille):
+        # Structuration laissée vide (seulement la légende et les en-têtes) : aucun niveau créé.
+        feuille = None
+    if feuille is None:
+        rapport = {"niveaux_crees": 0, "elements_crees": 0, "elements_mis_a_jour": 0, "erreurs": [], "avertissements": []}
+    else:
+        rapport = importer_structuration_depuis_feuille(feuille, cadre_strategique)
+    rapport["erreurs"] = [*erreurs_fiche, *rapport["erreurs"]]
+    rapport["avertissements"] = [*avertissements_fiche, *rapport.get("avertissements", [])]
+    rapport["fiche_mise_a_jour"] = _trouver_feuille(wb, FEUILLE_FICHE) is not None
+    return rapport
+
+
+def _meme_entete(saisie, francais) -> bool:
+    """
+    L'en-tête saisi désigne-t-il cet en-tête français ? Dans toutes les langues, sans tenir compte
+    des accents, de la casse ni des espaces (« Contribue a (code) », « Contributes to (code) »).
+    """
+    from apps.core.langues import correspond
+
+    return correspond(str(saisie or ""), francais)
+
+
+def _a_des_elements(feuille) -> bool:
+    """Au moins une ligne d'élément sous les en-têtes (la légende du modèle ne compte pas)."""
+    lignes = [l for l in feuille.iter_rows(values_only=True) if any(c not in (None, "") for c in l)]
+    if lignes and str(vers_francais(str(lignes[0][0] or ""))).startswith(DEBUT_LEGENDE):
+        lignes = lignes[1:]
+    return len(lignes) > 1
+
+
+def _importer_fichier_chaine(fichier) -> dict:
+    """Fichier de la chaîne importé depuis la page d'un document : compte rendu au format de la structuration."""
+    from .import_chaine import importer_chaine
+
+    fichier.seek(0)
+    rapport = importer_chaine(fichier)
+    avertissements = [
+        {"ligne": 1, "message": (
+            f"Fichier de la chaîne des documents : {rapport['documents_crees']} document(s) créé(s), "
+            f"{rapport['documents_mis_a_jour']} mis à jour."
+        )},
+        *rapport["avertissements"],
+    ]
+    return {
+        "niveaux_crees": 0,
+        "elements_crees": rapport["elements_crees"],
+        "elements_mis_a_jour": rapport["elements_mis_a_jour"] + rapport["documents_mis_a_jour"] + rapport["documents_crees"],
+        "erreurs": rapport["erreurs"],
+        "avertissements": avertissements,
+    }
 
 
 def importer_structuration_depuis_feuille(feuille, cadre_strategique) -> dict:
@@ -277,7 +379,7 @@ def importer_structuration_depuis_feuille(feuille, cadre_strategique) -> dict:
         noms_colonnes.pop()
     # Colonne « Contribue à (code) » : pas un niveau, lue à part (elle peut être traduite).
     colonne_contribution = next(
-        (i for i, nom in enumerate(noms_colonnes) if str(vers_francais(nom)).strip().lower() == COLONNE_CONTRIBUTION.lower()), None
+        (i for i, nom in enumerate(noms_colonnes) if _meme_entete(nom, COLONNE_CONTRIBUTION)), None
     )
     if colonne_contribution is not None:
         noms_colonnes = noms_colonnes[:colonne_contribution]

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowDown, ArrowLeft, ArrowUp, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Download, FileSpreadsheet, Gauge, Layers, ListTree, Pencil, Plus, Search, Settings2, Trash2, Wallet } from "lucide-react";
+import { ArrowDown, ArrowLeft, ClipboardList, ArrowUp, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Download, FileSpreadsheet, Gauge, Layers, ListPlus, ListTree, Pencil, Plus, Search, Settings2, Trash2, Wallet } from "lucide-react";
 import {
   ActionIcon,
   Alert,
@@ -34,6 +34,7 @@ import {
   useCreateTypeNiveau,
   useDeleteElementStrategique,
   useDeleteTypeNiveau,
+  useSupprimerNiveauSiVide,
   useElementsStrategiques,
   useRecapCadreStrategique,
   useTypesDocuments,
@@ -44,7 +45,7 @@ import {
 } from "../../api/strategy";
 import { BoutonModeEdition } from "../../components/common/BoutonModeEdition";
 import { EmptyState } from "../../components/common/EmptyState";
-import { CadreTableau } from "./CadreTableau";
+import { CadreTableau, MenuExport } from "./CadreTableau";
 import { StatCard } from "../../components/common/StatCard";
 import { STATUS_HEX } from "../../components/common/statusPalette";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
@@ -53,13 +54,15 @@ import { correspond } from "../../utils/recherche";
 import { AxesBudgetsTab } from "./AxesBudgetsTab";
 import { SuiviStrategiqueTab } from "./SuiviStrategiqueTab";
 import { ImportStructurationModal } from "./ImportStructurationModal";
+import { DocumentModal } from "./DocumentModal";
+import { FicheDocument } from "./FicheDocument";
 import type { ElementStrategique, RecapCadreStrategique, StatutProjet, TypeNiveau } from "../../types";
 import { voc } from "../../utils/vocabulaire";
 import { messageErreurApi } from "../../utils/erreurs";
 import { usePartiesPrenantes, useStructures } from "../../api/organisation";
 import { optionsStructures } from "../../utils/organisation";
 import { useAccesModules } from "../../utils/modules";
-import { type ModeAffichage, useModeAffichage } from "../../utils/affichage";
+import { type ModeAffichage, useModeAffichage, usePreference } from "../../utils/affichage";
 
 import { locale } from "../../utils/i18n";
 import { PROJET_STATUT_LABEL } from "../../utils/statusTones";
@@ -554,7 +557,20 @@ function ElementModal({
   );
 }
 
-function ActionsElement({ element, onModifier }: { element: ElementStrategique; onModifier: (element: ElementStrategique) => void }) {
+/**
+ * Actions d'un élément de l'arbre : ajouter un élément du niveau en dessous (même icône que
+ * « Ajouter une sous-activité » d'un projet), modifier, supprimer.
+ */
+function ActionsElement({
+  element,
+  onModifier,
+  ajoutDessous,
+}: {
+  element: ElementStrategique;
+  onModifier: (element: ElementStrategique) => void;
+  /** Ajouter sous l'élément : libellé de l'info-bulle et action (voir Arborescence.ajouterDessous). */
+  ajoutDessous?: { libelle: string; onClick: () => void };
+}) {
   const deleteElement = useDeleteElementStrategique();
 
   function supprimer() {
@@ -576,6 +592,13 @@ function ActionsElement({ element, onModifier }: { element: ElementStrategique; 
 
   return (
     <Group gap={4} wrap="nowrap">
+      {ajoutDessous && (
+        <Tooltip label={ajoutDessous.libelle}>
+          <ActionIcon size="sm" variant="subtle" onClick={ajoutDessous.onClick} aria-label={ajoutDessous.libelle}>
+            <ListPlus size={13} />
+          </ActionIcon>
+        </Tooltip>
+      )}
       <Tooltip label={voc("Modifier")}>
         <ActionIcon size="sm" variant="subtle" onClick={() => onModifier(element)}>
           <Pencil size={13} />
@@ -626,6 +649,7 @@ function NoeudElement({
   niveauEnfant,
   onAjouter,
   onModifier,
+  ajoutDessous,
   idsVisibles,
   editionActive,
   replies,
@@ -639,6 +663,7 @@ function NoeudElement({
   niveauEnfant: TypeNiveau | undefined;
   onAjouter: (typeNiveau: TypeNiveau, parent: ElementStrategique) => void;
   onModifier: (element: ElementStrategique) => void;
+  ajoutDessous: (element: ElementStrategique) => { libelle: string; onClick: () => void };
   idsVisibles: Set<number> | null;
   editionActive: boolean;
   /** Éléments repliés : leurs éléments en dessous sont masqués. */
@@ -688,7 +713,7 @@ function NoeudElement({
             <DetailsElement element={element} />
           </div>
         </Group>
-        {editionActive && <ActionsElement element={element} onModifier={onModifier} />}
+        {editionActive && <ActionsElement element={element} onModifier={onModifier} ajoutDessous={ajoutDessous(element)} />}
       </Group>
 
       {niveauEnfant && (
@@ -709,6 +734,7 @@ function NoeudElement({
             niveauEnfant={niveauPourEnfantsDesEnfants}
             onAjouter={onAjouter}
             onModifier={onModifier}
+            ajoutDessous={ajoutDessous}
             idsVisibles={idsVisibles}
             editionActive={editionActive}
             replies={replies}
@@ -722,11 +748,13 @@ function NoeudElement({
 
 function Arborescence({
   cadreId,
+  nomDocument,
   niveaux,
   elements,
   editionActive,
 }: {
   cadreId: number;
+  nomDocument: string;
   niveaux: TypeNiveau[];
   elements: ElementStrategique[];
   editionActive: boolean;
@@ -735,6 +763,8 @@ function Arborescence({
   const [elementEnEdition, setElementEnEdition] = useState<ElementStrategique | null>(null);
   const [recherche, setRecherche] = useState("");
   const [affichage, setAffichage] = useModeAffichage("cadre-strategique");
+  // Programmation choisie dans le mode Tableau : reprise par l'export depuis le mode Arbre.
+  const [programmation] = usePreference("programmation-planification", ["trimestres", "dates"] as const);
   // Éléments repliés dans l'arbre (tout est déplié à l'ouverture).
   const [replies, setReplies] = useState<Set<number>>(new Set());
   const basculer = (id: number) =>
@@ -744,6 +774,39 @@ function Arborescence({
       return apres;
     });
   const couleurs = useCouleursParNiveau(niveaux);
+  const createNiveau = useCreateTypeNiveau();
+  const supprimerNiveauSiVide = useSupprimerNiveauSiVide();
+  // Niveau « Sous-… » créé à la volée : retiré si le formulaire est fermé sans rien ajouter.
+  const [niveauCree, setNiveauCree] = useState<number | null>(null);
+
+  /**
+   * « Ajouter dessous » d'un élément, comme « Ajouter une sous-activité » d'un projet : un élément
+   * du niveau en dessous ; sous le dernier niveau, le niveau « Sous-… » est d'abord créé.
+   */
+  function ajoutDessous(element: ElementStrategique) {
+    const niveauEnfant = niveaux.find((n) => n.niveau_parent === element.type_niveau);
+    if (niveauEnfant) {
+      return { libelle: voc`Ajouter — ${niveauEnfant.nom_niveau}`, onClick: () => setModalAjout({ typeNiveau: niveauEnfant, parent: element }) };
+    }
+    const niveau = niveaux.find((n) => n.id === element.type_niveau);
+    const nom = `Sous-${(niveau?.nom_niveau ?? "élément").toLocaleLowerCase(locale())}`;
+    return {
+      libelle: voc`Ajouter — ${nom} (nouveau niveau)`,
+      onClick: async () => {
+        if (!niveau) return;
+        try {
+          const cree = await createNiveau.mutateAsync({
+            cadre_strategique: cadreId, nom_niveau: nom, ordre: niveau.ordre + 1, niveau_parent: niveau.id,
+          });
+          notifications.show({ message: voc`Niveau « ${nom} » ajouté sous « ${niveau.nom_niveau} ».`, color: "green" });
+          setNiveauCree(cree.id);
+          setModalAjout({ typeNiveau: cree, parent: element });
+        } catch (error) {
+          notifications.show({ message: messageErreurApi(error, voc("Erreur lors de l'ajout du niveau")), color: "red" });
+        }
+      },
+    };
+  }
 
   // Niveau racine = celui sans niveau_parent (rang 1 de la chaîne).
   const niveauRacine = niveaux.find((n) => n.niveau_parent === null);
@@ -825,6 +888,8 @@ function Arborescence({
                 </Button>
               </>
             )}
+            {/* En mode Tableau, le menu est au-dessus du tableau (avec l'année choisie). */}
+            {affichage === "arbre" && <MenuExport cadreId={cadreId} nomDocument={nomDocument} programmation={programmation} />}
             <SegmentedControl
               size="xs"
               value={affichage}
@@ -850,12 +915,12 @@ function Arborescence({
       ) : affichage === "tableau" ? (
         <CadreTableau
           cadreId={cadreId}
+          nomDocument={nomDocument}
           niveaux={niveaux}
           racines={racinesFiltrees}
           enfants={(e) => (enfantsParParent.get(e.id) ?? []).filter((x) => !idsVisibles || idsVisibles.has(x.id))}
           editionActive={editionActive}
-          onModifier={setElementEnEdition}
-          onAjouter={(typeNiveau, parent) => setModalAjout({ typeNiveau, parent })}
+          actions={(element) => <ActionsElement element={element} onModifier={setElementEnEdition} ajoutDessous={ajoutDessous(element)} />}
         />
       ) : (
         <Box style={{ overflowX: "auto" }}>
@@ -871,6 +936,7 @@ function Arborescence({
               niveauEnfant={niveaux.find((n) => n.niveau_parent === racine.type_niveau)}
               onAjouter={(typeNiveau, parent) => setModalAjout({ typeNiveau, parent })}
               onModifier={setElementEnEdition}
+              ajoutDessous={ajoutDessous}
               idsVisibles={idsVisibles}
               editionActive={editionActive}
               replies={replies}
@@ -883,7 +949,13 @@ function Arborescence({
 
       <ElementModal
         opened={!!modalAjout}
-        onClose={() => setModalAjout(null)}
+        onClose={() => {
+          setModalAjout(null);
+          if (niveauCree !== null) {
+            supprimerNiveauSiVide.mutate(niveauCree);
+            setNiveauCree(null);
+          }
+        }}
         typeNiveau={modalAjout?.typeNiveau ?? null}
         elementParent={modalAjout?.parent ?? null}
         niveaux={niveaux}
@@ -1169,6 +1241,9 @@ export function CadreStrategiqueDetailPage() {
   const [modalImportOuvert, setModalImportOuvert] = useState(false);
   const { peutEcrire } = useAccesModules();
   const [editionActive, setEditionActive] = useState(false);
+  const [ficheOuverte, setFicheOuverte] = useState(false);
+  // Programme, Pilier… : une fiche comme celle d'un projet, premier onglet.
+  const avecFiche = rang > 0;
 
   return (
     <Stack gap="md">
@@ -1182,12 +1257,17 @@ export function CadreStrategiqueDetailPage() {
         </Group>
         <Group gap="xs">
           <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />
+          {avecFiche && peutEcrire("/strategie") && (
+            <Button variant="light" leftSection={<Pencil size={16} />} onClick={() => setFicheOuverte(true)}>
+              {voc("Modifier la fiche")}
+            </Button>
+          )}
           <Button
             variant="light"
             leftSection={<Download size={16} />}
             onClick={() => telechargerExportStructuration(cadreId, cadre?.nom ?? String(cadreId))}
           >
-            {voc("Exporter en Excel")}
+            {voc("Exporter le canevas Excel")}
           </Button>
           <Button variant="light" leftSection={<FileSpreadsheet size={16} />} onClick={() => setModalImportOuvert(true)}>
             {voc("Importer depuis Excel")}
@@ -1202,6 +1282,8 @@ export function CadreStrategiqueDetailPage() {
               {voc("Rattaché à")} {cadre?.document_parent_type ? `${cadre.document_parent_type} ` : ""}
               <Text component={Link} to={lienDocument(parent, maillons)} span fw={600} c="teal.8">{parent.nom}</Text>
               {cadre?.element_parent_nom ? ` › ${cadre.element_parent_nom}` : ""}
+              {(cadre?.elements_parents_secondaires_noms ?? []).length > 0 &&
+                ` · ${voc("aussi")} ${cadre!.elements_parents_secondaires_noms!.join(", ")} (${voc("pour information")})`}
             </Text>
           )}
           {(cadre?.alertes_chaine ?? []).map((m) => (
@@ -1222,6 +1304,7 @@ export function CadreStrategiqueDetailPage() {
                     style={{ cursor: "pointer", textTransform: "none" }}
                   >
                     {d.type_document_nom ? `${d.type_document_nom} · ` : ""}{d.nom}{d.element_parent_nom ? ` (${d.element_parent_nom})` : ""}
+                    {(d.elements_secondaires_noms ?? []).length > 0 ? ` + ${d.elements_secondaires_noms!.length} ${voc("pour information")}` : ""}
                   </Badge>
                 );
               })}
@@ -1233,8 +1316,13 @@ export function CadreStrategiqueDetailPage() {
       {chargementNiveaux || chargementElements ? (
         <Text c="dimmed">{voc("Chargement…")}</Text>
       ) : (
-        <Tabs defaultValue="arborescence" keepMounted={false}>
+        <Tabs defaultValue={avecFiche ? "fiche" : "arborescence"} keepMounted={false}>
           <Tabs.List>
+            {avecFiche && (
+              <Tabs.Tab value="fiche" leftSection={<ClipboardList size={15} />}>
+                {voc("Fiche")}
+              </Tabs.Tab>
+            )}
             <Tabs.Tab value="configuration" leftSection={<Settings2 size={15} />}>
               {voc("Configuration des niveaux")}
             </Tabs.Tab>
@@ -1251,12 +1339,18 @@ export function CadreStrategiqueDetailPage() {
               {voc("Projets & budgets")}</Tabs.Tab>
           </Tabs.List>
 
+          {avecFiche && cadre && (
+            <Tabs.Panel value="fiche" pt="md">
+              <FicheDocument cadre={cadre} />
+            </Tabs.Panel>
+          )}
+
           <Tabs.Panel value="configuration" pt="md">
             <ConfigurationNiveaux cadreStrategiqueId={cadreId} niveaux={niveaux ?? []} editionActive={editionActive} />
           </Tabs.Panel>
 
           <Tabs.Panel value="arborescence" pt="md">
-            <Arborescence cadreId={cadreId} niveaux={niveaux ?? []} elements={elements ?? []} editionActive={editionActive} />
+            <Arborescence cadreId={cadreId} nomDocument={cadre?.code || cadre?.nom || String(cadreId)} niveaux={niveaux ?? []} elements={elements ?? []} editionActive={editionActive} />
           </Tabs.Panel>
 
           <Tabs.Panel value="axes" pt="md">
@@ -1273,10 +1367,22 @@ export function CadreStrategiqueDetailPage() {
         </Tabs>
       )}
 
+      {avecFiche && cadre && (
+        <DocumentModal
+          key={`${cadre.id}-${ficheOuverte}`}
+          opened={ficheOuverte}
+          onClose={() => setFicheOuverte(false)}
+          cadreExistant={cadre}
+          maillon={maillons[rang]}
+          maillons={maillons}
+        />
+      )}
+
       <ImportStructurationModal
         opened={modalImportOuvert}
         onClose={() => setModalImportOuvert(false)}
         cadreStrategiqueId={cadreId}
+        avecFiche={avecFiche}
       />
     </Stack>
   );

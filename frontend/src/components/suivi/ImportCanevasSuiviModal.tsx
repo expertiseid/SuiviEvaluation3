@@ -33,20 +33,38 @@ const STATUTS: Record<LigneCanevas["statut"], { libelle: string; couleur: string
 };
 
 /**
+ * Autre canevas importé avec le même écran (ex. objectifs d'une période) : téléchargement,
+ * analyse, import et rapport d'erreurs, plus les textes propres.
+ */
+export interface SourceCanevas {
+  titre: string;
+  consigne: string;
+  libelleTelecharger: string;
+  libelleExistants: string;
+  messageSucces: string;
+  telecharger: () => Promise<void> | void;
+  analyser: (fichier: File, mode: ModeCanevas) => Promise<ResultatCanevas>;
+  importer: (fichier: File, mode: ModeCanevas) => Promise<ResultatCanevas>;
+  rapportErreurs: (fichier: File, mode: ModeCanevas) => Promise<void> | void;
+}
+
+/**
  * Saisie du suivi en masse par Excel : télécharger le canevas prérempli, le compléter hors
  * ligne, puis le réimporter — aperçu détaillé (ajouts, modifications, erreurs par cellule)
- * avant tout enregistrement.
+ * avant tout enregistrement. `source` : le même écran pour un autre canevas.
  */
 export function ImportCanevasSuiviModal({
   projetId,
   codeProjet,
   opened,
   onClose,
+  source,
 }: {
   projetId: number;
   codeProjet: string;
   opened: boolean;
   onClose: () => void;
+  source?: SourceCanevas;
 }) {
   const [fichier, setFichier] = useState<File | null>(null);
   const [mode, setMode] = useState<ModeCanevas>("ajout");
@@ -54,7 +72,8 @@ export function ImportCanevasSuiviModal({
   const [resultat, setResultat] = useState<ResultatCanevas | null>(null);
   const [analyseEnCours, setAnalyseEnCours] = useState(false);
   const [filtre, setFiltre] = useState<"toutes" | LigneCanevas["statut"]>("toutes");
-  const importer = useImporterCanevasSuivi();
+  const importerSuivi = useImporterCanevasSuivi();
+  const [importEnCours, setImportEnCours] = useState(false);
 
   const fermer = () => {
     setFichier(null);
@@ -69,7 +88,7 @@ export function ImportCanevasSuiviModal({
     setAnalyseEnCours(true);
     setResultat(null);
     try {
-      setApercu(await analyserCanevasSuivi(projetId, f, m));
+      setApercu(source ? await source.analyser(f, m) : await analyserCanevasSuivi(projetId, f, m));
     } catch (error) {
       notifications.show({ message: messageErreurApi(error, "Impossible d'analyser ce fichier"), color: "red" });
     } finally {
@@ -84,14 +103,18 @@ export function ImportCanevasSuiviModal({
   const aEnregistrer = apercu ? apercu.totaux.ajout + apercu.totaux.modification : 0;
 
   return (
-    <Modal opened={opened} onClose={fermer} title={voc("Saisie du suivi par Excel")} size="xl">
+    <Modal opened={opened} onClose={fermer} title={source?.titre ?? voc("Saisie du suivi par Excel")} size="xl">
       <Stack gap="sm">
         <Text size="sm" c="dimmed">
-          {voc("1. Télécharge le canevas prérempli avec la planification du projet et ses indicateurs. 2. Complète les colonnes bleues hors ligne. 3. Réimporte-le : un aperçu montre ce qui sera ajouté ou modifié, et les cellules en erreur, avant tout enregistrement.")}
+          {source?.consigne ?? voc("1. Télécharge le canevas prérempli avec la planification du projet et ses indicateurs. 2. Complète les colonnes bleues hors ligne. 3. Réimporte-le : un aperçu montre ce qui sera ajouté ou modifié, et les cellules en erreur, avant tout enregistrement.")}
         </Text>
         <Group>
-          <Button variant="light" leftSection={<Download size={16} />} onClick={() => telechargerCanevasSuivi(projetId, codeProjet)}>
-            {voc("Télécharger le canevas de suivi")}
+          <Button
+            variant="light"
+            leftSection={<Download size={16} />}
+            onClick={() => (source ? source.telecharger() : telechargerCanevasSuivi(projetId, codeProjet))}
+          >
+            {source?.libelleTelecharger ?? voc("Télécharger le canevas de suivi")}
           </Button>
         </Group>
 
@@ -110,7 +133,7 @@ export function ImportCanevasSuiviModal({
             style={{ flex: 1 }}
           />
           <Stack gap={2}>
-            <Text size="sm" fw={500}>{voc("Saisies déjà existantes")}</Text>
+            <Text size="sm" fw={500}>{source?.libelleExistants ?? voc("Saisies déjà existantes")}</Text>
             <SegmentedControl
               value={mode}
               onChange={(v) => {
@@ -203,7 +226,9 @@ export function ImportCanevasSuiviModal({
                   variant="subtle"
                   color="red"
                   leftSection={<Download size={16} />}
-                  onClick={() => fichier && telechargerRapportErreursCanevas(projetId, fichier, mode)}
+                  onClick={() =>
+                    fichier && (source ? source.rapportErreurs(fichier, mode) : telechargerRapportErreursCanevas(projetId, fichier, mode))
+                  }
                 >
                   {voc("Télécharger le rapport d'erreurs")}
                 </Button>
@@ -212,21 +237,33 @@ export function ImportCanevasSuiviModal({
               )}
               <Button
                 disabled={aEnregistrer === 0}
-                loading={importer.isPending}
-                onClick={() =>
-                  fichier &&
-                  importer.mutate(
-                    { projetId, fichier, mode },
-                    {
-                      onSuccess: (r) => {
-                        setResultat(r);
-                        notifications.show({ message: voc("Suivi importé"), color: "green" });
+                loading={importerSuivi.isPending || importEnCours}
+                onClick={async () => {
+                  if (!fichier) return;
+                  if (!source) {
+                    importerSuivi.mutate(
+                      { projetId, fichier, mode },
+                      {
+                        onSuccess: (r) => {
+                          setResultat(r);
+                          notifications.show({ message: voc("Suivi importé"), color: "green" });
+                        },
+                        onError: (error) =>
+                          notifications.show({ message: messageErreurApi(error, voc("Erreur lors de l'import")), color: "red" }),
                       },
-                      onError: (error) =>
-                        notifications.show({ message: messageErreurApi(error, voc("Erreur lors de l'import")), color: "red" }),
-                    },
-                  )
-                }
+                    );
+                    return;
+                  }
+                  setImportEnCours(true);
+                  try {
+                    setResultat(await source.importer(fichier, mode));
+                    notifications.show({ message: source.messageSucces, color: "green" });
+                  } catch (error) {
+                    notifications.show({ message: messageErreurApi(error, voc("Erreur lors de l'import")), color: "red" });
+                  } finally {
+                    setImportEnCours(false);
+                  }
+                }}
               >
                 {aEnregistrer === 0
                   ? voc("Rien à enregistrer")

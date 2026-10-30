@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -52,12 +54,81 @@ class CadreStrategique(TimestampedModel):
         "ElementStrategique", null=True, blank=True, on_delete=models.SET_NULL, related_name="documents_rattaches",
         help_text="Élément du document parent auquel ce document est rattaché (vide = le document lui-même).",
     )
+    # Autres éléments du document parent servis par ce document : affichés pour information, jamais
+    # comptés (seul element_parent fait remonter budgets et taux, pas de double compte) — comme
+    # Projet.elements_strategiques_secondaires.
+    elements_parents_secondaires = models.ManyToManyField(
+        "ElementStrategique", blank=True, related_name="documents_rattaches_secondaires",
+        help_text="Autres éléments du document parent auxquels ce document se rattache, pour information.",
+    )
+
+    # Fiche du document, sur le modèle de celle d'un projet (Programme, Pilier… se gèrent comme des
+    # projets). Tout est facultatif : un cadre stratégique peut s'en passer, un import Excel ancien aussi.
+    class Statut(models.TextChoices):
+        EN_PREPARATION = "EN_PREPARATION", "En préparation"
+        EN_COURS = "EN_COURS", "En cours"
+        CLOTURE = "CLOTURE", "Clôturé"
+
+    class TypeMiseEnOeuvre(models.TextChoices):
+        DIRECT = "DIRECT", "Direct"
+        CONSORTIUM = "CONSORTIUM", "En consortium"
+
+    code = models.CharField(max_length=50, blank=True)
+    budget_total = models.DecimalField(
+        max_digits=16, decimal_places=2, default=0,
+        help_text="Coût total ; avec des bailleurs = fonds propres + leurs financements (recalculé).",
+    )
+    fonds_propres = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+    date_debut = models.DateField(null=True, blank=True)
+    date_fin = models.DateField(null=True, blank=True)
+    statut = models.CharField(max_length=20, choices=Statut.choices, blank=True)
+    type_mise_en_oeuvre = models.CharField(max_length=20, choices=TypeMiseEnOeuvre.choices, default=TypeMiseEnOeuvre.DIRECT)
+    responsable_nom = models.CharField(
+        max_length=200, blank=True, help_text="Responsable du document — texte libre, indépendant d'un compte.",
+    )
+    utilisateurs_affectes = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="documents_strategiques_affectes",
+        help_text="Utilisateurs à visibilité restreinte qui voient ce document (en plus de ceux de leurs projets).",
+    )
+    partenaire_mise_en_oeuvre = models.ForeignKey(
+        "partners.Partenaire", null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="documents_strategiques_mise_en_oeuvre",
+    )
+    partenaires_consortium = models.ManyToManyField(
+        "partners.Partenaire", blank=True, related_name="documents_strategiques_consortium",
+    )
+    pays = ArrayField(models.CharField(max_length=2), default=list, blank=True)
+    tout_le_pays = models.BooleanField(default=False)
+    zones = models.ManyToManyField("geo.Zone", blank=True, related_name="documents_strategiques")
+    cible_totale = models.PositiveIntegerField(null=True, blank=True)
+    cible_hommes = models.PositiveIntegerField(null=True, blank=True)
+    cible_femmes = models.PositiveIntegerField(null=True, blank=True)
+    cible_jeunes = models.PositiveIntegerField(null=True, blank=True)
+    cible_pdi = models.PositiveIntegerField(null=True, blank=True, verbose_name="Cible PDI")
+    elements_capitalisation = models.TextField(blank=True, help_text="Leçons apprises, bonnes pratiques.")
 
     class Meta:
         ordering = ("-created_at",)
 
     def __str__(self):
         return self.nom
+
+
+class FinancementDocument(TimestampedModel):
+    """Bailleur d'un document stratégique et montant apporté (pendant de partners.Financement pour un projet)."""
+
+    document = models.ForeignKey(CadreStrategique, on_delete=models.CASCADE, related_name="financements")
+    bailleur = models.ForeignKey("partners.Bailleur", on_delete=models.PROTECT, related_name="financements_documents")
+    montant = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+
+    class Meta:
+        ordering = ("id",)
+        constraints = [
+            models.UniqueConstraint(fields=("document", "bailleur"), name="financement_document_bailleur_unique")
+        ]
+
+    def __str__(self):
+        return f"{self.bailleur} → {self.document} : {self.montant}"
 
 
 class TypeNiveau(TimestampedModel):

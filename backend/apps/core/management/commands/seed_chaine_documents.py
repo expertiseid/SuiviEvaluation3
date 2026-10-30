@@ -1,14 +1,24 @@
 """
 Démonstration de la chaîne des documents : PNDES-II (cadre stratégique) → Programme → Pilier 1 →
 Pilier 2 → Pilier 3, avec contributions élément par élément ; un Pilier 3 saute le Pilier 2
-(avertissement). Les projets éducation et santé sont rattachés aux Piliers 3, et un projet
-complet (PEQR-KOU-2025) est créé au dernier maillon. Rejouable.
+(avertissement). Chaque programme et pilier a sa fiche renseignée comme un projet (code, budget
+et bailleurs, dates, statut, responsable, partenaires, zones, cibles). Les projets éducation et
+santé sont rattachés aux Piliers 3, et un projet complet (PEQR-KOU-2025) est créé au dernier
+maillon. Rejouable.
 
 À lancer après seed_50_projets (il s'appuie sur le PNDES-II et ses projets) :
     docker compose exec backend python manage.py seed_chaine_documents
 """
+from datetime import date
+from decimal import Decimal
+
 from django.core.management.base import BaseCommand
 from django.db import transaction
+
+from apps.accounts.models import User
+from apps.geo.models import Zone
+from apps.partners.models import Partenaire, PartiePrenante, StructureOrganisation
+from apps.strategy.serializers import enregistrer_bailleurs
 
 from apps.projects.models import Activite, Projet
 from apps.strategy.models import CadreStrategique, ElementStrategique, TypeDocument, TypeNiveau
@@ -41,6 +51,87 @@ def document(nom, type_nom, description, parent=None, element_parent=None, nivea
 
 
 
+# Fiches des documents (comme celles des projets), par code. Montants en FCFA ; bailleurs créés
+# s'ils n'existent pas ; zones, partenaires, services et parties prenantes retrouvés par leur nom
+# (ignorés s'ils n'existent pas dans la base).
+FICHES = {
+    "PNDCH": {
+        "statut": "EN_COURS", "date_debut": date(2026, 1, 1), "date_fin": date(2030, 12, 31),
+        "fonds_propres": 45_000_000_000, "responsable_nom": "Secrétariat permanent du PNDCH",
+        "bailleurs": [("Banque mondiale", 60_000_000_000), ("Union européenne", 35_000_000_000), ("UNICEF", 12_000_000_000)],
+        "partenaire": None, "consortium": [], "tout_le_pays": True, "zones": [],
+        "cibles": (2_400_000, 1_150_000, 1_250_000, 900_000, 180_000),
+        "services": ["Direction des programmes", "Direction du suivi-évaluation et de la capitalisation"],
+        "parties": ["Ministère de l'Éducation nationale", "Ministère de la Santé"],
+        "capitalisation": "Revue à mi-parcours prévue en 2028 : pilotage conjoint éducation-santé, "
+                          "mutualisation des infrastructures sociales en zone rurale.",
+    },
+    "P1-ASSB": {
+        "statut": "EN_COURS", "date_debut": date(2026, 1, 1), "date_fin": date(2030, 6, 30),
+        "fonds_propres": 18_000_000_000, "responsable_nom": "Direction des programmes",
+        "bailleurs": [("Banque mondiale", 30_000_000_000), ("Agence française de développement", 9_500_000_000)],
+        "partenaire": "Centre d'études et de formation pour le développement", "consortium": [],
+        "tout_le_pays": True, "zones": [], "cibles": (1_300_000, 620_000, 680_000, 480_000, 110_000),
+        "services": ["Service éducation, santé et emploi"],
+        "parties": ["Ministère de l'Éducation nationale", "Ministère de la Santé", "Conseils régionaux"],
+        "capitalisation": "",
+    },
+    "P2-INFRA": {
+        "statut": "EN_COURS", "date_debut": date(2026, 4, 1), "date_fin": date(2029, 12, 31),
+        "fonds_propres": 6_500_000_000, "responsable_nom": "Service éducation, santé et emploi",
+        "bailleurs": [("Banque africaine de développement", 14_000_000_000), ("Enabel, Agence belge de développement", 3_200_000_000)],
+        "partenaire": "Bureau d'études Sahel Ingénierie", "type": "CONSORTIUM",
+        "consortium": ["Association Zood Nooma pour le développement", "Réseau des ONG locales du Sahel"],
+        "tout_le_pays": False, "zones": ["Koulse", "Sirba", "Goulmou", "Tapoa"],
+        "cibles": (420_000, 200_000, 220_000, 150_000, 45_000),
+        "services": ["Service éducation, santé et emploi", "Direction administrative et financière"],
+        "parties": ["Conseils régionaux", "Districts sanitaires", "Association des municipalités"],
+        "capitalisation": "",
+    },
+    "P3-KOU": {
+        "statut": "EN_COURS", "date_debut": date(2026, 7, 1), "date_fin": date(2028, 12, 31),
+        "fonds_propres": 850_000_000, "responsable_nom": "Direction régionale de Koulsé",
+        "bailleurs": [("UNICEF", 2_400_000_000), ("Coopération suisse", 1_100_000_000)],
+        "partenaire": "ONG Wend Panga", "consortium": [], "tout_le_pays": False, "zones": ["Koulse", "Sirba"],
+        "cibles": (95_000, 44_000, 51_000, 38_000, 16_000),
+        "services": ["Service éducation, santé et emploi"],
+        "parties": ["Conseils régionaux", "Districts sanitaires"],
+        "capitalisation": "",
+    },
+    "P3-EST": {
+        "statut": "EN_PREPARATION", "date_debut": date(2027, 1, 1), "date_fin": date(2029, 12, 31),
+        "fonds_propres": 600_000_000, "responsable_nom": "Direction régionale de l'Est",
+        "bailleurs": [("Programme alimentaire mondial", 1_800_000_000), ("Union européenne", 2_200_000_000)],
+        "partenaire": "Réseau des ONG locales du Sahel", "consortium": [], "tout_le_pays": False,
+        "zones": ["Goulmou", "Tapoa"], "cibles": (120_000, 55_000, 65_000, 47_000, 38_000),
+        "services": ["Service éducation, santé et emploi", "Service gouvernance, climat et inclusion"],
+        "parties": ["Ministère de l'Action humanitaire et de la Solidarité nationale", "Districts sanitaires"],
+        "capitalisation": "",
+    },
+}
+
+
+def remplir_fiche(doc, code):
+    """Renseigne la fiche du document `doc` d'après FICHES[code] (bailleurs : budget recalculé)."""
+    f = FICHES[code]
+    doc.code, doc.statut = code, f["statut"]
+    doc.date_debut, doc.date_fin = f["date_debut"], f["date_fin"]
+    doc.fonds_propres = Decimal(f["fonds_propres"])
+    doc.responsable_nom = f["responsable_nom"]
+    doc.type_mise_en_oeuvre = f.get("type", "DIRECT")
+    doc.partenaire_mise_en_oeuvre = Partenaire.objects.filter(nom=f["partenaire"]).first() if f["partenaire"] else None
+    doc.pays, doc.tout_le_pays = ["BF"], f["tout_le_pays"]
+    (doc.cible_totale, doc.cible_hommes, doc.cible_femmes, doc.cible_jeunes, doc.cible_pdi) = f["cibles"]
+    doc.elements_capitalisation = f["capitalisation"]
+    doc.save()
+    doc.partenaires_consortium.set(Partenaire.objects.filter(nom__in=f["consortium"]))
+    doc.zones.set(Zone.objects.filter(nom__in=f["zones"], parent__isnull=True))
+    doc.structures.set(StructureOrganisation.objects.filter(nom__in=f["services"]))
+    doc.parties_prenantes.set(PartiePrenante.objects.filter(nom__in=f["parties"]))
+    doc.utilisateurs_affectes.set(User.objects.filter(role="ADMIN")[:1])
+    enregistrer_bailleurs(doc, [{"nom": nom, "montant": Decimal(m)} for nom, m in f["bailleurs"]])
+
+
 def creer_projet_dernier_maillon(sortie):
     """
     Projet complet (tous les onglets, comme ceux de seed_50_projets) rattaché au dernier maillon :
@@ -52,6 +143,7 @@ def creer_projet_dernier_maillon(sortie):
     from apps.beneficiaries.models import StatutParticulier, TypeActiviteBeneficiaire
     from apps.geo.models import Zone
     from apps.partners.models import Bailleur, Partenaire, PartiePrenante, StructureOrganisation
+    from apps.projects.models import Equipe
     from apps.projects.services import supprimer_projet_cascade
     from apps.projects.verrou import verrou_desactive
 
@@ -60,7 +152,13 @@ def creer_projet_dernier_maillon(sortie):
     random.seed(77)
     with transaction.atomic(), verrou_desactive():
         for ancien in Projet.objects.filter(code="PEQR-KOU-2025"):
+            # Son équipe (créée sous le code provisoire de creer_projet) part avec lui.
+            equipes = list(Equipe.objects.filter(activites__projet=ancien).distinct())
             supprimer_projet_cascade(ancien)
+            for equipe in equipes:
+                if not equipe.activites.exists():
+                    equipe.delete()
+        Equipe.objects.filter(nom="Équipe projet PEQR-KOU-2025").delete()
         sigle = {s.sigle: s for s in StructureOrganisation.objects.all()}
         admin = User.objects.filter(role="ADMIN").order_by("id").first()
         ref = {
@@ -92,6 +190,7 @@ def creer_projet_dernier_maillon(sortie):
             cadre_strategique=pilier3, element_strategique=ecoles, elements_capitalisation="",
         )
         projet.elements_strategiques_secondaires.clear()
+        Equipe.objects.filter(activites__projet=projet).distinct().update(nom="Équipe projet PEQR-KOU-2025")
         Activite.objects.filter(projet=projet).update(axe_strategique=ecoles)
     sortie.write(f"Projet au dernier maillon : PEQR-KOU-2025 (id {projet.id})")
 
@@ -178,6 +277,9 @@ class Command(BaseCommand):
                 pilier, element = (centre_nord, c["P3-K2"]) if i % 2 == 0 else (est, e["P3-E2"])
                 Projet.objects.filter(id=projet.id).update(cadre_strategique=pilier, element_strategique=element)
                 Activite.objects.filter(projet=projet).update(axe_strategique=None)
+
+            for doc, code in ((programme, "PNDCH"), (pilier1, "P1-ASSB"), (pilier2, "P2-INFRA"), (centre_nord, "P3-KOU"), (est, "P3-EST")):
+                remplir_fiche(doc, code)
 
         self.stdout.write(f"Maillons : {', '.join(TypeDocument.objects.order_by('ordre').values_list('nom', flat=True))}")
         self.stdout.write(f"Documents créés : {programme}, {pilier1}, {pilier2}, {centre_nord}, {est}")

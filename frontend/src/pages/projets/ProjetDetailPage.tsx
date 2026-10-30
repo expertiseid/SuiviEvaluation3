@@ -55,7 +55,13 @@ import {
   telechargerExportProjet,
 } from "../../api/projects";
 import { useDashboardProjet } from "../../api/dashboard";
-import { telechargerExportSuiviExcel, telechargerExportSuiviPdf, telechargerExportSuiviWord } from "../../api/suivi";
+import {
+  telechargerExportSuiviExcel,
+  telechargerExportSuiviPdf,
+  telechargerExportSuiviPeriode,
+  telechargerExportSuiviWord,
+  usePeriodesPlanification,
+} from "../../api/suivi";
 import { RapportFinancierModal } from "./RapportFinancierModal";
 import { CadreLogiqueTab } from "./CadreLogiqueTab";
 import { RisquesTab } from "./RisquesTab";
@@ -74,7 +80,8 @@ import { ResumeAttributs } from "../../components/common/AttributsLibres";
 import { nomsAttributs } from "../../utils/attributs";
 import { ActiviteForm } from "./ActiviteForm";
 import { PlanificationTableau } from "./PlanificationTableau";
-import { type ModeAffichage, useModeAffichage } from "../../utils/affichage";
+import { type ModeAffichage, useModeAffichage, usePreference } from "../../utils/affichage";
+import { ImportPlanification, MenuExportPlanification } from "./ExportPlanification";
 import { AvancementModal } from "./AvancementModal";
 import { useAuth } from "../../auth/useAuth";
 import { libelleMethodeEffective } from "../../utils/methodesCalcul";
@@ -571,6 +578,10 @@ export function ProjetDetailPage() {
   const editionActive = editionDemandee && !lectureSeule;
 
   const [affichagePlan, setAffichagePlan] = useModeAffichage("planification-projet");
+  // Périodes de planification : le suivi de chacune s'exporte aussi depuis le menu Exporter.
+  const { data: periodesSuivi } = usePeriodesPlanification(projetId);
+  // Programmation choisie dans le mode Tableau : reprise par l'export depuis le mode Arbre.
+  const [programmationPlan] = usePreference("programmation-planification", ["trimestres", "dates"] as const);
   const supprimerElement = (a: Activite, profondeur: number) =>
     supprimerAvecConfirmation(
       voc`Supprimer « ${a.libelle} » (${nomDuNiveau(niveauxNoms, profondeur)}) ainsi que tout ce qui se trouve en dessous (niveaux inférieurs, sous-activités, indicateurs liés) ? Cette action est irréversible.`,
@@ -729,15 +740,32 @@ export function ProjetDetailPage() {
               <Menu.Item onClick={() => telechargerExportSuiviWord(projetId, projet.code)}>
                 {voc("Word")}
               </Menu.Item>
+              {(periodesSuivi?.length ?? 0) > 0 && (
+                <>
+                  <Menu.Label>{voc("Suivi par période")}</Menu.Label>
+                  {periodesSuivi!.map((periode) => (
+                    <Menu.Sub key={periode.id}>
+                      <Menu.Sub.Target>
+                        <Menu.Sub.Item>{periode.libelle || voc("Période sans nom")}</Menu.Sub.Item>
+                      </Menu.Sub.Target>
+                      <Menu.Sub.Dropdown>
+                        <Menu.Item onClick={() => telechargerExportSuiviPeriode(periode, projet.code, "excel")}>{voc("Excel")}</Menu.Item>
+                        <Menu.Item onClick={() => telechargerExportSuiviPeriode(periode, projet.code, "pdf")}>{voc("PDF")}</Menu.Item>
+                        <Menu.Item onClick={() => telechargerExportSuiviPeriode(periode, projet.code, "word")}>{voc("Word")}</Menu.Item>
+                      </Menu.Sub.Dropdown>
+                    </Menu.Sub>
+                  ))}
+                </>
+              )}
               {!estMasque("projet:financement") && (
                 <>
                   <Menu.Label>{voc("Finances")}</Menu.Label>
                   <Menu.Item onClick={() => setRapportFinancierOuvert(true)}>{voc("Rapport financier…")}</Menu.Item>
                 </>
               )}
-              <Menu.Label>{voc("Pour la collecte terrain")}</Menu.Label>
+              <Menu.Label>{voc("Collecte")}</Menu.Label>
               <Menu.Item onClick={() => telechargerExportProjet(projetId, "xlsform")}>
-                {voc("XLSForm (KoboToolbox/ODK)")}
+                {voc("XLSForm")}
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
@@ -801,6 +829,10 @@ export function ProjetDetailPage() {
                 }}
               />
             )}
+            {/* Planification vide : elle peut aussi être chargée d'un coup depuis le canevas Excel. */}
+            {projet.activites.length === 0 && !lectureSeule && (
+              <Group mt="sm"><ImportPlanification projetId={projetId} code={projet.code} /></Group>
+            )}
             {projet.activites.length > 0 && (
               <Group mt="sm" justify="space-between">
                 <TextInput
@@ -840,6 +872,11 @@ export function ProjetDetailPage() {
                       </Button>
                     </>
                   )}
+                  {!lectureSeule && <ImportPlanification projetId={projetId} code={projet.code} />}
+                  {/* En mode Tableau, le menu est au-dessus du tableau (avec l'année choisie). */}
+                  {affichagePlan === "arbre" && (
+                    <MenuExportPlanification projetId={projetId} code={projet.code} programmation={programmationPlan} />
+                  )}
                   <SegmentedControl
                     size="xs"
                     value={affichagePlan}
@@ -858,6 +895,9 @@ export function ProjetDetailPage() {
             {affichagePlan === "tableau" && elementsFiltres.length > 0 && (
               <Box mt="sm">
                 <PlanificationTableau
+                  outils={(programmation, annee) => (
+                    <MenuExportPlanification projetId={projetId} code={projet.code} programmation={programmation} annee={annee} />
+                  )}
                   elements={elementsFiltres}
                   nomNiveau={(p) => nomDuNiveau(niveauxNoms, p)}
                   nomsAttributs={nomsAttributsProjet}

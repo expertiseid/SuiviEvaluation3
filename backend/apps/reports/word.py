@@ -254,6 +254,19 @@ class _Redacteur:
         largeur = max(sum(int(c.attributs.get("colspan", 1) or 1) for c in ligne) for ligne in cellules)
         table = conteneur.add_table(rows=len(cellules), cols=largeur)
         table.style = "Table Grid"
+        # Largeurs en % sur la première ligne (style="width:30%") : appliquées à chaque colonne.
+        pourcentages = [
+            float(m.group(1)) if (m := re.fullmatch(r"([\d.]+)%", c.style.get("width", ""))) else None for c in cellules[0]
+        ]
+        if len(pourcentages) == largeur and all(p is not None for p in pourcentages) and conteneur is self.document:
+            section = self.document.sections[-1]
+            utile = section.page_width - section.left_margin - section.right_margin
+            table.autofit = False
+            for j, pct in enumerate(pourcentages):
+                largeur_colonne = int(utile * pct / 100)
+                table.columns[j].width = largeur_colonne  # grille du tableau (autres lecteurs que Word)
+                for cellule_colonne in table.columns[j].cells:
+                    cellule_colonne.width = largeur_colonne
         for i, ligne in enumerate(cellules):
             j = 0
             for cellule in ligne:

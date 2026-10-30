@@ -1,191 +1,37 @@
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { AlertTriangle, Link2, LayoutGrid, Network, Pencil, Search, Trash2 } from "lucide-react";
-import {
-  ActionIcon,
-  Alert,
-  Badge,
-  Button,
-  Card,
-  Group,
-  Modal,
-  MultiSelect,
-  Select,
-  SimpleGrid,
-  Stack,
-  Text,
-  Textarea,
-  TextInput,
-  Title,
-  Tooltip,
-} from "@mantine/core";
+import { AlertTriangle, Building2, Calendar, Landmark, Link2, LayoutGrid, Network, Pencil, Search, Trash2, UserRound, Wallet } from "lucide-react";
+import { ActionIcon, Alert, Badge, Button, Card, Group, SimpleGrid, Stack, Text, TextInput, Title, Tooltip } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import {
-  useCadresStrategiques,
-  useCreateCadreStrategique,
-  useDeleteCadreStrategique,
-  useElementsStrategiques,
-  useTypesDocuments,
-  useUpdateCadreStrategique,
-} from "../../api/strategy";
+import { useCadresStrategiques, useDeleteCadreStrategique, useTypesDocuments } from "../../api/strategy";
 import { BoutonModeEdition } from "../../components/common/BoutonModeEdition";
 import { EmptyState } from "../../components/common/EmptyState";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
 import { correspond } from "../../utils/recherche";
-import type { CadreStrategique, TypeDocument } from "../../types";
+import type { CadreStrategique } from "../../types";
 import { TitreRubrique } from "../../components/common/TitreRubrique";
 import { voc } from "../../utils/vocabulaire";
 import { messageErreurApi } from "../../utils/erreurs";
 import { useAuth } from "../../auth/useAuth";
-import { usePartiesPrenantes, useStructures } from "../../api/organisation";
-import { optionsStructures } from "../../utils/organisation";
-import { lienDocument, maillonsSautes, optionsDocumentsAuDessus, rangMaillon } from "../../utils/chaineDocuments";
+import { lienDocument, rangMaillon } from "../../utils/chaineDocuments";
+import { PROJET_STATUT_LABEL, PROJET_STATUT_TONE } from "../../utils/statusTones";
+import { StatusBadge } from "../../components/common/StatusBadge";
+import { locale } from "../../utils/i18n";
 import { ChaineDocumentsModal } from "./ChaineDocumentsModal";
+import { DocumentModal } from "./DocumentModal";
 
-/**
- * Création ou modification d'un document d'un maillon : nom, description et, hors premier
- * maillon, rattachement à un document au-dessus (et éventuellement à l'un de ses éléments),
- * avec l'avertissement des maillons sautés.
- */
-function CadreModal({
-  opened,
-  onClose,
-  cadreExistant,
-  maillon,
-  maillons,
-}: {
-  opened: boolean;
-  onClose: () => void;
-  cadreExistant?: CadreStrategique | null;
-  maillon: TypeDocument | undefined;
-  maillons: TypeDocument[];
-}) {
-  const createCadre = useCreateCadreStrategique();
-  const updateCadre = useUpdateCadreStrategique();
-  const [nom, setNom] = useState(cadreExistant?.nom ?? "");
-  const [description, setDescription] = useState(cadreExistant?.description ?? "");
-  const [structuresIds, setStructuresIds] = useState<string[]>((cadreExistant?.structures ?? []).map(String));
-  const [partiesIds, setPartiesIds] = useState<string[]>((cadreExistant?.parties_prenantes ?? []).map(String));
-  const [parentId, setParentId] = useState<string | null>(cadreExistant?.document_parent ? String(cadreExistant.document_parent) : null);
-  const [elementId, setElementId] = useState<string | null>(cadreExistant?.element_parent ? String(cadreExistant.element_parent) : null);
-  const { data: structures } = useStructures();
-  const { data: partiesPrenantes } = usePartiesPrenantes();
-  const { data: tousDocuments } = useCadresStrategiques();
-  const { data: elementsParent } = useElementsStrategiques(parentId ? { cadre_strategique: Number(parentId) } : undefined, !!parentId);
+/** Date courte dans la langue de l'interface (jj/mm/aaaa en français). */
+const dateCourte = (iso?: string | null) => (iso ? new Date(`${iso}T00:00:00`).toLocaleDateString(locale()) : "…");
 
-  const rang = rangMaillon(maillon?.id, maillons);
-  const parent = (tousDocuments ?? []).find((d) => String(d.id) === parentId);
-  const sautes = parent ? maillonsSautes(rangMaillon(parent.type_document, maillons), rang, maillons) : [];
-
-  function reinitialiser() {
-    setNom(cadreExistant?.nom ?? "");
-    setDescription(cadreExistant?.description ?? "");
-    setStructuresIds((cadreExistant?.structures ?? []).map(String));
-    setPartiesIds((cadreExistant?.parties_prenantes ?? []).map(String));
-    setParentId(cadreExistant?.document_parent ? String(cadreExistant.document_parent) : null);
-    setElementId(cadreExistant?.element_parent ? String(cadreExistant.element_parent) : null);
-  }
-  const champs = {
-    structures: structuresIds.map(Number),
-    parties_prenantes: partiesIds.map(Number),
-    type_document: maillon?.id ?? null,
-    document_parent: parentId ? Number(parentId) : null,
-    element_parent: parentId && elementId ? Number(elementId) : null,
-  };
-
-  async function handleSave() {
-    if (!nom.trim()) {
-      notifications.show({ message: voc("Le nom est requis."), color: "orange" });
-      return;
-    }
-    try {
-      const enregistre = cadreExistant
-        ? await updateCadre.mutateAsync({ id: cadreExistant.id, payload: { nom: nom.trim(), description, ...champs } })
-        : await createCadre.mutateAsync({ nom: nom.trim(), description, ...champs });
-      notifications.show({ message: voc("Document enregistré"), color: "green" });
-      for (const message of enregistre?.alertes_chaine ?? []) notifications.show({ message: voc(message), color: "orange" });
-      onClose();
-    } catch (error) {
-      notifications.show({ message: messageErreurApi(error, voc("Erreur lors de l'enregistrement")), color: "red" });
-    }
-  }
-
-  const libelleMaillon = maillon?.nom ?? voc("Cadre stratégique");
+/** Ligne « icône · libellé · valeur » d'une carte de document ; rien si la valeur est vide. */
+function InfoLigne({ icone: Icone, libelle, children }: { icone: typeof Calendar; libelle: string; children: ReactNode }) {
+  if (children == null || children === "" || children === false) return null;
   return (
-    <Modal
-      opened={opened}
-      onClose={onClose}
-      onExitTransitionEnd={reinitialiser}
-      title={cadreExistant ? voc`Modifier — ${cadreExistant.nom}` : voc`Nouveau document — ${libelleMaillon}`}
-    >
-      <Stack gap="sm">
-        <TextInput
-          label={voc("Nom")}
-          description={rang === 0 ? voc("Ex : « Cadre stratégique 2022-2026 »") : undefined}
-          value={nom}
-          onChange={(e) => setNom(e.currentTarget.value)}
-          required
-        />
-        <Textarea label={voc("Description")} minRows={2} value={description} onChange={(e) => setDescription(e.currentTarget.value)} />
-        {rang > 0 && (
-          <>
-            <Select
-              label={voc("Rattaché à (document)")}
-              description={voc("Document d'un maillon au-dessus. Sauter un maillon est permis.")}
-              placeholder={voc("Aucun pour l'instant")}
-              data={optionsDocumentsAuDessus(rang, tousDocuments ?? [], maillons, cadreExistant?.id)}
-              value={parentId}
-              onChange={(v) => {
-                setParentId(v);
-                setElementId(null);
-              }}
-              searchable
-              clearable
-            />
-            {parentId && (
-              <Select
-                label={voc("Élément de ce document")}
-                description={voc("Vide : rattaché au document lui-même.")}
-                placeholder={voc("Le document lui-même")}
-                data={(elementsParent ?? []).map((e) => ({ value: String(e.id), label: `${e.type_niveau_nom} : ${e.code ? `${e.code} — ` : ""}${e.nom}` }))}
-                value={elementId}
-                onChange={setElementId}
-                searchable
-                clearable
-              />
-            )}
-            {sautes.length > 0 && (
-              <Alert color="orange" variant="light" icon={<AlertTriangle size={16} />} py={6}>
-                {voc`Maillon(s) sauté(s) : ${sautes.join(", ")}.`}
-              </Alert>
-            )}
-          </>
-        )}
-        <MultiSelect
-          label={voc("Services chargés")}
-          placeholder={voc("Aucun")}
-          data={optionsStructures(structures ?? [])}
-          value={structuresIds}
-          onChange={setStructuresIds}
-          searchable
-          clearable
-        />
-        <MultiSelect
-          label={voc("Parties prenantes")}
-          placeholder={voc("Aucune")}
-          data={(partiesPrenantes ?? []).map((p) => ({ value: String(p.id), label: p.nom }))}
-          value={partiesIds}
-          onChange={setPartiesIds}
-          searchable
-          clearable
-        />
-        <Group justify="flex-end">
-          <Button onClick={handleSave} loading={createCadre.isPending || updateCadre.isPending}>
-            {cadreExistant ? voc("Enregistrer") : voc("Créer")}
-          </Button>
-        </Group>
-      </Stack>
-    </Modal>
+    <Group gap={8} wrap="nowrap" align="flex-start">
+      <Icone size={14} color="var(--mantine-color-dimmed)" style={{ marginTop: 2, flexShrink: 0 }} />
+      <Text size="xs" c="dimmed" w={82} style={{ flexShrink: 0 }}>{libelle}</Text>
+      <Text size="xs" lineClamp={3} style={{ flex: 1 }}>{children}</Text>
+    </Group>
   );
 }
 
@@ -202,7 +48,8 @@ export function CadresStrategiquesListPage() {
   const { data: cadres, isLoading } = useCadresStrategiques(maillon?.id);
   const { data: tousDocuments } = useCadresStrategiques();
   const deleteCadre = useDeleteCadreStrategique();
-  const [modalOuvert, setModalOuvert] = useState(false);
+  // Compteur : un nouveau formulaire vierge à chaque ouverture (le modal garde son état sinon).
+  const [modalOuvert, setModalOuvert] = useState(0);
   const [chaineOuverte, setChaineOuverte] = useState(false);
   const [cadreEnEdition, setCadreEnEdition] = useState<CadreStrategique | null>(null);
   const [recherche, setRecherche] = useState("");
@@ -247,7 +94,7 @@ export function CadresStrategiquesListPage() {
               {voc("Chaîne des documents")}
             </Button>
           )}
-          <Button onClick={() => setModalOuvert(true)}>
+          <Button onClick={() => setModalOuvert((n) => Math.abs(n) + 1)}>
             {rang === 0 ? voc("Nouveau cadre stratégique") : voc`Nouveau document — ${maillon?.nom ?? ""}`}
           </Button>
         </Group>
@@ -277,7 +124,7 @@ export function CadresStrategiquesListPage() {
       ) : (
         <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
           {cadresFiltres.map((cadre) => (
-            <Card key={cadre.id} withBorder padding="md" radius="md">
+            <Card key={cadre.id} withBorder padding="md" radius="md" style={{ display: "flex", flexDirection: "column" }}>
               <Group justify="space-between" align="flex-start" wrap="nowrap">
                 <Text component={Link} to={lienDocument(cadre, maillons)} fw={700} size="md" c="teal.8" style={{ flex: 1 }}>
                   {cadre.nom}
@@ -297,34 +144,54 @@ export function CadresStrategiquesListPage() {
                   </Group>
                 )}
               </Group>
-              {cadre.document_parent && (
-                <Group gap={4} mt={4} wrap="nowrap" align="flex-start">
-                  <Link2 size={13} color="var(--mantine-color-dimmed)" style={{ marginTop: 3 }} />
-                  <Text size="xs" c="dimmed">
-                    {voc("Rattaché à")} {cadre.document_parent_type ? `${cadre.document_parent_type} ` : ""}
-                    <Text component={Link} to={lienParent(cadre)} span size="xs" c="teal.8" fw={600}>{cadre.document_parent_nom}</Text>
-                    {cadre.element_parent_nom ? ` › ${cadre.element_parent_nom}` : ""}
-                  </Text>
+              {/* En-tête : code, statut et documents rattachés. */}
+              {(cadre.code || cadre.statut || (cadre.documents_rattaches?.length ?? 0) > 0) && (
+                <Group gap={6} mt={6}>
+                  {cadre.code && <Badge size="sm" variant="outline" color="gray">{cadre.code}</Badge>}
+                  {cadre.statut && <StatusBadge tone={PROJET_STATUT_TONE[cadre.statut]}>{PROJET_STATUT_LABEL[cadre.statut]}</StatusBadge>}
+                  {(cadre.documents_rattaches?.length ?? 0) > 0 && (
+                    <Badge size="sm" variant="light" color="grape">
+                      {voc`${cadre.documents_rattaches!.length} document(s) rattaché(s)`}
+                    </Badge>
+                  )}
                 </Group>
               )}
-              {(cadre.alertes_chaine ?? []).map((m) => (
-                <Text key={m} size="xs" c="orange.8" mt={2}>⚠ {voc(m)}</Text>
-              ))}
               {cadre.description && (
-                <Text size="sm" c="dimmed" mt={4}>
-                  {cadre.description}
-                </Text>
+                <Text size="sm" c="dimmed" mt={6} lineClamp={2} title={cadre.description}>{cadre.description}</Text>
               )}
-              {(cadre.structures_noms?.length ?? 0) > 0 && (
-                <Text size="xs" c="dimmed" mt={4}>{voc("Services")} : {cadre.structures_noms?.join(", ")}</Text>
-              )}
-              {(cadre.documents_rattaches?.length ?? 0) > 0 && (
-                <Group gap={4} mt={6}>
-                  <Badge size="sm" variant="light" color="grape">
-                    {voc`${cadre.documents_rattaches!.length} document(s) rattaché(s)`}
-                  </Badge>
-                </Group>
-              )}
+              {/* Informations clés, alignées : rattachement, période, budget, bailleurs, responsable, services. */}
+              <Stack gap={5} mt="sm" pt="sm" style={{ borderTop: "1px solid var(--mantine-color-default-border)" }}>
+                <InfoLigne icone={Link2} libelle={voc("Rattaché à")}>
+                  {cadre.document_parent ? (
+                    <>
+                      <Text component={Link} to={lienParent(cadre)} span size="xs" c="teal.8" fw={600}>{cadre.document_parent_nom}</Text>
+                      {/* Codes seulement (« P3-K2 ») : la ligne reste lisible sur la carte. */}
+                      {cadre.element_parent_nom ? ` › ${cadre.element_parent_nom.split(" — ")[0]}` : ""}
+                      {(cadre.elements_parents_secondaires_noms ?? []).length > 0 &&
+                        ` (+ ${cadre.elements_parents_secondaires_noms!.map((n) => n.split(" — ")[0]).join(", ")} ${voc("pour information")})`}
+                    </>
+                  ) : null}
+                </InfoLigne>
+                <InfoLigne icone={Calendar} libelle={voc("Période")}>
+                  {cadre.date_debut || cadre.date_fin ? `${dateCourte(cadre.date_debut)} → ${dateCourte(cadre.date_fin)}` : null}
+                </InfoLigne>
+                <InfoLigne icone={Wallet} libelle={voc("Budget")}>
+                  {Number(cadre.budget_total ?? 0) > 0 ? `${Number(cadre.budget_total).toLocaleString(locale())} FCFA` : null}
+                </InfoLigne>
+                <InfoLigne icone={Landmark} libelle={voc("Bailleurs")}>
+                  {(cadre.financements ?? []).map((f) => f.bailleur_nom).join(", ")}
+                </InfoLigne>
+                <InfoLigne icone={UserRound} libelle={voc("Responsable")}>{cadre.responsable_nom}</InfoLigne>
+                <InfoLigne icone={Building2} libelle={voc("Services")}>
+                  {(cadre.structures_noms ?? []).map((n) => n.split(" — ")[0]).join(", ")}
+                </InfoLigne>
+              </Stack>
+              {(cadre.alertes_chaine ?? []).map((m) => (
+                <Alert key={m} color="orange" variant="light" p={6} mt="xs" icon={<AlertTriangle size={14} />}>
+                  <Text size="xs">{voc(m)}</Text>
+                </Alert>
+              ))}
+              <div style={{ flex: 1 }} />
               <Button component={Link} to={lienDocument(cadre, maillons)} variant="light" size="xs" mt="sm" fullWidth>
                 {voc("Ouvrir")}
               </Button>
@@ -333,8 +200,14 @@ export function CadresStrategiquesListPage() {
         </SimpleGrid>
       )}
 
-      <CadreModal opened={modalOuvert} onClose={() => setModalOuvert(false)} maillon={maillon} maillons={maillons} />
-      <CadreModal
+      <DocumentModal
+        key={`nouveau-${Math.abs(modalOuvert)}`}
+        opened={modalOuvert > 0}
+        onClose={() => setModalOuvert((n) => -n)}
+        maillon={maillon}
+        maillons={maillons}
+      />
+      <DocumentModal
         key={cadreEnEdition?.id ?? "aucun"}
         opened={!!cadreEnEdition}
         onClose={() => setCadreEnEdition(null)}

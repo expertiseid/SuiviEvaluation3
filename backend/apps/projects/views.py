@@ -142,6 +142,79 @@ class ProjetViewSet(viewsets.ModelViewSet):
         response["Content-Disposition"] = f"attachment; filename=xlsform_{projet.code}.xlsx"
         return response
 
+    @action(detail=True, methods=["get"], url_path="planification/export")
+    @dans_la_langue_demandee
+    def export_planification(self, request, pk=None):
+        """
+        Planification exportée : ?contenu=complet (défaut, comme le mode Tableau ; ?programmation=
+        trimestres|dates, ?annee=) | simple (structure seule) | canevas (feuille « Planification »
+        du modèle d'import, préremplie, réimportable) ; ?fichier=xlsx|pdf (pas de PDF du canevas).
+        """
+        import datetime
+
+        from . import export_planification as export
+
+        projet = self.get_object()
+        contenu = request.query_params.get("contenu", "complet")
+        pdf = request.query_params.get("fichier") == "pdf"
+        xlsx = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+        def reponse(octets, nom, pdf_):
+            response = HttpResponse(octets, content_type="application/pdf" if pdf_ else xlsx)
+            response["Content-Disposition"] = f"attachment; filename={nom}_{projet.code}.{'pdf' if pdf_ else 'xlsx'}"
+            return response
+
+        if contenu == "canevas":
+            return reponse(export.exporter_canevas(projet), "canevas_planification", False)
+        lignes, attributs = export.lignes_planification(projet)
+        if contenu == "simple":
+            octets = export.exporter_simple_pdf(projet, lignes) if pdf else export.exporter_simple_excel(projet, lignes)
+            return reponse(octets, "structure_planification", pdf)
+        par_trimestre = request.query_params.get("programmation", "trimestres") != "dates"
+        annees = export.annees_possibles(lignes)
+        try:
+            annee = int(request.query_params.get("annee") or 0)
+        except ValueError:
+            annee = 0
+        if not annee:
+            annee = datetime.date.today().year if datetime.date.today().year in annees else annees[0]
+        fonction = export.exporter_complet_pdf if pdf else export.exporter_complet_excel
+        return reponse(fonction(projet, lignes, attributs, par_trimestre, annee), "planification", pdf)
+
+    @action(detail=True, methods=["post"], url_path="planification/importer", parser_classes=[MultiPartParser, FormParser])
+    def importer_planification(self, request, pk=None):
+        """
+        Réimporte le canevas de la planification dans ce projet (rejouable : met à jour les éléments
+        de même libellé et même parent, ajoute les nouveaux, ne supprime rien). Refusé si les
+        changements de planification du projet passent par une demande d'approbation.
+        """
+        from django.db import transaction
+        from openpyxl import load_workbook
+
+        from apps.core.vocabulaire import ramener_classeur
+
+        from .import_excel import importer_planification
+
+        projet = self.get_object()
+        if exige_demande(projet, request.user):
+            raise ValidationError({"fichier": (
+                "Les changements de planification de ce projet doivent être approuvés : l'import Excel n'est pas "
+                "possible, passez par la saisie (chaque changement devient une demande)."
+            )})
+        fichier = request.data.get("fichier")
+        if not fichier:
+            raise ValidationError({"fichier": "Un fichier Excel (.xlsx) est requis."})
+        try:
+            wb = ramener_classeur(load_workbook(fichier, data_only=True))
+        except Exception as exc:  # fichier corrompu, mauvais format…
+            raise ValidationError({"fichier": f"Impossible de lire ce fichier : {exc}"})
+        feuille = wb["Planification"] if "Planification" in wb.sheetnames else next(
+            (f for f in wb.worksheets if f.title.strip().lower() != "instructions"), wb.worksheets[0]
+        )
+        with transaction.atomic():
+            resultat = importer_planification(feuille, projet)
+        return Response(resultat)
+
     @action(detail=False, methods=["get"], url_path="modele-import")
     @dans_la_langue_demandee
     def modele_import(self, request):

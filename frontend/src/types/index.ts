@@ -191,9 +191,47 @@ export interface CadreStrategique {
   document_parent_type?: string | null;
   element_parent?: number | null;
   element_parent_nom?: string | null;
-  documents_rattaches?: { id: number; nom: string; type_document_nom: string | null; element_parent_nom: string | null }[];
+  /** Autres éléments du document parent, pour information (seul element_parent compte). */
+  elements_parents_secondaires?: number[];
+  elements_parents_secondaires_noms?: string[];
+  documents_rattaches?: {
+    id: number;
+    nom: string;
+    type_document_nom: string | null;
+    element_parent_nom: string | null;
+    elements_secondaires_noms?: string[];
+  }[];
   /** Sauts de maillons, rattachement manquant… */
   alertes_chaine?: string[];
+  /** Fiche du document, comme celle d'un projet (tout facultatif). */
+  code?: string;
+  budget_total?: string;
+  fonds_propres?: string;
+  date_debut?: string | null;
+  date_fin?: string | null;
+  statut?: StatutProjet | "";
+  type_mise_en_oeuvre?: "DIRECT" | "CONSORTIUM";
+  responsable_nom?: string;
+  utilisateurs_affectes?: number[];
+  utilisateurs_affectes_noms?: string[];
+  partenaire_mise_en_oeuvre?: number | null;
+  partenaire_mise_en_oeuvre_nom?: string | null;
+  partenaires_consortium?: number[];
+  partenaires_consortium_noms?: string[];
+  pays?: string[];
+  tout_le_pays?: boolean;
+  zones?: number[];
+  zones_noms?: string[];
+  cible_totale?: number | null;
+  cible_hommes?: number | null;
+  cible_femmes?: number | null;
+  cible_jeunes?: number | null;
+  cible_pdi?: number | null;
+  elements_capitalisation?: string;
+  /** Bailleurs du document (lecture). */
+  financements?: { id: number; bailleur: number; bailleur_nom: string; montant: string }[];
+  /** Bailleurs à enregistrer (écriture) : remplace toute la liste ; un nom inconnu crée le bailleur. */
+  bailleurs?: { nom: string; montant: number }[];
 }
 
 export interface ImportChaineResultat {
@@ -819,6 +857,8 @@ export interface ImportStructurationResultat {
   erreurs: { ligne: number; message: string }[];
   /** Ex : niveau inséré au-dessus d'un niveau existant (anciens éléments gardant leur rattachement). */
   avertissements: { ligne: number; message: string }[];
+  /** Le fichier avait une feuille « Fiche » (programme, pilier…) : fiche et bailleurs mis à jour. */
+  fiche_mise_a_jour?: boolean;
 }
 
 export interface ImportProjetResultat {

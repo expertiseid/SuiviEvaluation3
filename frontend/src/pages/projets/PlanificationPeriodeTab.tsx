@@ -3,6 +3,7 @@ import {
   CalendarPlus,
   CalendarRange,
   Download,
+  FileSpreadsheet,
   ListPlus,
   ListChecks,
   Pencil,
@@ -24,6 +25,7 @@ import {
   Modal,
   NumberInput,
   Progress,
+  SegmentedControl,
   Select,
   SimpleGrid,
   Stack,
@@ -43,7 +45,11 @@ import {
   useDeleteTranchePlanifiee,
   usePeriodesPlanification,
   useSuiviDashboard,
+  analyserCanevasPeriode,
+  importerCanevasPeriode,
+  telechargerCanevasPeriode,
   telechargerExportPeriode,
+  telechargerRapportErreursPeriode,
   useTranchesPeriode,
   useValeursPeriode,
   useTranchesPlanifiees,
@@ -68,6 +74,10 @@ import type {
   ValeurElementPeriode,
 } from "../../types";
 import { ActiviteForm } from "./ActiviteForm";
+import { PeriodeTableau } from "./PeriodeTableau";
+import { type ModeAffichage, useModeAffichage } from "../../utils/affichage";
+import { ImportCanevasSuiviModal } from "../../components/suivi/ImportCanevasSuiviModal";
+import { useQueryClient } from "@tanstack/react-query";
 import { SousActiviteForm } from "./SousActiviteForm";
 import { voc } from "../../utils/vocabulaire";
 import { libelleMethodeEffective } from "../../utils/methodesCalcul";
@@ -687,6 +697,11 @@ export function PlanificationPeriodeTab({
   const [recherche, setRecherche] = useState("");
   const [seulementDansLesDates, setSeulementDansLesDates] = useState(false);
   const peutModifier = useAccesModules().peutEcrire("/projets");
+  // Objectifs de la période saisis par Excel (même écran que le canevas de suivi).
+  const [canevasOuvert, setCanevasOuvert] = useState(false);
+  // Arbre (cartes) ou Tableau, mémorisé comme dans les autres onglets.
+  const [affichage, setAffichage] = useModeAffichage("planification-periode");
+  const queryClient = useQueryClient();
   const { data: suivi } = useSuiviDashboard(projet.id);
   const indicateurs = suivi?.indicateurs ?? [];
 
@@ -749,6 +764,26 @@ export function PlanificationPeriodeTab({
       act.sous_activites.some((sa) => visible(sa.libelle, `sous_activite-${sa.id}`))
     );
   }
+
+  /** Éléments de la planification par identifiant (pour ouvrir les dates et le commentaire depuis le tableau). */
+  const objetsParCle = useMemo(() => {
+    const map = new Map<string, Element>();
+    const parcourir = (liste: Activite[]) =>
+      liste.forEach((a) => {
+        map.set(`activite-${a.id}`, { type: "activite", objet: a });
+        a.sous_activites.forEach((sa) => map.set(`sous_activite-${sa.id}`, { type: "sous_activite", objet: sa, unite: sa.unite_quantite }));
+        parcourir(a.enfants);
+      });
+    parcourir(projet.activites);
+    return map;
+  }, [projet.activites]);
+
+  /** Lignes du tableau : mêmes filtres que l'arbre (un élément reste affiché si un élément en dessous correspond). */
+  const lignesTableau = (valeurs?.lignes ?? []).filter((l) => {
+    const objet = objetsParCle.get(`${l.type}-${l.id}`);
+    if (!objet) return false;
+    return objet.type === "activite" ? activiteVisible(objet.objet) : visible(l.libelle, `sous_activite-${l.id}`);
+  });
 
   function effacer(trancheId: number, libelle: string) {
     confirmerSuppression({
@@ -834,6 +869,31 @@ export function PlanificationPeriodeTab({
 
   return (
     <Stack gap="md">
+      {periode && (
+        <ImportCanevasSuiviModal
+          projetId={projet.id}
+          codeProjet={projet.code}
+          opened={canevasOuvert}
+          onClose={() => setCanevasOuvert(false)}
+          source={{
+            titre: voc`Saisie des objectifs par Excel — ${periode.libelle}`,
+            consigne: voc("1. Télécharge le canevas : la planification du projet et ses indicateurs y sont déjà, il ne reste que les objectifs de la période à saisir (colonnes bleues). 2. Complète-le hors ligne. 3. Réimporte-le : un aperçu montre les objectifs ajoutés ou modifiés, et les cellules en erreur, avant tout enregistrement."),
+            libelleTelecharger: voc("Télécharger le canevas"),
+            libelleExistants: voc("Objectifs déjà définis"),
+            messageSucces: voc("Objectifs de la période importés"),
+            telecharger: () => telechargerCanevasPeriode(periode, projet.code),
+            analyser: (fichier, mode) => analyserCanevasPeriode(periode.id, fichier, mode),
+            importer: async (fichier, mode) => {
+              const resultat = await importerCanevasPeriode(periode.id, fichier, mode);
+              queryClient.invalidateQueries({ queryKey: ["tranches-planifiees"] });
+              queryClient.invalidateQueries({ queryKey: ["periodes-planification"] });
+              recalculerValeurs();
+              return resultat;
+            },
+            rapportErreurs: (fichier, mode) => telechargerRapportErreursPeriode(periode.id, fichier, mode),
+          }}
+        />
+      )}
       <Card withBorder padding="md">
         <Group justify="space-between" align="flex-end" wrap="wrap">
           <Select
@@ -867,8 +927,13 @@ export function PlanificationPeriodeTab({
                 </Button>
               </>
             )}
+            {periode && peutModifier && (
+              <Button variant="light" leftSection={<FileSpreadsheet size={16} />} onClick={() => setCanevasOuvert(true)}>
+                {voc("Saisie par Excel")}
+              </Button>
+            )}
             {periode && (
-              <Menu shadow="md" width={200}>
+              <Menu shadow="md" width={220}>
                 <Menu.Target>
                   <Button variant="light" leftSection={<Download size={16} />}>{voc("Exporter")}</Button>
                 </Menu.Target>
@@ -877,6 +942,10 @@ export function PlanificationPeriodeTab({
                   <Menu.Item onClick={() => telechargerExportPeriode(periode, projet.code, "excel")}>{voc("Excel")}</Menu.Item>
                   <Menu.Item onClick={() => telechargerExportPeriode(periode, projet.code, "pdf")}>{voc("PDF")}</Menu.Item>
                   <Menu.Item onClick={() => telechargerExportPeriode(periode, projet.code, "word")}>{voc("Word")}</Menu.Item>
+                  <Menu.Divider />
+                  <Menu.Item leftSection={<FileSpreadsheet size={14} />} onClick={() => telechargerCanevasPeriode(periode, projet.code)}>
+                    {voc("Canevas Excel")}
+                  </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
             )}
@@ -935,11 +1004,22 @@ export function PlanificationPeriodeTab({
                 onChange={(e) => setRecherche(e.currentTarget.value)}
                 w={320}
               />
-              <Switch
-                label={voc("Seulement les éléments prévus à ces dates dans la planification globale")}
-                checked={seulementDansLesDates}
-                onChange={(e) => setSeulementDansLesDates(e.currentTarget.checked)}
-              />
+              <Group gap="md">
+                <Switch
+                  label={voc("Seulement les éléments prévus à ces dates")}
+                  checked={seulementDansLesDates}
+                  onChange={(e) => setSeulementDansLesDates(e.currentTarget.checked)}
+                />
+                <SegmentedControl
+                  size="xs"
+                  value={affichage}
+                  onChange={(v) => setAffichage(v as ModeAffichage)}
+                  data={[
+                    { value: "arbre", label: voc("Arbre") },
+                    { value: "tableau", label: voc("Tableau") },
+                  ]}
+                />
+              </Group>
             </Group>
 
             {editionActive && (
@@ -956,7 +1036,20 @@ export function PlanificationPeriodeTab({
                 </Tooltip>
               </Group>
             )}
-            <Stack gap={6}>{projet.activites.map((act) => renduActivite(act, 0))}</Stack>
+            {affichage === "tableau" ? (
+              <PeriodeTableau
+                lignes={lignesTableau}
+                periode={periode}
+                modifiable={editionActive && peutModifier}
+                onEditer={(l) => {
+                  const objet = objetsParCle.get(`${l.type}-${l.id}`);
+                  if (objet) setElementEnEdition(objet);
+                }}
+                onEffacer={effacer}
+              />
+            ) : (
+              <Stack gap={6}>{projet.activites.map((act) => renduActivite(act, 0))}</Stack>
+            )}
           </Card>
 
           <Card withBorder padding="md">

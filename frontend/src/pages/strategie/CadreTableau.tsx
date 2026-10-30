@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
-import { ActionIcon, Badge, Group, SegmentedControl, Select, Table, Text, Tooltip } from "@mantine/core";
-import { Pencil, Plus } from "lucide-react";
-import { useRecapAxesCadreStrategique } from "../../api/strategy";
+import type { ReactNode } from "react";
+import { Badge, Button, Group, Menu, SegmentedControl, Select, Table, Text } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import { Download, FileInput, FileSpreadsheet, FileText } from "lucide-react";
+import { telechargerExportStructuration, telechargerTableauDocument, useRecapAxesCadreStrategique } from "../../api/strategy";
 import type { ElementStrategique, RecapAxesCadreStrategique, TypeNiveau } from "../../types";
 import { usePreference } from "../../utils/affichage";
 import { locale } from "../../utils/i18n";
@@ -51,21 +53,23 @@ function Taux({ taux, titre }: { taux: number | null; titre: boolean }) {
  */
 export function CadreTableau({
   cadreId,
+  nomDocument,
   niveaux,
   racines,
   enfants,
   editionActive,
-  onModifier,
-  onAjouter,
+  actions,
 }: {
   cadreId: number;
+  /** Nom du document, pour le nom du fichier exporté. */
+  nomDocument: string;
   niveaux: TypeNiveau[];
   racines: ElementStrategique[];
   /** Éléments en dessous (déjà filtrés par la recherche). */
   enfants: (e: ElementStrategique) => ElementStrategique[];
   editionActive: boolean;
-  onModifier: (e: ElementStrategique) => void;
-  onAjouter: (typeNiveau: TypeNiveau, parent: ElementStrategique) => void;
+  /** Actions d'un élément (mêmes icônes que dans l'arbre : ajouter dessous, modifier, supprimer). */
+  actions: (e: ElementStrategique) => ReactNode;
 }) {
   const { data } = useRecapAxesCadreStrategique(cadreId);
   const [programmation, setProgrammation] = usePreference("programmation-planification", ["trimestres", "dates"] as const);
@@ -103,7 +107,8 @@ export function CadreTableau({
 
   return (
     <>
-      <Group gap="md" mb="xs">
+      <Group gap="md" mb="xs" justify="space-between">
+        <Group gap="md">
         <SegmentedControl
           size="xs"
           value={programmation}
@@ -119,6 +124,8 @@ export function CadreTableau({
             <Select size="xs" w={100} value={String(annee)} onChange={(v) => v && setAnnee(Number(v))} data={anneesPossibles.map(String)} allowDeselect={false} />
           </Group>
         )}
+        </Group>
+        <MenuExport cadreId={cadreId} nomDocument={nomDocument} programmation={programmation} annee={annee} />
       </Group>
       <Table.ScrollContainer minWidth={900}>
         <Table withTableBorder withColumnBorders verticalSpacing={6} fz="sm">
@@ -153,7 +160,6 @@ export function CadreTableau({
               const brut = estElement ? null : l.activite.budget_alloue;
               const budget = t ? t.alloue : brut !== null ? Number(brut) : null;
               const taux = estElement ? (t?.tauxPhysique ?? null) : l.activite.taux_physique;
-              const niveauEnfant = estElement ? niveaux.find((n) => n.niveau_parent === l.element.type_niveau) : undefined;
               return (
                 <Table.Tr key={estElement ? `e${l.element.id}` : `a${l.activite.id}`} bg={fond}>
                   <Table.Td ta="center" fw={titre ? 700 : undefined} {...MILIEU}>{estElement ? l.element.code : l.activite.code}</Table.Td>
@@ -183,18 +189,7 @@ export function CadreTableau({
                   <Table.Td ta="center" {...MILIEU}><Taux taux={taux} titre={!!titre} /></Table.Td>
                   {editionActive && (
                     <Table.Td {...MILIEU}>
-                      {estElement && (
-                        <Group gap={2} wrap="nowrap">
-                          <Tooltip label={voc("Modifier")}>
-                            <ActionIcon size="sm" variant="subtle" onClick={() => onModifier(l.element)}><Pencil size={12} /></ActionIcon>
-                          </Tooltip>
-                          {niveauEnfant && (
-                            <Tooltip label={voc`Ajouter ${niveauEnfant.nom_niveau}`}>
-                              <ActionIcon size="sm" variant="subtle" onClick={() => onAjouter(niveauEnfant, l.element)}><Plus size={13} /></ActionIcon>
-                            </Tooltip>
-                          )}
-                        </Group>
-                      )}
+                      {estElement && actions(l.element)}
                     </Table.Td>
                   )}
                 </Table.Tr>
@@ -204,5 +199,63 @@ export function CadreTableau({
         </Table>
       </Table.ScrollContainer>
     </>
+  );
+}
+
+/**
+ * Menu « Exporter » de l'arborescence d'un document (modes Arbre et Tableau) : tableau complet
+ * (programmation, budgets, taux) ou export simple (structure seule), en Excel ou en PDF, et le
+ * canevas de remplissage réimportable. `annee` absente : le serveur choisit (année en cours).
+ */
+export function MenuExport({
+  cadreId,
+  nomDocument,
+  programmation,
+  annee,
+}: {
+  cadreId: number;
+  nomDocument: string;
+  programmation: "trimestres" | "dates";
+  annee?: number;
+}) {
+  const [exportEnCours, setExportEnCours] = useState(false);
+
+  /** Tout le tableau (tous les niveaux, sans le filtre de recherche), avec la programmation affichée. */
+  async function exporter(fichier: "xlsx" | "pdf" | "canevas", contenu: "complet" | "simple" = "complet") {
+    setExportEnCours(true);
+    try {
+      if (fichier === "canevas") await telechargerExportStructuration(cadreId, nomDocument);
+      else await telechargerTableauDocument(cadreId, nomDocument, fichier, programmation, annee ?? 0, contenu);
+    } catch {
+      notifications.show({ message: voc("Erreur lors de l'export"), color: "red" });
+    } finally {
+      setExportEnCours(false);
+    }
+  }
+
+  return (
+  <Menu position="bottom-end" withinPortal>
+    <Menu.Target>
+      <Button size="xs" variant="light" leftSection={<Download size={14} />} loading={exportEnCours}>
+        {voc("Exporter")}
+      </Button>
+    </Menu.Target>
+    <Menu.Dropdown>
+      <Menu.Label>{voc("Tableau complet (programmation, budgets, taux)")}</Menu.Label>
+      <Menu.Item leftSection={<FileSpreadsheet size={14} />} onClick={() => exporter("xlsx")}>{voc("Excel (.xlsx)")}</Menu.Item>
+      <Menu.Item leftSection={<FileText size={14} />} onClick={() => exporter("pdf")}>{voc("PDF")}</Menu.Item>
+      <Menu.Divider />
+      <Menu.Label>{voc("Export simple (structure seule)")}</Menu.Label>
+      <Menu.Item leftSection={<FileSpreadsheet size={14} />} onClick={() => exporter("xlsx", "simple")}>{voc("Excel (.xlsx)")}</Menu.Item>
+      <Menu.Item leftSection={<FileText size={14} />} onClick={() => exporter("pdf", "simple")}>{voc("PDF")}</Menu.Item>
+      <Menu.Divider />
+      <Menu.Label>{voc("Réimportable")}</Menu.Label>
+      {/* Même format que le modèle d'import : on complète le fichier et on le réimporte. */}
+      <Menu.Item leftSection={<FileInput size={14} />} onClick={() => exporter("canevas")}>
+        <Text size="sm">{voc("Canevas de remplissage (Excel)")}</Text>
+        <Text size="xs" c="dimmed">{voc("À compléter puis réimporter avec « Importer depuis Excel »")}</Text>
+      </Menu.Item>
+    </Menu.Dropdown>
+  </Menu>
   );
 }

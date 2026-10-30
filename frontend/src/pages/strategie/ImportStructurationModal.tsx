@@ -6,14 +6,20 @@ import { useImporterStructuration, telechargerModeleImportStructuration } from "
 import type { ImportStructurationResultat } from "../../types";
 import { voc } from "../../utils/vocabulaire";
 
+/**
+ * Import Excel d'un document. Cadre stratégique : la structuration seule. Programme, Pilier…
+ * (`avecFiche`) : modèle comme celui d'un projet — feuilles Fiche, Financements et Structuration.
+ */
 export function ImportStructurationModal({
   opened,
   onClose,
   cadreStrategiqueId,
+  avecFiche = false,
 }: {
   opened: boolean;
   onClose: () => void;
   cadreStrategiqueId: number;
+  avecFiche?: boolean;
 }) {
   const importer = useImporterStructuration();
   const [fichier, setFichier] = useState<File | null>(null);
@@ -36,7 +42,7 @@ export function ImportStructurationModal({
     try {
       const res = await importer.mutateAsync(formData);
       setResultat(res);
-      if (res.elements_crees > 0 || res.elements_mis_a_jour > 0) {
+      if (res.elements_crees > 0 || res.elements_mis_a_jour > 0 || res.fiche_mise_a_jour) {
         notifications.show({
           message: voc`${res.elements_crees} élément(s) créé(s), ${res.elements_mis_a_jour} mis à jour`,
           color: "green",
@@ -48,8 +54,18 @@ export function ImportStructurationModal({
   }
 
   return (
-    <Modal opened={opened} onClose={fermer} title={voc("Importer la structuration depuis Excel")} size="lg">
+    <Modal
+      opened={opened}
+      onClose={fermer}
+      title={avecFiche ? voc("Importer la fiche et la structuration depuis Excel") : voc("Importer la structuration depuis Excel")}
+      size="lg"
+    >
       <Stack gap="md">
+        {avecFiche && (
+          <Alert color="teal" variant="light">
+            {voc("Même modèle que pour un projet : feuille « Fiche » (un champ par ligne, préremplie avec les valeurs actuelles), « Financements » (un bailleur par ligne) et « Structuration » (une colonne par niveau, puis « Contribue à (code) »). Une cellule vide ne change rien.")}
+          </Alert>
+        )}
         <Alert color="blue" variant="light">
           {voc("Utilise le modèle ci-dessous : une colonne = un niveau. Écris chaque élément dans la colonne de son niveau, une seule colonne par ligne — son rattachement au niveau supérieur se déduit automatiquement du dernier élément écrit juste à gauche, au-dessus. Les niveaux manquants sont créés automatiquement. Réimporter le même fichier met à jour les éléments déjà importés au lieu de les dupliquer.")}
         </Alert>
@@ -82,6 +98,7 @@ export function ImportStructurationModal({
               color={resultat.elements_crees > 0 || resultat.elements_mis_a_jour > 0 ? "green" : "orange"}
               title={voc("Résultat de l'import")}
             >
+              {resultat.fiche_mise_a_jour && <Text size="sm">{voc("Fiche et bailleurs mis à jour.")}</Text>}
               <Text size="sm">
                 <strong>{resultat.niveaux_crees}</strong> {voc("niveau(x) créé(s),")} <strong>{resultat.elements_crees}</strong> {voc("élément(s) créé(s),")} <strong>{resultat.elements_mis_a_jour}</strong> {voc("mis à jour.")}
               </Text>

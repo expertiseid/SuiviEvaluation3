@@ -243,6 +243,51 @@ export function useDupliquerActivite() {
   });
 }
 
+/**
+ * Planification d'un projet exportée : « complet » (comme le mode Tableau : programmation,
+ * budgets, taux), « simple » (structure seule) ou « canevas » (modèle d'import prérempli,
+ * réimportable dans le projet).
+ */
+export async function telechargerPlanification(
+  projetId: number,
+  code: string,
+  contenu: "complet" | "simple" | "canevas",
+  fichier: "xlsx" | "pdf",
+  programmation: "trimestres" | "dates",
+  annee?: number,
+) {
+  const response = await apiClient.get(`/projets/${projetId}/planification/export/`, {
+    responseType: "blob",
+    params: { contenu, fichier, programmation, annee: annee ?? "" },
+  });
+  const prefixe = { complet: "planification", simple: "structure_planification", canevas: "canevas_planification" }[contenu];
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", `${prefixe}_${code.replace(/[^\w-]+/g, "_")}.${contenu === "canevas" ? "xlsx" : fichier}`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+/** Réimport du canevas de la planification dans le projet (met à jour sans dupliquer). */
+export function useImporterPlanification(projetId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (fichier: File) => {
+      const donnees = new FormData();
+      donnees.append("fichier", fichier);
+      return (
+        await apiClient.post<{ elements_crees: number; sous_activites_creees: number; niveaux: string[]; erreurs: { ligne: number; message: string }[] }>(
+          `/projets/${projetId}/planification/importer/`, donnees, { headers: { "Content-Type": "multipart/form-data" } },
+        )
+      ).data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projets"] }),
+  });
+}
+
 export async function telechargerExportProjet(id: number, format: "xlsform") {
   const response = await apiClient.get(`/projets/${id}/export/${format}/`, { responseType: "blob" });
   const url = window.URL.createObjectURL(new Blob([response.data]));

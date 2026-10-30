@@ -6,10 +6,15 @@ import { voc } from "../../utils/vocabulaire";
 import { type LigneBailleur, nouvelleLigneBailleur, totalBailleurs } from "./lignesBailleurs";
 
 /**
- * Bailleurs du projet et montant apporté par chacun : autant de lignes que de bailleurs. Un nom
- * inconnu crée le bailleur à l'enregistrement du projet.
+ * Bailleurs du projet (ou d'un document de la chaîne) et montant apporté par chacun : autant de
+ * lignes que de bailleurs. Un nom inconnu crée le bailleur à l'enregistrement.
  */
-export function BailleursMontants({ lignes, onChange }: { lignes: LigneBailleur[]; onChange: (lignes: LigneBailleur[]) => void }) {
+export function BailleursMontants({ lignes, onChange, messageVide }: {
+  lignes: LigneBailleur[];
+  onChange: (lignes: LigneBailleur[]) => void;
+  /** Texte quand aucun bailleur n'est saisi (par défaut, celui d'un projet). */
+  messageVide?: string;
+}) {
   const { data: bailleurs } = useBailleurs();
   const noms = [...new Set((bailleurs ?? []).map((b) => b.nom))];
   const modifier = (cle: number, champs: Partial<LigneBailleur>) =>
@@ -18,7 +23,7 @@ export function BailleursMontants({ lignes, onChange }: { lignes: LigneBailleur[
   return (
     <Stack gap={6}>
       <Text size="sm" fw={500}>{voc("Bailleurs et montants")}</Text>
-      {lignes.length === 0 && <Text size="xs" c="dimmed">{voc("Aucun bailleur : le projet est financé sur fonds propres.")}</Text>}
+      {lignes.length === 0 && <Text size="xs" c="dimmed">{messageVide ?? voc("Aucun bailleur : le projet est financé sur fonds propres.")}</Text>}
       {lignes.map((l) => (
         <Group key={l.cle} gap="xs" wrap="nowrap" align="flex-start">
           <Autocomplete

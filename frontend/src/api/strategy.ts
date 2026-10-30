@@ -142,6 +142,21 @@ export function useCreateTypeNiveau() {
   });
 }
 
+/**
+ * Supprime un niveau s'il n'a aucun élément : niveau « Sous-… » créé par « Ajouter dessous »
+ * puis abandonné (formulaire fermé sans enregistrer).
+ */
+export function useSupprimerNiveauSiVide() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const elements = (await apiClient.get<Paginated<ElementStrategique>>("/elements-strategiques/", { params: { type_niveau: id } })).data;
+      if (elements.count === 0) await apiClient.delete(`/types-niveaux/${id}/`);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["types-niveaux"] }),
+  });
+}
+
 export function useUpdateTypeNiveau() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -222,10 +237,36 @@ export async function telechargerExportStructuration(cadreStrategiqueId: number,
   const url = window.URL.createObjectURL(new Blob([response.data]));
   const link = document.createElement("a");
   link.href = url;
-  link.setAttribute("download", `plan_strategique_${nomCadre.replace(/[^\w-]+/g, "_")}.xlsx`);
+  link.setAttribute("download", `canevas_${nomCadre.replace(/[^\w-]+/g, "_")}.xlsx`);
   document.body.appendChild(link);
   link.click();
   link.remove();
+}
+
+/**
+ * Arborescence d'un document exportée en Excel ou en PDF : « complet » = le mode Tableau
+ * (programmation et année choisies, budgets, taux, activités) ; « simple » = la structure seule.
+ */
+export async function telechargerTableauDocument(
+  cadreStrategiqueId: number,
+  nomFichier: string,
+  fichier: "xlsx" | "pdf",
+  programmation: "trimestres" | "dates",
+  annee: number,
+  contenu: "complet" | "simple" = "complet",
+) {
+  const response = await apiClient.get(`/cadres-strategiques/${cadreStrategiqueId}/tableau/`, {
+    responseType: "blob",
+    params: { fichier, programmation, annee, contenu },
+  });
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", `${contenu === "simple" ? "structure" : "tableau"}_${nomFichier.replace(/[^\w-]+/g, "_")}.${fichier}`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
 }
 
 export async function telechargerModeleImportStructuration(cadreStrategiqueId: number) {
@@ -254,6 +295,8 @@ export function useImporterStructuration() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["types-niveaux"] });
       queryClient.invalidateQueries({ queryKey: ["elements-strategiques"] });
+      // Feuille « Fiche » d'un programme, d'un pilier… : la fiche et les bailleurs changent aussi.
+      queryClient.invalidateQueries({ queryKey: ["cadres-strategiques"] });
     },
   });
 }

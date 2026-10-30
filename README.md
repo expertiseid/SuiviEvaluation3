@@ -29,7 +29,9 @@ bénéficiaires, documents, alertes et tableaux de bord.
   Programme → Pilier 1 → Pilier 2 → Pilier 3, puis les projets), chacun une rubrique du menu
   avec ses propres documents ; rattachement au document au-dessus ou à l'un de ses éléments,
   et élément par élément (« Contribue à ») ; sauts de maillons permis avec avertissement ;
-  budgets, taux et projets remontés sur toute la chaîne ; toute la chaîne en un fichier Excel.
+  budgets, taux et projets remontés sur toute la chaîne ; toute la chaîne en un fichier Excel ;
+  chaque programme ou pilier a sa fiche comme un projet (code, statut, dates, budget et
+  bailleurs, responsable, partenaires, zones, cibles, capitalisation).
 - **Projets** : fiche projet (bailleurs, partenaires, budget, dates, zones, cibles),
   financements multi-bailleurs, équipe de projet, historique des modifications.
 - **Planification à niveaux libres** : aucun niveau imposé — chaque projet nomme et

@@ -1,7 +1,10 @@
 
+import datetime
+
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.utils.text import slugify
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -63,9 +66,15 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
         Un rôle à visibilité globale voit tous les cadres stratégiques ; un
         rôle restreint (chef de projet, animateur de terrain) ne voit que
         ceux rattachés à un projet auquel il est affecté — cohérent avec la
-        restriction déjà appliquée sur les projets eux-mêmes.
+        restriction déjà appliquée sur les projets eux-mêmes — et ceux
+        auxquels il est affecté directement.
         """
-        queryset = CadreStrategique.objects.select_related("type_document", "document_parent", "element_parent")
+        queryset = CadreStrategique.objects.select_related(
+            "type_document", "document_parent", "element_parent", "partenaire_mise_en_oeuvre",
+        ).prefetch_related(
+            "structures", "parties_prenantes", "partenaires_consortium", "zones", "utilisateurs_affectes",
+            "elements_parents_secondaires",
+        )
         type_document = self.request.query_params.get("type_document")
         if type_document:
             # Maillon de la chaîne ; le premier maillon reprend aussi les documents sans type.
@@ -81,13 +90,15 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
         # Rôle restreint : les documents auxquels comptent ses projets (et ceux au-dessus d'eux).
         from .chaine import documents_des_projets
 
+        # Plus les documents auxquels il est affecté directement (fiche du document).
         projets = Projet.objects.filter(id__in=visible_projets_ids(self.request.user))
-        return queryset.filter(id__in=documents_des_projets(projets))
+        return queryset.filter(Q(id__in=documents_des_projets(projets)) | Q(utilisateurs_affectes=self.request.user)).distinct()
 
     def perform_destroy(self, instance):
         supprimer_cadre_strategique_cascade(instance)
 
     @action(detail=True, methods=["get"], url_path="export")
+    @dans_la_langue_demandee
     def export_structuration(self, request, pk=None):
         cadre = self.get_object()
         contenu = exporter_structuration(cadre)
@@ -112,6 +123,7 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
         return self._fichier(generer_modele_chaine(), "modele_chaine_documents.xlsx")
 
     @action(detail=False, methods=["get"], url_path="chaine/export")
+    @dans_la_langue_demandee
     def export_chaine(self, request):
         """Toute la chaîne actuelle au format du modèle (réimportable)."""
         from .import_chaine import exporter_chaine
@@ -267,6 +279,46 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
             })
         return Response({"elements": lignes})
 
+    @action(detail=True, methods=["get"], url_path="tableau")
+    @dans_la_langue_demandee
+    def tableau(self, request, pk=None):
+        """
+        Export du mode Tableau de l'arborescence (n'importe quel maillon) : ?fichier=xlsx|pdf,
+        ?contenu=simple pour la structure seule (sans activités ni chiffres),
+        ?programmation=trimestres|dates, ?annee= (programmation par trimestres ; défaut : l'année
+        en cours si les activités la couvrent, sinon la première).
+        """
+        from .tableau import (
+            annees_possibles, exporter_simple_excel, exporter_simple_pdf, exporter_tableau_excel, exporter_tableau_pdf,
+            lignes_simples, lignes_tableau,
+        )
+
+        cadre = self.get_object()
+        if request.query_params.get("contenu") == "simple":
+            # Export simple : la structure seule (éléments, niveaux, contributions), sans chiffres.
+            nom = f"structure_{slugify(cadre.code or cadre.nom)[:60] or cadre.id}"
+            lignes = lignes_simples(cadre)
+            if request.query_params.get("fichier") == "pdf":
+                response = HttpResponse(exporter_simple_pdf(cadre, lignes), content_type="application/pdf")
+                response["Content-Disposition"] = f"attachment; filename={nom}.pdf"
+                return response
+            return self._fichier(exporter_simple_excel(cadre, lignes), f"{nom}.xlsx")
+        lignes = lignes_tableau(cadre, visible_projets_ids(request.user))
+        par_trimestre = request.query_params.get("programmation", "trimestres") != "dates"
+        annees = annees_possibles(lignes)
+        try:
+            annee = int(request.query_params.get("annee") or 0)
+        except ValueError:
+            annee = 0
+        if not annee:
+            annee = datetime.date.today().year if datetime.date.today().year in annees else annees[0]
+        nom = f"tableau_{slugify(cadre.code or cadre.nom)[:60] or cadre.id}"
+        if request.query_params.get("fichier") == "pdf":
+            response = HttpResponse(exporter_tableau_pdf(cadre, lignes, par_trimestre, annee), content_type="application/pdf")
+            response["Content-Disposition"] = f"attachment; filename={nom}.pdf"
+            return response
+        return self._fichier(exporter_tableau_excel(cadre, lignes, par_trimestre, annee), f"{nom}.xlsx")
+
     @action(detail=True, methods=["get"], url_path="recap-axes")
     def recap_axes(self, request, pk=None):
         """
@@ -281,82 +333,9 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
         élément cumulant les activités de ses sous-éléments. Limité aux
         projets visibles par l'utilisateur.
         """
-        from .chaine import activites_rattachees
+        from .tableau import donnees_recap_axes
 
-        cadre = self.get_object()
-        ids = visible_projets_ids(request.user)
-        elements = ElementStrategique.objects.filter(type_niveau__cadre_strategique=cadre).select_related("type_niveau")
-        rattachees = activites_rattachees(cadre, ids)
-        element_de = {a.id: element for a, element in rattachees}
-        arbres_taux = _ArbresTaux()
-        # Budgets sans double compte : calculés sur toutes les activités des projets concernés
-        # (un niveau parent peut être rattaché à un autre élément du cadre que ses activités).
-        activites = [a for a, _ in rattachees]
-        toutes = list(
-            Activite.objects.filter(projet__id__in={a.projet_id for a in activites}).only(
-                "id", "activite_parent_id", "budget_alloue", "budget_realise"
-            )
-        )
-        alloue_compte = activites_comptees(toutes, "budget_alloue")
-        realise_compte = activites_comptees(toutes, "budget_realise")
-        parent_de = {a.id: a.activite_parent_id for a in toutes}
-
-        def ancetres(activite_id):
-            resultat, courant = [], parent_de.get(activite_id)
-            while courant is not None:
-                resultat.append(courant)
-                courant = parent_de.get(courant)
-            return resultat
-        return Response(
-            {
-                "elements": [
-                    {
-                        "id": e.id,
-                        "code": e.code,
-                        "nom": e.nom,
-                        "type_niveau": e.type_niveau_id,
-                        "ordre_niveau": e.type_niveau.ordre,
-                        "element_parent": e.element_parent_id,
-                    }
-                    for e in elements
-                ],
-                "activites": [
-                    {
-                        "id": a.id,
-                        "code": a.code_activite,
-                        "libelle": a.libelle,
-                        "projet_id": a.projet.id,
-                        "projet_code": a.projet.code,
-                        "axe": element_de[a.id],
-                        "budget_alloue": a.budget_alloue,
-                        "budget_realise": a.budget_realise,
-                        # Part comptée dans les totaux (0 si le détail est saisi en dessous).
-                        "budget_alloue_compte": a.budget_alloue if a.id in alloue_compte else 0,
-                        "budget_realise_compte": a.budget_realise if a.id in realise_compte else 0,
-                        # Éléments au-dessus : dans un groupe, un élément dont un élément en dessous
-                        # figure aussi n'entre pas dans la moyenne des taux (déjà compté via lui).
-                        "ancetres": ancetres(a.id),
-                        "taux_physique": arbres_taux.taux(a),
-                        "taux_financier": a.taux_execution_financiere,
-                        "date_debut": a.date_debut,
-                        "date_fin": a.date_fin,
-                    }
-                    for a in activites
-                ],
-            }
-        )
-
-
-class _ArbresTaux:
-    """Taux des éléments de plusieurs projets : un ArbreTaux par projet, chargé à la demande."""
-
-    def __init__(self):
-        self.arbres = {}
-
-    def taux(self, activite):
-        if activite.projet_id not in self.arbres:
-            self.arbres[activite.projet_id] = ArbreTaux(activite.projet)
-        return self.arbres[activite.projet_id].resultat(activite.id).taux
+        return Response(donnees_recap_axes(self.get_object(), visible_projets_ids(request.user)))
 
 
 class TypeNiveauViewSet(viewsets.ModelViewSet):

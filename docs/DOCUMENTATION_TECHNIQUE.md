@@ -175,6 +175,7 @@ NiveauAdministratif ── Zone (arborescence : parent)
 | `Partenaire` | `nom`, `type` (bailleur, mise en œuvre), contacts | |
 | `Bailleur` | `nom`, `type` (institutionnel, fondation, coopération bilatérale, autre) | Modèle recommandé pour les financements |
 | `Financement` | `projet`, `bailleur`, `montant_finance` | Plusieurs bailleurs par projet |
+| `FinancementDocument` | `document`, `bailleur`, `montant` | Bailleurs d'un document de la chaîne (fiche) |
 | `Intervenant` | `nom`, `prenom`, `fonction`, `utilisateur` (facultatif), projets et activités associés | Couvre les personnes sans compte sur la plateforme |
 
 **Indicateurs (`indicators`)**
@@ -295,6 +296,12 @@ Aucun niveau n'est imposé, ni au-dessus du projet ni en dessous :
   élément peut préciser l'élément d'un document au-dessus auquel il contribue
   (`ElementStrategique.contribue_a`, hérité par ce qui est en dessous) ; cela l'emporte sur le
   rattachement du document. Les projets se rattachent au dernier maillon (`Projet.cadre_strategique`).
+- **Plusieurs éléments de rattachement** : un document a un élément principal (`element_parent`,
+  le seul qui compte dans les budgets et les taux) et, pour information, d'autres éléments du même
+  document parent (`elements_parents_secondaires`), affichés mais jamais comptés — pas de double
+  compte, comme « Contribue aussi à » d'un projet. En Excel : codes séparés par « ; », le premier
+  est le principal (fiche du document et feuille « Documents » de la chaîne). La répartition réelle
+  entre plusieurs éléments passe par « Contribue à » sur chaque élément de la structuration.
 - **Sauts de maillons** permis (un pilier 3 rattaché au programme, un projet rattaché à un
   pilier 1…) et signalés : `alertes_chaine` du document ou de l'élément (le nom évite
   `avertissements`, que l'interface notifie à chaque réponse), compte rendu d'import, contrôle
@@ -310,6 +317,42 @@ Aucun niveau n'est imposé, ni au-dessus du projet ni en dessous :
   parent, code de l'élément parent) et « Éléments » (document, niveau, code, nom, code parent,
   « Contribue à (code) », éventuellement « Document / CODE »). La structuration d'un seul
   document garde son format « plan », avec une dernière colonne facultative « Contribue à (code) ».
+- **Fiche du document** (maillons après le premier : Programme, Piliers…) : les mêmes attributs
+  qu'un projet, tous facultatifs — code, statut, dates, budget total et fonds propres, bailleurs
+  et montants (`strategy.FinancementDocument`, saisis par leur nom via le champ d'écriture
+  `bailleurs` ; avec des bailleurs, budget total = fonds propres + financements, recalculé par
+  le serveur), responsable, utilisateurs affectés (un rôle restreint voit les documents
+  auxquels il est affecté, en plus de ceux de ses projets), partenaire de mise en œuvre et
+  consortium, pays et zones, cibles bénéficiaires, éléments de capitalisation. Formulaire à
+  onglets comme celui d'un projet (`DocumentModal.tsx`), onglet « Fiche » sur la page du
+  document (`FicheDocument.tsx`), résumé sur les cartes de la liste. Dans le fichier Excel de la
+  chaîne, colonnes facultatives Code, Statut, Date de début, Date de fin, Budget total, Fonds
+  propres et Responsable (feuille « Documents » ; une cellule vide ne change rien).
+- **Excel d'un seul document** (page du document › « Importer depuis Excel » / « Exporter en
+  Excel », `strategy/fiche_excel.py`) : pour un programme, un pilier…, même présentation que le
+  modèle d'import d'un projet — feuilles « Fiche » (un champ par ligne, préremplie avec les
+  valeurs actuelles, listes séparées par « ; »), « Financements » (un bailleur par ligne,
+  remplace les bailleurs du document), « Structuration » (format plan, puis « Contribue à
+  (code) ») et « Instructions » (jamais importée). L'export a le même format et se réimporte
+  tel quel. Un cadre stratégique (premier maillon) garde le modèle de structuration seul ; un
+  fichier de la chaîne importé depuis la page d'un document est importé comme fichier de la chaîne.
+- **Export du mode Tableau** (onglet « Arborescence & saisie », bouton « Exporter le tableau »,
+  `cadres-strategiques/<id>/tableau/?fichier=xlsx|pdf&programmation=trimestres|dates&annee=`,
+  `strategy/tableau.py`) : pour un document de n'importe quel maillon, le tableau complet (tous les
+  niveaux, sans le filtre de recherche) avec la programmation affichée, les bandeaux de couleur par
+  niveau, les budgets sans double compte et les taux — mêmes calculs qu'à l'écran
+  (`donnees_recap_axes`, aussi utilisé par `recap-axes`).
+  `?contenu=simple` : export simple, la structure seule (code, niveau, élément en retrait,
+  « Contribue à »), sans activités ni chiffres. Le menu « Exporter » (modes Arbre et Tableau)
+  propose aussi le canevas de remplissage réimportable (`cadres-strategiques/<id>/export/`).
+- **Même menu pour la planification d'un projet** (onglet Planification, modes Arbre et Tableau,
+  `projets/<id>/planification/export/?contenu=complet|simple|canevas&fichier=xlsx|pdf`,
+  `projects/export_planification.py`) : tableau complet (attributs, services, programmation,
+  budget, taux), export simple (structure) et canevas = feuille « Planification » du modèle
+  d'import, préremplie ; « Importer depuis Excel » (`projets/<id>/planification/importer/`) la
+  réimporte dans le projet (`importer_planification` : met à jour les éléments de même libellé
+  et même parent, ajoute les nouveaux, ne supprime rien). Refusé si la planification du projet
+  passe par une demande d'approbation ; un projet clôturé reste en lecture seule (verrou).
 
 ### 5.5 Suppressions protégées
 
@@ -820,6 +863,9 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 | GET / POST | `documents/{id}/versions/`, `documents/{id}/nouvelle-version/` | Versions d'un document |
 | GET / POST | `notifications/non-lues-count/`, `…/{id}/marquer-lu/`, `…/tout-marquer-lu/` | Gestion des notifications |
 | GET | `periodes-planification/{id}/valeurs/` | Données de l'onglet « Planification par période » |
+| GET | `suivi/projets/{id}/exporter/word/` · `periodes-planification/{id}/exporter-suivi/word/` | Suivi du projet / suivi par période en Word : mise en page propre à Word, en tableaux (résumé, activités par niveau, saisies, indicateurs) — `suivi/export_word.py` ; le PDF garde ses cartes |
+| GET | `periodes-planification/{id}/canevas/` | Canevas des objectifs de la période (planification et indicateurs préremplis, objectifs à saisir) — `suivi/canevas_periode.py`, même présentation que le canevas de suivi |
+| POST | `periodes-planification/{id}/canevas/apercu/` · `importer/` · `rapport-erreurs/` | Import du canevas des objectifs en deux temps (aperçu puis validation), modes `ajout` / `mise_a_jour`, mêmes contrôles que la saisie à l'écran (`TranchePlanifieeSerializer`) |
 | GET | `periodes-planification/{id}/exporter/excel/`, `…/exporter/pdf/` | Export de la planification d'une période |
 | GET | `periodes-planification/{id}/exporter-suivi/excel/`, `…/exporter-suivi/pdf/` | Export du suivi d'une période |
 | GET | `suivi/projets/{id}/dashboard/` | Tableau de suivi d'un projet |

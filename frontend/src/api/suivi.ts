@@ -210,6 +210,36 @@ export async function telechargerExportPeriode(periode: PeriodePlanification, co
   );
 }
 
+/**
+ * Canevas des objectifs d'une période (même présentation et même import que le canevas de
+ * suivi) : planification et indicateurs préremplis, objectifs de la période à saisir.
+ */
+export async function telechargerCanevasPeriode(periode: PeriodePlanification, codeProjet: string) {
+  const libelle = periode.libelle.replace(/[^\p{L}\p{N}]+/gu, "_");
+  await telecharger(`/periodes-planification/${periode.id}/canevas/`, `canevas_objectifs_${codeProjet}_${libelle}.xlsx`);
+}
+
+export async function analyserCanevasPeriode(periodeId: number, fichier: File, mode: ModeCanevas) {
+  return (await apiClient.post<ResultatCanevas>(`/periodes-planification/${periodeId}/canevas/apercu/`, formulaireCanevas(fichier, mode))).data;
+}
+
+export async function importerCanevasPeriode(periodeId: number, fichier: File, mode: ModeCanevas) {
+  return (await apiClient.post<ResultatCanevas>(`/periodes-planification/${periodeId}/canevas/importer/`, formulaireCanevas(fichier, mode))).data;
+}
+
+export async function telechargerRapportErreursPeriode(periodeId: number, fichier: File, mode: ModeCanevas) {
+  const response = await apiClient.post(`/periodes-planification/${periodeId}/canevas/rapport-erreurs/`, formulaireCanevas(fichier, mode), {
+    responseType: "blob",
+  });
+  const objetUrl = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement("a");
+  link.href = objetUrl;
+  link.setAttribute("download", "rapport_erreurs_objectifs_periode.xlsx");
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
 /** Export du suivi par période (module Suivi), même présentation que l'export du suivi global. */
 export async function telechargerExportSuiviPeriode(
   periode: PeriodePlanification,

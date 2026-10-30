@@ -19,12 +19,13 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill
 
 from apps.core.excel_utils import figer_entete, quadriller
-from apps.core.langues import vers_francais
 from apps.core.vocabulaire import adapter_classeur
 
 FEUILLE_MAILLONS, FEUILLE_DOCUMENTS, FEUILLE_ELEMENTS = "Maillons", "Documents", "Éléments"
 COLONNES_MAILLONS = ["Maillon", "Rubrique du menu"]
 COLONNES_DOCUMENTS = ["Document", "Maillon", "Document parent", "Élément parent (code)", "Description"]
+# Fiche du document (comme un projet), facultative : un fichier sans ces colonnes reste valable.
+COLONNES_FICHE = ["Code", "Statut", "Date de début", "Date de fin", "Budget total", "Fonds propres", "Responsable"]
 COLONNES_ELEMENTS = ["Document", "Niveau", "Code", "Nom", "Code parent", "Contribue à (code)"]
 COLONNE_CONTRIBUTION = "Contribue à (code)"
 
@@ -33,9 +34,11 @@ EXEMPLE_MAILLONS = [
     ["Pilier 1", "Piliers 1"], ["Pilier 2", "Piliers 2"], ["Pilier 3", "Piliers 3"],
 ]
 EXEMPLE_DOCUMENTS = [
-    ["Plan national de développement", "Cadre stratégique", "", "", ""],
-    ["Programme capital humain", "Programme", "Plan national de développement", "AXE1", ""],
-    ["Pilier Éducation", "Pilier 1", "Programme capital humain", "", ""],
+    ["Plan national de développement", "Cadre stratégique", "", "", "", "PND", "En cours", "2026-01-01", "2030-12-31", "", "", ""],
+    ["Programme capital humain", "Programme", "Plan national de développement", "AXE1", "", "PCH", "En cours",
+     "2026-01-01", "2030-12-31", 50000000000, 5000000000, "Direction de la planification"],
+    ["Pilier Éducation", "Pilier 1", "Programme capital humain", "", "", "PE", "En préparation",
+     "2026-07-01", "2029-12-31", 12000000000, 1000000000, ""],
 ]
 EXEMPLE_ELEMENTS = [
     ["Plan national de développement", "Axe", "AXE1", "Développer le capital humain", "", ""],
@@ -48,8 +51,11 @@ INSTRUCTIONS = [
     "- Feuille « Maillons » : les rubriques de la chaîne, de la plus haute à la plus basse (une par ligne).",
     "  Chacune devient une rubrique du menu ; les projets se rattachent au dernier maillon.",
     "- Feuille « Documents » : un document par ligne, avec son maillon et le document au-dessus auquel il est",
-    "  rattaché ; « Élément parent (code) » précise l'élément de ce document (vide = le document lui-même).",
+    "  rattaché ; « Élément parent (code) » précise l'élément de ce document (vide = le document lui-même) ;",
+    "  plusieurs codes séparés par « ; » : le premier compte, les suivants sont pour information.",
     "  Sauter un maillon est permis (ex : un pilier 3 rattaché au programme) : un avertissement le signale.",
+    "  Colonnes facultatives de la fiche : Code, Statut (En préparation / En cours / Clôturé), dates",
+    "  (AAAA-MM-JJ ou JJ/MM/AAAA), Budget total, Fonds propres (FCFA) et Responsable.",
     "- Feuille « Éléments » : la structuration de chaque document. « Niveau » est le nom du niveau (créé à",
     "  sa première apparition, dans l'ordre du fichier) ; « Code parent » est le code de l'élément parent",
     "  dans le même document ; « Contribue à (code) » est le code d'un élément d'un document au-dessus",
@@ -82,7 +88,7 @@ def _classeur(maillons, documents, elements, adapter=True) -> bytes:
     """Classeur des trois feuilles et des consignes ; `adapter` : traduit / adapte au vocabulaire (modèle seulement)."""
     wb = Workbook()
     _feuille(wb, FEUILLE_MAILLONS, COLONNES_MAILLONS, maillons, [30, 30])
-    _feuille(wb, FEUILLE_DOCUMENTS, COLONNES_DOCUMENTS, documents, [42, 22, 42, 22, 50])
+    _feuille(wb, FEUILLE_DOCUMENTS, COLONNES_DOCUMENTS + COLONNES_FICHE, documents, [42, 22, 42, 22, 50, 14, 16, 14, 14, 18, 18, 30])
     _feuille(wb, FEUILLE_ELEMENTS, COLONNES_ELEMENTS, elements, [42, 24, 14, 60, 14, 24])
     instructions = wb.create_sheet("Instructions")
     for ligne in INSTRUCTIONS:
@@ -91,9 +97,31 @@ def _classeur(maillons, documents, elements, adapter=True) -> bytes:
     if adapter:
         # Modèle : traduit ou adapté au vocabulaire ; export : données telles quelles (réimportables).
         adapter_classeur(wb)
+    else:
+        _traduire_structure(wb)
     buffer = io.BytesIO()
     wb.save(buffer)
     return buffer.getvalue()
+
+
+def _traduire_structure(wb) -> None:
+    """
+    Export dans une autre langue : noms de feuilles, en-têtes, statuts et consignes traduits ;
+    les données (maillons, documents, codes, noms) restent telles quelles, pour être réimportées.
+    """
+    from apps.core.langues import langue_active, traduire_classeur
+
+    if langue_active() == "fr":
+        return
+    feuilles_de_donnees = {FEUILLE_MAILLONS, FEUILLE_DOCUMENTS, FEUILLE_ELEMENTS}
+    colonne_statut = (COLONNES_DOCUMENTS + COLONNES_FICHE).index("Statut") + 1
+
+    def garder(feuille, cellule):
+        if feuille.title not in feuilles_de_donnees or cellule.row == 1:
+            return False
+        return not (feuille.title == FEUILLE_DOCUMENTS and cellule.column == colonne_statut)
+
+    traduire_classeur(wb, garder=garder)
 
 
 def generer_modele_chaine() -> bytes:
@@ -117,7 +145,7 @@ def exporter_chaine() -> bytes:
     premier = types[0] if types else None
     rang = {t.id: i for i, t in enumerate(types)}
     documents = sorted(
-        CadreStrategique.objects.select_related("type_document", "document_parent", "element_parent"),
+        CadreStrategique.objects.select_related("type_document", "document_parent", "element_parent").prefetch_related("elements_parents_secondaires"),
         key=lambda d: (rang.get(d.type_document_id, 0), d.nom),
     )
     elements = list(
@@ -135,7 +163,9 @@ def exporter_chaine() -> bytes:
         [
             [d.nom, (d.type_document or premier).nom if (d.type_document or premier) else "",
              d.document_parent.nom if d.document_parent_id else "",
-             (d.element_parent.code or d.element_parent.nom) if d.element_parent_id else "", d.description]
+             "; ".join(filter(None, [(d.element_parent.code or d.element_parent.nom) if d.element_parent_id else ""]
+                              + [e.code or e.nom for e in d.elements_parents_secondaires.all()])), d.description,
+             *_valeurs_fiche(d)]
             for d in documents
         ],
         [
@@ -148,7 +178,81 @@ def exporter_chaine() -> bytes:
     )
 
 
+def _valeurs_fiche(document) -> list:
+    """Colonnes de la fiche d'un document, dans l'ordre de COLONNES_FICHE (export)."""
+    return [
+        document.code, document.get_statut_display() if document.statut else "",
+        document.date_debut.isoformat() if document.date_debut else "",
+        document.date_fin.isoformat() if document.date_fin else "",
+        float(document.budget_total) if document.budget_total else "",
+        float(document.fonds_propres) if document.fonds_propres else "", document.responsable_nom,
+    ]
+
+
 # ----------------------------------------------------------------------------------------- import
+
+
+def _date(texte):
+    """Date d'une cellule : AAAA-MM-JJ (date Excel comprise) ou JJ/MM/AAAA ; None si illisible."""
+    import datetime
+
+    texte = str(texte or "").strip()
+    for format_, longueur in (("%Y-%m-%d", 10), ("%d/%m/%Y", 10)):
+        try:
+            return datetime.datetime.strptime(texte[:longueur], format_).date()
+        except ValueError:
+            continue
+    return None
+
+
+def _montant(texte):
+    """Montant d'une cellule (espaces et virgule décimale tolérés) ; None si illisible."""
+    from decimal import Decimal, InvalidOperation
+
+    try:
+        return Decimal(str(texte).replace("\u202f", "").replace("\xa0", "").replace(" ", "").replace(",", "."))
+    except InvalidOperation:
+        return None
+
+
+def appliquer_fiche(document, v, signaler) -> None:
+    """
+    Renseigne la fiche du document depuis les colonnes facultatives (une cellule vide ne change
+    rien) ; une valeur illisible est ignorée et signalée par `signaler(message)`.
+    """
+    from .models import CadreStrategique
+
+    if v.get("Code"):
+        document.code = v["Code"][:50]
+    if v.get("Responsable"):
+        document.responsable_nom = v["Responsable"][:200]
+    if v.get("Statut"):
+        from apps.core.langues import correspond
+
+        statut = next((code for code, libelle in CadreStrategique.Statut.choices
+                       if correspond(v["Statut"], libelle) or correspond(v["Statut"], code)), None)
+        if statut:
+            document.statut = statut
+        else:
+            signaler(f"Statut « {v['Statut']} » inconnu (En préparation, En cours ou Clôturé) — ignoré.")
+    for colonne, champ in (("Date de début", "date_debut"), ("Date de fin", "date_fin")):
+        if v.get(colonne):
+            date = _date(v[colonne])
+            if date:
+                setattr(document, champ, date)
+            else:
+                signaler(f"{colonne} « {v[colonne]} » illisible — ignorée.")
+    for colonne, champ in (("Budget total", "budget_total"), ("Fonds propres", "fonds_propres")):
+        if v.get(colonne):
+            montant = _montant(v[colonne])
+            if montant is not None and montant >= 0:
+                setattr(document, champ, montant)
+            else:
+                signaler(f"{colonne} « {v[colonne]} » illisible — ignoré.")
+    if document.date_debut and document.date_fin and document.date_fin < document.date_debut:
+        signaler("La date de fin précède la date de début.")
+
+
 
 def _cle(texte) -> str:
     """Forme de comparaison d'un nom : espaces réduits, minuscules."""
@@ -156,11 +260,10 @@ def _cle(texte) -> str:
 
 
 def _trouver_feuille(wb, nom):
-    """Feuille d'après son nom français, même si le modèle a été téléchargé dans une autre langue."""
-    for feuille in wb.worksheets:
-        if _cle(vers_francais(feuille.title)) == _cle(nom) or _cle(feuille.title) == _cle(nom):
-            return feuille
-    return None
+    """Feuille d'après son nom français (accents facultatifs), même si le modèle a été téléchargé dans une autre langue."""
+    from apps.core.langues import correspond
+
+    return next((feuille for feuille in wb.worksheets if correspond(feuille.title, nom)), None)
 
 
 def _lignes(feuille, colonnes):
@@ -168,8 +271,14 @@ def _lignes(feuille, colonnes):
     lignes = list(feuille.iter_rows(values_only=True))
     if not lignes:
         return []
-    entetes = [_cle(vers_francais(str(c))) if c is not None else "" for c in lignes[0]]
-    index = {nom: entetes.index(_cle(nom)) for nom in colonnes if _cle(nom) in entetes}
+    from apps.core.langues import correspond
+
+    # En-têtes reconnus dans toutes les langues, accents et casse indifférents.
+    index = {}
+    for nom in colonnes:
+        trouve = next((i for i, c in enumerate(lignes[0]) if c is not None and correspond(str(c), nom)), None)
+        if trouve is not None:
+            index[nom] = trouve
     resultat = []
     for numero, ligne in enumerate(lignes[1:], start=2):
         valeurs = {nom: (str(ligne[i]).strip() if i < len(ligne) and ligne[i] is not None else "") for nom, i in index.items()}
@@ -265,28 +374,34 @@ def importer_chaine(fichier) -> dict:
 
     # Documents : créés d'abord (un parent peut figurer plus bas), rattachés ensuite.
     feuille = _trouver_feuille(wb, FEUILLE_DOCUMENTS)
-    lignes_documents = _lignes(feuille, COLONNES_DOCUMENTS) if feuille is not None else []
+    lignes_documents = _lignes(feuille, COLONNES_DOCUMENTS + COLONNES_FICHE) if feuille is not None else []
     a_rattacher = []
     for numero, v in lignes_documents:
         nom = v.get("Document", "")
         if not nom:
             erreur(FEUILLE_DOCUMENTS, numero, "Nom du document manquant — ligne ignorée.")
             continue
-        maillon = maillons.get(_cle(v.get("Maillon"))) if v.get("Maillon") else premier
-        if maillon is None:
-            erreur(FEUILLE_DOCUMENTS, numero, f"Maillon « {v.get('Maillon')} » inconnu (feuille « Maillons ») — ligne ignorée.")
-            continue
         document = documents.get(_cle(nom))
+        # Maillon vide : celui du document s'il existe déjà (sinon le premier maillon).
+        if v.get("Maillon"):
+            maillon = maillons.get(_cle(v["Maillon"]))
+        else:
+            maillon = (document.type_document if document is not None else None) or premier
+        if maillon is None:
+            connus = ", ".join(t.nom for t in TypeDocument.objects.order_by("ordre", "id"))
+            erreur(FEUILLE_DOCUMENTS, numero, f"Maillon « {v.get('Maillon')} » inconnu — maillons existants : {connus}. Ligne ignorée.")
+            continue
         if document is None:
-            document = CadreStrategique.objects.create(nom=nom, description=v.get("Description", ""), type_document=maillon)
-            documents[_cle(nom)] = document
+            document = CadreStrategique(nom=nom, description=v.get("Description", ""), type_document=maillon)
             rapport["documents_crees"] += 1
         else:
             document.type_document = maillon
             if v.get("Description"):
                 document.description = v["Description"]
-            document.save()
             rapport["documents_mis_a_jour"] += 1
+        appliquer_fiche(document, v, lambda message: avertir(FEUILLE_DOCUMENTS, numero, f"{nom} : {message}"))
+        document.save()
+        documents[_cle(nom)] = document
         a_rattacher.append((numero, document, v))
 
     def rattacher_documents(seulement_sans_element):
@@ -304,16 +419,24 @@ def importer_chaine(fichier) -> dict:
                 if parent is None:
                     erreur(FEUILLE_DOCUMENTS, numero, f"Document parent « {v['Document parent']} » inconnu — rattachement ignoré.")
                     continue
-            element = None
+            element, secondaires = None, []
             if code_element:
                 if parent is None:
                     erreur(FEUILLE_DOCUMENTS, numero, "Élément parent sans document parent — rattachement ignoré.")
                     continue
-                element = ElementStrategique.objects.filter(type_niveau__cadre_strategique=parent).filter(code__iexact=code_element).first() \
-                    or ElementStrategique.objects.filter(type_niveau__cadre_strategique=parent, nom__iexact=code_element).first()
-                if element is None:
-                    erreur(FEUILLE_DOCUMENTS, numero, f"Élément « {code_element} » introuvable dans « {parent} » — rattachement ignoré.")
+                # « P3-K1; P3-K2 » : le premier est l'élément principal, les suivants pour information.
+                trouves, introuvable = [], None
+                for code in [c.strip() for c in code_element.split(";") if c.strip()]:
+                    trouve = ElementStrategique.objects.filter(type_niveau__cadre_strategique=parent).filter(code__iexact=code).first() \
+                        or ElementStrategique.objects.filter(type_niveau__cadre_strategique=parent, nom__iexact=code).first()
+                    if trouve is None:
+                        introuvable = code
+                        break
+                    trouves.append(trouve)
+                if introuvable is not None:
+                    erreur(FEUILLE_DOCUMENTS, numero, f"Élément « {introuvable} » introuvable dans « {parent} » — rattachement ignoré.")
                     continue
+                element, secondaires = trouves[0], [e for e in trouves[1:] if e != trouves[0]]
             erreurs, avertissements = controler_rattachement(document.id, document.type_document, parent, element)
             if erreurs:
                 for message in erreurs:
@@ -323,6 +446,7 @@ def importer_chaine(fichier) -> dict:
                 avertir(FEUILLE_DOCUMENTS, numero, f"{document.nom} : {message}")
             document.document_parent, document.element_parent = parent, element
             document.save(update_fields=["document_parent", "element_parent", "updated_at"])
+            document.elements_parents_secondaires.set(secondaires)
 
     # Rattachements au document lui-même tout de suite (pour résoudre la chaîne des contributions),
     # rattachements à un élément après la création des éléments.

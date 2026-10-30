@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { ActionIcon, Button, Group, SegmentedControl, Select, Table, Text, Tooltip } from "@mantine/core";
 import { ListPlus, Pencil, Plus, Trash2 } from "lucide-react";
 import type { Activite, SousActivite } from "../../types";
@@ -66,6 +66,7 @@ export function PlanificationTableau({
   onSupprimer,
   onEditerSousActivite,
   onSupprimerSousActivite,
+  outils,
 }: {
   elements: Activite[];
   nomNiveau: (profondeur: number) => string;
@@ -80,6 +81,8 @@ export function PlanificationTableau({
   onSupprimer: (act: Activite, profondeur: number) => void;
   onEditerSousActivite: (sa: SousActivite) => void;
   onSupprimerSousActivite: (sa: SousActivite) => void;
+  /** Boutons à droite de la programmation (export…), qui reçoivent la programmation et l'année affichées. */
+  outils?: (programmation: "trimestres" | "dates", annee: number) => ReactNode;
 }) {
   const lignes = aplatir(elements);
   const anneesPossibles = annees(lignes);
@@ -129,7 +132,8 @@ export function PlanificationTableau({
 
   return (
     <>
-      <Group gap="md" mb="xs">
+      <Group gap="md" mb="xs" justify="space-between">
+        <Group gap="md">
         <SegmentedControl
           size="xs"
           value={programmation}
@@ -152,6 +156,8 @@ export function PlanificationTableau({
             />
           </Group>
         )}
+        </Group>
+        {outils?.(programmation, annee)}
       </Group>
       <Table.ScrollContainer minWidth={900 + attributs.length * 150}>
         <Table withTableBorder withColumnBorders verticalSpacing={6} fz="sm">

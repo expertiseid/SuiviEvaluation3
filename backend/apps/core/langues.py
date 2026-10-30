@@ -209,6 +209,15 @@ def normaliser(texte) -> str:
 _inverse = {"index": None, "instant": None}
 
 
+def correspond(saisie, francais) -> bool:
+    """
+    La saisie (dans n'importe quelle langue, accents et casse indifférents) désigne-t-elle ce
+    texte français ? Comparée aux traductions de CE texte (formes) et non ramenée au français :
+    une traduction partagée (« Closed » = « Clos », « Clôturé »…) est ainsi reconnue sans ambiguïté.
+    """
+    return normaliser(saisie or "") in {normaliser(f) for f in formes(francais)}
+
+
 def vers_francais(saisie):
     """
     Saisie d'une cellule dans une autre langue (« In progress », « Ja ») → texte français du

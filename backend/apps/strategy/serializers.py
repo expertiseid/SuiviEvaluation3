@@ -1,8 +1,16 @@
+from decimal import Decimal
+
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from .chaine import controler_contribution, controler_rattachement
-from .models import AppreciationStrategique, CadreStrategique, ElementStrategique, TypeDocument, TypeNiveau
+from .models import AppreciationStrategique, CadreStrategique, ElementStrategique, FinancementDocument, TypeDocument, TypeNiveau
+
+
+class LigneBailleurSerializer(serializers.Serializer):
+    """Bailleur saisi sur la fiche d'un document : son nom (créé s'il est inconnu) et son montant."""
+    nom = serializers.CharField(max_length=200)
+    montant = serializers.DecimalField(max_digits=16, decimal_places=2, min_value=Decimal(0))
 
 
 class TypeDocumentSerializer(serializers.ModelSerializer):
@@ -32,6 +40,15 @@ class CadreStrategiqueSerializer(serializers.ModelSerializer):
     documents_rattaches = serializers.SerializerMethodField()
     # Pas « avertissements » : l'interface notifie ce champ à chaque réponse (saisies à vérifier).
     alertes_chaine = serializers.SerializerMethodField()
+    # Fiche du document (comme un projet) : bailleurs en lecture (financements) et en écriture
+    # (bailleurs : remplace toute la liste), noms des partenaires et des zones pour l'affichage.
+    financements = serializers.SerializerMethodField()
+    bailleurs = LigneBailleurSerializer(many=True, write_only=True, required=False)
+    partenaire_mise_en_oeuvre_nom = serializers.StringRelatedField(source="partenaire_mise_en_oeuvre", read_only=True)
+    partenaires_consortium_noms = serializers.StringRelatedField(source="partenaires_consortium", many=True, read_only=True)
+    zones_noms = serializers.StringRelatedField(source="zones", many=True, read_only=True)
+    utilisateurs_affectes_noms = serializers.SerializerMethodField()
+    elements_parents_secondaires_noms = serializers.StringRelatedField(source="elements_parents_secondaires", many=True, read_only=True)
 
     class Meta:
         model = CadreStrategique
@@ -39,8 +56,24 @@ class CadreStrategiqueSerializer(serializers.ModelSerializer):
             "id", "nom", "description", "created_at",
             "structures", "structures_noms", "parties_prenantes", "parties_prenantes_noms",
             "type_document", "type_document_nom", "document_parent", "document_parent_nom", "document_parent_type",
-            "element_parent", "element_parent_nom", "documents_rattaches", "alertes_chaine",
+            "element_parent", "element_parent_nom", "elements_parents_secondaires", "elements_parents_secondaires_noms",
+            "documents_rattaches", "alertes_chaine",
+            "code", "budget_total", "fonds_propres", "date_debut", "date_fin", "statut", "type_mise_en_oeuvre",
+            "responsable_nom", "utilisateurs_affectes", "utilisateurs_affectes_noms",
+            "partenaire_mise_en_oeuvre", "partenaire_mise_en_oeuvre_nom",
+            "partenaires_consortium", "partenaires_consortium_noms", "pays", "tout_le_pays", "zones", "zones_noms",
+            "cible_totale", "cible_hommes", "cible_femmes", "cible_jeunes", "cible_pdi", "elements_capitalisation",
+            "financements", "bailleurs",
         )
+
+    def get_financements(self, obj):
+        return [
+            {"id": f.id, "bailleur": f.bailleur_id, "bailleur_nom": f.bailleur.nom, "montant": f.montant}
+            for f in obj.financements.select_related("bailleur")
+        ]
+
+    def get_utilisateurs_affectes_noms(self, obj):
+        return [(f"{u.first_name} {u.last_name}".strip() or u.username) for u in obj.utilisateurs_affectes.all()]
 
     def get_type_document_nom(self, obj):
         if obj.type_document_id:
@@ -53,14 +86,21 @@ class CadreStrategiqueSerializer(serializers.ModelSerializer):
         return parent.type_document.nom if parent and parent.type_document_id else None
 
     def get_documents_rattaches(self, obj):
-        """Documents rattachés directement à celui-ci, ou dont un élément contribue à l'un des siens."""
+        """
+        Documents rattachés directement à celui-ci, ou dont un élément contribue à l'un des siens ;
+        avec l'élément principal et, pour information, les éléments secondaires de rattachement.
+        """
         par_contribution = CadreStrategique.objects.filter(
             types_niveaux__elements__contribue_a__type_niveau__cadre_strategique=obj
         ).exclude(id=obj.id)
-        documents = (obj.documents_rattaches.all() | par_contribution).distinct().select_related("type_document", "element_parent")
+        documents = (
+            (obj.documents_rattaches.all() | par_contribution).distinct()
+            .select_related("type_document", "element_parent").prefetch_related("elements_parents_secondaires")
+        )
         return [
             {"id": d.id, "nom": d.nom, "type_document_nom": d.type_document.nom if d.type_document_id else None,
-             "element_parent_nom": str(d.element_parent) if d.element_parent_id and d.document_parent_id == obj.id else None}
+             "element_parent_nom": str(d.element_parent) if d.element_parent_id and d.document_parent_id == obj.id else None,
+             "elements_secondaires_noms": [str(e) for e in d.elements_parents_secondaires.all()] if d.document_parent_id == obj.id else []}
             for d in documents.order_by("type_document__ordre", "nom")
         ]
 
@@ -79,7 +119,67 @@ class CadreStrategiqueSerializer(serializers.ModelSerializer):
         )
         if erreurs:
             raise serializers.ValidationError({"document_parent": erreurs})
+        # Éléments secondaires : du document parent, distincts de l'élément principal.
+        if "elements_parents_secondaires" in attrs or "document_parent" in attrs:
+            parent = valeur("document_parent")
+            secondaires = attrs["elements_parents_secondaires"] if "elements_parents_secondaires" in attrs else (
+                list(self.instance.elements_parents_secondaires.all()) if self.instance else [])
+            hors_parent = [str(e) for e in secondaires if parent is None or e.type_niveau.cadre_strategique_id != parent.id]
+            if hors_parent:
+                raise serializers.ValidationError({"elements_parents_secondaires": (
+                    f"Élément(s) qui n'appartiennent pas au document de rattachement : {', '.join(hors_parent)}.")})
+            principal = valeur("element_parent")
+            if principal is not None and "elements_parents_secondaires" in attrs:
+                attrs["elements_parents_secondaires"] = [e for e in secondaires if e.id != principal.id]
+        debut, fin = valeur("date_debut"), valeur("date_fin")
+        if debut and fin and fin < debut:
+            raise serializers.ValidationError({"date_fin": "La date de fin précède la date de début."})
+        bailleurs = attrs.get("bailleurs") or []
+        noms = [b["nom"].strip().lower() for b in bailleurs]
+        doublon = next((b["nom"].strip() for i, b in enumerate(bailleurs) if noms.index(noms[i]) != i), None)
+        if doublon:
+            raise serializers.ValidationError({"bailleurs": f"Le bailleur « {doublon} » est saisi deux fois."})
         return attrs
+
+    def create(self, validated_data):
+        bailleurs = validated_data.pop("bailleurs", None)
+        document = super().create(validated_data)
+        if bailleurs is not None:
+            enregistrer_bailleurs(document, bailleurs)
+        return document
+
+    def update(self, instance, validated_data):
+        bailleurs = validated_data.pop("bailleurs", None)
+        document = super().update(instance, validated_data)
+        if bailleurs is not None:
+            enregistrer_bailleurs(document, bailleurs)
+        elif "fonds_propres" in validated_data and document.financements.exists():
+            recalculer_budget(document)
+        return document
+
+
+def recalculer_budget(document):
+    """Avec des bailleurs, le coût total = fonds propres + leurs financements (comme un projet)."""
+    total = sum((f.montant for f in document.financements.all()), 0)
+    if total:
+        document.budget_total = document.fonds_propres + total
+        document.save(update_fields=["budget_total", "updated_at"])
+
+
+def enregistrer_bailleurs(document, lignes):
+    """Remplace les bailleurs du document ; un nom inconnu crée le bailleur (comme sur un projet)."""
+    from apps.partners.models import Bailleur
+
+    gardes = []
+    for ligne in lignes:
+        nom = ligne["nom"].strip()
+        bailleur = Bailleur.objects.filter(nom__iexact=nom).first() or Bailleur.objects.create(nom=nom)
+        financement, _ = FinancementDocument.objects.update_or_create(
+            document=document, bailleur=bailleur, defaults={"montant": ligne["montant"]},
+        )
+        gardes.append(financement.id)
+    document.financements.exclude(id__in=gardes).delete()
+    recalculer_budget(document)
 
 
 class TypeNiveauSerializer(serializers.ModelSerializer):

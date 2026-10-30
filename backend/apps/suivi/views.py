@@ -37,6 +37,8 @@ from .models import PeriodePlanification, PointSuivi, TranchePlanifiee
 from .serializers import PeriodePlanificationSerializer, PointSuiviSerializer, TranchePlanifieeSerializer
 from .services import construire_dashboard_suivi, construire_planification_periode, synchroniser_activite_depuis_suivi, synchroniser_sous_activite_depuis_suivi
 
+XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
 
 class PointSuiviViewSet(AvertissementsSaisieMixin, SuppressionAtomiqueMixin, viewsets.ModelViewSet):
     serializer_class = PointSuiviSerializer
@@ -160,8 +162,54 @@ class PeriodePlanificationViewSet(viewsets.ModelViewSet):
     def exporter_suivi_word(self, request, pk=None):
         from apps.reports.word import reponse_docx
 
+        from .export_word import html_suivi_periode_word
+
         periode = self.get_object()
-        return reponse_docx(html_suivi_periode(periode), self._nom_fichier(periode, "suivi"))
+        # Mise en page propre à Word (tableaux), même contenu que le PDF.
+        return reponse_docx(html_suivi_periode_word(periode), self._nom_fichier(periode, "suivi"))
+
+    @action(detail=True, methods=["get"], url_path="canevas")
+    @dans_la_langue_demandee
+    def canevas(self, request, pk=None):
+        """Canevas des objectifs de la période : planification et indicateurs préremplis, objectifs à saisir."""
+        from .canevas_periode import generer_canevas_periode
+
+        periode = self.get_object()
+        response = HttpResponse(generer_canevas_periode(periode), content_type=XLSX)
+        response["Content-Disposition"] = f"attachment; filename={self._nom_fichier(periode, 'canevas_objectifs')}.xlsx"
+        return response
+
+    def _canevas_recu(self, request, traitement):
+        """Fichier et mode envoyés (comme le canevas de suivi), puis traitement de la période."""
+        fichier, mode = _fichier_et_mode(request)
+        try:
+            return traitement(fichier, self.get_object(), mode)
+        except (BadZipFile, InvalidFileException, KeyError, OSError) as exc:
+            raise ValidationError({"fichier": f"Impossible de lire ce fichier : {exc}"})
+
+    @action(detail=True, methods=["post"], url_path="canevas/apercu", parser_classes=[MultiPartParser, FormParser])
+    def canevas_apercu(self, request, pk=None):
+        """Analyse sans rien enregistrer : objectifs ajoutés, modifiés, ignorés, et erreurs par cellule."""
+        from .canevas_periode import apercu_canevas_periode
+
+        return Response(self._canevas_recu(request, apercu_canevas_periode))
+
+    @action(detail=True, methods=["post"], url_path="canevas/importer", parser_classes=[MultiPartParser, FormParser])
+    def canevas_importer(self, request, pk=None):
+        """Enregistre les objectifs valides du canevas (les lignes en erreur sont ignorées)."""
+        from .canevas_periode import importer_canevas_periode
+
+        return Response(self._canevas_recu(request, importer_canevas_periode))
+
+    @action(detail=True, methods=["post"], url_path="canevas/rapport-erreurs", parser_classes=[MultiPartParser, FormParser])
+    @dans_la_langue_demandee
+    def canevas_rapport_erreurs(self, request, pk=None):
+        """Le fichier reçu avec les cellules en erreur surlignées et commentées, plus une feuille « Erreurs »."""
+        from .canevas_periode import rapport_erreurs_periode
+
+        response = HttpResponse(self._canevas_recu(request, rapport_erreurs_periode), content_type=XLSX)
+        response["Content-Disposition"] = "attachment; filename=rapport_erreurs_objectifs_periode.xlsx"
+        return response
 
     @staticmethod
     def _nom_fichier(periode, prefixe="planification"):
@@ -236,13 +284,15 @@ def suivi_exporter_pdf(request, projet_id):
 @permission_classes([HasGlobalVisibilityOrAssigned])
 @dans_la_langue_demandee
 def suivi_exporter_word(request, projet_id):
-    """Fiche de suivi du projet au format Word : même contenu que le PDF."""
+    """Fiche de suivi du projet au format Word : même contenu que le PDF, mis en page en tableaux."""
     from apps.reports.word import reponse_docx
+
+    from .export_word import html_suivi_word
 
     projet = _projet_visible_ou_404(request, projet_id)
     if projet is None:
         return Response({"detail": v('Projet introuvable ou non accessible.')}, status=404)
-    return reponse_docx(html_suivi(projet), f"suivi_{projet.code}")
+    return reponse_docx(html_suivi_word(projet), f"suivi_{projet.code}")
 
 
 # --- Canevas de suivi (Excel prérempli, import en masse avec aperçu) ---------------------
