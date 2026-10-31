@@ -43,6 +43,7 @@ API_PAR_MODULE = {
     ],
     "/documents": ["/api/v1/documents", "/api/v1/dossiers", "/api/v1/pieces-justificatives"],
     "/zones-administratives": ["/api/v1/zones", "/api/v1/niveaux-administratifs"],
+    "/plaintes": ["/api/v1/plaintes/"],
     "projet:equipe": ["/api/v1/equipes"],
     "projet:risques": ["/api/v1/risques", "/api/v1/evaluations-risques", "/api/v1/rapports/risques"],
     "projet:financement": ["/api/v1/financements", "/api/v1/rallonges-financement", "/api/v1/rapports/financier"],

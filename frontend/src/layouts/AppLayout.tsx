@@ -14,6 +14,7 @@ import {
   LogOut,
   Map as MapIcon,
   MapPin,
+  MessagesSquare,
   PenLine,
   RotateCcw,
   Languages,
@@ -77,6 +78,7 @@ const ITEMS_PRINCIPAUX: NavItem[] = [
   { to: "/doublons", label: voc("Doublons d'enregistrement"), icon: Copy },
   { to: "/zones-administratives", label: voc("Zones administratives"), icon: MapPin },
   { to: "/documents", label: voc("Documents"), icon: FileText },
+  { to: "/plaintes", label: voc("Plaintes et retours"), icon: MessagesSquare },
 ];
 
 const ITEMS_ADMIN: NavItem[] = [

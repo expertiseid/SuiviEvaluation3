@@ -103,6 +103,7 @@ Une application Django par domaine métier, dans `backend/apps/` :
 | `planification` | Import combiné « planification complète » (un seul classeur Excel) |
 | `reports` | Calculs agrégés de progression d'un projet |
 | `audit` | Consultation de l'historique des modifications de n'importe quel objet |
+| `plaintes` | Mécanisme de gestion des plaintes et retours : paramétrage (mécanisme, types, priorités, catégories, circuits et étapes), modèles prêts à l'emploi, contrôles d'activation, canevas Excel |
 
 Dans chaque application, on retrouve les fichiers Django habituels : `models.py`,
 `serializers.py`, `views.py`, `urls.py`, `admin.py`, `tests.py`. La logique métier qui
@@ -729,6 +730,45 @@ secondaire ne peut viser qu'un niveau supérieur, jamais le parent principal ni 
   pas. L'export Excel des bénéficiaires ne traduit que ses en-têtes : ses données se réimportent
   telles quelles. Tests : `core/test_modeles_traduits.py`, `suivi/test_canevas.py`.
 
+### 5.14 Mécanisme de gestion des plaintes et retours (lot 1 : paramétrage)
+
+Une installation = une organisation : tout le mécanisme se paramètre, sans rien coder, pour
+des communautés, des bénéficiaires, le personnel ou tout autre public. Application `plaintes`,
+écran `/plaintes`, droit du module « Plaintes et retours » (`/plaintes`).
+
+- **Mécanisme** (`Mecanisme`, une seule ligne, `Mecanisme.courant()`) : nom, anonymat
+  autorisé, langues du formulaire public, texte d'information, préfixe des numéros de dossier,
+  délais en jours ouvrés ou calendaires, durées de conservation (ordinaire / sensible, à fixer
+  par l'organisation : aucune valeur imposée), projets couverts (vide = tous).
+- **Listes** : types de retours (`TypeRetour`), priorités avec délai (`Priorite`, drapeau
+  `urgente`), catégories sur deux niveaux (`Categorie`, drapeau `sensible`, circuit et délai
+  propres facultatifs), circuits de traitement (`Circuit`, ordinaire ou confidentiel, un par
+  défaut par nature) et leurs étapes (`EtapeCircuit` : délai, rôle ou personne responsable,
+  étape de clôture). Désactiver plutôt que supprimer : rien n'est effacé.
+- **Modèles** (`modeles_mecanisme.py`) : « Mécanisme standard auprès des communautés » et
+  « Réclamations internes du personnel ». Un modèle ajoute ce qui manque (par nom, sans doublon)
+  et installe toujours le circuit confidentiel et les catégories sensibles.
+- **Règles verrouillées** (protection des personnes, non paramétrables) : les catégories
+  « Exploitation et abus sexuels » et « Harcèlement sexuel » (`verrouillee`) restent sensibles,
+  actives et ne se suppriment pas (renommer reste possible) ; une catégorie sensible (ou
+  sous-catégorie d'une catégorie sensible) passe par un circuit confidentiel ; chaque étape d'un
+  circuit confidentiel est confiée à une personne nommément désignée, jamais à un rôle ; au moins
+  une priorité urgente reste active.
+- **Activation contrôlée** (`controles.py`) : `controler_activation()` liste ce qui manque
+  (renvoyé dans `controles` du mécanisme, affiché tel quel). Le mécanisme ne s'active que si la
+  liste est vide : nom, langue, durées de conservation, un type, une catégorie ordinaire, une
+  priorité urgente, un circuit par défaut de chaque nature, circuits valides
+  (`controler_circuit()` : au moins une étape, clôture en dernier, un responsable par étape).
+- **Canevas Excel** (`excel.py`) : tout le paramétrage dans un classeur (feuilles Mécanisme,
+  Types de retours, Priorités, Circuits — une ligne par étape —, Catégories, Instructions),
+  prérempli et traduit dans la langue de l'utilisateur ; réimport « au mieux » : éléments
+  retrouvés par leur nom, étapes d'un circuit présent remplacées, erreurs ligne par ligne.
+  Tests : `plaintes/tests.py`.
+
+Lots suivants prévus : réception (formulaire public, saisie assistée, accusé de réception),
+traitement (dossiers, étapes, réponses), délais et alertes, circuit confidentiel (accès
+restreint, journal), pilotage (tableaux de bord, rapports).
+
 ## 6. Utilisateurs, rôles et permissions
 
 Deux notions indépendantes définissent les droits d'un utilisateur :
@@ -858,6 +898,11 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 | GET | `cadres-strategiques/{id}/suivi/`, `elements-strategiques/{id}/suivi/` | Suivi stratégique : vue d'ensemble, détail d'un élément |
 | GET | `pieces-justificatives/{id}/telecharger/` | Fichier d'une pièce justificative (compte connecté) |
 | GET | `public/partage/{jeton}/[ressource/]` | Page partagée, sans authentification : description, puis `dashboard`, `configuration`, `menu`, `suivi`, `parametres-alerte` |
+| GET / PATCH | `plaintes/mecanisme/` | Réglages du mécanisme et `controles` (ce qui manque pour l'activer) |
+| POST | `plaintes/mecanisme/activer/`, `…/desactiver/` | Activation (refusée avec la liste des `controles` tant qu'elle n'est pas vide) |
+| GET / POST | `plaintes/modeles/` | Modèles prêts à l'emploi ; POST `{modele}` les copie dans le paramétrage |
+| GET / POST | `plaintes/canevas/`, `plaintes/canevas/importer/` | Canevas Excel du paramétrage et son import |
+| CRUD | `plaintes/types/`, `plaintes/priorites/`, `plaintes/categories/`, `plaintes/circuits/`, `plaintes/etapes/` | Listes du paramétrage (sans pagination) |
 | GET | `beneficiaires/exporter/` | Export des bénéficiaires : `?fichier=excel` ou `pdf`, `?projets=1,3` pour choisir les projets |
 | POST | `beneficiaires/{id}/verifier-doublons/` | Recherche des doublons d'un bénéficiaire |
 | GET / POST | `documents/{id}/versions/`, `documents/{id}/nouvelle-version/` | Versions d'un document |
@@ -963,6 +1008,7 @@ mutualisées) puis rejoue la requête, ou renvoie vers la page de connexion.
 | `/doublons` | Doublons signalés |
 | `/zones-administratives` | Référentiel administratif |
 | `/documents` | Bibliothèque documentaire |
+| `/plaintes` | Plaintes et retours : onglets Mécanisme (modèles, réglages, activation), Types de retours, Catégories, Priorités, Circuits de traitement, Canevas Excel |
 | `/utilisateurs` | Utilisateurs et rôles (Administrateur) |
 | `/organisation` | Structure de l'organisation, parties prenantes, partenaires (Administrateur) |
 | `/parametres-alerte` | Grilles d'alerte, délai d'échéance et périodes de rapportage (Administrateur) |

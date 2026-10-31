@@ -29,6 +29,7 @@ export function modulesReglables(): { group: string; items: ModuleReglable[] }[]
         { cle: "/beneficiaires", label: voc("Bénéficiaires"), ecriture: true },
         { cle: "/carte", label: voc("Carte"), ecriture: true },
         { cle: "/documents", label: voc("Documents"), ecriture: true },
+        { cle: "/plaintes", label: voc("Plaintes et retours"), ecriture: true },
         { cle: "/zones-administratives", label: voc("Zones administratives"), ecriture: true },
         { cle: "/approbations", label: voc("Approbations"), ecriture: false },
         { cle: "/doublons", label: voc("Doublons d'enregistrement"), ecriture: false },

@@ -25,6 +25,7 @@ import { DocumentsGlobauxPage } from "./pages/documents/DocumentsGlobauxPage";
 import { LanguesPage } from "./pages/langues/LanguesPage";
 import { ParametresAlertePage } from "./pages/parametres/ParametresAlertePage";
 import { PagePartagee } from "./pages/partage/PagePartagee";
+import { PlaintesPage } from "./pages/plaintes/PlaintesPage";
 
 export default function App() {
   return (
@@ -60,6 +61,7 @@ export default function App() {
         <Route path="/zones-administratives" element={<ZonesAdministrativesPage />} />
         <Route path="/planification" element={<PlanificationImportPage />} />
         <Route path="/documents" element={<DocumentsGlobauxPage />} />
+        <Route path="/plaintes" element={<PlaintesPage />} />
         <Route
           path="/organisation"
           element={

@@ -66,6 +66,10 @@ bénéficiaires, documents, alertes et tableaux de bord.
   JWT, historique de toutes les modifications.
 - **Référentiel administratif** : niveaux administratifs paramétrables par pays, régions et
   provinces du Burkina Faso chargées automatiquement.
+- **Plaintes et retours** (paramétrage) : mécanisme adaptable à toute organisation — types
+  de retours, catégories (dont sensibles), priorités et délais, circuits de traitement par
+  étapes, modèles prêts à l'emploi, canevas Excel ; activation contrôlée et règles de
+  protection des personnes non modifiables (circuit confidentiel confié à des personnes nommées).
 
 ## Pile technique
 

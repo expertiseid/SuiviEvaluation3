@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "apps.notifications",
     "apps.suivi",
     "apps.planification",
+    "apps.plaintes",
 ]
 
 MIDDLEWARE = [

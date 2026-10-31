@@ -197,6 +197,18 @@
  "{0} — vérifie qu'aucune zone n'en dépend encore.": [
   "pages/geo/ZonesAdministrativesPage.tsx"
  ],
+ "{0} : ajoutez une étape de clôture.": [
+  "serveur"
+ ],
+ "{0} : choisissez un rôle ou une personne responsable pour chaque étape (encore sans : {1}).": [
+  "serveur"
+ ],
+ "{0} : désignez une personne responsable pour chaque étape (encore sans : {1}).": [
+  "serveur"
+ ],
+ "{0} : l'étape de clôture doit être la dernière.": [
+  "serveur"
+ ],
  "{0} {1} réalisé(s) sur {2} prévu(s).": [
   "components/suivi/MethodeCalculLigne.tsx"
  ],
@@ -251,6 +263,9 @@
  ],
  "{0} caractères maximum par terme.": [
   "serveur"
+ ],
+ "{0} créé(s), {1} mis à jour": [
+  "pages/plaintes/PlaintesPage.tsx"
  ],
  "{0} de la zone ({1})": [
   "pages/carte/CartePage.tsx"
@@ -427,6 +442,12 @@
  "À ajouter dans l'écran Organisation": [
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
+ "À compléter": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
+ ],
+ "À compléter avant l'activation": [
+  "pages/plaintes/PlaintesPage.tsx"
+ ],
  "À compléter en fin de projet : leçons apprises, bonnes pratiques.": [
   "pages/projets/ProjetForm.tsx"
  ],
@@ -457,6 +478,9 @@
  "Absent de la liste ? Tape-le ici pour l'ajouter…": [
   "components/common/MultiSelectOrCreate.tsx"
  ],
+ "Accepter les retours anonymes": [
+  "pages/plaintes/PlaintesPage.tsx"
+ ],
  "Accès": [
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
@@ -468,6 +492,9 @@
  ],
  "Actif": [
   "components/partage/BoutonPartage.tsx",
+  "pages/plaintes/CircuitsPlaintes.tsx",
+  "pages/plaintes/ListesPlaintes.tsx",
+  "pages/plaintes/PlaintesPage.tsx",
   "pages/projets/RisquesTab.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
@@ -479,6 +506,18 @@
  ],
  "Actions menées depuis la dernière revue": [
   "pages/projets/RisquesTab.tsx"
+ ],
+ "Activation impossible": [
+  "pages/plaintes/PlaintesPage.tsx"
+ ],
+ "Active": [
+  "pages/plaintes/ListesPlaintes.tsx"
+ ],
+ "Activer": [
+  "pages/plaintes/PlaintesPage.tsx"
+ ],
+ "Activer le mécanisme": [
+  "pages/plaintes/PlaintesPage.tsx"
  ],
  "Activité": [
   "pages/projets/PlanificationPeriodeTab.tsx",
@@ -602,6 +641,7 @@
   "pages/geo/ZonesAdministrativesPage.tsx",
   "pages/organisation/OrganisationPage.tsx",
   "pages/parametres/RapportageCard.tsx",
+  "pages/plaintes/ListesPlaintes.tsx",
   "pages/projets/AvancementModal.tsx",
   "pages/projets/FinancementsTab.tsx",
   "pages/projets/NiveauxActiviteTab.tsx",
@@ -650,6 +690,9 @@
  "Ajouter un bailleur": [
   "pages/projets/BailleursMontants.tsx"
  ],
+ "Ajouter un circuit": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
+ ],
  "Ajouter un document": [
   "components/documents/DocumentsTab.tsx"
  ],
@@ -689,12 +732,27 @@
  "Ajouter un service": [
   "pages/organisation/OrganisationPage.tsx"
  ],
+ "Ajouter un type": [
+  "pages/plaintes/ListesPlaintes.tsx"
+ ],
+ "Ajouter une catégorie": [
+  "pages/plaintes/ListesPlaintes.tsx"
+ ],
+ "Ajouter une étape": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
+ ],
  "Ajouter une nouvelle version": [
   "components/documents/DocumentsTab.tsx"
+ ],
+ "Ajouter une priorité": [
+  "pages/plaintes/ListesPlaintes.tsx"
  ],
  "Ajouter une sous-activité": [
   "pages/projets/PlanificationTableau.tsx",
   "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Ajouter une sous-catégorie": [
+  "pages/plaintes/ListesPlaintes.tsx"
  ],
  "Ajouter une variable": [
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
@@ -739,6 +797,8 @@
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
   "pages/carte/FenetresCarte.tsx",
   "pages/langues/LanguesPage.tsx",
+  "pages/plaintes/ListesPlaintes.tsx",
+  "pages/plaintes/PlaintesPage.tsx",
   "pages/projets/ActiviteForm.tsx",
   "pages/projets/CadreLogiqueTab.tsx",
   "pages/projets/EquipeTab.tsx",
@@ -1475,6 +1535,7 @@
   "pages/strategie/CadreTableau.tsx"
  ],
  "Canevas Excel": [
+  "pages/plaintes/PlaintesPage.tsx",
   "pages/projets/PlanificationPeriodeTab.tsx"
  ],
  "Carte": [
@@ -1495,13 +1556,24 @@
  ],
  "Catégorie": [
   "pages/organisation/OrganisationPage.tsx",
+  "pages/plaintes/ListesPlaintes.tsx",
   "pages/projets/RisquesTab.tsx"
  ],
  "Catégorie déjà existante ?": [
   "pages/organisation/OrganisationPage.tsx"
  ],
  "Catégories": [
-  "pages/organisation/OrganisationPage.tsx"
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/plaintes/PlaintesPage.tsx"
+ ],
+ "Catégories : « {0} » est sensible, elle doit utiliser un circuit confidentiel.": [
+  "serveur"
+ ],
+ "Catégories : « {0} » utilise un circuit désactivé.": [
+  "serveur"
+ ],
+ "Catégories : activez au moins une catégorie ordinaire.": [
+  "serveur"
  ],
  "Causes et conséquences": [
   "pages/projets/RisquesTab.tsx"
@@ -1579,6 +1651,12 @@
  "Ce qui sera fait si le risque survient.": [
   "pages/projets/RisquesTab.tsx"
  ],
+ "Ce réglage protège les personnes et ne peut pas être modifié : chaque étape d'un circuit confidentiel est confiée à une personne nommément désignée, jamais à un rôle entier.": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
+ ],
+ "Ce réglage protège les personnes et ne peut pas être modifié.": [
+  "pages/plaintes/ListesPlaintes.tsx"
+ ],
  "Celle du niveau au-dessus, sinon du projet, sinon de l'organisation.": [
   "components/suivi/MethodeCalculLigne.tsx"
  ],
@@ -1590,6 +1668,9 @@
  ],
  "Cet élément a des éléments en dessous : son taux est calculé à partir des leurs, selon sa méthode d'agrégation (modifiable dans le formulaire de l'élément).": [
   "pages/projets/AvancementModal.tsx"
+ ],
+ "Cet élément est encore utilisé : retirez d'abord ce qui en dépend.": [
+  "serveur"
  ],
  "Cet élément n'appartient pas au cadre stratégique du projet.": [
   "serveur"
@@ -1608,6 +1689,15 @@
  ],
  "Cette activité": [
   "pages/parametres/ParametresAlertePage.tsx"
+ ],
+ "Cette catégorie a des sous-catégories : elle reste principale.": [
+  "serveur"
+ ],
+ "Cette catégorie protège les personnes : elle ne peut pas être supprimée.": [
+  "serveur"
+ ],
+ "Cette catégorie protège les personnes : elle reste sensible et active.": [
+  "serveur"
  ],
  "Cette demande a déjà été traitée.": [
   "serveur"
@@ -1778,6 +1868,9 @@
  "Choisir un ou plusieurs bénéficiaires…": [
   "components/beneficiaires/BeneficiairesTab.tsx"
  ],
+ "Choisir un rôle ou une personne…": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
+ ],
  "Choisir une équipe…": [
   "pages/projets/ActiviteForm.tsx"
  ],
@@ -1789,6 +1882,9 @@
  ],
  "Choisir une personne déjà enregistrée…": [
   "pages/projets/EquipeTab.tsx"
+ ],
+ "Choisir une personne…": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
  ],
  "Choisir, ou taper un nouveau type": [
   "pages/organisation/OrganisationPage.tsx"
@@ -1853,6 +1949,9 @@
   "pages/carte/FenetresCarte.tsx"
  ],
  "Choisissez un fichier.": [
+  "serveur"
+ ],
+ "Choisissez un modèle de la liste.": [
   "serveur"
  ],
  "Choix multiple": [
@@ -1922,6 +2021,21 @@
  "Cibles saisies sur la fiche de chaque projet (les jeunes et les PDI font partie de la cible totale).": [
   "pages/DashboardConsolidePage.tsx"
  ],
+ "Circuit": [
+  "pages/plaintes/ListesPlaintes.tsx"
+ ],
+ "Circuit par défaut": [
+  "pages/plaintes/ListesPlaintes.tsx"
+ ],
+ "Circuits : choisissez un circuit confidentiel par défaut.": [
+  "serveur"
+ ],
+ "Circuits : choisissez un circuit ordinaire par défaut.": [
+  "serveur"
+ ],
+ "Circuits de traitement": [
+  "pages/plaintes/PlaintesPage.tsx"
+ ],
  "Climatique et environnemental": [
   "pages/projets/RisquesTab.tsx"
  ],
@@ -1942,6 +2056,9 @@
  ],
  "Clos": [
   "pages/projets/RisquesTab.tsx"
+ ],
+ "Clôture": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
  ],
  "Clôturé": [
   "utils/statusTones.ts"
@@ -2020,6 +2137,9 @@
  "Compte lié": [
   "pages/projets/EquipeTab.tsx"
  ],
+ "Confidentiel": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
+ ],
  "Configuration de la structuration": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
  ],
@@ -2041,6 +2161,12 @@
  ],
  "Connexion": [
   "pages/langues/LanguesPage.tsx"
+ ],
+ "Conservation des dossiers ordinaires (mois)": [
+  "pages/plaintes/PlaintesPage.tsx"
+ ],
+ "Conservation des dossiers sensibles (mois)": [
+  "pages/plaintes/PlaintesPage.tsx"
  ],
  "Conserver (ajouter seulement)": [
   "components/suivi/ImportCanevasSuiviModal.tsx"
@@ -2339,6 +2465,16 @@
  "Déjà réparti sur les autres périodes :": [
   "pages/projets/PlanificationPeriodeTab.tsx"
  ],
+ "Délai (jours)": [
+  "pages/plaintes/CircuitsPlaintes.tsx",
+  "pages/plaintes/ListesPlaintes.tsx"
+ ],
+ "Délai de traitement (jours)": [
+  "pages/plaintes/ListesPlaintes.tsx"
+ ],
+ "Délais comptés en jours ouvrés": [
+  "pages/plaintes/PlaintesPage.tsx"
+ ],
  "Demande": [
   "pages/approbations/ApprobationsPage.tsx"
  ],
@@ -2384,20 +2520,32 @@
  "Des cartes sont en cours de génération, réessayez dans une minute.": [
   "serveur"
  ],
+ "Des catégories sensibles utilisent ce circuit : il doit rester confidentiel.": [
+  "serveur"
+ ],
  "Des utilisateurs ont ce rôle": [
   "pages/utilisateurs/RolesTab.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
  "Désactivé": [
-  "components/partage/BoutonPartage.tsx"
+  "components/partage/BoutonPartage.tsx",
+  "pages/plaintes/CircuitsPlaintes.tsx"
+ ],
+ "Désactiver": [
+  "pages/plaintes/PlaintesPage.tsx"
+ ],
+ "Désactiver le mécanisme": [
+  "pages/plaintes/PlaintesPage.tsx"
  ],
  "Descendre": [
   "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/plaintes/CircuitsPlaintes.tsx",
   "pages/strategie/CadreStrategiqueDetailPage.tsx",
   "pages/strategie/ChaineDocumentsModal.tsx"
  ],
  "Description": [
   "pages/organisation/OrganisationPage.tsx",
+  "pages/plaintes/ListesPlaintes.tsx",
   "pages/projets/ActiviteForm.tsx",
   "pages/strategie/CadreStrategiqueDetailPage.tsx",
   "pages/strategie/DocumentModal.tsx",
@@ -2415,6 +2563,9 @@
  ],
  "Détermine les éléments (axes, orientations…) proposés ensuite pour les activités de ce projet.": [
   "pages/projets/ProjetForm.tsx"
+ ],
+ "Deux niveaux au plus : choisissez une catégorie principale.": [
+  "serveur"
  ],
  "Deux paliers ne peuvent pas avoir le même seuil.": [
   "pages/parametres/ParametresAlertePage.tsx"
@@ -2726,6 +2877,7 @@
   "pages/langues/LanguesPage.tsx",
   "pages/organisation/OrganisationPage.tsx",
   "pages/parametres/ParametresAlertePage.tsx",
+  "pages/plaintes/PlaintesPage.tsx",
   "pages/projets/ActiviteForm.tsx",
   "pages/projets/AvancementModal.tsx",
   "pages/projets/CadreLogiqueTab.tsx",
@@ -2811,6 +2963,9 @@
   "pages/langues/LanguesPage.tsx",
   "pages/organisation/OrganisationPage.tsx",
   "pages/parametres/ParametresAlertePage.tsx",
+  "pages/plaintes/CircuitsPlaintes.tsx",
+  "pages/plaintes/ListesPlaintes.tsx",
+  "pages/plaintes/PlaintesPage.tsx",
   "pages/projets/AvancementModal.tsx",
   "pages/projets/CadreLogiqueTab.tsx",
   "pages/projets/FinancementsTab.tsx",
@@ -3010,6 +3165,12 @@
   "pages/projets/ExportPlanification.tsx",
   "pages/strategie/ChaineDocumentsModal.tsx"
  ],
+ "Étape": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
+ ],
+ "Étape de clôture": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
+ ],
  "État": [
   "pages/parametres/RapportageCard.tsx"
  ],
@@ -3035,11 +3196,20 @@
  "Ex : 1.1": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
  ],
+ "Ex : Accès à l'eau": [
+  "pages/plaintes/ListesPlaintes.tsx"
+ ],
  "Ex : Année 1, T1 2026…": [
   "components/suivi/TranchesPlanifieesTab.tsx"
  ],
  "Ex : Année 2026, 1er semestre 2027": [
   "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Ex : Basse": [
+  "pages/plaintes/ListesPlaintes.tsx"
+ ],
+ "Ex : Circuit des plaintes urgentes": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
  ],
  "Ex : Comité de pilotage, bailleur": [
   "components/partage/BoutonPartage.tsx"
@@ -3055,6 +3225,9 @@
  ],
  "Ex : Kadiogo": [
   "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Ex : MGP → MGP-2026-0001": [
+  "pages/plaintes/PlaintesPage.tsx"
  ],
  "Ex : Note, Contrat, Rapport bailleur…": [
   "components/documents/DocumentsTab.tsx"
@@ -3076,6 +3249,9 @@
  ],
  "Ex : Rapport du 1er trimestre 2026": [
   "pages/parametres/RapportageCard.tsx"
+ ],
+ "Ex : Réclamation": [
+  "pages/plaintes/ListesPlaintes.tsx"
  ],
  "Ex : Région": [
   "pages/geo/ZonesAdministrativesPage.tsx"
@@ -3164,6 +3340,12 @@
  "Exemple affiché comme indication (facultatif)": [
   "pages/geo/ZonesAdministrativesPage.tsx",
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Exemple indicatif : 120 mois. À fixer selon les règles de l'organisation.": [
+  "pages/plaintes/PlaintesPage.tsx"
+ ],
+ "Exemple indicatif : 60 mois. À fixer selon les règles de l'organisation.": [
+  "pages/plaintes/PlaintesPage.tsx"
  ],
  "Expiré": [
   "components/partage/BoutonPartage.tsx"
@@ -3293,6 +3475,9 @@
   "pages/projets/ImportProjetModal.tsx",
   "pages/strategie/ImportStructurationModal.tsx"
  ],
+ "Fichier complété": [
+  "pages/plaintes/PlaintesPage.tsx"
+ ],
  "Fichier de la chaîne des documents : {0} document(s) créé(s), {1} mis à jour.": [
   "serveur"
  ],
@@ -3385,10 +3570,22 @@
  "Fréquence de collecte invalide « {0} » — ligne ignorée.": [
   "serveur"
  ],
+ "Gardez au moins une priorité urgente active.": [
+  "serveur"
+ ],
  "Général": [
   "pages/projets/ProjetForm.tsx",
   "pages/strategie/DocumentModal.tsx",
   "pages/strategie/FicheDocument.tsx"
+ ],
+ "Général : choisissez au moins une langue pour le formulaire public.": [
+  "serveur"
+ ],
+ "Général : donnez un nom au mécanisme.": [
+  "serveur"
+ ],
+ "Général : fixez les durées de conservation des dossiers ordinaires et sensibles.": [
+  "serveur"
  ],
  "Géographie": [
   "pages/DashboardConsolidePage.tsx"
@@ -3518,6 +3715,9 @@
  "Import combiné — un seul fichier Excel": [
   "pages/planification/PlanificationImportPage.tsx"
  ],
+ "Import impossible": [
+  "pages/plaintes/PlaintesPage.tsx"
+ ],
  "Import terminé": [
   "components/suivi/ImportCanevasSuiviModal.tsx"
  ],
@@ -3529,6 +3729,7 @@
   "pages/carte/FenetresCarte.tsx",
   "pages/indicateurs/ImportIndicateursModal.tsx",
   "pages/langues/LanguesPage.tsx",
+  "pages/plaintes/PlaintesPage.tsx",
   "pages/planification/PlanificationImportPage.tsx",
   "pages/projets/ExportPlanification.tsx",
   "pages/projets/ImportProjetModal.tsx",
@@ -3605,6 +3806,9 @@
  ],
  "Imprimer les cartes de ce projet": [
   "pages/beneficiaires/BeneficiairesListPage.tsx"
+ ],
+ "Inactif": [
+  "pages/plaintes/PlaintesPage.tsx"
  ],
  "Indicateur": [
   "pages/projets/PlanificationPeriodeTab.tsx",
@@ -3823,6 +4027,9 @@
  "La saisie des valeurs réalisées et leur évolution dans le temps se font depuis le module Suivi.": [
   "pages/indicateurs/IndicateurDetailPage.tsx"
  ],
+ "Laisser vide pour couvrir tous les projets.": [
+  "pages/plaintes/PlaintesPage.tsx"
+ ],
  "Laisser vide pour ne pas le changer": [
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
@@ -3832,9 +4039,15 @@
  "Langue par défaut enregistrée": [
   "pages/langues/LanguesPage.tsx"
  ],
+ "Langue(s) non proposée(s) : {0}.": [
+  "serveur"
+ ],
  "Langues": [
   "layouts/AppLayout.tsx",
   "pages/langues/LanguesPage.tsx"
+ ],
+ "Langues de réception": [
+  "pages/plaintes/PlaintesPage.tsx"
  ],
  "Latitude": [
   "pages/beneficiaires/BeneficiaireForm.tsx"
@@ -3848,6 +4061,9 @@
  ],
  "Le budget dépensé ({0} FCFA) dépasse le budget alloué à l'activité ({1} FCFA).": [
   "serveur"
+ ],
+ "Le canevas contient tout le paramétrage actuel (une feuille par rubrique). Modifiez-le ou complétez-le puis réimportez-le : les éléments sont retrouvés par leur nom, les étapes d'un circuit présent dans le fichier sont remplacées.": [
+  "pages/plaintes/PlaintesPage.tsx"
  ],
  "Le détail de ce budget est saisi sur les éléments en dessous : il n'est pas compté une seconde fois dans les totaux.": [
   "pages/strategie/AxesBudgetsTab.tsx"
@@ -3864,6 +4080,15 @@
  "Le libellé est requis.": [
   "pages/projets/ActiviteForm.tsx",
   "pages/projets/SousActiviteForm.tsx"
+ ],
+ "Le mécanisme ne peut pas encore être activé.": [
+  "serveur"
+ ],
+ "Le mécanisme reçoit les retours. Les réglages restent modifiables.": [
+  "pages/plaintes/PlaintesPage.tsx"
+ ],
+ "Le modèle installe des types, priorités, catégories et circuits courants, que vous adaptez ensuite. Le circuit confidentiel est toujours ajouté.": [
+  "pages/plaintes/PlaintesPage.tsx"
  ],
  "Le montant de la rallonge doit être positif.": [
   "serveur"
@@ -3889,6 +4114,9 @@
   "pages/strategie/DocumentModal.tsx"
  ],
  "Le parent principal n'a pas à être repris dans les autres liens.": [
+  "serveur"
+ ],
+ "Le préfixe ne contient que des lettres et des chiffres (ex : MGP).": [
   "serveur"
  ],
  "Le premier colorie les zones ; tous sont écrits sur chaque zone et dans le tableau.": [
@@ -3951,6 +4179,9 @@
  "Les réalisations seulement": [
   "utils/rapportage.ts"
  ],
+ "Les retours pourront être reçus et traités selon ce paramétrage.": [
+  "pages/plaintes/PlaintesPage.tsx"
+ ],
  "les risques maîtrisés ou clos (": [
   "pages/projets/RisquesTab.tsx"
  ],
@@ -3962,6 +4193,9 @@
  ],
  "Les saisies faites ici (dates comprises dans la période) sont aussi comptées dans le suivi global du projet : quantités, budget, statut et dates réelles s'actualisent automatiquement.": [
   "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Les types de retours que l'organisation accepte. Un type désactivé n'est plus proposé, sans rien effacer.": [
+  "pages/plaintes/ListesPlaintes.tsx"
  ],
  "Les utilisateurs à visibilité restreinte affectés ici voient ce document, en plus de ceux de leurs projets.": [
   "pages/strategie/DocumentModal.tsx"
@@ -4022,6 +4256,9 @@
  "Ligne {0}": [
   "pages/projets/ExportPlanification.tsx",
   "pages/strategie/ChaineDocumentsModal.tsx"
+ ],
+ "Ligne {0} : {1}": [
+  "pages/plaintes/PlaintesPage.tsx"
  ],
  "Limité au cadre stratégique du projet choisi ci-dessus.": [
   "pages/indicateurs/IndicateurForm.tsx"
@@ -4100,6 +4337,12 @@
  ],
  "Matrice des risques ouverts": [
   "pages/projets/RisquesTab.tsx"
+ ],
+ "Mécanisme": [
+  "pages/plaintes/PlaintesPage.tsx"
+ ],
+ "Mécanisme actif": [
+  "pages/plaintes/PlaintesPage.tsx"
  ],
  "Membre ajouté à l'équipe": [
   "pages/projets/EquipeTab.tsx"
@@ -4222,6 +4465,9 @@
  ],
  "Mise en page": [
   "pages/carte/FenetresCarte.tsx"
+ ],
+ "Modèle appliqué : complétez maintenant les réglages.": [
+  "pages/plaintes/PlaintesPage.tsx"
  ],
  "Modéré": [
   "pages/projets/RisquesTab.tsx"
@@ -4365,6 +4611,7 @@
  ],
  "Monter": [
   "pages/geo/ZonesAdministrativesPage.tsx",
+  "pages/plaintes/CircuitsPlaintes.tsx",
   "pages/strategie/CadreStrategiqueDetailPage.tsx",
   "pages/strategie/ChaineDocumentsModal.tsx"
  ],
@@ -4518,6 +4765,9 @@
  "Nom de la période": [
   "pages/projets/PlanificationPeriodeTab.tsx"
  ],
+ "Nom de la sous-catégorie": [
+  "pages/plaintes/ListesPlaintes.tsx"
+ ],
  "Nom du bailleur": [
   "pages/projets/BailleursMontants.tsx"
  ],
@@ -4526,6 +4776,9 @@
  ],
  "Nom du dossier": [
   "components/documents/DocumentsTab.tsx"
+ ],
+ "Nom du mécanisme": [
+  "pages/plaintes/PlaintesPage.tsx"
  ],
  "Nom du niveau": [
   "pages/geo/ZonesAdministrativesPage.tsx",
@@ -4655,6 +4908,9 @@
  "Nouveau cadre stratégique": [
   "pages/strategie/CadresStrategiquesListPage.tsx"
  ],
+ "Nouveau circuit": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
+ ],
  "Nouveau document": [
   "components/documents/DocumentsTab.tsx"
  ],
@@ -4721,6 +4977,9 @@
  ],
  "Nouvelle équipe": [
   "pages/projets/ActiviteForm.tsx"
+ ],
+ "Nouvelle étape, ex : Vérification": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
  ],
  "Nouvelle organisation": [
   "pages/organisation/OrganisationPage.tsx"
@@ -4880,6 +5139,9 @@
  "Par « {0} »": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
  ],
+ "Par défaut": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
+ ],
  "Par défaut : {0}": [
   "layouts/AppLayout.tsx"
  ],
@@ -4987,6 +5249,9 @@
   "pages/strategie/CadreStrategiqueDetailPage.tsx",
   "pages/strategie/DocumentModal.tsx",
   "pages/strategie/FicheDocument.tsx"
+ ],
+ "Partir d'un modèle": [
+  "pages/plaintes/PlaintesPage.tsx"
  ],
  "Pas de contact renseigné": [
   "pages/organisation/OrganisationPage.tsx"
@@ -5098,6 +5363,9 @@
  "personnes": [
   "pages/DashboardConsolidePage.tsx"
  ],
+ "Personnes": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
+ ],
  "personnes, ha…": [
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
  ],
@@ -5129,6 +5397,11 @@
  ],
  "Plage de dates": [
   "components/dashboard/FiltresTableauDeBord.tsx"
+ ],
+ "Plaintes et retours": [
+  "layouts/AppLayout.tsx",
+  "pages/plaintes/PlaintesPage.tsx",
+  "utils/modules.ts"
  ],
  "Plan de contingence": [
   "pages/projets/RisquesTab.tsx"
@@ -5183,6 +5456,9 @@
  ],
  "Pluriel": [
   "layouts/AppLayout.tsx"
+ ],
+ "Plus aucun retour ne sera reçu ; les dossiers existants sont conservés.": [
+  "pages/plaintes/PlaintesPage.tsx"
  ],
  "Poids": [
   "pages/projets/ActiviteForm.tsx"
@@ -5256,6 +5532,9 @@
  "Préciser le rôle": [
   "pages/projets/PartenairesProjetTab.tsx"
  ],
+ "Préfixe des numéros de dossier": [
+  "pages/plaintes/PlaintesPage.tsx"
+ ],
  "Prénom": [
   "components/common/IntervenantsMultiples.tsx",
   "pages/beneficiaires/BeneficiaireForm.tsx",
@@ -5264,6 +5543,12 @@
  ],
  "Présélectionnée automatiquement — change-la ou vide-la si tu ne veux pas rattacher la personne à une équipe précise.": [
   "pages/projets/EquipeTab.tsx"
+ ],
+ "Présenté aux personnes qui déposent un retour : à quoi sert le mécanisme, comment leurs données sont protégées.": [
+  "pages/plaintes/PlaintesPage.tsx"
+ ],
+ "Prêt à être activé": [
+  "pages/plaintes/PlaintesPage.tsx"
  ],
  "Prévu": [
   "pages/projets/PeriodeTableau.tsx"
@@ -5276,6 +5561,15 @@
  ],
  "Prévu, dépensé, taux et solde des grandes composantes.": [
   "pages/projets/RapportFinancierModal.tsx"
+ ],
+ "Priorité": [
+  "pages/plaintes/ListesPlaintes.tsx"
+ ],
+ "Priorités": [
+  "pages/plaintes/PlaintesPage.tsx"
+ ],
+ "Priorités : gardez au moins une priorité urgente active.": [
+  "serveur"
  ],
  "Probabilité": [
   "pages/projets/RisquesTab.tsx"
@@ -5385,6 +5679,9 @@
  ],
  "Projets contribuant à ce cadre stratégique": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Projets couverts": [
+  "pages/plaintes/PlaintesPage.tsx"
  ],
  "Projets dont cette structure est chargée (un projet peut relever de plusieurs services). Une partie d'un projet s'affecte depuis sa planification.": [
   "pages/organisation/OrganisationPage.tsx"
@@ -5659,6 +5956,9 @@
  "Réglage par défaut de l'organisation : chaque projet peut fixer le sien (fiche projet, onglet Stratégie), et chaque élément de la planification aussi (son formulaire).": [
   "pages/parametres/ParametresAlertePage.tsx"
  ],
+ "Réglages enregistrés": [
+  "pages/plaintes/PlaintesPage.tsx"
+ ],
  "Regrouper par :": [
   "pages/strategie/AxesBudgetsTab.tsx"
  ],
@@ -5685,6 +5985,9 @@
  "Remplace les termes de la plateforme par ceux de ton organisation : ils changent partout (écrans, formulaires, rattachements, messages, exports). Indique le singulier, le pluriel et le genre (pour accorder « un/une », « le/la », « nouveau/nouvelle »…). Laisse vide pour garder le terme par défaut.": [
   "layouts/AppLayout.tsx"
  ],
+ "Remplacez d'abord les rôles des étapes par des personnes nommément désignées.": [
+  "serveur"
+ ],
  "Renommer": [
   "pages/projets/NiveauxActiviteTab.tsx"
  ],
@@ -5708,6 +6011,7 @@
  ],
  "Responsable": [
   "pages/organisation/OrganisationPage.tsx",
+  "pages/plaintes/CircuitsPlaintes.tsx",
   "pages/strategie/CadresStrategiquesListPage.tsx",
   "pages/strategie/DocumentModal.tsx",
   "pages/strategie/FicheDocument.tsx"
@@ -5845,6 +6149,7 @@
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
  "Rôles": [
+  "pages/plaintes/CircuitsPlaintes.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
  "Route": [
@@ -5987,6 +6292,15 @@
   "pages/indicateurs/IndicateurForm.tsx",
   "pages/strategie/SuiviStrategiqueTab.tsx"
  ],
+ "Sensibilité": [
+  "pages/plaintes/ListesPlaintes.tsx"
+ ],
+ "Sensible": [
+  "pages/plaintes/ListesPlaintes.tsx"
+ ],
+ "Sensible (héritée)": [
+  "pages/plaintes/ListesPlaintes.tsx"
+ ],
  "Service": [
   "pages/projets/PartenairesProjetTab.tsx"
  ],
@@ -6111,6 +6425,9 @@
  "sous-activité(s).": [
   "pages/projets/ImportProjetModal.tsx"
  ],
+ "Sous-catégorie de « {0} » :": [
+  "pages/plaintes/ListesPlaintes.tsx"
+ ],
  "Sous-service": [
   "pages/organisation/OrganisationPage.tsx"
  ],
@@ -6206,6 +6523,7 @@
   "pages/approbations/ApprobationsPage.tsx"
  ],
  "Suppression impossible": [
+  "pages/plaintes/ListesPlaintes.tsx",
   "pages/strategie/ChaineDocumentsModal.tsx"
  ],
  "Suppression impossible : ce partenaire est utilisé par un projet.": [
@@ -6220,6 +6538,8 @@
   "pages/beneficiaires/BeneficiairesListPage.tsx",
   "pages/geo/ZonesAdministrativesPage.tsx",
   "pages/organisation/OrganisationPage.tsx",
+  "pages/plaintes/CircuitsPlaintes.tsx",
+  "pages/plaintes/ListesPlaintes.tsx",
   "pages/projets/AvancementModal.tsx",
   "pages/projets/NiveauxActiviteTab.tsx",
   "pages/projets/PlanificationPeriodeTab.tsx",
@@ -6237,7 +6557,8 @@
   "pages/beneficiaires/BeneficiairesListPage.tsx"
  ],
  "Supprimer « {0} » ?": [
-  "pages/organisation/OrganisationPage.tsx"
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/plaintes/ListesPlaintes.tsx"
  ],
  "Supprimer « {0} » ? Cette action est irréversible.": [
   "pages/geo/ZonesAdministrativesPage.tsx",
@@ -6297,6 +6618,9 @@
  "Supprimer l'équipe": [
   "pages/projets/EquipeTab.tsx"
  ],
+ "Supprimer l'étape « {0} » ?": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
+ ],
  "Supprimer l'indicateur": [
   "pages/indicateurs/IndicateurDetailPage.tsx",
   "pages/indicateurs/IndicateursListPage.tsx"
@@ -6348,6 +6672,12 @@
  "Supprimer le bénéficiaire": [
   "pages/beneficiaires/BeneficiaireDetailPage.tsx"
  ],
+ "Supprimer le circuit": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
+ ],
+ "Supprimer le circuit « {0} » et ses étapes ? Les catégories qui l'utilisent passeront par le circuit par défaut.": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
+ ],
  "Supprimer le document \"{0}\" ainsi que toutes ses versions ? Cette action est irréversible.": [
   "components/documents/DocumentsTab.tsx"
  ],
@@ -6384,6 +6714,9 @@
  "Supprimer le rôle \"{0}\" ?": [
   "pages/utilisateurs/RolesTab.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Supprimez ou déplacez d'abord ses sous-catégories.": [
+  "serveur"
  ],
  "Sur": [
   "pages/projets/PartenairesProjetTab.tsx"
@@ -6476,6 +6809,7 @@
   "pages/carte/FenetresCarte.tsx"
  ],
  "Télécharger le canevas": [
+  "pages/plaintes/PlaintesPage.tsx",
   "pages/projets/PlanificationPeriodeTab.tsx"
  ],
  "Télécharger le canevas de la planification": [
@@ -6523,6 +6857,9 @@
  ],
  "Texte": [
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Texte d'information du public": [
+  "pages/plaintes/PlaintesPage.tsx"
  ],
  "Texte français": [
   "pages/langues/LanguesPage.tsx"
@@ -6580,6 +6917,9 @@
  ],
  "Tous les blocs sont masqués — clique sur « Personnaliser » pour en afficher.": [
   "pages/DashboardConsolidePage.tsx"
+ ],
+ "Tous les contrôles sont satisfaits.": [
+  "pages/plaintes/PlaintesPage.tsx"
  ],
  "Tous les dossiers": [
   "components/documents/DocumentsTab.tsx"
@@ -6674,7 +7014,8 @@
  "Type": [
   "components/documents/DocumentsTab.tsx",
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
-  "pages/organisation/OrganisationPage.tsx"
+  "pages/organisation/OrganisationPage.tsx",
+  "pages/plaintes/ListesPlaintes.tsx"
  ],
  "Type d'activité inconnu ignoré : « {0} ».": [
   "serveur"
@@ -6705,11 +7046,23 @@
  "Types de graphiques par défaut": [
   "components/dashboard/PersonnalisationModal.tsx"
  ],
+ "Types de retours": [
+  "pages/plaintes/PlaintesPage.tsx"
+ ],
+ "Types de retours : activez au moins un type.": [
+  "serveur"
+ ],
  "Un Administrateur a toujours accès à tous les modules.": [
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
  "Un Administrateur a toujours accès à tout. Pour les autres, choisis le rôle (détermine les projets visibles) et le niveau d'accès (voir seulement, ou créer et modifier dans son périmètre).": [
   "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Un circuit confidentiel est confié à des personnes nommément désignées, pas à un rôle.": [
+  "serveur"
+ ],
+ "Un circuit est la suite des étapes que suit un dossier, de la réception à la clôture. Chaque catégorie utilise le circuit par défaut de sa nature, ou un circuit qui lui est propre.": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
  ],
  "Un dépassement de cible (ex : 130 %) reste affiché, mais compte pour 100 % dans les moyennes.": [
   "pages/parametres/ParametresAlertePage.tsx"
@@ -6768,11 +7121,26 @@
  "Une activité ne peut pas être sa propre ancêtre (boucle détectée).": [
   "serveur"
  ],
+ "Une catégorie ne peut pas être sa propre sous-catégorie.": [
+  "serveur"
+ ],
+ "Une catégorie porte déjà ce nom à ce niveau.": [
+  "serveur"
+ ],
+ "Une catégorie sensible (abus, fraude, plainte visant le personnel…) fait passer le dossier dans le circuit confidentiel : seules les personnes désignées y ont accès. Les catégories liées à l'exploitation et aux abus sexuels restent toujours sensibles.": [
+  "pages/plaintes/ListesPlaintes.tsx"
+ ],
+ "Une catégorie sensible utilise un circuit confidentiel.": [
+  "serveur"
+ ],
  "Une ligne = un indicateur. Le rattachement (Projet, ou nom d'un niveau de la planification : Objectif, Résultat, Pilier, Activité…) se fait par le code exact du projet et le libellé exact de l'élément — laisse « Aucun » pour un indicateur stratégique sans projet.": [
   "pages/indicateurs/ImportIndicateursModal.tsx"
  ],
  "Une même organisation peut être de mise en œuvre sur un projet et du consortium sur un autre : son rôle se précise dans l'onglet « Partenaires » de chaque projet.": [
   "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Une priorité urgente déclenche une notification immédiate et un traitement accéléré. Il en reste toujours au moins une.": [
+  "pages/plaintes/ListesPlaintes.tsx"
  ],
  "Une seule colonne de niveau doit être remplie par ligne — ligne ignorée.": [
   "serveur"
@@ -6810,6 +7178,9 @@
  "Unité :": [
   "pages/indicateurs/IndicateurDetailPage.tsx"
  ],
+ "Urgente": [
+  "pages/plaintes/ListesPlaintes.tsx"
+ ],
  "Utilisateur créé": [
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
@@ -6842,11 +7213,17 @@
  "Utilise le modèle ci-dessous pour être sûr que les colonnes sont dans le bon format, puis remplis-le et importe-le. Les régions/provinces doivent correspondre à des zones existantes ; les communes/villages sont créés automatiquement s'ils n'existent pas encore.": [
   "pages/beneficiaires/ImportBeneficiairesModal.tsx"
  ],
+ "Utilisé par {0} catégorie(s)": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
+ ],
  "Utilisée si cet élément a des éléments en dessous.": [
   "pages/projets/ActiviteForm.tsx"
  ],
  "Utilisée sur la page de connexion et pour les utilisateurs qui n'ont pas choisi de langue.": [
   "pages/langues/LanguesPage.tsx"
+ ],
+ "Utiliser ce modèle": [
+  "pages/plaintes/PlaintesPage.tsx"
  ],
  "Valeur": [
   "components/common/AttributsLibres.tsx",
@@ -6911,6 +7288,9 @@
  ],
  "Validation retirée": [
   "serveur"
+ ],
+ "Valide": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
  ],
  "Validé": [
   "pages/projets/AvancementModal.tsx"
