@@ -50,10 +50,10 @@ l'installation, voir le [README](../README.md).
 
 | Service | Rôle | Port hôte → conteneur |
 |---|---|---|
-| `db` | PostgreSQL 16, volume persistant `suivi-evaluation-2-pgdata` | 5443 → 5432 |
-| `backend` | Django (`manage.py runserver`), code monté depuis `./backend` | 8092 → 8000 |
+| `db` | PostgreSQL 16, volume persistant `suivi-evaluation-3-pgdata` | 5444 → 5432 |
+| `backend` | Django (`manage.py runserver`), code monté depuis `./backend` | 8093 → 8000 |
 | `scheduler` | Boucle `check_deadlines` toutes les heures | — |
-| `frontend` | Serveur de développement Vite, code monté depuis `./frontend` | 5191 → 5173 |
+| `frontend` | Serveur de développement Vite, code monté depuis `./frontend` | 5192 → 5173 |
 
 Le backend et le frontend se rechargent automatiquement à chaque modification du code.
 Un redémarrage (`docker compose restart <service>`) n'est utile qu'après un changement
@@ -70,8 +70,8 @@ du fichier `.env`.
 | `DJANGO_ALLOWED_HOSTS` | Noms d'hôte acceptés | `localhost,127.0.0.1,backend` |
 | `JWT_ACCESS_LIFETIME_MIN` | Durée du jeton d'accès (minutes) | 45 |
 | `JWT_REFRESH_LIFETIME_DAYS` | Durée du jeton de rafraîchissement (jours) | 7 |
-| `CORS_ALLOWED_ORIGINS` | Origines autorisées à appeler l'API | `http://localhost:5191` |
-| `VITE_API_BASE_URL` | Adresse de l'API vue par le navigateur | `http://localhost:8092/api/v1` |
+| `CORS_ALLOWED_ORIGINS` | Origines autorisées à appeler l'API | `http://localhost:5192` |
+| `VITE_API_BASE_URL` | Adresse de l'API vue par le navigateur | `http://localhost:8093/api/v1` |
 | `EMAIL_BACKEND`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL` | Envoi des courriels de notification | backend « console » : les courriels sont écrits dans les journaux du conteneur |
 
 ### Réglages Django

@@ -16,7 +16,7 @@ Documentation complète : [README.md](README.md) (présentation, démarrage) et
 [docs/DOCUMENTATION_TECHNIQUE.md](docs/DOCUMENTATION_TECHNIQUE.md) (architecture,
 modèle de données, règles métier, API, frontend, exploitation).
 
-Dépôt GitHub : [expertiseid/SuiviEvaluation2](https://github.com/expertiseid/SuiviEvaluation2) (branche `main`)
+Dépôt GitHub : [expertiseid/SuiviEvaluation3](https://github.com/expertiseid/SuiviEvaluation3) (branche `main`)
 
 ## Installation sur une machine neuve
 
@@ -25,8 +25,8 @@ Dépôt GitHub : [expertiseid/SuiviEvaluation2](https://github.com/expertiseid/S
 2. **Cloner le dépôt** :
 
    ```bash
-   git clone https://github.com/expertiseid/SuiviEvaluation2.git
-   cd SuiviEvaluation2
+   git clone https://github.com/expertiseid/SuiviEvaluation3.git
+   cd SuiviEvaluation3
    ```
 
 3. **Créer le fichier `.env`** à partir du modèle (les valeurs par défaut suffisent pour du développement local) :
@@ -66,9 +66,9 @@ Dépôt GitHub : [expertiseid/SuiviEvaluation2](https://github.com/expertiseid/S
    `COORDO_GENERAL`, `CHARGE_SE`, `CHEF_PROJET`...)
 
 7. **Accéder à l'application** :
-   - Interface web : <http://localhost:5191>
-   - API : <http://localhost:8092/api/v1>
-   - Admin Django : <http://localhost:8092/admin>
+   - Interface web : <http://localhost:5192>
+   - API : <http://localhost:8093/api/v1>
+   - Admin Django : <http://localhost:8093/admin>
 
 ## Commandes courantes
 
@@ -130,9 +130,9 @@ docker compose up -d
 
 | Service     | Rôle                                   | Port local |
 |-------------|-----------------------------------------|------------|
-| `db`        | PostgreSQL 16                           | 5443       |
-| `backend`   | Django (API DRF, `manage.py runserver`) | 8092       |
-| `frontend`  | Vite dev server (React)                 | 5191       |
+| `db`        | PostgreSQL 16                           | 5444       |
+| `backend`   | Django (API DRF, `manage.py runserver`) | 8093       |
+| `frontend`  | Vite dev server (React)                 | 5192       |
 | `scheduler` | Boucle `check_deadlines` toutes les heures | —       |
 
 ## Déploiement existant

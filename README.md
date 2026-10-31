@@ -1,14 +1,15 @@
-# SuiviEvaluation2 — Plateforme de Suivi-Évaluation (Expertise-ID)
+# SuiviEvaluation3 — Plateforme de Suivi-Évaluation (Expertise-ID)
 
 Plateforme web de suivi-évaluation (S&E) des projets et programmes de développement,
 conçue et développée par Expertise-ID. Elle couvre toute la chaîne du pilotage : cadre
 stratégique, projets, planification, indicateurs, suivi périodique des réalisations,
 bénéficiaires, documents, alertes et tableaux de bord.
 
-> **SuiviEvaluation2** est la copie de travail de
-> [SuiviEvaluation](https://github.com/expertiseid/SuiviEvaluation) : toutes les évolutions
-> se font ici, le dépôt d'origine conserve le code initial. Les deux peuvent tourner en même
-> temps sur le même poste (ports et conteneurs distincts).
+> **SuiviEvaluation3** est la copie de travail actuelle : toutes les évolutions se font ici.
+> [SuiviEvaluation2](https://github.com/expertiseid/SuiviEvaluation2) (version arrêtée au
+> commit `ecad790`) et [SuiviEvaluation](https://github.com/expertiseid/SuiviEvaluation) (code
+> initial) restent inchangés. Les trois peuvent tourner en même temps sur le même poste (ports
+> et conteneurs distincts).
 
 ## Sommaire
 
@@ -80,8 +81,8 @@ bénéficiaires, documents, alertes et tableaux de bord.
 Prérequis : [Docker Desktop](https://www.docker.com/products/docker-desktop/) démarré.
 
 ```bash
-git clone https://github.com/expertiseid/SuiviEvaluation2.git
-cd SuiviEvaluation2
+git clone https://github.com/expertiseid/SuiviEvaluation3.git
+cd SuiviEvaluation3
 cp .env.example .env                                   # valeurs par défaut suffisantes en local
 docker compose up -d --build                           # premier démarrage : quelques minutes
 docker compose exec backend python manage.py migrate
@@ -109,17 +110,17 @@ docker compose exec backend python manage.py seed_demo_expertise_id
 
 | Service | Adresse locale |
 |---|---|
-| Interface web | <http://localhost:5191> |
-| API REST | <http://localhost:8092/api/v1/> |
-| Documentation de l'API (Swagger) | <http://localhost:8092/api/docs/> |
-| Documentation de l'API (ReDoc) | <http://localhost:8092/api/redoc/> |
-| Administration Django | <http://localhost:8092/admin/> |
-| PostgreSQL | `localhost:5443` |
+| Interface web | <http://localhost:5192> |
+| API REST | <http://localhost:8093/api/v1/> |
+| Documentation de l'API (Swagger) | <http://localhost:8093/api/docs/> |
+| Documentation de l'API (ReDoc) | <http://localhost:8093/api/redoc/> |
+| Administration Django | <http://localhost:8093/admin/> |
+| PostgreSQL | `localhost:5444` |
 
 ## Organisation du dépôt
 
 ```
-SuiviEvaluation2/
+SuiviEvaluation3/
 ├── backend/                 API Django
 │   ├── config/              réglages (base / dev / prod), URLs racine
 │   ├── apps/                une application Django par domaine métier
