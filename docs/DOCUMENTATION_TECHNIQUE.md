@@ -730,7 +730,7 @@ secondaire ne peut viser qu'un niveau supérieur, jamais le parent principal ni 
   pas. L'export Excel des bénéficiaires ne traduit que ses en-têtes : ses données se réimportent
   telles quelles. Tests : `core/test_modeles_traduits.py`, `suivi/test_canevas.py`.
 
-### 5.14 Mécanisme de gestion des plaintes et retours (lots 1 à 4 : paramétrage, réception, traitement, délais)
+### 5.14 Mécanisme de gestion des plaintes et retours (lots 1 à 5 : paramétrage, réception, traitement, délais, confidentialité)
 
 Une installation = une organisation : tout le mécanisme se paramètre, sans rien coder, pour
 des communautés, des bénéficiaires, le personnel ou tout autre public. Application `plaintes`,
@@ -868,9 +868,46 @@ des communautés, des bénéficiaires, le personnel ou tout autre public. Applic
 - Tests : `plaintes/test_delais.py` (jours ouvrés, échéances et recalcul, retard, rappel unique,
   escalade, échéance proche, prolongation, notifications et confidentialité).
 
-Lots suivants prévus : circuit confidentiel complet (personne mise en cause, circuit alternatif,
-chiffrement, levée motivée de la sensibilité), pilotage (tableaux de bord, rapports), modèles de
-messages.
+**Circuit confidentiel complet (lot 5)** — `confidentiel.py`, `chiffrement.py`, `export_fiche.py`,
+modèles `Prestataire` et `Referencement` :
+
+- **Chiffrement** (`TexteChiffre`) des données protégées : récit, lieu, nom, téléphone, courriel,
+  personnes mises en cause (noms libres), décision, motif de clôture, notes du journal
+  (`ActionDossier.texte`) — y compris dans l'historique (`HistoricalDossier`). Clé Fernet propre à
+  l'installation, hors du code et de la base : `PLAINTES_CLE_CHIFFREMENT` (plusieurs clés séparées
+  par des virgules pour une rotation ; vide en développement : clé dérivée de `DJANGO_SECRET_KEY`,
+  avertissement `plaintes.W001` hors mode DEBUG). Le vide n'est pas chiffré (filtres « sans
+  décision »). Migration `0006` : chiffrement des données existantes. **Ne jamais perdre la clé.**
+- **Marquage manuel** : `plaintes-signaler/{id}/` (hors de `/plaintes/`, possible même en lecture
+  seule) ; effet immédiat, le signalant perd l'accès s'il n'est pas habilité. **Levée** :
+  `lever-sensibilite`, par un point focal du circuit ou un Administrateur, motif obligatoire ;
+  refusée si la catégorie est sensible, si des personnes sont mises en cause ou si le retour vise le
+  personnel. Jamais automatique.
+- **Personnes mises en cause** (`mis_en_cause_utilisateurs`, `mis_en_cause_libre`), à la saisie ou
+  par `mettre-en-cause` : exclues du dossier quel que soit leur rôle (`dossiers_visibles`), de ses
+  notifications, de l'affectation et des escalades ; le dossier devient confidentiel ; si l'une
+  d'elles est responsable d'une étape du circuit confidentiel, il part au **circuit alternatif**
+  (`Mecanisme.circuit_alternatif`, installé par les modèles, obligatoire pour l'activation).
+- **Assistance et référencement** : annuaire `Prestataire` (paramétrage, onglet « Prestataires
+  d'assistance ») ; `assistance` enregistre prestataire, type, date et consentement (obligatoire),
+  jamais le contenu des échanges.
+- **Export** `exporter` (POST, PDF) : filigrane au nom de la personne et à la date sur chaque page,
+  mention « Confidentiel » ; pour un dossier confidentiel, motif et confirmation exigés ; tracé au
+  journal (`EXPORT`).
+- **Conservation** : `fin_de_conservation` (date de clôture + durée ordinaire ou sensible) ;
+  `a_anonymiser` ; la tâche planifiée prévient les Administrateurs une fois par jour (vue
+  `?vue=a_anonymiser`) ; `anonymiser` (Administrateur, confirmation) efface récit, identité,
+  coordonnées, personnes mises en cause, notes, décision et l'historique détaillé, et garde numéro,
+  dates, type, catégorie, canal, statut et issue pour les statistiques. **Suspension légale**
+  (`suspendre`, Administrateur, motif) : bloque l'anonymisation tant qu'elle dure.
+- « Anonyme vis-à-vis de l'organisation » : dossier anonyme saisi par un agent.
+- Tests : `plaintes/test_confidentiel.py` (chiffrement en base et dans l'historique, scénario 7 et
+  circuit alternatif, marquage par un utilisateur en lecture seule et levée, assistance, export,
+  conservation, suspension et anonymisation).
+- Non couvert à ce stade : habilitation « sensible » distincte validée par une deuxième personne,
+  double authentification, pièces jointes chiffrées (à prévoir avec les pièces jointes).
+
+Lots suivants prévus : pilotage (tableaux de bord, indicateurs, rapports), modèles de messages.
 
 ## 6. Utilisateurs, rôles et permissions
 
@@ -1013,6 +1050,10 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 | CRUD | `plaintes-vues/` | Filtres enregistrés de l'utilisateur connecté |
 | POST | `plaintes/dossiers/{id}/prolonger/` | Prolongation motivée du délai (`jours`, `motif`) |
 | CRUD | `plaintes/jours-feries/` | Calendrier des jours fériés (délais en jours ouvrés) |
+| POST | `plaintes/dossiers/{id}/{lever-sensibilite,mettre-en-cause,assistance,suspendre,anonymiser}/` | Circuit confidentiel (règles dans `confidentiel.py`) |
+| POST | `plaintes/dossiers/{id}/exporter/` | Fiche PDF en filigrane (motif et confirmation pour un dossier confidentiel), tracée au journal |
+| POST | `plaintes-signaler/{id}/` | Signaler un dossier comme sensible (tout utilisateur qui le voit) |
+| CRUD | `plaintes/prestataires/` | Annuaire des prestataires d'assistance |
 | GET | `plaintes/qr/?projet=` | QR code (PNG) du formulaire public |
 | GET / POST | `public/plaintes/formulaire/`, `public/plaintes/deposer/`, `public/plaintes/suivi/` | Sans authentification : contenu du formulaire, dépôt d'un retour, état d'un dossier par son code |
 | GET | `beneficiaires/exporter/` | Export des bénéficiaires : `?fichier=excel` ou `pdf`, `?projets=1,3` pour choisir les projets |
@@ -1156,7 +1197,7 @@ mutualisées) puis rejoue la requête, ou renvoie vers la page de connexion.
 | `seed_points_suivi` | Ajoute des points de suivi de démonstration |
 | `verifier_echeances_plaintes [--recalculer]` | Rappels, retards et escalades des dossiers de plaintes (lancée par `check_deadlines`) ; `--recalculer` recalcule d'abord toutes les échéances |
 | `seed_demo_complements` | Complète la démonstration sans rien supprimer : variables des bénéficiaires et réponses, doublons signalés, liens de partage, pièces justificatives des valeurs d'indicateurs ; relançable |
-| `seed_demo_plaintes [--reinitialiser \| --historique]` | Mécanisme de plaintes « standard » activé, points focaux du circuit confidentiel `admin` et `pf_psea` (`demo1234!`) ; les dossiers confidentiels sont visibles de l'Administrateur et de `pf_psea` et 42 dossiers sur six mois, tous canaux et états d'avancement, créés par l'interface d'entrée commune puis traités par les vraies opérations (journal daté, un recours) ; `--historique` complète seulement le journal des dossiers qui n'en ont pas |
+| `seed_demo_plaintes [--reinitialiser \| --historique \| --confidentiel]` | Mécanisme de plaintes « standard » activé, points focaux du circuit confidentiel `admin` et `pf_psea` (`demo1234!`) ; les dossiers confidentiels sont visibles de l'Administrateur et de `pf_psea` et 42 dossiers sur six mois, tous canaux et états d'avancement, créés par l'interface d'entrée commune puis traités par les vraies opérations (journal daté, un recours) ; `--historique` complète seulement le journal des dossiers qui n'en ont pas ; `--confidentiel` ajoute seulement la démonstration du circuit confidentiel (circuit alternatif, prestataires, mise en cause, suspension légale) |
 | `charger_limites BF [--niveaux 1 2 3] [--recalculer]` | Télécharge les limites administratives d'un pays (geoBoundaries) et place les zones sur la carte |
 | `importer_bndt WGS84.zip [--pays BF] [--recalculer]` | Importe une base topographique en shapefiles (archive ou dossier) : contours, routes, localités, puis place les zones |
 

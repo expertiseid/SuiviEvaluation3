@@ -163,3 +163,8 @@ EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="notifications@suivi-evaluation.local")
+
+# --- Plaintes : clé de chiffrement des données protégées (récits, coordonnées, notes) ---
+# Clé Fernet propre à l'organisation, hors du code et de la base ; plusieurs clés séparées par des
+# virgules pour une rotation (la première chiffre). Voir apps/plaintes/chiffrement.py.
+PLAINTES_CLE_CHIFFREMENT = env("PLAINTES_CLE_CHIFFREMENT", default="")

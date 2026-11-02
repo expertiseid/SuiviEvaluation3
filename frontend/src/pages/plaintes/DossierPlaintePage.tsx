@@ -5,8 +5,16 @@ import {
   ArrowRightLeft,
   CalendarPlus,
   CheckCheck,
+  Eraser,
+  FileDown,
+  HandHeart,
+  ShieldAlert,
+  ShieldCheck,
+  ShieldX,
+  UserRoundX,
   FolderCheck,
   Gavel,
+  Landmark,
   Link2,
   Lock,
   MessageSquareText,
@@ -33,6 +41,7 @@ import {
   libelleObjetEchange,
   libelleStatutDossier,
   libelleTypeAction,
+  libelleTypePrestataire,
   useDossierPlainte,
 } from "../../api/plaintes";
 import { useAuth } from "../../auth/useAuth";
@@ -50,12 +59,23 @@ import {
   MotifDossier,
   NoterDossier,
   ProlongerDossier,
+  AnonymiserDossier,
+  AssistanceDossier,
+  ExporterDossier,
+  MettreEnCauseDossier,
+  SignalerDossier,
+  SuspendreDossier,
 } from "./OperationsDossier";
 import { BadgeDelai } from "./DelaiDossier";
 
 const COULEUR_ACTION: Partial<Record<ActionDossier["type"], string>> = {
   RETARD: "red",
   PROLONGATION: "orange",
+  MISE_EN_CAUSE: "grape",
+  ASSISTANCE: "pink",
+  EXPORT: "gray",
+  SUSPENSION: "orange",
+  ANONYMISATION: "dark",
   RECEPTION: "blue",
   AFFECTATION: "cyan",
   DECISION: "violet",
@@ -98,6 +118,15 @@ function DetailsAction({ action }: { action: ActionDossier }) {
         })}
       </Stack>
     );
+  }
+  if (action.type === "ASSISTANCE") {
+    return <Text size="xs">{String(d.prestataire)} · {libelleTypePrestataire(d.type as never)} · {d.date ? dateLisible(String(d.date)) : ""}</Text>;
+  }
+  if (action.type === "MISE_EN_CAUSE") {
+    return <Text size="xs">{voc`${Number(d.comptes ?? 0)} utilisateur(s)`}{d.noms_libres ? ` · ${voc("autres personnes")}` : ""}</Text>;
+  }
+  if (action.type === "SENSIBILITE" && d.leve) {
+    return <Text size="xs" c="teal.8">{voc("Sensibilité levée")}{d.circuit ? ` · ${String(d.circuit)}` : ""}</Text>;
   }
   if (action.type === "PROLONGATION") {
     return <Text size="xs">+{String(d.jours)} j · {d.de ? dateLisible(String(d.de)) : "—"} → {dateLisible(String(d.a))}</Text>;
@@ -146,7 +175,7 @@ function Journal({ actions }: { actions: ActionDossier[] }) {
 
 type Fenetre =
   | "classer" | "affecter" | "etape" | "noter" | "communiquer" | "decider" | "cloturer" | "rouvrir" | "recours" | "recuser" | "lier"
-  | "prolonger" | null;
+  | "prolonger" | "signaler" | "lever" | "mettre_en_cause" | "assistance" | "suspendre" | "anonymiser" | "exporter" | null;
 
 /** Barre d'actions : seules les opérations possibles dans l'état du dossier sont proposées. */
 function Actions({ dossier, ouvrir }: { dossier: DossierDetail; ouvrir: (f: Fenetre) => void }) {
@@ -170,6 +199,11 @@ function Actions({ dossier, ouvrir }: { dossier: DossierDetail; ouvrir: (f: Fene
       {!clos && peutRouvrir && bouton("prolonger", voc("Prolonger le délai"), <CalendarPlus size={14} />, { variant: "subtle" })}
       {bouton("lier", voc("Lier"), <Link2 size={14} />, { variant: "subtle" })}
       {!clos && dossier.responsable === user?.id && bouton("recuser", voc("Me récuser"), <UserX size={14} />, { variant: "subtle", color: "red" })}
+      {!clos && bouton("mettre_en_cause", voc("Personnes mises en cause"), <UserRoundX size={14} />, { color: "grape", variant: "subtle" })}
+      {dossier.sensible && bouton("assistance", voc("Orienter vers une assistance"), <HandHeart size={14} />, { color: "pink", variant: "subtle" })}
+      {dossier.sensible && dossier.habilite && bouton("lever", voc("Lever la sensibilité"), <ShieldCheck size={14} />, { color: "grape", variant: "subtle" })}
+      {user?.role === "ADMIN" && bouton("suspendre", dossier.suspension_legale ? voc("Lever la suspension légale") : voc("Suspension légale"), <Landmark size={14} />, { color: "orange", variant: "subtle" })}
+      {user?.role === "ADMIN" && clos && !dossier.suspension_legale && !dossier.anonymise && bouton("anonymiser", voc("Anonymiser"), <Eraser size={14} />, { color: "red", variant: "subtle" })}
     </Group>
   );
 }
@@ -210,7 +244,17 @@ export function DossierPlaintePage() {
             {dossier.en_recours && <Badge color="red" variant="outline" tt="none" size="lg">{voc("Recours en cours")}</Badge>}
           </Group>
         </Group>
-        {modifiable && <Actions dossier={dossier} ouvrir={setFenetre} />}
+        <Group gap={6}>
+          {modifiable && !dossier.anonymise && <Actions dossier={dossier} ouvrir={setFenetre} />}
+          {!dossier.sensible && !dossier.anonymise && (
+            <Button size="xs" variant="subtle" color="grape" leftSection={<ShieldAlert size={14} />} onClick={() => setFenetre("signaler")}>
+              {voc("Signaler comme sensible")}
+            </Button>
+          )}
+          <Button size="xs" variant="subtle" color="gray" leftSection={<FileDown size={14} />} onClick={() => setFenetre("exporter")}>
+            {voc("Exporter (PDF)")}
+          </Button>
+        </Group>
       </Stack>
 
       <Grid gap="md">
@@ -254,7 +298,11 @@ export function DossierPlaintePage() {
               <Stack gap="sm">
                 <Text fw={600} size="sm">{voc("Plaignant")}</Text>
                 {dossier.anonyme ? (
-                  <Text size="sm">{voc("Anonyme : aucune information d'identité enregistrée.")}</Text>
+                  <Text size="sm">
+                    {dossier.saisi_par_nom
+                      ? voc("Anonyme vis-à-vis de l'organisation : l'agent qui a saisi le retour n'a enregistré aucune information d'identité.")
+                      : voc("Anonyme : aucune information d'identité enregistrée.")}
+                  </Text>
                 ) : (
                   <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
                     <Ligne libelle={voc("Nom")}>{dossier.nom}</Ligne>
@@ -304,6 +352,32 @@ export function DossierPlaintePage() {
               </Stack>
             </Card>
 
+            {(dossier.sensible || dossier.mis_en_cause_noms.length > 0 || dossier.mis_en_cause_libre || dossier.suspension_legale ||
+              dossier.anonymise || dossier.fin_conservation) && (
+              <Card withBorder>
+                <Stack gap="sm">
+                  <Group gap="xs"><ShieldX size={16} /><Text fw={600} size="sm">{voc("Confidentialité et conservation")}</Text></Group>
+                  {dossier.anonymise && <Alert color="gray">{voc`Dossier anonymisé le ${dossier.date_anonymisation ? dateLisible(dossier.date_anonymisation) : ""} : seules les données statistiques sont conservées.`}</Alert>}
+                  {dossier.suspension_legale && <Alert color="orange" title={voc("Suspension légale")}>{dossier.motif_suspension}</Alert>}
+                  <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                    {(dossier.mis_en_cause_noms.length > 0 || dossier.mis_en_cause_libre) && (
+                      <Ligne libelle={voc("Personnes mises en cause")}>{[...dossier.mis_en_cause_noms, dossier.mis_en_cause_libre].filter(Boolean).join(", ")}</Ligne>
+                    )}
+                    {dossier.fin_conservation && !dossier.anonymise && (
+                      <Ligne libelle={voc("Fin de la durée de conservation")}>{dateLisible(dossier.fin_conservation)}</Ligne>
+                    )}
+                  </SimpleGrid>
+                  {dossier.referencements.length > 0 && (
+                    <Ligne libelle={voc("Assistance et référencement")}>
+                      {dossier.referencements.map((r) => (
+                        <Text key={r.id} size="sm">{dateLisible(r.date)} · {r.prestataire} ({libelleTypePrestataire(r.type)}) · {voc("avec consentement")}</Text>
+                      ))}
+                    </Ligne>
+                  )}
+                </Stack>
+              </Card>
+            )}
+
             {dossier.dossiers_lies.length > 0 && (
               <Card withBorder>
                 <Stack gap={6}>
@@ -340,6 +414,16 @@ export function DossierPlaintePage() {
       {fenetre === "cloturer" && <CloturerDossier dossier={dossier} onClose={fermer} />}
       {fenetre === "lier" && <LierDossier dossier={dossier} onClose={fermer} />}
       {fenetre === "prolonger" && <ProlongerDossier dossier={dossier} onClose={fermer} />}
+      {fenetre === "signaler" && <SignalerDossier dossier={dossier} onClose={fermer} />}
+      {fenetre === "exporter" && <ExporterDossier dossier={dossier} onClose={fermer} />}
+      {fenetre === "mettre_en_cause" && <MettreEnCauseDossier dossier={dossier} onClose={fermer} />}
+      {fenetre === "assistance" && <AssistanceDossier dossier={dossier} onClose={fermer} />}
+      {fenetre === "suspendre" && <SuspendreDossier dossier={dossier} onClose={fermer} />}
+      {fenetre === "anonymiser" && <AnonymiserDossier dossier={dossier} onClose={fermer} />}
+      {fenetre === "lever" && (
+        <MotifDossier dossier={dossier} operation="lever-sensibilite" titre={voc("Lever la sensibilité")} onClose={fermer} libelleBouton={voc("Lever la sensibilité")} couleur="grape"
+          aide={voc("Le dossier repassera au circuit ordinaire. À réserver aux signalements sans objet ; le motif est inscrit au journal.")} />
+      )}
       {fenetre === "recuser" && (
         <MotifDossier dossier={dossier} operation="recuser" titre={voc("Me récuser")} onClose={fermer} libelleBouton={voc("Me récuser")} couleur="red"
           aide={voc("Vous vous retirez de ce dossier (conflit d'intérêts, lien avec le plaignant…). Il devra être réaffecté.")} />

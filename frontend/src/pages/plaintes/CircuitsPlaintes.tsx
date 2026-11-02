@@ -26,6 +26,7 @@ import {
   useCircuitsPlainte,
   useEnregistrerCircuit,
   useEnregistrerEtape,
+  useMecanisme,
   useSupprimerCircuit,
   useSupprimerEtape,
 } from "../../api/plaintes";
@@ -137,6 +138,7 @@ function CarteCircuit({ circuit, modifiable }: { circuit: CircuitPlainte; modifi
   const enregistrer = useEnregistrerCircuit();
   const supprimer = useSupprimerCircuit();
   const enregistrerEtape = useEnregistrerEtape();
+  const { data: mecanisme } = useMecanisme();
   const [nouvelleEtape, setNouvelleEtape] = useState("");
   const etapes = [...circuit.etapes].sort((a, b) => a.ordre - b.ordre || a.id - b.id);
 
@@ -176,6 +178,7 @@ function CarteCircuit({ circuit, modifiable }: { circuit: CircuitPlainte; modifi
               <Badge color="grape" variant="light" leftSection={<Lock size={11} />}>{voc("Confidentiel")}</Badge>
             )}
             {circuit.par_defaut && <Badge variant="outline">{voc("Par défaut")}</Badge>}
+            {mecanisme?.circuit_alternatif === circuit.id && <Badge color="grape" variant="outline">{voc("Circuit alternatif")}</Badge>}
             {!circuit.actif && <Badge color="gray">{voc("Désactivé")}</Badge>}
             {circuit.erreurs.length === 0 ? (
               <Badge color="teal" variant="light" leftSection={<CircleCheck size={11} />}>{voc("Valide")}</Badge>

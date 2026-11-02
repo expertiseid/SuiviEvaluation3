@@ -136,7 +136,7 @@ def superviseurs(dossier, sauf=None):
         qs = User.objects.filter(is_active=True, role__in=ROLES_SUPERVISION)
     if sauf is not None:
         qs = qs.exclude(pk=sauf.pk)
-    return list(qs.distinct())
+    return list(qs.exclude(pk__in=dossier.mis_en_cause_utilisateurs.values("pk")).distinct())
 
 
 # Coupé pendant la génération des données de démonstration (seed_demo_plaintes).
@@ -151,7 +151,9 @@ def notifier_dossier(dossier, destinataires, titre_ordinaire, titre_confidentiel
     if not NOTIFICATIONS_ACTIVES:
         return []
 
-    destinataires = [d for d in {d.pk: d for d in destinataires if d is not None}.values()]
+    # Jamais une personne mise en cause.
+    vises = set(dossier.mis_en_cause_utilisateurs.values_list("pk", flat=True))
+    destinataires = [d for d in {d.pk: d for d in destinataires if d is not None}.values() if d.pk not in vises]
     if not destinataires:
         return []
     titre = titre_confidentiel if dossier.sensible else titre_ordinaire
@@ -247,4 +249,29 @@ def verifier_echeances(aujourdhui=None):
             notifier_dossier(dossier, destinataires, v(f"Échéance proche pour le dossier {dossier.numero}"),
                              v(f"Échéance proche pour le dossier confidentiel {dossier.numero}"),
                              v("L'échéance de traitement approche."))
+    signaler_conservation(aujourdhui)
     return signales
+
+
+def signaler_conservation(aujourdhui):
+    """
+    Dossiers arrivés au terme de leur durée de conservation : proposés aux Administrateurs pour
+    anonymisation (une notification par jour, rien n'est supprimé sans confirmation).
+    """
+    from apps.accounts.models import User
+    from apps.notifications.models import Notification
+    from apps.notifications.services import notifier
+
+    from .confidentiel import a_anonymiser
+
+    nombre = len(a_anonymiser(aujourdhui=aujourdhui))
+    if not nombre or not NOTIFICATIONS_ACTIVES:
+        return 0
+    titre = v(f"{nombre} dossier(s) de plaintes à anonymiser (fin de conservation)")
+    admins = User.objects.filter(is_active=True, role=ROLE_ADMIN)
+    deja = Notification.objects.filter(type=Notification.Type.PLAINTE, titre=titre, created_at__date=aujourdhui)
+    destinataires = [u for u in admins if not deja.filter(destinataire=u).exists()]
+    notifier(destinataires, Notification.Type.PLAINTE, titre,
+             v("La durée de conservation est écoulée : confirmez l'anonymisation de ces dossiers."),
+             "/plaintes?vue=a_anonymiser", courriel=Mecanisme.courant().notifications_courriel)
+    return nombre

@@ -61,10 +61,12 @@ def personnes_habilitees(dossier):
     from apps.accounts.models import User
     from apps.core.modules import MASQUE, acces_module
 
+    vises = set(dossier.mis_en_cause_utilisateurs.values_list("pk", flat=True)) if dossier.pk else set()
     if dossier.sensible:
         ids = set(dossier.circuit.etapes.exclude(responsable=None).values_list("responsable_id", flat=True)) if dossier.circuit_id else set()
-        return User.objects.filter(is_active=True).filter(pk__in=ids) | User.objects.filter(is_active=True, role=ROLE_ADMIN)
-    ids = [u.pk for u in User.objects.filter(is_active=True) if acces_module(u, "/plaintes") != MASQUE]
+        qs = User.objects.filter(is_active=True).filter(pk__in=ids) | User.objects.filter(is_active=True, role=ROLE_ADMIN)
+        return qs.exclude(pk__in=vises)
+    ids = [u.pk for u in User.objects.filter(is_active=True) if acces_module(u, "/plaintes") != MASQUE and u.pk not in vises]
     return User.objects.filter(pk__in=ids)
 
 
@@ -123,13 +125,9 @@ def classer(dossier, auteur, donnees):
 
 
 def _vers_confidentiel(dossier, auteur):
-    circuit = circuit_pour(dossier.categorie, True) or Circuit.objects.filter(actif=True, sensible=True, par_defaut=True).first()
-    dossier.sensible = True
-    dossier.circuit = circuit
-    dossier.etape = circuit.etapes.order_by("ordre", "id").first() if circuit else None
-    if dossier.responsable_id and not personnes_habilitees(dossier).filter(pk=dossier.responsable_id).exists():
-        dossier.responsable = None
-    journaliser(dossier, A.SENSIBILITE, auteur, v("Dossier transmis au circuit confidentiel."))
+    from .confidentiel import _passer_au_confidentiel
+
+    _passer_au_confidentiel(dossier, auteur, v("Dossier transmis au circuit confidentiel."))
 
 
 @transaction.atomic

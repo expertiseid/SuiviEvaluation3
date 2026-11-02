@@ -79,6 +79,9 @@ bénéficiaires, documents, alertes et tableaux de bord.
   Délais : échéances du dossier et de chaque étape (jours calendaires ou ouvrés, jours fériés),
   rappels, escalade des retards, prolongation motivée, notifications (application et courriel,
   neutres pour les dossiers confidentiels), vue « En retard ».
+  Confidentialité : données protégées chiffrées (clé propre à l'organisation), signalement manuel et
+  levée motivée, personnes mises en cause exclues et circuit alternatif, assistance et référencement
+  avec consentement, export PDF en filigrane, conservation, anonymisation et suspension légale.
 
 ## Pile technique
 

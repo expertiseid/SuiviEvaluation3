@@ -20,11 +20,12 @@ from apps.core.langues import dans_la_langue_demandee, en_langue, langue_demande
 from apps.core.permissions import HasGlobalVisibilityOrAssigned
 from apps.core.vocabulaire import v
 
-from . import delais, traitement
+from . import confidentiel, delais, traitement
 
 from .controles import controler_activation
 from .models import (
-    Canal, Categorie, Circuit, Dossier, EtapeCircuit, JourFerie, Mecanisme, Priorite, StatutDossier, TypeRetour, VueDossiers,
+    Canal, Categorie, Circuit, Dossier, EtapeCircuit, JourFerie, Mecanisme, Prestataire, Priorite, StatutDossier, TypeRetour,
+    VueDossiers,
 )
 from .modeles_mecanisme import MODELES, appliquer_modele, liste_modeles
 from .reception import dossiers_visibles, recevoir
@@ -35,6 +36,7 @@ from .serializers import (
     DossierSerializer,
     EtapeCircuitSerializer,
     JourFerieSerializer,
+    PrestataireSerializer,
     MecanismeSerializer,
     PrioriteSerializer,
     TypeRetourSerializer,
@@ -217,7 +219,32 @@ VUES = {
     "recours": lambda qs, u: qs.filter(en_recours=True),
     "en_retard": lambda qs, u: qs.exclude(statut=StatutDossier.CLOTURE).filter(
         Q(echeance__lt=timezone.localdate()) | Q(echeance_etape__lt=timezone.localdate())),
+    "a_anonymiser": lambda qs, u: qs.filter(pk__in=[d.pk for d in confidentiel.a_anonymiser(qs)]),
+    "confidentiels": lambda qs, u: qs.filter(sensible=True),
 }
+
+
+class PrestataireViewSet(_Base):
+    """Annuaire des prestataires d'assistance (référencement)."""
+
+    queryset = Prestataire.objects.all()
+    serializer_class = PrestataireSerializer
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def signaler_sensible(request, pk):
+    """
+    Marquage manuel : tout utilisateur qui voit le dossier peut le signaler comme sensible, même en
+    lecture seule sur le module (d'où une route hors de /plaintes/). Il en perd aussitôt l'accès s'il
+    n'est pas habilité.
+    """
+    dossier = dossiers_visibles(request.user).filter(pk=pk).first()
+    if dossier is None:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    confidentiel.signaler_sensible(dossier, request.user, request.data)
+    visible = dossiers_visibles(request.user).filter(pk=pk).exists()
+    return Response({"numero": dossier.numero, "visible": visible})
 
 
 class JourFerieViewSet(_Base):
@@ -321,6 +348,44 @@ class DossierViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=["post"])
     def prolonger(self, request, pk=None):
         return self._agir(delais.prolonger, request.data)
+
+    @action(detail=True, methods=["post"], url_path="lever-sensibilite")
+    def lever_sensibilite(self, request, pk=None):
+        return self._agir(confidentiel.lever_sensibilite, request.data)
+
+    @action(detail=True, methods=["post"], url_path="mettre-en-cause")
+    def mettre_en_cause(self, request, pk=None):
+        return self._agir(confidentiel.mettre_en_cause, request.data)
+
+    @action(detail=True, methods=["post"])
+    def assistance(self, request, pk=None):
+        return self._agir(confidentiel.orienter_assistance, request.data)
+
+    @action(detail=True, methods=["post"])
+    def suspendre(self, request, pk=None):
+        return self._agir(confidentiel.suspendre, request.data)
+
+    @action(detail=True, methods=["post"])
+    def anonymiser(self, request, pk=None):
+        return self._agir(confidentiel.anonymiser, request.data)
+
+    @action(detail=True, methods=["post"])
+    @dans_la_langue_demandee
+    def exporter(self, request, pk=None):
+        """Fiche PDF en filigrane ; motif exigé pour un dossier confidentiel ; export tracé au journal."""
+        from .export_fiche import fiche_pdf
+        from .models import ActionDossier
+
+        dossier = self.get_object()
+        motif = (request.data.get("motif") or "").strip()
+        if dossier.sensible and not motif:
+            raise ValidationError({"motif": v("Indiquez le motif de l'export de ce dossier confidentiel.")})
+        if dossier.sensible and request.data.get("confirmation") is not True:
+            raise ValidationError({"confirmation": v("Confirmez l'export de ce dossier confidentiel.")})
+        ActionDossier.objects.create(dossier=dossier, type=ActionDossier.Type.EXPORT, auteur=request.user, texte=motif)
+        reponse = HttpResponse(fiche_pdf(dossier, request.user), content_type="application/pdf")
+        reponse["Content-Disposition"] = f'attachment; filename="dossier_{dossier.numero}.pdf"'
+        return reponse
 
     @action(detail=True, methods=["post"])
     def lier(self, request, pk=None):

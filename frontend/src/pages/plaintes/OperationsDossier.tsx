@@ -7,6 +7,7 @@ import {
   Checkbox,
   Group,
   Modal,
+  MultiSelect,
   NumberInput,
   Radio,
   SegmentedControl,
@@ -23,6 +24,10 @@ import {
   type DossierDetail,
   type IssueDossier,
   ISSUES,
+  exporterFicheDossier,
+  libelleTypePrestataire,
+  usePrestataires,
+  useSignalerSensible,
   MODES_REPONSE,
   OBJETS_ECHANGE,
   type OperationDossier,
@@ -40,6 +45,7 @@ import {
   useResponsablesPossibles,
   useTypesRetour,
 } from "../../api/plaintes";
+import { useUtilisateurs } from "../../api/accounts";
 import { useProjets } from "../../api/projects";
 import { messageErreurApi } from "../../utils/erreurs";
 import { libelleRole } from "../../utils/roles";
@@ -346,5 +352,155 @@ export function ProlongerDossier({ dossier, onClose }: { dossier: DossierDetail;
         </>
       )}
     </Fenetre>
+  );
+}
+
+/** Personnes mises en cause : exclues du dossier ; le dossier devient confidentiel (circuit alternatif si besoin). */
+export function MettreEnCauseDossier({ dossier, onClose }: { dossier: DossierDetail; onClose: () => void }) {
+  const { data: utilisateurs = [] } = useUtilisateurs();
+  return (
+    <Fenetre dossier={dossier} operation="mettre-en-cause" titre={voc("Personnes mises en cause")} onClose={onClose}
+      initiales={{ utilisateurs: dossier.mis_en_cause_utilisateurs, libre: dossier.mis_en_cause_libre }}>
+      {(v, changer, erreurs) => (
+        <>
+          <Alert color="grape">
+            {voc("Une personne mise en cause n'a plus aucun accès au dossier, quel que soit son rôle, ni à ses notifications. Si elle fait partie du circuit confidentiel habituel, le dossier part au circuit alternatif.")}
+          </Alert>
+          <MultiSelect label={voc("Utilisateurs de la plateforme")} searchable clearable error={erreurs.utilisateurs}
+            data={utilisateurs.map((u) => ({ value: String(u.id), label: `${u.first_name} ${u.last_name}`.trim() || u.username }))}
+            value={((v.utilisateurs as number[]) ?? []).map(String)} onChange={(x) => changer({ utilisateurs: x.map(Number) })} />
+          <TextInput label={voc("Autres personnes (noms ou fonctions)")} value={texte(v.libre)} onChange={(e) => changer({ libre: e.currentTarget.value })} />
+        </>
+      )}
+    </Fenetre>
+  );
+}
+
+/** Orientation vers une assistance : on enregistre consentement, date et prestataire, jamais le contenu des échanges. */
+export function AssistanceDossier({ dossier, onClose }: { dossier: DossierDetail; onClose: () => void }) {
+  const { data: prestataires = [] } = usePrestataires();
+  return (
+    <Fenetre dossier={dossier} operation="assistance" titre={voc("Orienter vers une assistance")} onClose={onClose}
+      initiales={{ date: new Date().toISOString().slice(0, 10) }}>
+      {(v, changer, erreurs) => (
+        <>
+          <Text size="sm" c="dimmed">{voc("Seuls le prestataire, la date et le consentement sont enregistrés — jamais le contenu des échanges avec le prestataire.")}</Text>
+          <Select label={voc("Prestataire")} withAsterisk searchable error={erreurs.prestataire}
+            data={prestataires.filter((p) => p.actif).map((p) => ({ value: String(p.id), label: `${p.nom} — ${libelleTypePrestataire(p.type)}${p.zone ? ` (${p.zone})` : ""}` }))}
+            value={nombre(v.prestataire)} onChange={(x) => changer({ prestataire: x ? Number(x) : null })}
+            nothingFoundMessage={voc("Annuaire vide : ajoutez des prestataires dans le paramétrage.")} />
+          <TextInput type="date" label={voc("Date de l'orientation")} value={texte(v.date)} onChange={(e) => changer({ date: e.currentTarget.value })} error={erreurs.date} w={200} />
+          <Checkbox label={voc("La personne a donné son consentement à cette orientation")} checked={v.consentement === true}
+            onChange={(e) => changer({ consentement: e.currentTarget.checked })} error={erreurs.consentement} />
+        </>
+      )}
+    </Fenetre>
+  );
+}
+
+export function SuspendreDossier({ dossier, onClose }: { dossier: DossierDetail; onClose: () => void }) {
+  const lever = dossier.suspension_legale;
+  return (
+    <Fenetre dossier={dossier} operation="suspendre" titre={lever ? voc("Lever la suspension légale") : voc("Suspension légale")} onClose={onClose}
+      initiales={{ suspendre: !lever }} libelleBouton={lever ? voc("Lever la suspension") : voc("Suspendre")} couleur="orange">
+      {(v, changer, erreurs) => (
+        <>
+          <Text size="sm" c="dimmed">
+            {lever ? voc("Le dossier pourra de nouveau être anonymisé à l'échéance de conservation.")
+              : voc("Dossier lié à une procédure (enquête, justice…) : il ne sera jamais anonymisé tant que la suspension dure.")}
+          </Text>
+          <Textarea label={voc("Motif")} withAsterisk autosize minRows={2} value={texte(v.motif)} onChange={(e) => changer({ motif: e.currentTarget.value })} error={erreurs.motif} />
+        </>
+      )}
+    </Fenetre>
+  );
+}
+
+export function AnonymiserDossier({ dossier, onClose }: { dossier: DossierDetail; onClose: () => void }) {
+  return (
+    <Fenetre dossier={dossier} operation="anonymiser" titre={voc("Anonymiser le dossier")} onClose={onClose} libelleBouton={voc("Anonymiser définitivement")} couleur="red">
+      {(v, changer, erreurs) => (
+        <>
+          <Alert color="red">
+            {voc("Le récit, l'identité et les coordonnées du plaignant, les personnes mises en cause, les notes, la décision et l'historique détaillé seront supprimés. Seules les informations utiles aux statistiques sont conservées (numéro, dates, type, catégorie, canal, statut, issue). Cette action est irréversible.")}
+          </Alert>
+          <Checkbox label={voc("Je confirme l'anonymisation définitive de ce dossier")} checked={v.confirmation === true}
+            onChange={(e) => changer({ confirmation: e.currentTarget.checked })} error={erreurs.confirmation} />
+        </>
+      )}
+    </Fenetre>
+  );
+}
+
+/** Signalement manuel comme sensible (même en lecture seule) : on peut en perdre l'accès aussitôt. */
+export function SignalerDossier({ dossier, onClose }: { dossier: DossierDetail; onClose: () => void }) {
+  const signaler = useSignalerSensible(dossier.id);
+  const navigate = useNavigate();
+  const [motif, setMotif] = useState("");
+  const envoyer = async () => {
+    try {
+      const r = await signaler.mutateAsync(motif);
+      onClose();
+      notifications.show({ title: voc("Transmis au circuit confidentiel"), message: voc("Le dossier est désormais traité de façon confidentielle."), color: "grape" });
+      if (!r.visible) navigate("/plaintes");
+    } catch (error) {
+      notifications.show({ message: messageErreurApi(error, voc("Erreur lors de l'enregistrement")), color: "red" });
+    }
+  };
+  return (
+    <Modal opened onClose={onClose} title={voc("Signaler comme sensible")} size="lg">
+      <Stack>
+        <Alert color="grape">
+          {voc("Le dossier passera aussitôt au circuit confidentiel. Si vous n'êtes pas une personne désignée de ce circuit, vous n'y aurez plus accès. Dans le doute, mieux vaut signaler : une erreur se corrige, une fuite ne se corrige pas.")}
+        </Alert>
+        <Textarea label={voc("Pourquoi ? (facultatif)")} autosize minRows={2} value={motif} onChange={(e) => setMotif(e.currentTarget.value)} />
+        <Group justify="flex-end">
+          <Button variant="default" onClick={onClose}>{voc("Annuler")}</Button>
+          <Button color="grape" onClick={envoyer} loading={signaler.isPending}>{voc("Signaler comme sensible")}</Button>
+        </Group>
+      </Stack>
+    </Modal>
+  );
+}
+
+/** Export PDF en filigrane ; pour un dossier confidentiel : motif et confirmation, tracés au journal. */
+export function ExporterDossier({ dossier, onClose }: { dossier: DossierDetail; onClose: () => void }) {
+  const [motif, setMotif] = useState("");
+  const [confirme, setConfirme] = useState(false);
+  const [erreurs, setErreurs] = useState<Record<string, string>>({});
+  const [enCours, setEnCours] = useState(false);
+  const envoyer = async () => {
+    setErreurs({});
+    setEnCours(true);
+    try {
+      await exporterFicheDossier(dossier.id, dossier.numero, motif, confirme);
+      onClose();
+    } catch (error) {
+      // Réponse d'erreur reçue comme fichier : on la relit.
+      const donnees = (error as { response?: { data?: unknown } }).response?.data;
+      const lu = donnees instanceof Blob ? JSON.parse(await donnees.text()) : {};
+      setErreurs(Object.fromEntries(Object.entries(lu).map(([k, x]) => [k, voc(String(Array.isArray(x) ? x[0] : x))])));
+    } finally {
+      setEnCours(false);
+    }
+  };
+  return (
+    <Modal opened onClose={onClose} title={voc("Exporter la fiche (PDF)")} size="lg">
+      <Stack>
+        <Text size="sm" c="dimmed">
+          {voc("Chaque page porte votre nom et la date en filigrane. L'export est inscrit au journal du dossier.")}
+        </Text>
+        <Textarea label={voc("Motif de l'export")} withAsterisk={dossier.sensible} autosize minRows={2} value={motif}
+          onChange={(e) => setMotif(e.currentTarget.value)} error={erreurs.motif} />
+        {dossier.sensible && (
+          <Checkbox label={voc("Je confirme exporter un dossier confidentiel et le garder en sécurité")} checked={confirme}
+            onChange={(e) => setConfirme(e.currentTarget.checked)} error={erreurs.confirmation} />
+        )}
+        <Group justify="flex-end">
+          <Button variant="default" onClick={onClose}>{voc("Annuler")}</Button>
+          <Button onClick={envoyer} loading={enCours}>{voc("Exporter")}</Button>
+        </Group>
+      </Stack>
+    </Modal>
   );
 }

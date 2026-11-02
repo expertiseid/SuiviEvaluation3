@@ -13,6 +13,7 @@ import {
   MultiSelect,
   NumberInput,
   SimpleGrid,
+  Select,
   Stack,
   Switch,
   Tabs,
@@ -30,6 +31,7 @@ import {
   useActivationMecanisme,
   useAppliquerModele,
   useCategoriesPlainte,
+  useCircuitsPlainte,
   useEnregistrerMecanisme,
   useImporterCanevasParametrage,
   useMecanisme,
@@ -41,6 +43,7 @@ import { useAccesModules } from "../../utils/modules";
 import { voc } from "../../utils/vocabulaire";
 import { CalendrierPlaintes } from "./CalendrierPlaintes";
 import { CircuitsPlaintes } from "./CircuitsPlaintes";
+import { PrestatairesPlaintes } from "./PrestatairesPlaintes";
 import { CategoriesPlainte, PrioritesPlainte, TypesRetour } from "./ListesPlaintes";
 
 const LANGUES = [
@@ -164,6 +167,7 @@ function Activation({ mecanisme, modifiable }: { mecanisme: MecanismePlaintes; m
 function FormulaireMecanisme({ mecanisme, modifiable }: { mecanisme: MecanismePlaintes; modifiable: boolean }) {
   const enregistrer = useEnregistrerMecanisme();
   const { data: projets = [] } = useProjets();
+  const { data: circuits = [] } = useCircuitsPlainte();
   const [valeurs, setValeurs] = useState(mecanisme);
   useEffect(() => setValeurs(mecanisme), [mecanisme]);
   const changer = <K extends keyof MecanismePlaintes>(champ: K, valeur: MecanismePlaintes[K]) =>
@@ -184,6 +188,7 @@ function FormulaireMecanisme({ mecanisme, modifiable }: { mecanisme: MecanismePl
         rappel_jours_avant: valeurs.rappel_jours_avant,
         escalade_active: valeurs.escalade_active,
         notifications_courriel: valeurs.notifications_courriel,
+        circuit_alternatif: valeurs.circuit_alternatif,
         projets: valeurs.projets,
       });
       notifications.show({ message: voc("Réglages enregistrés"), color: "teal" });
@@ -232,6 +237,15 @@ function FormulaireMecanisme({ mecanisme, modifiable }: { mecanisme: MecanismePl
             onChange={(v) => changer("conservation_sensible_mois", v === "" ? null : Number(v))}
           />
         </SimpleGrid>
+        <Select
+          label={voc("Circuit alternatif (personne mise en cause)")}
+          description={voc("Suivi quand une personne mise en cause fait partie du circuit confidentiel habituel : direction, siège, référent extérieur… Obligatoire pour l'activation.")}
+          data={circuits.filter((c) => c.sensible).map((c) => ({ value: String(c.id), label: c.nom }))}
+          value={valeurs.circuit_alternatif ? String(valeurs.circuit_alternatif) : null}
+          disabled={!modifiable}
+          onChange={(v) => changer("circuit_alternatif", v ? Number(v) : null)}
+          clearable
+        />
         <SimpleGrid cols={{ base: 1, sm: 2 }}>
           <NumberInput
             label={voc("Délai de traitement par défaut (jours)")}
@@ -379,6 +393,7 @@ export function ParametragePlaintesPage() {
           <Tabs.Tab value="priorites">{voc("Priorités")}</Tabs.Tab>
           <Tabs.Tab value="circuits">{voc("Circuits de traitement")}</Tabs.Tab>
           <Tabs.Tab value="calendrier">{voc("Calendrier")}</Tabs.Tab>
+          <Tabs.Tab value="prestataires">{voc("Prestataires d'assistance")}</Tabs.Tab>
           <Tabs.Tab value="excel">{voc("Canevas Excel")}</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel value="mecanisme" pt="md">
@@ -393,6 +408,7 @@ export function ParametragePlaintesPage() {
         <Tabs.Panel value="priorites" pt="md"><PrioritesPlainte modifiable={modifiable} /></Tabs.Panel>
         <Tabs.Panel value="circuits" pt="md"><CircuitsPlaintes modifiable={modifiable} /></Tabs.Panel>
         <Tabs.Panel value="calendrier" pt="md"><CalendrierPlaintes modifiable={modifiable} /></Tabs.Panel>
+        <Tabs.Panel value="prestataires" pt="md"><PrestatairesPlaintes modifiable={modifiable} /></Tabs.Panel>
         <Tabs.Panel value="excel" pt="md"><CanevasExcel modifiable={modifiable} /></Tabs.Panel>
       </Tabs>
     </Stack>

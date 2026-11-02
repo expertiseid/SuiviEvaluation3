@@ -170,6 +170,8 @@ class Command(BaseCommand):
         parser.add_argument("--reinitialiser", action="store_true", help="Efface d'abord tout le module plaintes.")
         parser.add_argument("--historique", action="store_true",
                             help="Complète seulement le journal des dossiers qui n'en ont pas, sans rien supprimer.")
+        parser.add_argument("--confidentiel", action="store_true",
+                            help="Ajoute seulement la démonstration du circuit confidentiel (lot 5), sans rien supprimer.")
 
     def handle(self, *args, **options):
         from apps.plaintes import delais
@@ -191,6 +193,8 @@ class Command(BaseCommand):
 
         if options["historique"]:
             return self.completer_historique()
+        if options["confidentiel"]:
+            return self.confidentiel_de_demonstration()
         if m.Dossier.objects.exists() or m.Categorie.objects.exists():
             if not options["reinitialiser"]:
                 raise CommandError("Le module contient déjà des données : relancer avec --reinitialiser pour les effacer.")
@@ -282,6 +286,7 @@ class Command(BaseCommand):
             historiser(dossier, statut, 4 if statut == "EN_COURS" else 99, date_reception, alea, *self.personnes(point_focal))
             compte["sensibles"] += dossier.sensible
         self.recours_de_demonstration(alea, point_focal)
+        self.confidentiel_de_demonstration()
 
         self.stdout.write(self.style.SUCCESS(
             f"Mécanisme activé ; {m.Dossier.objects.count()} dossiers dont {compte['sensibles']} confidentiels "
@@ -332,4 +337,44 @@ class Command(BaseCommand):
             completes += 1
         if not Dossier.objects.filter(en_recours=True).exists():
             self.recours_de_demonstration(alea, point_focal)
+        self.confidentiel_de_demonstration()
         self.stdout.write(self.style.SUCCESS(f"Journal complété pour {completes} dossier(s)."))
+
+    def confidentiel_de_demonstration(self):
+        """
+        Lot 5 : circuit alternatif confié à la coordination, annuaire de prestataires, orientations
+        vers une assistance, un dossier mettant en cause un point focal, une suspension légale.
+        """
+        from apps.plaintes import confidentiel
+        from apps.plaintes.modeles_mecanisme import appliquer_modele
+        from apps.plaintes.models import Dossier, EtapeCircuit, Mecanisme, Prestataire, TypeRetour
+        from apps.plaintes.reception import recevoir
+
+        appliquer_modele(Mecanisme.courant().modele or "standard")  # installe le circuit alternatif s'il manque
+        mecanisme = Mecanisme.courant()
+        referent = User.objects.filter(username="demo_coordo_general").first() or User.objects.filter(role="ADMIN").first()
+        EtapeCircuit.objects.filter(circuit=mecanisme.circuit_alternatif, responsable=None).update(responsable=referent)
+        prestataires = [Prestataire.objects.get_or_create(nom=nom, defaults={"type": type_, "contact": contact, "zone": zone})[0]
+                        for nom, type_, contact, zone in (
+                            ("Centre d'écoute et de prise en charge psychosociale", "PSYCHOSOCIAL", "+226 25 30 00 00", "Ouagadougou"),
+                            ("CMA du secteur 30", "MEDICAL", "+226 25 36 00 00", "Ouagadougou"),
+                            ("Clinique juridique de l'Association des femmes juristes", "JURIDIQUE", "+226 25 31 00 00", "National"),
+                            ("Maison d'accueil temporaire", "SECURITE", "+226 70 00 00 00", "Centre"),
+                        )]
+        admin = User.objects.filter(username="admin").first() or referent
+        for dossier, prestataire in zip(Dossier.objects.filter(sensible=True, referencements__isnull=True).order_by("numero")[:3], prestataires):
+            confidentiel.orienter_assistance(dossier, admin, {"prestataire": prestataire.pk, "consentement": True,
+                                                              "date": dossier.date_reception.isoformat()})
+        point_focal = User.objects.filter(username="pf_psea").first()
+        if point_focal and not Dossier.objects.filter(mis_en_cause_utilisateurs=point_focal).exists():
+            recevoir({
+                "type_retour": TypeRetour.objects.get(nom="Signalement").pk,
+                "description": "Signalement visant un membre de l'équipe de protection : transmis au circuit alternatif.",
+                "concerne_personnel": True, "anonyme": True, "consentement": True,
+                "mis_en_cause_utilisateurs": [point_focal.pk],
+                "date_reception": (timezone.localdate() - timedelta(days=3)).isoformat(),
+            }, "TELEPHONE", saisi_par=admin)
+        cloture = Dossier.objects.filter(statut="CLOTURE", sensible=True, suspension_legale=False).order_by("date_cloture").first()
+        if cloture and not Dossier.objects.filter(suspension_legale=True).exists():
+            confidentiel.suspendre(cloture, admin, {"motif": "Procédure judiciaire en cours : conservation obligatoire."})
+        self.stdout.write(self.style.SUCCESS("Démonstration du circuit confidentiel ajoutée."))

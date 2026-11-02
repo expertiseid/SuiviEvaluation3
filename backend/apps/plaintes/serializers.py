@@ -2,7 +2,8 @@ from rest_framework import serializers
 
 from .controles import controler_activation, controler_circuit
 from .models import (
-    ActionDossier, Categorie, Circuit, Dossier, EtapeCircuit, JourFerie, Mecanisme, Priorite, TypeRetour, VueDossiers,
+    ActionDossier, Categorie, Circuit, Dossier, EtapeCircuit, JourFerie, Mecanisme, Prestataire, Priorite, TypeRetour,
+    VueDossiers,
 )
 from .traitement import nom_personne
 
@@ -20,6 +21,7 @@ class MecanismeSerializer(serializers.ModelSerializer):
             "id", "nom", "actif", "modele", "anonymat_autorise", "langues", "texte_information", "prefixe_numero",
             "jours_ouvres", "conservation_ordinaire_mois", "conservation_sensible_mois", "projets", "controles",
             "delai_defaut_jours", "rappel_jours_avant", "escalade_active", "notifications_courriel",
+            "circuit_alternatif",
         )
         read_only_fields = ("actif", "modele")
 
@@ -31,6 +33,11 @@ class MecanismeSerializer(serializers.ModelSerializer):
         if inconnues:
             raise serializers.ValidationError(f"Langue(s) non proposée(s) : {', '.join(inconnues)}.")
         return list(dict.fromkeys(valeur))
+
+    def validate_circuit_alternatif(self, valeur):
+        if valeur is not None and not valeur.sensible:
+            raise serializers.ValidationError("Le circuit alternatif doit être un circuit confidentiel.")
+        return valeur
 
     def validate_prefixe_numero(self, valeur):
         valeur = valeur.strip().upper()
@@ -175,6 +182,7 @@ class DossierSerializer(serializers.ModelSerializer):
     saisi_par_nom = serializers.SerializerMethodField()
     responsable_nom = serializers.SerializerMethodField()
     gestionnaire_initial_nom = serializers.SerializerMethodField()
+    mis_en_cause_noms = serializers.SerializerMethodField()
 
     class Meta:
         model = Dossier
@@ -188,6 +196,8 @@ class DossierSerializer(serializers.ModelSerializer):
             "retour_donne", "raison_sans_retour", "oriente_vers", "consentement_reference", "date_cloture", "en_recours",
             "gestionnaire_initial", "gestionnaire_initial_nom",
             "echeance", "echeance_etape", "date_entree_etape", "jours_prolongation", "en_retard",
+            "mis_en_cause_utilisateurs", "mis_en_cause_noms", "mis_en_cause_libre", "suspension_legale", "motif_suspension",
+            "anonymise", "date_anonymisation",
         )
         read_only_fields = fields
 
@@ -199,6 +209,9 @@ class DossierSerializer(serializers.ModelSerializer):
 
     def get_gestionnaire_initial_nom(self, obj):
         return nom_personne(obj.gestionnaire_initial) or None
+
+    def get_mis_en_cause_noms(self, obj):
+        return [nom_personne(u) for u in obj.mis_en_cause_utilisateurs.all()]
 
 
 class ActionDossierSerializer(serializers.ModelSerializer):
@@ -218,10 +231,29 @@ class DossierDetailSerializer(DossierSerializer):
 
     actions = ActionDossierSerializer(many=True, read_only=True)
     dossiers_lies = serializers.SerializerMethodField()
+    referencements = serializers.SerializerMethodField()
+    habilite = serializers.SerializerMethodField()
+    fin_conservation = serializers.SerializerMethodField()
 
     class Meta(DossierSerializer.Meta):
-        fields = DossierSerializer.Meta.fields + ("actions", "dossiers_lies")
+        fields = DossierSerializer.Meta.fields + ("actions", "dossiers_lies", "referencements", "habilite", "fin_conservation")
         read_only_fields = fields
+
+    def get_referencements(self, obj):
+        return [{"id": r.id, "prestataire": r.prestataire.nom, "type": r.type, "date": r.date, "auteur": nom_personne(r.auteur)}
+                for r in obj.referencements.select_related("prestataire", "auteur")]
+
+    def get_habilite(self, obj):
+        """L'utilisateur peut-il lever la sensibilité (point focal du circuit, Administrateur) ?"""
+        from .confidentiel import est_habilite
+
+        requete = self.context.get("request")
+        return bool(requete and est_habilite(obj, requete.user))
+
+    def get_fin_conservation(self, obj):
+        from .confidentiel import fin_de_conservation
+
+        return fin_de_conservation(obj)
 
     def get_dossiers_lies(self, obj):
         visibles = self.context.get("visibles")
@@ -248,3 +280,9 @@ class JourFerieSerializer(serializers.ModelSerializer):
     class Meta:
         model = JourFerie
         fields = ("id", "date", "libelle")
+
+
+class PrestataireSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Prestataire
+        fields = ("id", "nom", "type", "contact", "zone", "actif")

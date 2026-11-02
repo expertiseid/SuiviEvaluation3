@@ -8,9 +8,9 @@ configuration déjà en place.
   l'engagement 5 de la Norme humanitaire fondamentale ;
 - « personnel » : réclamations internes du personnel ;
 - le circuit des plaintes sensibles (exploitation, abus et harcèlement sexuels, fraude,
-  corruption, mise en cause d'un membre du personnel…) est toujours ajouté, quel que soit le
-  modèle : ses étapes sont à confier à des personnes nommément désignées (points focaux), ce que
-  l'activation vérifie.
+  corruption, mise en cause d'un membre du personnel…) et le circuit alternatif (quand une personne
+  mise en cause en est destinataire) sont toujours ajoutés, quel que soit le modèle : leurs étapes
+  sont à confier à des personnes nommément désignées (points focaux), ce que l'activation vérifie.
 """
 from django.db import transaction
 
@@ -140,6 +140,10 @@ def appliquer_modele(code: str) -> dict:
     circuit(modele["circuit"], False, ETAPES_STANDARD, modele["description"])
     circuit("Circuit confidentiel", True, ETAPES_SENSIBLES,
             "Plaintes sensibles : seules les personnes désignées à chaque étape y ont accès.")
+    # Circuit alternatif (obligatoire) : quand une personne mise en cause est destinataire du circuit
+    # confidentiel habituel — direction générale, siège, conseil d'administration, référent extérieur…
+    alternatif = circuit("Circuit confidentiel alternatif", True, ETAPES_SENSIBLES,
+                         "Plaintes mettant en cause une personne du circuit confidentiel habituel.")
 
     for ordre, (nom, sous) in enumerate(modele["categories"], start=1):
         parent, cree = Categorie.objects.get_or_create(parent=None, nom=nom, defaults={"ordre": ordre})
@@ -157,6 +161,8 @@ def appliquer_modele(code: str) -> dict:
 
     mecanisme = Mecanisme.courant()
     mecanisme.modele = code
+    if mecanisme.circuit_alternatif_id is None:
+        mecanisme.circuit_alternatif = alternatif
     if not mecanisme.texte_information:
         mecanisme.texte_information = modele["texte"]
     if mecanisme.nom == Mecanisme._meta.get_field("nom").default:

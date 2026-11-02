@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Bookmark, Copy, Download, ExternalLink, Lock, Plus, QrCode, Search, Settings, Siren, Trash2, X } from "lucide-react";
 import {
   ActionIcon,
@@ -64,6 +64,8 @@ const VUES = [
   { value: "attente_decision", label: () => voc("En attente de décision") },
   { value: "a_cloturer", label: () => voc("À clôturer") },
   { value: "recours", label: () => voc("Recours") },
+  { value: "confidentiels", label: () => voc("Confidentiels") },
+  { value: "a_anonymiser", label: () => voc("À anonymiser") },
 ];
 
 type Filtres = Omit<FiltresDossiers, "page">;
@@ -170,7 +172,9 @@ export function DossiersPlaintesPage() {
   const { data: utilisateurs = [] } = useUtilisateurs();
   const modifiable = useAccesModules().peutEcrire("/plaintes");
   const [page, setPage] = useState(1);
-  const [filtres, setFiltres] = useState<Filtres>(SANS_FILTRE);
+  // ?vue=… : lien d'une notification (ex : dossiers à anonymiser).
+  const [parametres] = useSearchParams();
+  const [filtres, setFiltres] = useState<Filtres>({ ...SANS_FILTRE, vue: parametres.get("vue") ?? "" });
   const [rechercheDifferee] = useDebouncedValue(filtres.search ?? "", 300);
   const { data } = useDossiersPlainte({ ...filtres, search: rechercheDifferee, page });
   const [saisie, saisieControles] = useDisclosure(false);

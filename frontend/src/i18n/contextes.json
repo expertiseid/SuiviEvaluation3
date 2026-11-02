@@ -173,6 +173,9 @@
  ") · projection d'origine :": [
   "pages/carte/FenetresCarte.tsx"
  ],
+ "[contenu supprimé à l'échéance de conservation]": [
+  "serveur"
+ ],
  "[Fiche] Document « {0} » introuvable — rattachement inchangé.": [
   "serveur"
  ],
@@ -278,6 +281,9 @@
  ],
  "{0} dossier(s)": [
   "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
+ "{0} dossier(s) de plaintes à anonymiser (fin de conservation)": [
+  "serveur"
  ],
  "{0} doublon(s) potentiel(s) détecté(s) — à traiter dans l'écran « Doublons d'enregistrement ».": [
   "pages/beneficiaires/BeneficiaireForm.tsx"
@@ -388,6 +394,9 @@
  "{0} traduction(s) seront corrigées et {1} remise(s) à l'origine, pour tous les utilisateurs.": [
   "pages/langues/LanguesPage.tsx"
  ],
+ "{0} utilisateur(s)": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
  "{0}{1} » existe déjà — import annulé.": [
   "serveur"
  ],
@@ -447,6 +456,9 @@
  ],
  "À ajouter dans l'écran Organisation": [
   "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "À anonymiser": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
  "À classer": [
   "pages/plaintes/DossierPlaintePage.tsx",
@@ -528,6 +540,7 @@
   "pages/plaintes/CircuitsPlaintes.tsx",
   "pages/plaintes/ListesPlaintes.tsx",
   "pages/plaintes/ParametragePlaintesPage.tsx",
+  "pages/plaintes/PrestatairesPlaintes.tsx",
   "pages/projets/RisquesTab.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
@@ -691,6 +704,7 @@
   "pages/parametres/RapportageCard.tsx",
   "pages/plaintes/CalendrierPlaintes.tsx",
   "pages/plaintes/ListesPlaintes.tsx",
+  "pages/plaintes/PrestatairesPlaintes.tsx",
   "pages/projets/AvancementModal.tsx",
   "pages/projets/FinancementsTab.tsx",
   "pages/projets/NiveauxActiviteTab.tsx",
@@ -843,6 +857,9 @@
  "Année invalide.": [
   "serveur"
  ],
+ "Annuaire vide : ajoutez des prestataires dans le paramétrage.": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Annuelle": [
   "pages/indicateurs/IndicateurForm.tsx",
   "pages/strategie/SuiviStrategiqueTab.tsx"
@@ -866,6 +883,21 @@
  ],
  "Anonyme : aucune information d'identité enregistrée.": [
   "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Anonyme vis-à-vis de l'organisation : l'agent qui a saisi le retour n'a enregistré aucune information d'identité.": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Anonymisation": [
+  "api/plaintes.ts"
+ ],
+ "Anonymiser": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Anonymiser définitivement": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Anonymiser le dossier": [
+  "pages/plaintes/OperationsDossier.tsx"
  ],
  "Antenne régionale": [
   "pages/organisation/OrganisationPage.tsx"
@@ -916,6 +948,10 @@
  ],
  "arrive sur {0}": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Assistance et référencement": [
+  "api/plaintes.ts",
+  "pages/plaintes/DossierPlaintePage.tsx"
  ],
  "Associer": [
   "components/beneficiaires/BeneficiairesTab.tsx"
@@ -1125,6 +1161,9 @@
  "Aucun pour l'instant": [
   "pages/strategie/DocumentModal.tsx"
  ],
+ "Aucun prestataire.": [
+  "pages/plaintes/PrestatairesPlaintes.tsx"
+ ],
  "Aucun projet affecté à un service pour l'instant.": [
   "pages/organisation/OrganisationPage.tsx"
  ],
@@ -1326,6 +1365,15 @@
  "Autres périodes :": [
   "pages/projets/PlanificationPeriodeTab.tsx"
  ],
+ "autres personnes": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Autres personnes (noms ou fonctions)": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Autres personnes mises en cause": [
+  "pages/plaintes/SaisieDossierModal.tsx"
+ ],
  "Autres projets": [
   "pages/beneficiaires/BeneficiairesListPage.tsx"
  ],
@@ -1376,6 +1424,9 @@
  ],
  "Avant le démarrage — l'activité se suit alors comme un indicateur.": [
   "pages/projets/ActiviteForm.tsx"
+ ],
+ "avec consentement": [
+  "pages/plaintes/DossierPlaintePage.tsx"
  ],
  "Avertissements": [
   "pages/strategie/ChaineDocumentsModal.tsx"
@@ -1698,6 +1749,9 @@
  "Ce dossier est clôturé : rouvrez-le d'abord.": [
   "serveur"
  ],
+ "Ce dossier est déjà traité dans le circuit confidentiel.": [
+  "serveur"
+ ],
  "Ce dossier est désormais réservé aux personnes désignées.": [
   "pages/plaintes/OperationsDossier.tsx"
  ],
@@ -1705,6 +1759,9 @@
   "pages/plaintes/SaisieDossierModal.tsx"
  ],
  "Ce dossier est marqué urgent : il demande un traitement immédiat.": [
+  "serveur"
+ ],
+ "Ce dossier n'est pas sensible.": [
   "serveur"
  ],
  "Ce dossier sera traité dans le circuit confidentiel : seuls l'Administrateur et les personnes désignées par l'organisation y ont accès. N'en parlez qu'aux personnes prévues par les règles de confidentialité et de signalement de votre organisation.": [
@@ -1888,6 +1945,9 @@
  ],
  "Chaque borne doit être un pourcentage entre 0 et 100.": [
   "serveur"
+ ],
+ "Chaque page porte votre nom et la date en filigrane. L'export est inscrit au journal du dossier.": [
+  "pages/plaintes/OperationsDossier.tsx"
  ],
  "Chaque palier doit avoir un libellé.": [
   "pages/parametres/ParametresAlertePage.tsx",
@@ -2111,6 +2171,9 @@
  "Choisissez un modèle de la liste.": [
   "serveur"
  ],
+ "Choisissez un prestataire de l'annuaire.": [
+  "serveur"
+ ],
  "Choisissez un type de retour de la liste.": [
   "serveur"
  ],
@@ -2202,16 +2265,28 @@
  "Circuit": [
   "pages/plaintes/ListesPlaintes.tsx"
  ],
+ "Circuit alternatif": [
+  "pages/plaintes/CircuitsPlaintes.tsx"
+ ],
+ "Circuit alternatif (personne mise en cause)": [
+  "pages/plaintes/ParametragePlaintesPage.tsx"
+ ],
  "Circuit et étape": [
   "pages/plaintes/DossierPlaintePage.tsx"
  ],
  "Circuit par défaut": [
   "pages/plaintes/ListesPlaintes.tsx"
  ],
+ "Circuits : choisissez un circuit alternatif confidentiel, pour les dossiers qui mettent en cause une personne du circuit confidentiel habituel.": [
+  "serveur"
+ ],
  "Circuits : choisissez un circuit confidentiel par défaut.": [
   "serveur"
  ],
  "Circuits : choisissez un circuit ordinaire par défaut.": [
+  "serveur"
+ ],
+ "Circuits : le circuit alternatif doit être différent du circuit confidentiel par défaut.": [
   "serveur"
  ],
  "Circuits de traitement": [
@@ -2359,9 +2434,15 @@
  "Concerne le personnel ou un partenaire": [
   "pages/plaintes/DossierPlaintePage.tsx"
  ],
+ "Confidentialité et conservation": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
  "Confidentiel": [
   "pages/plaintes/CircuitsPlaintes.tsx",
   "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
+ "Confidentiels": [
   "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
  "Configuration de la structuration": [
@@ -2382,6 +2463,12 @@
  ],
  "Confirmer la suppression": [
   "components/common/confirmerSuppression.tsx"
+ ],
+ "Confirmez l'anonymisation : elle est irréversible.": [
+  "serveur"
+ ],
+ "Confirmez l'export de ce dossier confidentiel.": [
+  "serveur"
  ],
  "Connectez-vous à la plateforme pour consulter ce dossier.": [
   "serveur"
@@ -2424,6 +2511,7 @@
  ],
  "Contact": [
   "pages/organisation/OrganisationPage.tsx",
+  "pages/plaintes/PrestatairesPlaintes.tsx",
   "pages/projets/EquipeTab.tsx"
  ],
  "Contenu": [
@@ -2652,6 +2740,9 @@
   "pages/projets/SousActiviteForm.tsx",
   "pages/strategie/DocumentModal.tsx"
  ],
+ "Date de l'orientation": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Date de naissance": [
   "pages/beneficiaires/BeneficiaireForm.tsx"
  ],
@@ -2811,6 +2902,12 @@
  "Dès l'envoi, ce dossier est réservé aux personnes désignées par l'organisation et vous ne pourrez plus le consulter ; seul son numéro vous restera. N'en parlez qu'aux personnes prévues par les règles de confidentialité et de signalement de votre organisation.": [
   "pages/plaintes/SaisieDossierModal.tsx"
  ],
+ "Des personnes sont mises en cause : le dossier reste confidentiel.": [
+  "serveur"
+ ],
+ "Des personnes sont mises en cause : traitement confidentiel.": [
+  "serveur"
+ ],
  "Des utilisateurs ont ce rôle": [
   "pages/utilisateurs/RolesTab.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
@@ -2959,6 +3056,9 @@
  "Dossier {0}, reçu le {1}": [
   "pages/plaintes/public/SuiviPublicPage.tsx"
  ],
+ "Dossier anonymisé le {0} : seules les données statistiques sont conservées.": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
  "Dossier confidentiel : seules les personnes désignées dans son circuit peuvent le recevoir.": [
   "pages/plaintes/OperationsDossier.tsx"
  ],
@@ -2971,8 +3071,14 @@
  "Dossier introuvable, ou réservé aux personnes désignées (circuit confidentiel).": [
   "pages/plaintes/DossierPlaintePage.tsx"
  ],
+ "Dossier lié à une procédure (enquête, justice…) : il ne sera jamais anonymisé tant que la suspension dure.": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Dossier mis à jour": [
   "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Dossier signalé comme sensible.": [
+  "serveur"
  ],
  "Dossier supprimé": [
   "components/documents/DocumentsTab.tsx"
@@ -3391,6 +3497,7 @@
   "pages/plaintes/ListesPlaintes.tsx",
   "pages/plaintes/OperationsDossier.tsx",
   "pages/plaintes/ParametragePlaintesPage.tsx",
+  "pages/plaintes/PrestatairesPlaintes.tsx",
   "pages/plaintes/SaisieDossierModal.tsx",
   "pages/projets/AvancementModal.tsx",
   "pages/projets/CadreLogiqueTab.tsx",
@@ -3796,6 +3903,9 @@
  "Expliquez pourquoi le plaignant n'a pas pu être informé.": [
   "serveur"
  ],
+ "Export de la fiche": [
+  "api/plaintes.ts"
+ ],
  "Export de tous les bénéficiaires, une feuille par projet.": [
   "pages/beneficiaires/ExportBeneficiairesModal.tsx"
  ],
@@ -3809,6 +3919,7 @@
  "Exporter": [
   "pages/beneficiaires/BeneficiairesListPage.tsx",
   "pages/langues/LanguesPage.tsx",
+  "pages/plaintes/OperationsDossier.tsx",
   "pages/projets/CadreLogiqueTab.tsx",
   "pages/projets/ExportPlanification.tsx",
   "pages/projets/PlanificationPeriodeTab.tsx",
@@ -3817,11 +3928,17 @@
   "pages/strategie/CadreTableau.tsx",
   "pages/suivi/SuiviProjetDashboard.tsx"
  ],
+ "Exporter (PDF)": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
  "Exporter en": [
   "pages/beneficiaires/ExportBeneficiairesModal.tsx"
  ],
  "Exporter la chaîne actuelle": [
   "pages/strategie/ChaineDocumentsModal.tsx"
+ ],
+ "Exporter la fiche (PDF)": [
+  "pages/plaintes/OperationsDossier.tsx"
  ],
  "Exporter le canevas Excel": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
@@ -3848,8 +3965,14 @@
  "Facultatif — le taux de cette activité vient de la saisie ci-dessus ; cette partie enregistre le budget dépensé, le statut et un commentaire pour la période.": [
   "components/suivi/SaisieSuiviMethode.tsx"
  ],
+ "Facultatif : noms ou fonctions de personnes sans compte.": [
+  "pages/plaintes/SaisieDossierModal.tsx"
+ ],
  "Facultatif (carte)": [
   "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Facultatif. Elles n'auront jamais accès au dossier.": [
+  "pages/plaintes/SaisieDossierModal.tsx"
  ],
  "Faible": [
   "pages/projets/RisquesTab.tsx"
@@ -3937,6 +4060,9 @@
  ],
  "Fin avant le début (sous-activité).": [
   "serveur"
+ ],
+ "Fin de la durée de conservation": [
+  "pages/plaintes/DossierPlaintePage.tsx"
  ],
  "Fin de période": [
   "components/indicators/SaisieValeurIndicateurForm.tsx",
@@ -4366,7 +4492,13 @@
  "Indiquez la période.": [
   "pages/strategie/SuiviStrategiqueTab.tsx"
  ],
+ "Indiquez le motif de l'export de ce dossier confidentiel.": [
+  "serveur"
+ ],
  "Indiquez le motif de la clôture.": [
+  "serveur"
+ ],
+ "Indiquez le motif de la levée.": [
   "serveur"
  ],
  "Indiquez le motif de la prolongation.": [
@@ -4379,6 +4511,9 @@
   "serveur"
  ],
  "Indiquez le motif de la réouverture.": [
+  "serveur"
+ ],
+ "Indiquez le motif.": [
   "serveur"
  ],
  "Indiquez le risque.": [
@@ -4446,6 +4581,12 @@
  "Jalon": [
   "pages/projets/AvancementModal.tsx"
  ],
+ "Je confirme exporter un dossier confidentiel et le garder en sécurité": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Je confirme l'anonymisation définitive de ce dossier": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Je ne sais pas": [
   "pages/plaintes/ChampsRetour.tsx"
  ],
@@ -4460,6 +4601,12 @@
  ],
  "Journal du dossier": [
   "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Juridique": [
+  "api/plaintes.ts"
+ ],
+ "L'anonymisation est réservée à l'Administrateur.": [
+  "serveur"
  ],
  "L'échéance de traitement approche.": [
   "serveur"
@@ -4482,11 +4629,17 @@
  "L'envoi n'a pas abouti. Réessayez.": [
   "pages/plaintes/public/FormulairePublicPage.tsx"
  ],
+ "L'orientation exige le consentement de la personne.": [
+  "serveur"
+ ],
  "L'orientation vers un acteur externe exige le consentement du plaignant.": [
   "serveur"
  ],
  "La carte n'a pas pu être générée (réessayez dans un instant).": [
   "pages/carte/FenetresCarte.tsx"
+ ],
+ "La catégorie du dossier est sensible : reclassez-le d'abord dans une catégorie ordinaire.": [
+  "serveur"
  ],
  "La cotation et le statut évoluent ensuite par les réévaluations (bouton « Réévaluer »).": [
   "pages/projets/RisquesTab.tsx"
@@ -4517,6 +4670,9 @@
  ],
  "La dernière étape se franchit avec « Clôturer » (motif, décision et retour au plaignant).": [
   "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "La durée de conservation est écoulée : confirmez l'anonymisation de ces dossiers.": [
+  "serveur"
  ],
  "La feuille « Projet » du modèle porte sa fiche (nom, code, dates, modalités, bailleur…) en une ligne par champ. La feuille « Planification » porte sa planification : une colonne par niveau (en jaune dans le modèle, avec les noms et le nombre que tu veux, ex : Résultat → Pilier → Activité), puis Sous-activité — une seule colonne de niveau remplie par ligne.": [
   "pages/projets/ImportProjetModal.tsx"
@@ -4558,6 +4714,9 @@
  "La période se termine dans le futur ({0}) : une réalisation ne peut pas encore avoir eu lieu.": [
   "serveur"
  ],
+ "La personne a donné son consentement à cette orientation": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "La prolongation est exceptionnelle et tracée au journal du dossier.": [
   "pages/plaintes/OperationsDossier.tsx"
  ],
@@ -4572,6 +4731,9 @@
  ],
  "La saisie des valeurs réalisées et leur évolution dans le temps se font depuis le module Suivi.": [
   "pages/indicateurs/IndicateurDetailPage.tsx"
+ ],
+ "La suspension légale est réservée à l'Administrateur.": [
+  "serveur"
  ],
  "Laisser vide pour couvrir tous les projets.": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
@@ -4611,6 +4773,9 @@
  "Le canevas contient tout le paramétrage actuel (une feuille par rubrique). Modifiez-le ou complétez-le puis réimportez-le : les éléments sont retrouvés par leur nom, les étapes d'un circuit présent dans le fichier sont remplacées.": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
+ "Le circuit alternatif doit être un circuit confidentiel.": [
+  "serveur"
+ ],
  "Le dépôt de retours n'est pas ouvert pour le moment.": [
   "pages/plaintes/public/FormulairePublicPage.tsx"
  ],
@@ -4629,11 +4794,23 @@
  "Le dossier confidentiel {0} est en retard": [
   "serveur"
  ],
+ "Le dossier est désormais traité de façon confidentielle.": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Le dossier figure maintenant dans la liste.": [
   "pages/plaintes/SaisieDossierModal.tsx"
  ],
  "Le dossier passera au circuit confidentiel : seules les personnes désignées (et l'Administrateur) y auront accès.": [
   "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Le dossier passera aussitôt au circuit confidentiel. Si vous n'êtes pas une personne désignée de ce circuit, vous n'y aurez plus accès. Dans le doute, mieux vaut signaler : une erreur se corrige, une fuite ne se corrige pas.": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Le dossier pourra de nouveau être anonymisé à l'échéance de conservation.": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Le dossier repassera au circuit ordinaire. À réserver aux signalements sans objet ; le motif est inscrit au journal.": [
+  "pages/plaintes/DossierPlaintePage.tsx"
  ],
  "Le fichier est un classeur à plusieurs feuilles (Cadre stratégique, Structuration, Projet, Planification, Indicateurs, Bénéficiaires), avec une colonne par niveau pour les hiérarchies. Seule la feuille « Projet » est obligatoire — les autres sections sont ignorées si elles sont laissées vides. Les bénéficiaires importés sont automatiquement inscrits au projet créé.": [
   "pages/planification/PlanificationImportPage.tsx"
@@ -4718,6 +4895,12 @@
  ],
  "Le réalisé de la période est calculé à partir des valeurs saisies dont les dates tombent dans la période.": [
   "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Le récit, l'identité et les coordonnées du plaignant, les personnes mises en cause, les notes, la décision et l'historique détaillé seront supprimés. Seules les informations utiles aux statistiques sont conservées (numéro, dates, type, catégorie, canal, statut, issue). Cette action est irréversible.": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Le retour vise le personnel ou un partenaire : il reste confidentiel.": [
+  "serveur"
  ],
  "Le seuil {0}% est défini plusieurs fois.": [
   "serveur"
@@ -4814,6 +4997,16 @@
  ],
  "Les zones sont colorées selon le premier indicateur choisi ; les autres sont écrits sur chaque zone.": [
   "pages/carte/CartePage.tsx"
+ ],
+ "Lever la sensibilité": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Lever la suspension": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Lever la suspension légale": [
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/OperationsDossier.tsx"
  ],
  "Libellé": [
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
@@ -4973,6 +5166,9 @@
  ],
  "Mécanisme actif": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
+ ],
+ "Médical": [
+  "api/plaintes.ts"
  ],
  "Membre ajouté à l'équipe": [
   "pages/projets/EquipeTab.tsx"
@@ -5268,6 +5464,9 @@
   "pages/plaintes/OperationsDossier.tsx",
   "pages/projets/FinancementsTab.tsx"
  ],
+ "Motif de l'export": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Motif de la clôture": [
   "pages/plaintes/DossierPlaintePage.tsx",
   "pages/plaintes/OperationsDossier.tsx"
@@ -5384,6 +5583,7 @@
   "pages/organisation/OrganisationPage.tsx",
   "pages/plaintes/ChampsRetour.tsx",
   "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/PrestatairesPlaintes.tsx",
   "pages/projets/BeneficiairesProjetSection.tsx",
   "pages/projets/EquipeTab.tsx",
   "pages/projets/ProjetsListPage.tsx",
@@ -5796,6 +5996,10 @@
   "pages/plaintes/DossierPlaintePage.tsx",
   "pages/plaintes/OperationsDossier.tsx"
  ],
+ "Orienter vers une assistance": [
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Ou cocher un ou plusieurs projets :": [
   "pages/beneficiaires/ExportBeneficiairesModal.tsx"
  ],
@@ -6106,6 +6310,14 @@
  "Personnes": [
   "pages/plaintes/CircuitsPlaintes.tsx"
  ],
+ "Personnes mises en cause": [
+  "api/plaintes.ts",
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Personnes mises en cause (utilisateurs de la plateforme)": [
+  "pages/plaintes/SaisieDossierModal.tsx"
+ ],
  "personnes, ha…": [
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
  ],
@@ -6296,6 +6508,9 @@
  "Pourquoi ?": [
   "pages/plaintes/OperationsDossier.tsx"
  ],
+ "Pourquoi ? (facultatif)": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Précise au plus un seul parmi projet/indicateur/activité.": [
   "serveur"
  ],
@@ -6319,6 +6534,15 @@
  ],
  "Présenté aux personnes qui déposent un retour : à quoi sert le mécanisme, comment leurs données sont protégées.": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
+ ],
+ "Prestataire": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Prestataires d'assistance": [
+  "pages/plaintes/ParametragePlaintesPage.tsx"
+ ],
+ "Prestataires vers qui orienter une personne, avec son consentement, depuis un dossier confidentiel. Seuls le prestataire, la date et le consentement sont enregistrés.": [
+  "pages/plaintes/PrestatairesPlaintes.tsx"
  ],
  "Prêt à être activé": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
@@ -6524,6 +6748,9 @@
  "Provinces": [
   "pages/carte/CartePage.tsx",
   "pages/carte/FenetresCarte.tsx"
+ ],
+ "Psychosocial": [
+  "api/plaintes.ts"
  ],
  "Quand le contrôle est actif, la saisie n'est ouverte que pendant les périodes de rapportage ; le reste du temps, la plateforme est en lecture seule pour la partie choisie. Chaque projet peut aussi être toujours ouvert, ou fermé sauf pendant ses propres périodes (formulaire du projet). L'administrateur peut toujours corriger.": [
   "pages/parametres/RapportageCard.tsx"
@@ -7180,6 +7407,9 @@
  "Sécuritaire": [
   "pages/projets/RisquesTab.tsx"
  ],
+ "Sécurité et hébergement": [
+  "api/plaintes.ts"
+ ],
  "Sélectionner {0} {1}": [
   "pages/projets/BeneficiairesProjetSection.tsx"
  ],
@@ -7193,6 +7423,9 @@
  "Sensibilité": [
   "api/plaintes.ts",
   "pages/plaintes/ListesPlaintes.tsx"
+ ],
+ "Sensibilité levée": [
+  "pages/plaintes/DossierPlaintePage.tsx"
  ],
  "Sensible": [
   "pages/plaintes/ListesPlaintes.tsx"
@@ -7259,11 +7492,20 @@
  "Seul un administrateur peut rouvrir un projet clôturé.": [
   "serveur"
  ],
+ "Seul un dossier clôturé peut être anonymisé.": [
+  "serveur"
+ ],
  "Seul un dossier clôturé peut être rouvert.": [
+  "serveur"
+ ],
+ "Seule une personne habilitée du circuit confidentiel peut lever la sensibilité.": [
   "serveur"
  ],
  "Seulement les éléments prévus à ces dates": [
   "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Seuls le prestataire, la date et le consentement sont enregistrés — jamais le contenu des échanges avec le prestataire.": [
+  "pages/plaintes/OperationsDossier.tsx"
  ],
  "Sexe": [
   "pages/beneficiaires/BeneficiaireForm.tsx",
@@ -7287,6 +7529,10 @@
  ],
  "Signalement mis à jour": [
   "pages/beneficiaires/DoublonsPage.tsx"
+ ],
+ "Signaler comme sensible": [
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/OperationsDossier.tsx"
  ],
  "Signaler les retards aux superviseurs (escalade)": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
@@ -7425,6 +7671,9 @@
   "pages/suivi/SuiviProjetDashboard.tsx",
   "utils/modules.ts"
  ],
+ "Suivi quand une personne mise en cause fait partie du circuit confidentiel habituel : direction, siège, référent extérieur… Obligatoire pour l'activation.": [
+  "pages/plaintes/ParametragePlaintesPage.tsx"
+ ],
  "Suivi stratégique": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
  ],
@@ -7443,6 +7692,7 @@
  ],
  "Suppression impossible": [
   "pages/plaintes/ListesPlaintes.tsx",
+  "pages/plaintes/PrestatairesPlaintes.tsx",
   "pages/strategie/ChaineDocumentsModal.tsx"
  ],
  "Suppression impossible : ce partenaire est utilisé par un projet.": [
@@ -7461,6 +7711,7 @@
   "pages/plaintes/CircuitsPlaintes.tsx",
   "pages/plaintes/DossiersPlaintesPage.tsx",
   "pages/plaintes/ListesPlaintes.tsx",
+  "pages/plaintes/PrestatairesPlaintes.tsx",
   "pages/projets/AvancementModal.tsx",
   "pages/projets/NiveauxActiviteTab.tsx",
   "pages/projets/PlanificationPeriodeTab.tsx",
@@ -7644,6 +7895,17 @@
  ],
  "Survenu": [
   "pages/projets/RisquesTab.tsx"
+ ],
+ "Suspendre": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Suspension légale": [
+  "api/plaintes.ts",
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Suspension légale en cours : ce dossier ne peut pas être anonymisé.": [
+  "serveur"
  ],
  "Tableau": [
   "components/charts/GraphiqueAdaptable.tsx",
@@ -7973,6 +8235,9 @@
  "Type d'activité inconnu ignoré : « {0} ».": [
   "serveur"
  ],
+ "Type d'assistance": [
+  "pages/plaintes/PrestatairesPlaintes.tsx"
+ ],
  "Type de graphique": [
   "components/charts/GraphiqueAdaptable.tsx"
  ],
@@ -8115,6 +8380,9 @@
  "Une même organisation peut être de mise en œuvre sur un projet et du consortium sur un autre : son rôle se précise dans l'onglet « Partenaires » de chaque projet.": [
   "pages/organisation/OrganisationPage.tsx"
  ],
+ "Une personne mise en cause n'a plus aucun accès au dossier, quel que soit son rôle, ni à ses notifications. Si elle fait partie du circuit confidentiel habituel, le dossier part au circuit alternatif.": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Une priorité urgente déclenche une notification immédiate et un traitement accéléré. Il en reste toujours au moins une.": [
   "pages/plaintes/ListesPlaintes.tsx"
  ],
@@ -8183,6 +8451,9 @@
  "Utilisateurs affectés (accès à la plateforme)": [
   "pages/projets/ProjetForm.tsx",
   "pages/strategie/DocumentModal.tsx"
+ ],
+ "Utilisateurs de la plateforme": [
+  "pages/plaintes/OperationsDossier.tsx"
  ],
  "utilise actuellement la grille héritée — modifie les paliers ci-dessous et enregistre pour lui créer une grille propre.": [
   "pages/parametres/ParametresAlertePage.tsx"
@@ -8372,6 +8643,9 @@
  "Vous n'avez pas le droit d'approuver.": [
   "serveur"
  ],
+ "Vous ne pouvez pas vous désigner vous-même.": [
+  "serveur"
+ ],
  "Vous vous retirez de ce dossier (conflit d'intérêts, lien avec le plaignant…). Il devra être réaffecté.": [
   "pages/plaintes/DossierPlaintePage.tsx"
  ],
@@ -8402,6 +8676,9 @@
  ],
  "Zone ajoutée": [
   "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Zone couverte": [
+  "pages/plaintes/PrestatairesPlaintes.tsx"
  ],
  "Zone modifiée": [
   "pages/geo/ZonesAdministrativesPage.tsx"

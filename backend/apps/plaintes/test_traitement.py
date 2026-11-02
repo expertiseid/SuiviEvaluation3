@@ -182,7 +182,11 @@ def test_commande_de_demonstration(admin):
     User.objects.create_user(username="admin", password="x", role=ROLE_ADMIN)
     call_command("seed_demo_plaintes")
     clos = Dossier.objects.filter(statut="CLOTURE")
-    assert Dossier.objects.count() == 42 and clos.exists() and Dossier.objects.filter(en_recours=True).count() == 1
+    assert Dossier.objects.count() == 43 and clos.exists() and Dossier.objects.filter(en_recours=True).count() == 1
+    # Lot 5 : un dossier visant le point focal suit le circuit alternatif ; assistance et suspension légale.
+    vise = Dossier.objects.get(mis_en_cause_utilisateurs__username="pf_psea")
+    assert vise.circuit == Mecanisme.courant().circuit_alternatif
+    assert Dossier.objects.filter(referencements__isnull=False).exists() and Dossier.objects.filter(suspension_legale=True).exists()
     for d in clos:
         assert d.actions.filter(type="CLOTURE").exists() and d.decision
         assert d.date_reception <= d.date_decision <= d.date_cloture

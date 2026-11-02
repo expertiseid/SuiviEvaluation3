@@ -55,6 +55,12 @@ def controler_activation(mecanisme) -> list[str]:
         erreurs.append("Circuits : choisissez un circuit ordinaire par défaut.")
     if not Circuit.objects.filter(actif=True, sensible=True, par_defaut=True).exists():
         erreurs.append("Circuits : choisissez un circuit confidentiel par défaut.")
+    alternatif = mecanisme.circuit_alternatif
+    if alternatif is None or not alternatif.actif or not alternatif.sensible:
+        erreurs.append("Circuits : choisissez un circuit alternatif confidentiel, pour les dossiers qui mettent en "
+                       "cause une personne du circuit confidentiel habituel.")
+    elif alternatif.par_defaut:
+        erreurs.append("Circuits : le circuit alternatif doit être différent du circuit confidentiel par défaut.")
     for circuit in Circuit.objects.filter(actif=True).prefetch_related("etapes"):
         erreurs.extend(f"Circuits : {e}" for e in controler_circuit(circuit))
     for categorie in Categorie.objects.filter(actif=True, circuit__isnull=False).select_related("circuit", "parent"):

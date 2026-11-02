@@ -3,7 +3,8 @@
  * priorités, catégories, circuits et étapes, modèles, canevas Excel) ; lot 2 : réception
  * (dossiers, saisie par un agent, formulaire public et suivi par code) ; lot 3 : traitement
  * (actions sur un dossier, journal, vues prêtes et enregistrées, dossiers liés) ; lot 4 : délais
- * (échéances, prolongation, jours fériés, réglages des rappels). API : /api/v1/plaintes/
+ * (échéances, prolongation, jours fériés, réglages des rappels) ; lot 5 : circuit confidentiel
+ * (marquage, levée, personnes mises en cause, assistance, export, conservation). API : /api/v1/plaintes/
  * et, sans compte, /api/v1/public/plaintes/.
  */
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,6 +32,7 @@ export interface MecanismePlaintes {
   rappel_jours_avant: number;
   escalade_active: boolean;
   notifications_courriel: boolean;
+  circuit_alternatif: number | null;
 }
 
 export interface TypeRetour {
@@ -319,6 +321,13 @@ export interface DossierPlainte {
   date_entree_etape: string | null;
   jours_prolongation: number;
   en_retard: boolean;
+  mis_en_cause_utilisateurs: number[];
+  mis_en_cause_noms: string[];
+  mis_en_cause_libre: string;
+  suspension_legale: boolean;
+  motif_suspension: string;
+  anonymise: boolean;
+  date_anonymisation: string | null;
 }
 
 /** État des délais d'un dossier ouvert : en retard (dossier ou étape), proche, ou dans les temps. */
@@ -345,7 +354,8 @@ export const libelleIssue = (i: IssueDossier): string =>
 
 export type TypeAction =
   | "RECEPTION" | "CLASSIFICATION" | "AFFECTATION" | "RECUSATION" | "ETAPE" | "NOTE" | "ACTION_CORRECTIVE"
-  | "COMMUNICATION" | "DECISION" | "CLOTURE" | "REOUVERTURE" | "RECOURS" | "SENSIBILITE" | "LIEN" | "PROLONGATION" | "RETARD";
+  | "COMMUNICATION" | "DECISION" | "CLOTURE" | "REOUVERTURE" | "RECOURS" | "SENSIBILITE" | "LIEN" | "PROLONGATION" | "RETARD"
+  | "MISE_EN_CAUSE" | "ASSISTANCE" | "EXPORT" | "SUSPENSION" | "ANONYMISATION";
 export const libelleTypeAction = (t: TypeAction): string =>
   ({
     RECEPTION: voc("Réception"),
@@ -364,6 +374,11 @@ export const libelleTypeAction = (t: TypeAction): string =>
     LIEN: voc("Dossiers liés"),
     PROLONGATION: voc("Prolongation du délai"),
     RETARD: voc("Retard"),
+    MISE_EN_CAUSE: voc("Personnes mises en cause"),
+    ASSISTANCE: voc("Assistance et référencement"),
+    EXPORT: voc("Export de la fiche"),
+    SUSPENSION: voc("Suspension légale"),
+    ANONYMISATION: voc("Anonymisation"),
   })[t];
 
 export type ObjetEchange = "ACCUSE_RECEPTION" | "PRISE_EN_CHARGE" | "DEMANDE_COMPLEMENT" | "DECISION" | "CLOTURE" | "SATISFACTION" | "AUTRE";
@@ -394,12 +409,16 @@ export interface ActionDossier {
 export interface DossierDetail extends DossierPlainte {
   actions: ActionDossier[];
   dossiers_lies: { id: number; numero: string; statut: StatutDossier }[];
+  referencements: { id: number; prestataire: string; type: TypePrestataire; date: string; auteur: string }[];
+  /** L'utilisateur peut lever la sensibilité (point focal du circuit ou Administrateur). */
+  habilite: boolean;
+  fin_conservation: string | null;
 }
 
 /** Opérations de traitement (POST /plaintes/dossiers/{id}/{operation}/). */
 export type OperationDossier =
   | "classer" | "affecter" | "recuser" | "etape" | "noter" | "communiquer" | "decider" | "cloturer" | "rouvrir" | "recours" | "lier"
-  | "prolonger";
+  | "prolonger" | "lever-sensibilite" | "mettre-en-cause" | "assistance" | "suspendre" | "anonymiser";
 
 /** Données d'un retour, communes au formulaire public et à la saisie par un agent. */
 export interface SaisieRetour {
@@ -423,6 +442,8 @@ export interface SaisieAgent extends SaisieRetour {
   date_reception: string | null;
   recueilli_directement: boolean;
   priorite: number | null;
+  mis_en_cause_utilisateurs: number[];
+  mis_en_cause_libre: string;
 }
 
 /** Réponse à un enregistrement : le code de suivi n'est donné qu'une fois. */
@@ -604,3 +625,52 @@ export interface JourFerie {
 export const useJoursFeries = () => useListe<JourFerie>("jours-feries");
 export const useEnregistrerJourFerie = () => useEnregistrer<JourFerie>("jours-feries");
 export const useSupprimerJourFerie = () => useSupprimer("jours-feries");
+
+// --- Lot 5 : circuit confidentiel ----------------------------------------------------------------
+
+export type TypePrestataire = "MEDICAL" | "PSYCHOSOCIAL" | "JURIDIQUE" | "SECURITE" | "AUTRE";
+export const TYPES_PRESTATAIRE: TypePrestataire[] = ["MEDICAL", "PSYCHOSOCIAL", "JURIDIQUE", "SECURITE", "AUTRE"];
+export const libelleTypePrestataire = (t: TypePrestataire): string =>
+  ({
+    MEDICAL: voc("Médical"),
+    PSYCHOSOCIAL: voc("Psychosocial"),
+    JURIDIQUE: voc("Juridique"),
+    SECURITE: voc("Sécurité et hébergement"),
+    AUTRE: voc("Autre"),
+  })[t];
+
+export interface Prestataire {
+  id: number;
+  nom: string;
+  type: TypePrestataire;
+  contact: string;
+  zone: string;
+  actif: boolean;
+}
+
+export const usePrestataires = () => useListe<Prestataire>("prestataires");
+export const useEnregistrerPrestataire = () => useEnregistrer<Prestataire>("prestataires");
+export const useSupprimerPrestataire = () => useSupprimer("prestataires");
+
+/** Signaler un dossier comme sensible (possible même en lecture seule) ; renvoie s'il reste visible. */
+export function useSignalerSensible(id: number) {
+  const rafraichir = useRafraichir();
+  return useMutation({
+    mutationFn: async (motif: string) =>
+      (await apiClient.post<{ numero: string; visible: boolean }>(`/plaintes-signaler/${id}/`, { motif })).data,
+    onSuccess: rafraichir,
+  });
+}
+
+/** Fiche PDF en filigrane (motif et confirmation exigés pour un dossier confidentiel) ; l'export est tracé. */
+export async function exporterFicheDossier(id: number, numero: string, motif: string, confirmation: boolean) {
+  const reponse = await apiClient.post(`/plaintes/dossiers/${id}/exporter/`, { motif, confirmation }, { responseType: "blob" });
+  const url = window.URL.createObjectURL(new Blob([reponse.data], { type: "application/pdf" }));
+  const lien = document.createElement("a");
+  lien.href = url;
+  lien.setAttribute("download", `dossier_${numero}.pdf`);
+  document.body.appendChild(lien);
+  lien.click();
+  lien.remove();
+  window.URL.revokeObjectURL(url);
+}

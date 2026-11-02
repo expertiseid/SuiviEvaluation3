@@ -68,7 +68,7 @@ def test_regles_verrouillees(client, standard):
     ordinaire = Circuit.objects.get(sensible=False)
     assert client.patch(f"{URL}categories/{verrouillee.id}/", {"circuit": ordinaire.id}, format="json").status_code == 400
     # Circuit confidentiel : jamais confié à un rôle entier.
-    sensible = Circuit.objects.get(sensible=True)
+    sensible = Circuit.objects.get(sensible=True, par_defaut=True)
     etape = sensible.etapes.first()
     role = ordinaire.etapes.exclude(role=None).first().role
     assert client.patch(f"{URL}etapes/{etape.id}/", {"role": role.id}, format="json").status_code == 400
@@ -107,7 +107,7 @@ def test_canevas_excel_aller_retour(client, admin, standard):
             ligne[1].value = 48
     wb["Catégories"].append(["Distribution et assistance", "Articles manquants", "", "Non", "", 10, "Oui"])
     for ligne in wb["Circuits"].iter_rows(min_row=2):
-        if ligne[0].value == "Circuit confidentiel":
+        if str(ligne[0].value).startswith("Circuit confidentiel"):
             ligne[6].value = admin.username
     wb["Catégories"].append(["Inconnue", "Sous", "", "Non", "", "", "Oui"])  # erreur : principale absente
     wb["Priorités"].append(["Basse", "peut-être", 60, "Oui"])  # erreur : Oui / Non attendu

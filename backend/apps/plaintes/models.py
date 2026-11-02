@@ -11,8 +11,10 @@ Lot 2 : réception des dossiers (formulaire public et saisie par un agent, voir 
 Lot 3 : traitement (affectation, étapes, décision, communication, clôture, réouverture, recours,
 journal, dossiers liés, vues enregistrées ; voir traitement.py).
 Lot 4 : délais et alertes (échéances du dossier et de l'étape, jours ouvrés et jours fériés,
-rappels, escalade, prolongation motivée, notifications ; voir delais.py). Le circuit
-confidentiel complet et le pilotage arrivent dans les lots suivants.
+rappels, escalade, prolongation motivée, notifications ; voir delais.py).
+Lot 5 : circuit confidentiel complet (marquage manuel et levée motivée, personnes mises en cause
+et circuit alternatif, chiffrement des données protégées — chiffrement.py —, assistance et
+référencement, export motivé, conservation et suspension légale ; voir confidentiel.py).
 """
 import uuid
 
@@ -22,6 +24,8 @@ from django.db import models
 from simple_history.models import HistoricalRecords
 
 from apps.core.models import TimestampedModel
+
+from .chiffrement import TexteChiffre
 
 
 class Mecanisme(TimestampedModel):
@@ -69,6 +73,11 @@ class Mecanisme(TimestampedModel):
     )
     notifications_courriel = models.BooleanField(
         default=True, help_text="Envoyer aussi les notifications par courriel (en plus de l'application).",
+    )
+    circuit_alternatif = models.ForeignKey(
+        "Circuit", on_delete=models.SET_NULL, null=True, blank=True, related_name="+",
+        help_text="Circuit confidentiel suivi quand une personne mise en cause est destinataire du circuit "
+        "confidentiel habituel (direction, siège, référent extérieur…). Obligatoire pour l'activation.",
     )
 
     history = HistoricalRecords()
@@ -288,8 +297,8 @@ class Dossier(TimestampedModel):
     projet = models.ForeignKey(
         "projects.Projet", on_delete=models.SET_NULL, null=True, blank=True, related_name="dossiers_plaintes",
     )
-    lieu = models.CharField(max_length=255, blank=True)
-    description = models.TextField()
+    lieu = TexteChiffre(blank=True)
+    description = TexteChiffre()
     concerne_personnel = models.BooleanField(
         null=True, blank=True,
         help_text="Question système : le retour concerne-t-il le comportement d'un membre du personnel ou d'un "
@@ -302,9 +311,9 @@ class Dossier(TimestampedModel):
 
     # Coordonnées : toujours facultatives quand l'anonymat est autorisé ; vides si anonyme.
     anonyme = models.BooleanField(default=False)
-    nom = models.CharField(max_length=200, blank=True)
-    telephone = models.CharField(max_length=40, blank=True)
-    courriel = models.EmailField(blank=True)
+    nom = TexteChiffre(blank=True)
+    telephone = TexteChiffre(blank=True)
+    courriel = TexteChiffre(blank=True)
     mode_reponse = models.CharField(max_length=20, choices=ModeReponse.choices, default=ModeReponse.AUCUN)
     consentement = models.BooleanField(
         default=False, help_text="Accord du plaignant pour l'utilisation de ses informations dans le traitement.",
@@ -319,13 +328,13 @@ class Dossier(TimestampedModel):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="dossiers_plaintes_geres",
         help_text="Gestionnaire du dossier.",
     )
-    decision = models.TextField(blank=True, help_text="Décision enregistrée (exigée pour clôturer).")
+    decision = TexteChiffre(blank=True, help_text="Décision enregistrée (exigée pour clôturer).")
     date_decision = models.DateField(null=True, blank=True)
     date_reponse = models.DateField(null=True, blank=True, help_text="Date à laquelle la décision a été communiquée.")
     issue = models.CharField(max_length=20, choices=IssueDossier.choices, blank=True)
-    motif_cloture = models.TextField(blank=True)
+    motif_cloture = TexteChiffre(blank=True)
     retour_donne = models.BooleanField(null=True, blank=True, help_text="Le plaignant a été informé de la réponse.")
-    raison_sans_retour = models.TextField(blank=True, help_text="Pourquoi le plaignant n'a pas pu être informé.")
+    raison_sans_retour = TexteChiffre(blank=True, help_text="Pourquoi le plaignant n'a pas pu être informé.")
     oriente_vers = models.CharField(max_length=255, blank=True, help_text="Sortie « Référée » : acteur externe.")
     consentement_reference = models.BooleanField(default=False)
     date_cloture = models.DateField(null=True, blank=True)
@@ -342,6 +351,17 @@ class Dossier(TimestampedModel):
     echeance_etape = models.DateField(null=True, blank=True, help_text="Échéance de l'étape en cours.")
     jours_prolongation = models.PositiveIntegerField(default=0)
     en_retard = models.BooleanField(default=False, help_text="Échéance dépassée (mis à jour par la tâche planifiée).")
+
+    # Circuit confidentiel (lot 5).
+    mis_en_cause_utilisateurs = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="dossiers_plaintes_mis_en_cause",
+        help_text="Utilisateurs mis en cause : exclus du dossier, de ses notifications et de son traitement.",
+    )
+    mis_en_cause_libre = TexteChiffre(blank=True, help_text="Personnes mises en cause qui n'ont pas de compte.")
+    suspension_legale = models.BooleanField(default=False, help_text="Lié à une procédure : jamais anonymisé.")
+    motif_suspension = TexteChiffre(blank=True)
+    anonymise = models.BooleanField(default=False)
+    date_anonymisation = models.DateField(null=True, blank=True)
 
     history = HistoricalRecords(excluded_fields=["dossiers_lies"])
 
@@ -373,6 +393,11 @@ class ActionDossier(models.Model):
         LIEN = "LIEN", "Dossiers liés"
         PROLONGATION = "PROLONGATION", "Prolongation du délai"
         RETARD = "RETARD", "Retard"
+        MISE_EN_CAUSE = "MISE_EN_CAUSE", "Personnes mises en cause"
+        ASSISTANCE = "ASSISTANCE", "Assistance et référencement"
+        EXPORT = "EXPORT", "Export de la fiche"
+        SUSPENSION = "SUSPENSION", "Suspension légale"
+        ANONYMISATION = "ANONYMISATION", "Anonymisation"
 
     class Sens(models.TextChoices):
         SORTANT = "SORTANT", "Envoyé au plaignant"
@@ -391,7 +416,7 @@ class ActionDossier(models.Model):
     type = models.CharField(max_length=20, choices=Type.choices)
     auteur = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
     date = models.DateTimeField(auto_now_add=True)
-    texte = models.TextField(blank=True)
+    texte = TexteChiffre(blank=True)
     # Changement enregistré, lisible tel quel : {"de": …, "a": …} ou valeurs de la clôture.
     details = models.JSONField(default=dict, blank=True)
     # Communication avec le plaignant.
@@ -439,3 +464,44 @@ class RappelDossier(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=("dossier", "date"), name="un_rappel_par_dossier_et_par_jour")]
+
+
+class Prestataire(TimestampedModel):
+    """Annuaire des prestataires d'assistance tenu par l'organisation (référencement des victimes)."""
+
+    class Type(models.TextChoices):
+        MEDICAL = "MEDICAL", "Médical"
+        PSYCHOSOCIAL = "PSYCHOSOCIAL", "Psychosocial"
+        JURIDIQUE = "JURIDIQUE", "Juridique"
+        SECURITE = "SECURITE", "Sécurité et hébergement"
+        AUTRE = "AUTRE", "Autre"
+
+    nom = models.CharField(max_length=200)
+    type = models.CharField(max_length=20, choices=Type.choices)
+    contact = models.CharField(max_length=255, blank=True)
+    zone = models.CharField(max_length=200, blank=True, help_text="Zone couverte.")
+    actif = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ("type", "nom")
+
+    def __str__(self):
+        return self.nom
+
+
+class Referencement(models.Model):
+    """
+    Orientation vers une assistance (médicale, psychosociale, juridique, sécurité), avec le
+    consentement de la personne. On enregistre le consentement, la date et le prestataire — jamais
+    le contenu des échanges avec lui.
+    """
+
+    dossier = models.ForeignKey(Dossier, on_delete=models.CASCADE, related_name="referencements")
+    prestataire = models.ForeignKey(Prestataire, on_delete=models.PROTECT, related_name="referencements")
+    type = models.CharField(max_length=20, choices=Prestataire.Type.choices)
+    consentement = models.BooleanField()
+    date = models.DateField()
+    auteur = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+")
+
+    class Meta:
+        ordering = ("-date", "-id")

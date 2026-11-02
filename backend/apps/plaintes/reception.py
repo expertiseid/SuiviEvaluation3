@@ -177,6 +177,13 @@ def recevoir(donnees: dict, canal: str, saisi_par=None, public: bool = False):
     from . import delais
 
     delais.recalculer(dossier, entree_etape=date_reception)
+    # Personnes mises en cause (saisie par un agent) : traitement confidentiel, circuit alternatif si besoin.
+    if not public and (donnees.get("mis_en_cause_utilisateurs") or (donnees.get("mis_en_cause_libre") or "").strip()):
+        from . import confidentiel
+
+        confidentiel.mettre_en_cause(dossier, saisi_par, {
+            "utilisateurs": donnees.get("mis_en_cause_utilisateurs") or [], "libre": donnees.get("mis_en_cause_libre") or "",
+        })
     transaction.on_commit(lambda: delais.notifier_reception(dossier))
     return dossier, code
 
@@ -194,8 +201,10 @@ def dossiers_visibles(user):
 
     from .models import EtapeCircuit
 
+    # Une personne mise en cause n'accède jamais au dossier, quel que soit son rôle.
     if user.role == ROLE_ADMIN:
-        return Dossier.objects.all()
+        return Dossier.objects.exclude(mis_en_cause_utilisateurs=user)
 
     habilite = EtapeCircuit.objects.filter(circuit=OuterRef("circuit"), responsable=user)
-    return Dossier.objects.filter(sensible=False) | Dossier.objects.filter(sensible=True).filter(Exists(habilite))
+    visibles = Dossier.objects.filter(sensible=False) | Dossier.objects.filter(sensible=True).filter(Exists(habilite))
+    return visibles.exclude(mis_en_cause_utilisateurs=user)

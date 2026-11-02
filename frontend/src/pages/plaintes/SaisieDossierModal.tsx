@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Lock, ShieldAlert } from "lucide-react";
-import { Alert, Button, Group, Modal, Select, SimpleGrid, Stack, Switch, Text } from "@mantine/core";
+import { Alert, Button, Group, Modal, MultiSelect, Select, SimpleGrid, Stack, Switch, Text, TextInput } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import {
   CANAUX_AGENT,
@@ -14,6 +14,7 @@ import {
   usePrioritesPlainte,
   useTypesRetour,
 } from "../../api/plaintes";
+import { useUtilisateurs } from "../../api/accounts";
 import { useProjets } from "../../api/projects";
 import { useAuth } from "../../auth/useAuth";
 import { messageErreurApi } from "../../utils/erreurs";
@@ -31,6 +32,8 @@ const SAISIE_VIDE = (): SaisieAgent => ({
   date_reception: aujourdhui(),
   recueilli_directement: true,
   priorite: null,
+  mis_en_cause_utilisateurs: [],
+  mis_en_cause_libre: "",
 });
 
 /**
@@ -44,6 +47,7 @@ export function SaisieDossierModal({ opened, onClose }: { opened: boolean; onClo
   const { data: categories = [] } = useCategoriesPlainte();
   const { data: priorites = [] } = usePrioritesPlainte();
   const { data: tousProjets = [] } = useProjets();
+  const { data: utilisateurs = [] } = useUtilisateurs();
   const enregistrer = useEnregistrerDossier();
   // L'Administrateur voit tous les dossiers, y compris confidentiels.
   const estAdmin = useAuth().user?.role === "ADMIN";
@@ -56,7 +60,9 @@ export function SaisieDossierModal({ opened, onClose }: { opened: boolean; onClo
   const categoriesActives = categories.filter((c) => c.actif);
   const categorie = categories.find((c) => c.id === valeurs.categorie);
   // Même règle que le serveur : catégorie sensible, ou retour visant le personnel.
-  const sensible = !!categorie?.sensible_effective || valeurs.concerne_personnel === true;
+  const sensible =
+    !!categorie?.sensible_effective || valeurs.concerne_personnel === true ||
+    valeurs.mis_en_cause_utilisateurs.length > 0 || !!valeurs.mis_en_cause_libre.trim();
 
   const fermer = () => {
     setValeurs(SAISIE_VIDE());
@@ -137,6 +143,23 @@ export function SaisieDossierModal({ opened, onClose }: { opened: boolean; onClo
             anonymatAutorise={!!mecanisme?.anonymat_autorise}
             erreurs={erreurs}
           />
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+            <MultiSelect
+              label={voc("Personnes mises en cause (utilisateurs de la plateforme)")}
+              description={voc("Facultatif. Elles n'auront jamais accès au dossier.")}
+              data={utilisateurs.map((u) => ({ value: String(u.id), label: `${u.first_name} ${u.last_name}`.trim() || u.username }))}
+              value={valeurs.mis_en_cause_utilisateurs.map(String)}
+              onChange={(v) => setValeurs((s) => ({ ...s, mis_en_cause_utilisateurs: v.map(Number) }))}
+              searchable
+              clearable
+            />
+            <TextInput
+              label={voc("Autres personnes mises en cause")}
+              description={voc("Facultatif : noms ou fonctions de personnes sans compte.")}
+              value={valeurs.mis_en_cause_libre}
+              onChange={(e) => { const texte = e.currentTarget.value; setValeurs((s) => ({ ...s, mis_en_cause_libre: texte })); }}
+            />
+          </SimpleGrid>
           <Switch
             label={voc("Le plaignant accepte que ses informations soient utilisées pour traiter son retour")}
             checked={valeurs.consentement}

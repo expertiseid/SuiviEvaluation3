@@ -14,6 +14,8 @@ Pillow>=10.4,<10.5
 segno>=1.6,<1.7
 pyshp>=3.0,<4
 python-docx>=1.1,<2
+# Chiffrement des données protégées des plaintes (récits, coordonnées, notes).
+cryptography>=43,<46
 # Carte : import de couches SIG et cartes imprimables (même pile que la plateforme HIMO).
 geopandas==1.0.1
 pyogrio>=0.10,<0.11
