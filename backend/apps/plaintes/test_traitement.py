@@ -191,3 +191,22 @@ def test_commande_de_demonstration(admin):
         assert d.actions.filter(type="CLOTURE").exists() and d.decision
         assert d.date_reception <= d.date_decision <= d.date_cloture
     assert not Dossier.objects.filter(actions__isnull=True).exists()
+
+
+def test_correction_du_plaignant_tracee(actif, admin, gestionnaire):
+    """Informations du plaignant corrigées ; ancienne et nouvelle valeur au journal, chiffrées, pas dans les détails."""
+    d = _dossier(nom="Lexi")
+    # Mode de réponse incohérent avec les coordonnées : refusé, rien n'est changé.
+    assert "courriel" in _agir(gestionnaire, d, "plaignant", {"mode_reponse": "COURRIEL"}).data
+    r = _agir(gestionnaire, d, "plaignant", {"telephone": "77364628", "courriel": "lexi@exemple.org", "mode_reponse": "COURRIEL"})
+    assert r.status_code == 200 and r.data["telephone"] == "77364628" and r.data["mode_reponse"] == "COURRIEL"
+    action = d.actions.get(type="PLAIGNANT")
+    assert action.auteur == gestionnaire and action.details == {"champs": ["telephone", "courriel", "mode_reponse"]}
+    assert "Téléphone : 70000000 → 77364628" in action.texte and "Courriel : — → lexi@exemple.org" in action.texte
+    # Rien de changé : pas de nouvelle trace.
+    _agir(gestionnaire, d, "plaignant", {"telephone": "77364628"})
+    assert d.actions.filter(type="PLAIGNANT").count() == 1
+    # Dossier anonyme : l'identité ne peut pas être ajoutée, seul le consentement se corrige.
+    anonyme = _dossier(anonyme=True, telephone="", mode_reponse="AUCUN")
+    r = _agir(admin, anonyme, "plaignant", {"nom": "Quelqu'un", "consentement": False})
+    assert r.status_code == 200 and r.data["nom"] == "" and r.data["consentement"] is False

@@ -22,8 +22,11 @@ import {
 import { notifications } from "@mantine/notifications";
 import {
   type DossierDetail,
+  type PieceJointe,
   type IssueDossier,
   ISSUES,
+  OBJETS_MESSAGE,
+  useApercuMessage,
   exporterFicheDossier,
   libelleTypePrestataire,
   usePrestataires,
@@ -199,6 +202,23 @@ export function MotifDossier({ dossier, operation, titre, aide, libelleBouton, c
             <Select label={voc("Reprendre à l'étape")} placeholder={voc("Étape avant la clôture")} data={etapes.map((e) => ({ value: String(e.id), label: e.nom }))}
               value={nombre(v.etape)} onChange={(x) => changer({ etape: x ? Number(x) : null })} error={erreurs.etape} clearable />
           )}
+        </>
+      )}
+    </Fenetre>
+  );
+}
+
+/** Retrait motivé d'une pièce jointe (le fichier est effacé ; le retrait reste au journal). */
+export function RetirerPiece({ dossier, piece, onClose }: { dossier: DossierDetail; piece: PieceJointe; onClose: () => void }) {
+  return (
+    <Fenetre dossier={dossier} operation="retirer-piece" titre={voc("Retirer une pièce jointe")} onClose={onClose}
+      initiales={{ piece: piece.id }} libelleBouton={voc("Retirer")} couleur="red">
+      {(v, changer, erreurs) => (
+        <>
+          <Text size="sm">{piece.nom}</Text>
+          <Text size="sm" c="dimmed">{voc("Le fichier sera définitivement effacé. Le retrait et son motif restent inscrits au journal.")}</Text>
+          <Textarea label={voc("Motif")} withAsterisk autosize minRows={2} value={texte(v.motif)}
+            onChange={(e) => changer({ motif: e.currentTarget.value })} error={erreurs.motif ?? erreurs.piece} />
         </>
       )}
     </Fenetre>
@@ -422,6 +442,35 @@ export function SuspendreDossier({ dossier, onClose }: { dossier: DossierDetail;
   );
 }
 
+/** Correction des informations du plaignant ; ancienne et nouvelle valeur sont inscrites au journal. */
+export function ModifierPlaignant({ dossier, onClose }: { dossier: DossierDetail; onClose: () => void }) {
+  return (
+    <Fenetre dossier={dossier} operation="plaignant" titre={voc("Modifier les informations du plaignant")} onClose={onClose}
+      initiales={{ nom: dossier.nom, telephone: dossier.telephone, courriel: dossier.courriel, mode_reponse: dossier.mode_reponse, consentement: dossier.consentement }}>
+      {(v, changer, erreurs) => (
+        <>
+          {dossier.anonyme ? (
+            <Text size="sm" c="dimmed">{voc("Dossier anonyme : aucune information d'identité ne peut y être ajoutée.")}</Text>
+          ) : (
+            <>
+              <TextInput label={voc("Nom")} value={texte(v.nom)} onChange={(e) => changer({ nom: e.currentTarget.value })} error={erreurs.nom} />
+              <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                <TextInput label={voc("Téléphone")} value={texte(v.telephone)} onChange={(e) => changer({ telephone: e.currentTarget.value })} error={erreurs.telephone} />
+                <TextInput label={voc("Courriel")} value={texte(v.courriel)} onChange={(e) => changer({ courriel: e.currentTarget.value })} error={erreurs.courriel} />
+              </SimpleGrid>
+              <Select label={voc("Réponse souhaitée")} data={MODES_REPONSE.map((m) => ({ value: m, label: libelleModeReponse(m) }))}
+                value={texte(v.mode_reponse)} onChange={(x) => x && changer({ mode_reponse: x })} error={erreurs.mode_reponse} allowDeselect={false} />
+            </>
+          )}
+          <Checkbox label={voc("Le plaignant consent à l'utilisation de ses informations pour le traitement")} checked={v.consentement === true}
+            onChange={(e) => changer({ consentement: e.currentTarget.checked })} error={erreurs.consentement} />
+          <Text size="xs" c="dimmed">{voc("L'ancienne et la nouvelle valeur seront inscrites au journal du dossier, avec votre nom.")}</Text>
+        </>
+      )}
+    </Fenetre>
+  );
+}
+
 export function AnonymiserDossier({ dossier, onClose }: { dossier: DossierDetail; onClose: () => void }) {
   return (
     <Fenetre dossier={dossier} operation="anonymiser" titre={voc("Anonymiser le dossier")} onClose={onClose} libelleBouton={voc("Anonymiser définitivement")} couleur="red">
@@ -508,5 +557,69 @@ export function ExporterDossier({ dossier, onClose }: { dossier: DossierDetail; 
         </Group>
       </Stack>
     </Modal>
+  );
+}
+
+/** Contenu de la fenêtre d'envoi : aperçu du modèle, retouchable (vide = le modèle tel quel). */
+function ContenuMessage({ dossier, v, changer, erreurs, canaux }: {
+  dossier: DossierDetail;
+  v: Valeurs;
+  changer: (v: Valeurs) => void;
+  erreurs: Record<string, string>;
+  canaux: { value: string; label: string }[];
+}) {
+  const canal = (texte(v.canal) || "COURRIEL") as "SMS" | "COURRIEL";
+  const { data: apercu, error } = useApercuMessage(dossier.id, texte(v.objet), canal);
+  const sujet = v.sujet === undefined ? apercu?.sujet ?? "" : texte(v.sujet);
+  const message = v.texte === undefined ? apercu?.texte ?? "" : texte(v.texte);
+  const sens = apercu?.langue === "ar" ? "rtl" : "ltr";
+  // Changer d'objet ou de moyen repart du modèle correspondant.
+  const repartir = (champ: Valeurs) => changer({ ...champ, sujet: undefined, texte: undefined });
+  return (
+    <>
+      <Group grow>
+        <Select label={voc("Objet")} allowDeselect={false} value={texte(v.objet)} error={erreurs.objet}
+          data={OBJETS_MESSAGE.map((o) => ({ value: o, label: libelleObjetEchange(o) }))} onChange={(x) => x && repartir({ objet: x })} />
+        <Select label={voc("Envoi par")} allowDeselect={false} value={canal} data={canaux} error={erreurs.canal}
+          onChange={(x) => x && repartir({ canal: x })} />
+      </Group>
+      {error ? <Alert color="orange">{voc("Aucun modèle de message pour cet objet : installez les modèles dans le paramétrage.")}</Alert> : null}
+      {canal === "COURRIEL" && (
+        <TextInput label={voc("Objet du courriel")} value={sujet} dir={sens} onChange={(e) => changer({ sujet: e.currentTarget.value })} />
+      )}
+      <Textarea label={voc("Message")} autosize minRows={canal === "SMS" ? 3 : 7} value={message} error={erreurs.texte} dir={sens}
+        onChange={(e) => changer({ texte: e.currentTarget.value })}
+        description={canal === "SMS" ? voc`${message.length} caractères — ${Math.max(1, Math.ceil(message.length / 160))} SMS` : undefined} />
+      <Text size="xs" c="dimmed">
+        {canal === "SMS" ? dossier.telephone : dossier.courriel} · {voc("Langue")} : {apercu?.langue?.toUpperCase() ?? "—"}
+        {dossier.sensible ? ` · ${voc("Dossier confidentiel : la décision n'est jamais insérée dans le message.")}` : ""}
+      </Text>
+      {canal === "SMS" && apercu?.sms_simule && (
+        <Alert color="yellow" py={6}>{voc("Aucune passerelle SMS n'est configurée : l'envoi sera simulé et indiqué comme tel au journal.")}</Alert>
+      )}
+    </>
+  );
+}
+
+/** Message au plaignant, prérempli d'après le modèle, à relire avant l'envoi (SMS ou courriel). */
+export function EnvoyerMessage({ dossier, onClose }: { dossier: DossierDetail; onClose: () => void }) {
+  const canaux = [
+    ...(dossier.courriel ? [{ value: "COURRIEL", label: voc("Courriel") }] : []),
+    ...(dossier.telephone ? [{ value: "SMS", label: voc("SMS") }] : []),
+  ];
+  if (dossier.anonyme || canaux.length === 0) {
+    return (
+      <Modal opened onClose={onClose} title={voc("Envoyer un message")}>
+        <Alert color="gray">{voc("Aucun moyen de contacter ce plaignant (anonyme ou sans coordonnées). Il suit son dossier avec son code de suivi.")}</Alert>
+      </Modal>
+    );
+  }
+  const objet = dossier.statut === "CLOTURE" ? "SATISFACTION" : dossier.decision ? "DECISION" : "PRISE_EN_CHARGE";
+  const canal = (dossier.mode_reponse === "COURRIEL" && dossier.courriel) || !dossier.telephone ? "COURRIEL" : "SMS";
+  return (
+    <Fenetre dossier={dossier} operation="envoyer-message" titre={voc("Envoyer un message au plaignant")} onClose={onClose}
+      libelleBouton={voc("Envoyer")} initiales={{ objet, canal }}>
+      {(v, changer, erreurs) => <ContenuMessage dossier={dossier} v={v} changer={changer} erreurs={erreurs} canaux={canaux} />}
+    </Fenetre>
   );
 }

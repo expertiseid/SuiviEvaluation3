@@ -40,8 +40,10 @@ REGLAGES = [
     ("Conservation des dossiers ordinaires (mois)", "conservation_ordinaire_mois"),
     ("Conservation des dossiers sensibles (mois)", "conservation_sensible_mois"),
     ("Texte d'information des plaignants", "texte_information"),
+    ("Fichiers joints par les plaignants (Oui / Non)", "pieces_formulaire_public"),
+    ("Taille maximale d'un fichier joint (Mo)", "taille_max_piece_mo"),
 ]
-CHAMPS_OUI_NON = {"anonymat_autorise", "jours_ouvres"}
+CHAMPS_OUI_NON = {"anonymat_autorise", "jours_ouvres", "pieces_formulaire_public"}
 INSTRUCTIONS = [
     "Paramétrage du mécanisme de plaintes et retours",
     "",
@@ -251,7 +253,7 @@ def importer_parametrage(fichier) -> dict:
                     donnees[champ] = _bool(valeur)
                 elif champ == "langues":
                     donnees[champ] = [x.strip().lower() for x in str(valeur).replace(",", ";").split(";") if x.strip()]
-                elif champ.startswith("conservation"):
+                elif champ.startswith("conservation") or champ == "taille_max_piece_mo":
                     donnees[champ] = _entier(valeur)
                 else:
                     donnees[champ] = _texte(valeur)

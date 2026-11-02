@@ -159,6 +159,9 @@ def appliquer_modele(code: str) -> dict:
         if not cree and (verrouillee or not objet.sensible):
             Categorie.objects.filter(pk=objet.pk).update(sensible=True, verrouillee=objet.verrouillee or verrouillee)
 
+    from .messages import installer_modeles
+
+    installer_modeles()  # modèles de messages au plaignant, dans les cinq langues
     mecanisme = Mecanisme.courant()
     mecanisme.modele = code
     if mecanisme.circuit_alternatif_id is None:

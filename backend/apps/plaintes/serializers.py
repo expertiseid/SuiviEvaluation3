@@ -2,8 +2,8 @@ from rest_framework import serializers
 
 from .controles import controler_activation, controler_circuit
 from .models import (
-    ActionCorrective, ActionDossier, Categorie, Circuit, Dossier, EtapeCircuit, JourFerie, Mecanisme, Prestataire, Priorite,
-    TypeRetour, VueDossiers,
+    ActionCorrective, ActionDossier, Categorie, Circuit, Dossier, EtapeCircuit, JourFerie, Mecanisme, ModeleMessage,
+    PieceJointe, Prestataire, Priorite, TypeRetour, VueDossiers,
 )
 from .traitement import nom_personne
 
@@ -14,6 +14,8 @@ class MecanismeSerializer(serializers.ModelSerializer):
     """Le mécanisme ; « controles » liste ce qui manque pour l'activer (vide = activable)."""
 
     controles = serializers.SerializerMethodField()
+    plafond_piece_mo = serializers.SerializerMethodField()
+    pieces_equipe = serializers.SerializerMethodField()
 
     class Meta:
         model = Mecanisme
@@ -21,12 +23,31 @@ class MecanismeSerializer(serializers.ModelSerializer):
             "id", "nom", "actif", "modele", "anonymat_autorise", "langues", "texte_information", "prefixe_numero",
             "jours_ouvres", "conservation_ordinaire_mois", "conservation_sensible_mois", "projets", "controles",
             "delai_defaut_jours", "rappel_jours_avant", "escalade_active", "notifications_courriel",
-            "circuit_alternatif", "seuil_masquage",
+            "circuit_alternatif", "seuil_masquage", "accuse_reception_auto", "signature_messages",
+            "pieces_formulaire_public", "taille_max_piece_mo", "plafond_piece_mo", "pieces_equipe",
         )
         read_only_fields = ("actif", "modele")
 
     def get_controles(self, obj):
         return controler_activation(obj)
+
+    def get_pieces_equipe(self, obj):
+        """Formats et limites des fichiers joints par l'équipe (saisie, ajout sur la fiche)."""
+        from .pieces import FORMATS_ACCEPTES, PIECES_PAR_AJOUT, taille_max_mo
+
+        return {"formats": FORMATS_ACCEPTES, "taille_max_mo": taille_max_mo(obj), "nombre_max": PIECES_PAR_AJOUT}
+
+    def get_plafond_piece_mo(self, obj):
+        from .pieces import plafond_mo
+
+        return plafond_mo()
+
+    def validate_taille_max_piece_mo(self, valeur):
+        from .pieces import plafond_mo
+
+        if not 1 <= valeur <= plafond_mo():
+            raise serializers.ValidationError(f"Entre 1 et {plafond_mo()} Mo (plafond de la plateforme).")
+        return valeur
 
     def validate_langues(self, valeur):
         inconnues = [l for l in valeur if l not in LANGUES]
@@ -231,17 +252,30 @@ class ActionDossierSerializer(serializers.ModelSerializer):
         return nom_personne(obj.auteur) or None
 
 
+class PieceJointeSerializer(serializers.ModelSerializer):
+    ajoute_par_nom = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PieceJointe
+        fields = ("id", "nom", "type_mime", "taille", "source", "ajoute_par", "ajoute_par_nom", "date", "metadonnees_effacees")
+        read_only_fields = fields
+
+    def get_ajoute_par_nom(self, obj):
+        return nom_personne(obj.ajoute_par) or None
+
+
 class DossierDetailSerializer(DossierSerializer):
     """Fiche complète : journal, dossiers liés (seulement ceux que l'utilisateur peut voir)."""
 
     actions = ActionDossierSerializer(many=True, read_only=True)
+    pieces = PieceJointeSerializer(many=True, read_only=True)
     dossiers_lies = serializers.SerializerMethodField()
     referencements = serializers.SerializerMethodField()
     habilite = serializers.SerializerMethodField()
     fin_conservation = serializers.SerializerMethodField()
 
     class Meta(DossierSerializer.Meta):
-        fields = DossierSerializer.Meta.fields + ("actions", "dossiers_lies", "referencements", "habilite", "fin_conservation")
+        fields = DossierSerializer.Meta.fields + ("actions", "pieces", "dossiers_lies", "referencements", "habilite", "fin_conservation")
         read_only_fields = fields
 
     def get_referencements(self, obj):
@@ -323,3 +357,14 @@ class ActionCorrectiveSerializer(serializers.ModelSerializer):
         if any(d.pk not in visibles for d in dossiers):
             raise serializers.ValidationError("Certains dossiers ne vous sont pas accessibles.")
         return dossiers
+
+
+class ModeleMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ModeleMessage
+        fields = ("id", "objet", "langue", "sujet", "texte_courriel", "texte_sms", "actif")
+
+    def validate_langue(self, valeur):
+        if valeur not in LANGUES:
+            raise serializers.ValidationError("Langue non proposée.")
+        return valeur

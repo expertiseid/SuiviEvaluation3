@@ -66,14 +66,45 @@ def _objet(modele, valeur, champ, message):
     return objet
 
 
+def erreurs_coordonnees(telephone: str, courriel: str, mode_reponse: str) -> dict:
+    """Mode de réponse cohérent avec les coordonnées laissées (saisie et correction du plaignant)."""
+    erreurs = {}
+    if mode_reponse not in ModeReponse.values:
+        erreurs["mode_reponse"] = v("Mode de réponse inconnu.")
+    elif mode_reponse in (ModeReponse.TELEPHONE, ModeReponse.SMS) and not telephone:
+        erreurs["telephone"] = v("Indiquez un numéro de téléphone pour recevoir la réponse, ou choisissez un autre mode.")
+    elif mode_reponse == ModeReponse.COURRIEL and not courriel:
+        erreurs["courriel"] = v("Indiquez une adresse courriel pour recevoir la réponse, ou choisissez un autre mode.")
+    if courriel and ("@" not in courriel or "." not in courriel.split("@")[-1]):
+        erreurs["courriel"] = v("Adresse courriel invalide.")
+    return erreurs
+
+
+def lire_envoi(request):
+    """
+    Données et fichiers d'un envoi : JSON simple, ou formulaire multipart avec les données en JSON dans
+    « donnees » et les fichiers dans « fichiers » (listes et cases à cocher gardent ainsi leur type).
+    """
+    import json
+
+    if request.content_type and request.content_type.startswith("multipart/"):
+        try:
+            donnees = json.loads(request.data.get("donnees") or "{}")
+        except ValueError:
+            raise ValidationError({"detail": "Envoi illisible."})
+        return (donnees if isinstance(donnees, dict) else {}), request.FILES.getlist("fichiers")
+    return request.data, []
+
+
 @transaction.atomic
-def recevoir(donnees: dict, canal: str, saisi_par=None, public: bool = False):
+def recevoir(donnees: dict, canal: str, saisi_par=None, public: bool = False, fichiers=None):
     """
     Crée le dossier et renvoie (dossier, code de suivi en clair — à remettre au plaignant, il
     n'est plus jamais affiché ensuite).
 
     `public` : formulaire public (consentement exigé ; nom exigé si l'anonymat n'est pas autorisé).
     Un agent n'est jamais obligé de saisir une information qu'il n'a pas.
+    `fichiers` : pièces jointes, contrôlées avant toute création (un fichier refusé fait refuser l'envoi).
     """
     mecanisme = Mecanisme.courant()
     if not mecanisme.actif:
@@ -107,14 +138,7 @@ def recevoir(donnees: dict, canal: str, saisi_par=None, public: bool = False):
     telephone = "" if anonyme else (donnees.get("telephone") or "").strip()[:40]
     courriel = "" if anonyme else (donnees.get("courriel") or "").strip()[:254]
     mode_reponse = ModeReponse.AUCUN if anonyme else (donnees.get("mode_reponse") or ModeReponse.AUCUN)
-    if mode_reponse not in ModeReponse.values:
-        erreurs["mode_reponse"] = v("Mode de réponse inconnu.")
-    elif mode_reponse in (ModeReponse.TELEPHONE, ModeReponse.SMS) and not telephone:
-        erreurs["telephone"] = v("Indiquez un numéro de téléphone pour recevoir la réponse, ou choisissez un autre mode.")
-    elif mode_reponse == ModeReponse.COURRIEL and not courriel:
-        erreurs["courriel"] = v("Indiquez une adresse courriel pour recevoir la réponse, ou choisissez un autre mode.")
-    if courriel and ("@" not in courriel or "." not in courriel.split("@")[-1]):
-        erreurs["courriel"] = v("Adresse courriel invalide.")
+    erreurs.update(erreurs_coordonnees(telephone, courriel, mode_reponse))
     if public and not anonyme and not mecanisme.anonymat_autorise and not nom:
         erreurs["nom"] = v("Indiquez votre nom.")
     consentement = bool(donnees.get("consentement"))
@@ -134,6 +158,12 @@ def recevoir(donnees: dict, canal: str, saisi_par=None, public: bool = False):
                 erreurs["date_reception"] = v("La date de réception ne peut pas être dans le futur.")
     if erreurs:
         raise ValidationError(erreurs)
+    fichiers = [f for f in (fichiers or []) if f]
+    if public and fichiers and not mecanisme.pieces_formulaire_public:
+        raise ValidationError({"fichiers": v("Ce mécanisme n'accepte pas de fichiers joints.")})
+    from . import pieces
+
+    prets = pieces.preparer(fichiers, mecanisme, maximum=pieces.PIECES_PAR_ENVOI if public else pieces.PIECES_PAR_AJOUT)
 
     # Sensibilité (penche vers la protection) : catégorie sensible, ou retour visant le personnel.
     concerne_personnel = donnees.get("concerne_personnel")
@@ -174,6 +204,9 @@ def recevoir(donnees: dict, canal: str, saisi_par=None, public: bool = False):
         dossier=dossier, type=ActionDossier.Type.RECEPTION, auteur=saisi_par,
         details={"canal": canal, "circuit": circuit.nom if circuit else "", "sensible": sensible},
     )
+    if prets:
+        pieces.enregistrer(dossier, prets, pieces.PieceJointe.Source.PLAIGNANT if public else pieces.PieceJointe.Source.EQUIPE,
+                           saisi_par)
     from . import delais
 
     delais.recalculer(dossier, entree_etape=date_reception)
@@ -185,6 +218,9 @@ def recevoir(donnees: dict, canal: str, saisi_par=None, public: bool = False):
             "utilisateurs": donnees.get("mis_en_cause_utilisateurs") or [], "libre": donnees.get("mis_en_cause_libre") or "",
         })
     transaction.on_commit(lambda: delais.notifier_reception(dossier))
+    from . import messages
+
+    transaction.on_commit(lambda: messages.accuse_reception_automatique(dossier))
     return dossier, code
 
 

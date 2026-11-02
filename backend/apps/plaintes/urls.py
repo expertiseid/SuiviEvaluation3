@@ -11,6 +11,7 @@ router.register("plaintes/etapes", views.EtapeCircuitViewSet, basename="plainte-
 router.register("plaintes/categories", views.CategorieViewSet, basename="plainte-categorie")
 router.register("plaintes/jours-feries", views.JourFerieViewSet, basename="plainte-jour-ferie")
 router.register("plaintes/prestataires", views.PrestataireViewSet, basename="plainte-prestataire")
+router.register("plaintes/modeles-messages", views.ModeleMessageViewSet, basename="plainte-modele-message")
 router.register("plaintes/actions-correctives", views.ActionCorrectiveViewSet, basename="plainte-action-corrective")
 router.register("plaintes/dossiers", views.DossierViewSet, basename="plainte-dossier")
 # Hors de /plaintes/ : chacun enregistre ses propres vues, même en lecture seule sur le module.
@@ -36,5 +37,8 @@ urlpatterns = [
     path("public/plaintes/formulaire/", public.formulaire, name="plaintes-public-formulaire"),
     path("public/plaintes/deposer/", public.deposer, name="plaintes-public-deposer"),
     path("public/plaintes/suivi/", public.suivi, name="plaintes-public-suivi"),
+    path("public/plaintes/complement/", public.complement, name="plaintes-public-complement"),
+    # Lien temporaire signé (pieces.py) : ouvert dans un nouvel onglet, donc sans jeton de connexion.
+    path("plaintes-piece/<str:jeton>/", views.telecharger_piece, name="plaintes-piece"),
     path("", include(router.urls)),
 ]

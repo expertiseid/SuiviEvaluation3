@@ -162,9 +162,30 @@ EMAIL_PORT = env.int("EMAIL_PORT", default=587)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL", default=False)  # port 465 (exclusif avec EMAIL_USE_TLS)
+EMAIL_TIMEOUT = env.int("EMAIL_TIMEOUT", default=15)  # un serveur lent ne doit jamais bloquer une page
+# Liste blanche de destinataires (postes de test) : voir apps/core/courriel.py. Vide en production.
+EMAIL_DESTINATAIRES_AUTORISES = env("EMAIL_DESTINATAIRES_AUTORISES", default="")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="notifications@suivi-evaluation.local")
 
 # --- Plaintes : clé de chiffrement des données protégées (récits, coordonnées, notes) ---
 # Clé Fernet propre à l'organisation, hors du code et de la base ; plusieurs clés séparées par des
 # virgules pour une rotation (la première chiffre). Voir apps/plaintes/chiffrement.py.
 PLAINTES_CLE_CHIFFREMENT = env("PLAINTES_CLE_CHIFFREMENT", default="")
+
+# --- Plaintes : messages au plaignant ---
+# Adresse publique de la plateforme (lien de suivi dans les messages).
+PLAINTES_URL_PUBLIQUE = env("PLAINTES_URL_PUBLIQUE", default="http://localhost:5192")
+# Passerelle SMS (HTTP POST JSON {to, message, from}, jeton en « Authorization: Bearer »). Vide : envoi simulé.
+PLAINTES_SMS_URL = env("PLAINTES_SMS_URL", default="")
+PLAINTES_SMS_JETON = env("PLAINTES_SMS_JETON", default="")
+PLAINTES_SMS_EXPEDITEUR = env("PLAINTES_SMS_EXPEDITEUR", default="")
+
+# --- Plaintes : pièces jointes (lot 8) ---
+# Répertoire privé, hors de MEDIA_ROOT et de toute racine web : les fichiers y sont toujours chiffrés et
+# ne sont servis que par l'application, après contrôle d'accès. Voir apps/plaintes/pieces.py.
+PLAINTES_STOCKAGE_PRIVE = env("PLAINTES_STOCKAGE_PRIVE", default="") or str(BASE_DIR / "prive" / "plaintes")
+# Plafond de la plateforme par fichier (Mo) ; chaque mécanisme règle sa limite en dessous.
+PLAINTES_PLAFOND_PIECE_MO = env.int("PLAINTES_PLAFOND_PIECE_MO", default=10)
+# Durée de validité des liens de téléchargement, en minutes (1 à 15).
+PLAINTES_DUREE_LIEN_PIECE_MIN = env.int("PLAINTES_DUREE_LIEN_PIECE_MIN", default=5)

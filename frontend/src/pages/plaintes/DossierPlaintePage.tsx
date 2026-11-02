@@ -8,6 +8,7 @@ import {
   Eraser,
   FileDown,
   HandHeart,
+  Send,
   ShieldAlert,
   ShieldCheck,
   ShieldX,
@@ -18,6 +19,7 @@ import {
   Link2,
   Lock,
   MessageSquareText,
+  Pencil,
   RotateCcw,
   Scale,
   Siren,
@@ -64,12 +66,15 @@ import {
   AnonymiserDossier,
   AssistanceDossier,
   ExporterDossier,
+  EnvoyerMessage,
   MettreEnCauseDossier,
+  ModifierPlaignant,
   SignalerDossier,
   SuspendreDossier,
 } from "./OperationsDossier";
 import { ActionCorrectiveModal, BadgeStatutAction } from "./ActionsCorrectivesPage";
 import { BadgeDelai } from "./DelaiDossier";
+import { PiecesJointesDossier } from "./PiecesJointesDossier";
 
 const COULEUR_ACTION: Partial<Record<ActionDossier["type"], string>> = {
   RETARD: "red",
@@ -79,6 +84,7 @@ const COULEUR_ACTION: Partial<Record<ActionDossier["type"], string>> = {
   EXPORT: "gray",
   SUSPENSION: "orange",
   ANONYMISATION: "dark",
+  PLAIGNANT: "indigo",
   RECEPTION: "blue",
   AFFECTATION: "cyan",
   DECISION: "violet",
@@ -88,6 +94,9 @@ const COULEUR_ACTION: Partial<Record<ActionDossier["type"], string>> = {
   RECOURS: "red",
   SENSIBILITE: "grape",
   ACTION_CORRECTIVE: "lime",
+  PIECE_JOINTE: "blue",
+  TELECHARGEMENT: "gray",
+  COMPLEMENT: "teal",
 };
 
 function Ligne({ libelle, children }: { libelle: string; children: React.ReactNode }) {
@@ -148,12 +157,27 @@ function DetailsAction({ action }: { action: ActionDossier }) {
       </Text>
     );
   }
+  if (action.type === "PIECE_JOINTE") {
+    return <Text size="xs" c="dimmed">{d.retrait ? voc("Pièce retirée") : voc`${Number(d.ajout ?? 0)} fichier(s) ajouté(s)`}</Text>;
+  }
+  if (action.type === "COMPLEMENT" && Number(d.pieces)) {
+    return <Text size="xs" c="dimmed">{voc`${Number(d.pieces)} fichier(s) joint(s)`}</Text>;
+  }
   if (action.type === "COMMUNICATION") {
+    const statut = d.statut_envoi as string | undefined;
     return (
-      <Text size="xs" c="dimmed">
-        {action.sens === "ENTRANT" ? voc("Reçu du plaignant") : voc("Envoyé au plaignant")} · {libelleObjetEchange(action.objet as ObjetEchange)} ·{" "}
-        {libelleModeReponse(action.canal as ModeReponse)}
-      </Text>
+      <Group gap={6}>
+        <Text size="xs" c="dimmed">
+          {action.sens === "ENTRANT" ? voc("Reçu du plaignant") : voc("Envoyé au plaignant")} · {libelleObjetEchange(action.objet as ObjetEchange)} ·{" "}
+          {action.canal === "SMS" ? voc("SMS") : action.canal === "COURRIEL" ? voc("Courriel") : libelleModeReponse(action.canal as ModeReponse)}
+        </Text>
+        {statut && (
+          <Badge size="xs" variant="light" tt="none" color={statut === "ENVOYE" ? "teal" : statut === "SIMULE" ? "yellow" : "red"}>
+            {statut === "ENVOYE" ? voc("Envoyé") : statut === "SIMULE" ? voc("Envoi simulé") : voc("Échec de l'envoi")}
+          </Badge>
+        )}
+        {d.satisfait !== undefined && <Badge size="xs" variant="light" tt="none" color={d.satisfait ? "teal" : "orange"}>{d.satisfait ? voc("Satisfait") : voc("Non satisfait")}</Badge>}
+      </Group>
     );
   }
   return null;
@@ -178,7 +202,8 @@ function Journal({ actions }: { actions: ActionDossier[] }) {
 
 type Fenetre =
   | "classer" | "affecter" | "etape" | "noter" | "communiquer" | "decider" | "cloturer" | "rouvrir" | "recours" | "recuser" | "lier"
-  | "prolonger" | "signaler" | "lever" | "mettre_en_cause" | "assistance" | "suspendre" | "anonymiser" | "exporter" | null;
+  | "prolonger" | "signaler" | "lever" | "mettre_en_cause" | "assistance" | "suspendre" | "anonymiser" | "exporter" | "message" | "plaignant"
+  | null;
 
 /** Barre d'actions : seules les opérations possibles dans l'état du dossier sont proposées. */
 function Actions({ dossier, ouvrir }: { dossier: DossierDetail; ouvrir: (f: Fenetre) => void }) {
@@ -194,6 +219,7 @@ function Actions({ dossier, ouvrir }: { dossier: DossierDetail; ouvrir: (f: Fene
       {!clos && bouton("classer", voc("Classer"), <Tags size={14} />)}
       {!clos && bouton("etape", voc("Changer d'étape"), <ArrowRightLeft size={14} />)}
       {bouton("noter", voc("Note"), <StickyNote size={14} />)}
+      {!dossier.anonyme && (dossier.telephone || dossier.courriel) && bouton("message", voc("Envoyer un message"), <Send size={14} />)}
       {bouton("communiquer", voc("Échange avec le plaignant"), <MessageSquareText size={14} />)}
       {!clos && bouton("decider", voc("Décision"), <Gavel size={14} />)}
       {!clos && bouton("cloturer", voc("Clôturer"), <FolderCheck size={14} />, { color: "gray", variant: "filled" })}
@@ -327,7 +353,14 @@ export function DossierPlaintePage() {
 
             <Card withBorder>
               <Stack gap="sm">
-                <Text fw={600} size="sm">{voc("Plaignant")}</Text>
+                <Group justify="space-between">
+                  <Text fw={600} size="sm">{voc("Plaignant")}</Text>
+                  {modifiable && !dossier.anonymise && (
+                    <Button size="compact-xs" variant="subtle" leftSection={<Pencil size={12} />} onClick={() => setFenetre("plaignant")}>
+                      {voc("Modifier")}
+                    </Button>
+                  )}
+                </Group>
                 {dossier.anonyme ? (
                   <Text size="sm">
                     {dossier.saisi_par_nom
@@ -409,6 +442,8 @@ export function DossierPlaintePage() {
               </Card>
             )}
 
+            <PiecesJointesDossier dossier={dossier} modifiable={modifiable} />
+
             <ActionsCorrectivesDossier dossierId={dossier.id} modifiable={modifiable} />
 
             {dossier.dossiers_lies.length > 0 && (
@@ -448,11 +483,13 @@ export function DossierPlaintePage() {
       {fenetre === "lier" && <LierDossier dossier={dossier} onClose={fermer} />}
       {fenetre === "prolonger" && <ProlongerDossier dossier={dossier} onClose={fermer} />}
       {fenetre === "signaler" && <SignalerDossier dossier={dossier} onClose={fermer} />}
+      {fenetre === "message" && <EnvoyerMessage dossier={dossier} onClose={fermer} />}
       {fenetre === "exporter" && <ExporterDossier dossier={dossier} onClose={fermer} />}
       {fenetre === "mettre_en_cause" && <MettreEnCauseDossier dossier={dossier} onClose={fermer} />}
       {fenetre === "assistance" && <AssistanceDossier dossier={dossier} onClose={fermer} />}
       {fenetre === "suspendre" && <SuspendreDossier dossier={dossier} onClose={fermer} />}
       {fenetre === "anonymiser" && <AnonymiserDossier dossier={dossier} onClose={fermer} />}
+      {fenetre === "plaignant" && <ModifierPlaignant dossier={dossier} onClose={fermer} />}
       {fenetre === "lever" && (
         <MotifDossier dossier={dossier} operation="lever-sensibilite" titre={voc("Lever la sensibilité")} onClose={fermer} libelleBouton={voc("Lever la sensibilité")} couleur="grape"
           aide={voc("Le dossier repassera au circuit ordinaire. À réserver aux signalements sans objet ; le motif est inscrit au journal.")} />

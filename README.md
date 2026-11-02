@@ -85,6 +85,8 @@ bénéficiaires, documents, alertes et tableaux de bord.
   Pilotage : indicateurs avec définition et dénominateur, quatre tableaux de bord personnalisables
   (petits effectifs confidentiels masqués), exports Excel et PDF, actions correctives, onglet
   « Retours des communautés » sur la fiche projet.
+  Messages au plaignant : modèles modifiables en cinq langues, envoi par courriel et par SMS
+  (passerelle à brancher), accusé de réception automatique, statut d'envoi au journal.
 
 ## Pile technique
 

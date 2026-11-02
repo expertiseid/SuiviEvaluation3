@@ -43,6 +43,7 @@ import { useAccesModules } from "../../utils/modules";
 import { voc } from "../../utils/vocabulaire";
 import { CalendrierPlaintes } from "./CalendrierPlaintes";
 import { CircuitsPlaintes } from "./CircuitsPlaintes";
+import { MessagesPlaintes } from "./MessagesPlaintes";
 import { PrestatairesPlaintes } from "./PrestatairesPlaintes";
 import { CategoriesPlainte, PrioritesPlainte, TypesRetour } from "./ListesPlaintes";
 
@@ -190,6 +191,10 @@ function FormulaireMecanisme({ mecanisme, modifiable }: { mecanisme: MecanismePl
         notifications_courriel: valeurs.notifications_courriel,
         circuit_alternatif: valeurs.circuit_alternatif,
         seuil_masquage: valeurs.seuil_masquage,
+        accuse_reception_auto: valeurs.accuse_reception_auto,
+        signature_messages: valeurs.signature_messages,
+        pieces_formulaire_public: valeurs.pieces_formulaire_public,
+        taille_max_piece_mo: valeurs.taille_max_piece_mo,
         projets: valeurs.projets,
       });
       notifications.show({ message: voc("Réglages enregistrés"), color: "teal" });
@@ -272,6 +277,15 @@ function FormulaireMecanisme({ mecanisme, modifiable }: { mecanisme: MecanismePl
             disabled={!modifiable}
             onChange={(v) => changer("rappel_jours_avant", Number(v) || 0)}
           />
+          <NumberInput
+            label={voc("Taille maximale d'un fichier joint (Mo)")}
+            description={voc`Pièces jointes des plaignants et de l'équipe. Plafond de la plateforme : ${valeurs.plafond_piece_mo} Mo.`}
+            min={1}
+            max={valeurs.plafond_piece_mo}
+            value={valeurs.taille_max_piece_mo}
+            disabled={!modifiable}
+            onChange={(v) => changer("taille_max_piece_mo", Math.min(valeurs.plafond_piece_mo, Math.max(1, Number(v) || 1)))}
+          />
         </SimpleGrid>
         <Group gap="xl">
           <Switch
@@ -279,6 +293,12 @@ function FormulaireMecanisme({ mecanisme, modifiable }: { mecanisme: MecanismePl
             checked={valeurs.escalade_active}
             disabled={!modifiable}
             onChange={(e) => changer("escalade_active", e.currentTarget.checked)}
+          />
+          <Switch
+            label={voc("Accusé de réception automatique au plaignant")}
+            checked={valeurs.accuse_reception_auto}
+            disabled={!modifiable}
+            onChange={(e) => changer("accuse_reception_auto", e.currentTarget.checked)}
           />
           <Switch
             label={voc("Envoyer aussi les notifications par courriel")}
@@ -300,7 +320,20 @@ function FormulaireMecanisme({ mecanisme, modifiable }: { mecanisme: MecanismePl
             disabled={!modifiable}
             onChange={(e) => changer("jours_ouvres", e.currentTarget.checked)}
           />
+          <Switch
+            label={voc("Les plaignants peuvent joindre des fichiers (formulaire public et complément)")}
+            checked={valeurs.pieces_formulaire_public}
+            disabled={!modifiable}
+            onChange={(e) => changer("pieces_formulaire_public", e.currentTarget.checked)}
+          />
         </Group>
+        <TextInput
+          label={voc("Signature des messages au plaignant")}
+          description={voc("Remplace {signature} dans les messages (ex : « L'équipe du projet »). Vide : le nom du mécanisme.")}
+          value={valeurs.signature_messages}
+          disabled={!modifiable}
+          onChange={(e) => changer("signature_messages", e.currentTarget.value)}
+        />
         <Textarea
           label={voc("Texte d'information du public")}
           description={voc("Présenté aux personnes qui déposent un retour : à quoi sert le mécanisme, comment leurs données sont protégées.")}
@@ -401,6 +434,7 @@ export function ParametragePlaintesPage() {
           <Tabs.Tab value="categories">{voc("Catégories")}</Tabs.Tab>
           <Tabs.Tab value="priorites">{voc("Priorités")}</Tabs.Tab>
           <Tabs.Tab value="circuits">{voc("Circuits de traitement")}</Tabs.Tab>
+          <Tabs.Tab value="messages">{voc("Messages")}</Tabs.Tab>
           <Tabs.Tab value="calendrier">{voc("Calendrier")}</Tabs.Tab>
           <Tabs.Tab value="prestataires">{voc("Prestataires d'assistance")}</Tabs.Tab>
           <Tabs.Tab value="excel">{voc("Canevas Excel")}</Tabs.Tab>
@@ -416,6 +450,7 @@ export function ParametragePlaintesPage() {
         <Tabs.Panel value="categories" pt="md"><CategoriesPlainte modifiable={modifiable} /></Tabs.Panel>
         <Tabs.Panel value="priorites" pt="md"><PrioritesPlainte modifiable={modifiable} /></Tabs.Panel>
         <Tabs.Panel value="circuits" pt="md"><CircuitsPlaintes modifiable={modifiable} /></Tabs.Panel>
+        <Tabs.Panel value="messages" pt="md"><MessagesPlaintes modifiable={modifiable} /></Tabs.Panel>
         <Tabs.Panel value="calendrier" pt="md"><CalendrierPlaintes modifiable={modifiable} /></Tabs.Panel>
         <Tabs.Panel value="prestataires" pt="md"><PrestatairesPlaintes modifiable={modifiable} /></Tabs.Panel>
         <Tabs.Panel value="excel" pt="md"><CanevasExcel modifiable={modifiable} /></Tabs.Panel>

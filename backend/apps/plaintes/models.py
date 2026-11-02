@@ -17,6 +17,10 @@ et circuit alternatif, chiffrement des données protégées — chiffrement.py �
 référencement, export motivé, conservation et suspension légale ; voir confidentiel.py).
 Lot 6 : pilotage (indicateurs, tableaux de bord personnalisables, exports, actions correctives,
 encart projet ; voir pilotage.py).
+Lot 7 : messages au plaignant (modèles multilingues, envoi par courriel et SMS, accusé de réception
+automatique ; voir messages.py).
+Lot 8 : pièces jointes (chiffrées, type réel contrôlé, métadonnées effacées, liens de 5 minutes) et
+compléments du plaignant depuis la page de suivi ; voir pieces.py.
 """
 import uuid
 
@@ -76,6 +80,12 @@ class Mecanisme(TimestampedModel):
     notifications_courriel = models.BooleanField(
         default=True, help_text="Envoyer aussi les notifications par courriel (en plus de l'application).",
     )
+    accuse_reception_auto = models.BooleanField(
+        default=True, help_text="Envoyer automatiquement un accusé de réception au plaignant joignable.",
+    )
+    signature_messages = models.CharField(
+        max_length=255, blank=True, help_text="Signature ajoutée à la fin des messages (ex : « L'équipe du projet »).",
+    )
     seuil_masquage = models.PositiveSmallIntegerField(
         default=5, help_text="Tableaux de bord : une case comptant moins de dossiers confidentiels que ce seuil "
         "est affichée « moins de N ». Jamais en dessous de 5.",
@@ -84,6 +94,14 @@ class Mecanisme(TimestampedModel):
         "Circuit", on_delete=models.SET_NULL, null=True, blank=True, related_name="+",
         help_text="Circuit confidentiel suivi quand une personne mise en cause est destinataire du circuit "
         "confidentiel habituel (direction, siège, référent extérieur…). Obligatoire pour l'activation.",
+    )
+
+    # Pièces jointes (lot 8).
+    pieces_formulaire_public = models.BooleanField(
+        default=True, help_text="Le plaignant peut joindre des fichiers au formulaire public et à un complément.",
+    )
+    taille_max_piece_mo = models.PositiveSmallIntegerField(
+        default=10, help_text="Taille maximale d'un fichier joint, en Mo (jamais au-dessus du plafond de la plateforme).",
     )
 
     history = HistoricalRecords()
@@ -404,6 +422,10 @@ class ActionDossier(models.Model):
         EXPORT = "EXPORT", "Export de la fiche"
         SUSPENSION = "SUSPENSION", "Suspension légale"
         ANONYMISATION = "ANONYMISATION", "Anonymisation"
+        PLAIGNANT = "PLAIGNANT", "Correction du plaignant"
+        PIECE_JOINTE = "PIECE_JOINTE", "Pièce jointe"
+        TELECHARGEMENT = "TELECHARGEMENT", "Téléchargement d'une pièce jointe"
+        COMPLEMENT = "COMPLEMENT", "Complément du plaignant"
 
     class Sens(models.TextChoices):
         SORTANT = "SORTANT", "Envoyé au plaignant"
@@ -433,6 +455,37 @@ class ActionDossier(models.Model):
     class Meta:
         ordering = ("-date", "-id")
         verbose_name = "Action sur un dossier"
+
+
+class PieceJointe(models.Model):
+    """
+    Fichier joint à un dossier. Le contenu est toujours chiffré, dans un répertoire privé hors de toute
+    racine web (PLAINTES_STOCKAGE_PRIVE) ; il n'est servi que par un lien temporaire, après contrôle
+    d'accès (pieces.py). Le nom d'origine est chiffré lui aussi : il peut révéler une identité.
+    """
+
+    class Source(models.TextChoices):
+        PLAIGNANT = "PLAIGNANT", "Déposée par le plaignant"
+        EQUIPE = "EQUIPE", "Ajoutée par l'équipe"
+
+    uid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    dossier = models.ForeignKey(Dossier, on_delete=models.CASCADE, related_name="pieces")
+    nom = TexteChiffre()
+    type_mime = models.CharField(max_length=100)
+    taille = models.PositiveIntegerField(help_text="Taille du fichier en octets (après effacement des métadonnées).")
+    source = models.CharField(max_length=10, choices=Source.choices)
+    ajoute_par = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    date = models.DateTimeField(auto_now_add=True)
+    metadonnees_effacees = models.BooleanField(
+        default=False, help_text="Métadonnées retirées (photos, documents Office) ; sinon le format n'en permet pas l'effacement.",
+    )
+
+    class Meta:
+        ordering = ("date", "id")
+        verbose_name = "Pièce jointe"
+
+    def __str__(self):
+        return f"{self.dossier.numero} — pièce {self.pk}"
 
 
 class VueDossiers(models.Model):
@@ -557,3 +610,29 @@ class TableauPlaintes(models.Model):
     class Meta:
         constraints = [models.UniqueConstraint(fields=("vue", "utilisateur"), name="tableau_plaintes_unique",
                                                nulls_distinct=False)]
+
+
+class ModeleMessage(TimestampedModel):
+    """
+    Modèle de message au plaignant, par objet et par langue, avec une version courriel et une version
+    SMS. Variables : {numero}, {nom}, {mecanisme}, {date_reception}, {lien_suivi}, {decision}, {signature}.
+    Pour un dossier confidentiel, {decision} n'est jamais remplacée par la décision (aucun détail).
+    """
+
+    OBJETS = [c for c in ActionDossier.Objet.choices if c[0] != "AUTRE"]
+
+    objet = models.CharField(max_length=20, choices=OBJETS)
+    langue = models.CharField(max_length=5, default="fr")
+    sujet = models.CharField(max_length=200, blank=True, help_text="Objet du courriel.")
+    texte_courriel = models.TextField(blank=True)
+    texte_sms = models.CharField(max_length=480, blank=True, help_text="Court : 160 caractères par SMS.")
+    actif = models.BooleanField(default=True)
+
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ("objet", "langue")
+        constraints = [models.UniqueConstraint(fields=("objet", "langue"), name="modele_message_unique")]
+
+    def __str__(self):
+        return f"{self.get_objet_display()} ({self.langue})"

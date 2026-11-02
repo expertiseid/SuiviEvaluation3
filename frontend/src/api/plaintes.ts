@@ -5,7 +5,8 @@
  * (actions sur un dossier, journal, vues prêtes et enregistrées, dossiers liés) ; lot 4 : délais
  * (échéances, prolongation, jours fériés, réglages des rappels) ; lot 5 : circuit confidentiel
  * (marquage, levée, personnes mises en cause, assistance, export, conservation) ; lot 6 : pilotage
- * (tableaux de bord, exports, actions correctives, encart projet). API : /api/v1/plaintes/
+ * (tableaux de bord, exports, actions correctives, encart projet) ; lot 7 : messages au plaignant
+ * (modèles multilingues, envoi par courriel et SMS). API : /api/v1/plaintes/
  * et, sans compte, /api/v1/public/plaintes/.
  */
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -35,6 +36,14 @@ export interface MecanismePlaintes {
   notifications_courriel: boolean;
   circuit_alternatif: number | null;
   seuil_masquage: number;
+  accuse_reception_auto: boolean;
+  signature_messages: string;
+  pieces_formulaire_public: boolean;
+  taille_max_piece_mo: number;
+  /** Plafond de la plateforme (lecture seule). */
+  plafond_piece_mo: number;
+  /** Formats et limites des fichiers joints par l'équipe (lecture seule). */
+  pieces_equipe: PiecesAcceptees;
 }
 
 export interface TypeRetour {
@@ -357,7 +366,8 @@ export const libelleIssue = (i: IssueDossier): string =>
 export type TypeAction =
   | "RECEPTION" | "CLASSIFICATION" | "AFFECTATION" | "RECUSATION" | "ETAPE" | "NOTE" | "ACTION_CORRECTIVE"
   | "COMMUNICATION" | "DECISION" | "CLOTURE" | "REOUVERTURE" | "RECOURS" | "SENSIBILITE" | "LIEN" | "PROLONGATION" | "RETARD"
-  | "MISE_EN_CAUSE" | "ASSISTANCE" | "EXPORT" | "SUSPENSION" | "ANONYMISATION";
+  | "MISE_EN_CAUSE" | "ASSISTANCE" | "EXPORT" | "SUSPENSION" | "ANONYMISATION" | "PLAIGNANT"
+  | "PIECE_JOINTE" | "TELECHARGEMENT" | "COMPLEMENT";
 export const libelleTypeAction = (t: TypeAction): string =>
   ({
     RECEPTION: voc("Réception"),
@@ -381,6 +391,10 @@ export const libelleTypeAction = (t: TypeAction): string =>
     EXPORT: voc("Export de la fiche"),
     SUSPENSION: voc("Suspension légale"),
     ANONYMISATION: voc("Anonymisation"),
+    PLAIGNANT: voc("Correction du plaignant"),
+    PIECE_JOINTE: voc("Pièce jointe"),
+    TELECHARGEMENT: voc("Téléchargement d'une pièce jointe"),
+    COMPLEMENT: voc("Complément du plaignant"),
   })[t];
 
 export type ObjetEchange = "ACCUSE_RECEPTION" | "PRISE_EN_CHARGE" | "DEMANDE_COMPLEMENT" | "DECISION" | "CLOTURE" | "SATISFACTION" | "AUTRE";
@@ -408,8 +422,64 @@ export interface ActionDossier {
   objet: ObjetEchange | "";
 }
 
+export interface PieceJointe {
+  id: number;
+  nom: string;
+  type_mime: string;
+  taille: number;
+  source: "PLAIGNANT" | "EQUIPE";
+  ajoute_par: number | null;
+  ajoute_par_nom: string | null;
+  date: string;
+  /** Faux : le format ne permet pas d'effacer les métadonnées (certains fichiers audio, PDF compressés). */
+  metadonnees_effacees: boolean;
+}
+
+/** Formats et limites des fichiers joints par le plaignant (null : fichiers non acceptés). */
+export interface PiecesAcceptees {
+  formats: string;
+  taille_max_mo: number;
+  nombre_max: number;
+}
+
+export const tailleLisible = (octets: number) =>
+  octets < 1024 * 1024 ? voc`${Math.max(1, Math.round(octets / 1024))} Ko` : voc`${(octets / 1024 / 1024).toFixed(1)} Mo`;
+
+/** Envoi JSON, ou multipart (données en JSON dans « donnees ») quand des fichiers sont joints. */
+function avecFichiers(donnees: object, fichiers: File[]) {
+  if (!fichiers.length) return donnees;
+  const envoi = new FormData();
+  envoi.append("donnees", JSON.stringify(donnees));
+  fichiers.forEach((f) => envoi.append("fichiers", f));
+  return envoi;
+}
+
+export function useAjouterPieces(id: number) {
+  const rafraichir = useRafraichir();
+  return useMutation({
+    mutationFn: async (fichiers: File[]) => {
+      const envoi = new FormData();
+      fichiers.forEach((f) => envoi.append("fichiers", f));
+      return (await apiClient.post<DossierDetail>(`/plaintes/dossiers/${id}/pieces/`, envoi)).data;
+    },
+    onSuccess: rafraichir,
+  });
+}
+
+/** Ouvre une pièce jointe par un lien temporaire, demandé au moment du clic (jamais d'adresse permanente). */
+export async function ouvrirPieceJointe(dossier: number, piece: number) {
+  const { url } = (await apiClient.get<{ url: string }>(`/plaintes/dossiers/${dossier}/pieces/${piece}/lien/`)).data;
+  const lien = document.createElement("a");
+  lien.href = url;
+  lien.rel = "noopener";
+  document.body.appendChild(lien);
+  lien.click();
+  lien.remove();
+}
+
 export interface DossierDetail extends DossierPlainte {
   actions: ActionDossier[];
+  pieces: PieceJointe[];
   dossiers_lies: { id: number; numero: string; statut: StatutDossier }[];
   referencements: { id: number; prestataire: string; type: TypePrestataire; date: string; auteur: string }[];
   /** L'utilisateur peut lever la sensibilité (point focal du circuit ou Administrateur). */
@@ -420,7 +490,8 @@ export interface DossierDetail extends DossierPlainte {
 /** Opérations de traitement (POST /plaintes/dossiers/{id}/{operation}/). */
 export type OperationDossier =
   | "classer" | "affecter" | "recuser" | "etape" | "noter" | "communiquer" | "decider" | "cloturer" | "rouvrir" | "recours" | "lier"
-  | "prolonger" | "lever-sensibilite" | "mettre-en-cause" | "assistance" | "suspendre" | "anonymiser";
+  | "prolonger" | "lever-sensibilite" | "mettre-en-cause" | "assistance" | "suspendre" | "anonymiser" | "envoyer-message" | "plaignant"
+  | "retirer-piece";
 
 /** Données d'un retour, communes au formulaire public et à la saisie par un agent. */
 export interface SaisieRetour {
@@ -486,7 +557,8 @@ export function useDossiersPlainte(filtres: FiltresDossiers) {
 export function useEnregistrerDossier() {
   const rafraichir = useRafraichir();
   return useMutation({
-    mutationFn: async (saisie: SaisieAgent) => (await apiClient.post<RecuDossier>("/plaintes/dossiers/", saisie)).data,
+    mutationFn: async ({ fichiers = [], ...saisie }: SaisieAgent & { fichiers?: File[] }) =>
+      (await apiClient.post<RecuDossier>("/plaintes/dossiers/", avecFichiers(saisie, fichiers))).data,
     onSuccess: rafraichir,
   });
 }
@@ -523,6 +595,7 @@ export interface FormulairePublic {
   types?: { id: number; nom: string; description: string }[];
   categories?: { id: number; nom: string; parent: number | null }[];
   projets?: { id: number; code: string; nom: string }[];
+  pieces?: PiecesAcceptees | null;
 }
 
 export function useFormulairePublic(projet: string | null) {
@@ -535,15 +608,31 @@ export function useFormulairePublic(projet: string | null) {
 
 export function useDeposerRetour() {
   return useMutation({
-    mutationFn: async (saisie: SaisieRetour & { site_web: string }) =>
-      (await apiClient.post<RecuDossier>("/public/plaintes/deposer/", saisie)).data,
+    mutationFn: async ({ fichiers = [], ...saisie }: SaisieRetour & { site_web: string; fichiers?: File[] }) =>
+      (await apiClient.post<RecuDossier>("/public/plaintes/deposer/", avecFichiers(saisie, fichiers))).data,
   });
 }
 
 export function useSuiviPublic() {
   return useMutation({
     mutationFn: async (code: string) =>
-      (await apiClient.post<{ numero: string; date_reception: string; statut: StatutDossier }>("/public/plaintes/suivi/", { code })).data,
+      (await apiClient.post<SuiviPublic>("/public/plaintes/suivi/", { code })).data,
+  });
+}
+
+export interface SuiviPublic {
+  numero: string;
+  date_reception: string;
+  statut: StatutDossier;
+  complement_possible: boolean;
+  pieces: PiecesAcceptees | null;
+}
+
+/** Le plaignant complète son dossier (précision et/ou fichiers) avec son code de suivi. */
+export function useCompleterDossier() {
+  return useMutation({
+    mutationFn: async ({ code, texte, fichiers }: { code: string; texte: string; fichiers: File[] }) =>
+      (await apiClient.post<{ numero: string }>("/public/plaintes/complement/", avecFichiers({ code, texte }, fichiers))).data,
   });
 }
 
@@ -863,5 +952,56 @@ export function useRetoursProjet(projet: number) {
   return useQuery({
     queryKey: [CLE, "retours-projet", projet],
     queryFn: async () => (await apiClient.get<TableauPlaintes>(`/plaintes/projets/${projet}/retours/`)).data,
+  });
+}
+
+// --- Lot 7 : messages au plaignant ------------------------------------------------------------------
+
+export type ObjetMessage = Exclude<ObjetEchange, "AUTRE">;
+export const OBJETS_MESSAGE: ObjetMessage[] = ["ACCUSE_RECEPTION", "PRISE_EN_CHARGE", "DEMANDE_COMPLEMENT", "DECISION", "CLOTURE", "SATISFACTION"];
+export const LANGUES_MESSAGES = [
+  { value: "fr", label: "Français" },
+  { value: "en", label: "English" },
+  { value: "ar", label: "العربية" },
+  { value: "es", label: "Español" },
+  { value: "de", label: "Deutsch" },
+];
+
+export interface ModeleMessage {
+  id: number;
+  objet: ObjetMessage;
+  langue: string;
+  sujet: string;
+  texte_courriel: string;
+  texte_sms: string;
+  actif: boolean;
+}
+
+export const useModelesMessages = () => useListe<ModeleMessage>("modeles-messages");
+export const useEnregistrerModeleMessage = () => useEnregistrer<ModeleMessage>("modeles-messages");
+
+export function useInstallerModelesMessages() {
+  const rafraichir = useRafraichir();
+  return useMutation({
+    mutationFn: async () => (await apiClient.post<{ ajoutes: number }>("/plaintes/modeles-messages/installer/")).data,
+    onSuccess: rafraichir,
+  });
+}
+
+export interface ApercuMessage {
+  sujet: string;
+  texte: string;
+  langue: string;
+  sms_simule: boolean;
+  nombre_sms: number | null;
+}
+
+export function useApercuMessage(dossier: number, objet: string | null, canal: "SMS" | "COURRIEL") {
+  return useQuery({
+    queryKey: [CLE, "dossiers", dossier, "apercu", objet, canal],
+    queryFn: async () =>
+      (await apiClient.get<ApercuMessage>(`/plaintes/dossiers/${dossier}/apercu-message/`, { params: { objet, canal } })).data,
+    enabled: !!objet,
+    retry: false,
   });
 }

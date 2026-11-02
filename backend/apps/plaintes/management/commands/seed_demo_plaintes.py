@@ -176,14 +176,14 @@ class Command(BaseCommand):
                             help="Ajoute seulement la démonstration du circuit confidentiel (lot 5), sans rien supprimer.")
 
     def handle(self, *args, **options):
-        from apps.plaintes import delais
+        from apps.plaintes import delais, messages
 
-        # Données de démonstration : personne n'est notifié de dossiers fictifs.
-        delais.NOTIFICATIONS_ACTIVES = False
+        # Données de démonstration : personne n'est notifié, aucun message n'est envoyé pour des dossiers fictifs.
+        delais.NOTIFICATIONS_ACTIVES = messages.ENVOIS_AUTOMATIQUES = False
         try:
             self.remplir(**options)
         finally:
-            delais.NOTIFICATIONS_ACTIVES = True
+            delais.NOTIFICATIONS_ACTIVES = messages.ENVOIS_AUTOMATIQUES = True
 
     @transaction.atomic
     def remplir(self, **options):

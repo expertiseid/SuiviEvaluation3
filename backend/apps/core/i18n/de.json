@@ -1135,5 +1135,13 @@
  "moins de {0}": "weniger als {0}",
  "À faire": "Zu erledigen",
  "Échéances des 7 prochains jours": "Fristen der nächsten 7 Tage",
- "Édité par": "Erstellt von"
+ "Édité par": "Erstellt von",
+ "Ajoutée par l'équipe": "Vom Team hinzugefügt",
+ "Complément du plaignant": "Ergänzung der beschwerdeführenden Person",
+ "Correction du plaignant": "Korrektur der Angaben der beschwerdeführenden Person",
+ "Déposée par le plaignant": "Von der beschwerdeführenden Person eingereicht",
+ "Fichiers joints par les plaignants (Oui / Non)": "Anhänge durch Beschwerdeführende (Ja / Nein)",
+ "Pièce jointe": "Anhang",
+ "Taille maximale d'un fichier joint (Mo)": "Maximale Größe eines Anhangs (MB)",
+ "Téléchargement d'une pièce jointe": "Herunterladen eines Anhangs"
 }

@@ -1135,5 +1135,13 @@
  "moins de {0}": "menos de {0}",
  "À faire": "Por hacer",
  "Échéances des 7 prochains jours": "Vencimientos de los próximos 7 días",
- "Édité par": "Elaborado por"
+ "Édité par": "Elaborado por",
+ "Ajoutée par l'équipe": "Añadido por el equipo",
+ "Complément du plaignant": "Complemento del denunciante",
+ "Correction du plaignant": "Corrección de los datos del denunciante",
+ "Déposée par le plaignant": "Presentado por el denunciante",
+ "Fichiers joints par les plaignants (Oui / Non)": "Archivos adjuntos por los denunciantes (Sí / No)",
+ "Pièce jointe": "Archivo adjunto",
+ "Taille maximale d'un fichier joint (Mo)": "Tamaño máximo de un archivo adjunto (MB)",
+ "Téléchargement d'une pièce jointe": "Descarga de un archivo adjunto"
 }

@@ -6,14 +6,16 @@ en lecture (les dossiers contiennent des données personnelles). Pages publiques
 import io
 
 import django_filters
+from django.conf import settings
 from django.utils import timezone
 from django.db.models import ProtectedError, Q
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from rest_framework import mixins, status, viewsets
-from rest_framework.decorators import action, api_view, parser_classes, permission_classes
+from rest_framework.decorators import action, api_view, authentication_classes, parser_classes, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.parsers import FormParser, MultiPartParser
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from apps.core.langues import dans_la_langue_demandee, en_langue, langue_demandee, traduire
@@ -25,11 +27,11 @@ from . import confidentiel, delais, pilotage, traitement
 from .controles import controler_activation
 from .models import (
     ActionCorrective,
-    Canal, Categorie, Circuit, Dossier, EtapeCircuit, JourFerie, Mecanisme, Prestataire, Priorite, StatutDossier, TypeRetour,
-    VueDossiers,
+    Canal, Categorie, Circuit, Dossier, EtapeCircuit, JourFerie, Mecanisme, ModeleMessage, Prestataire, Priorite,
+    StatutDossier, TypeRetour, VueDossiers,
 )
 from .modeles_mecanisme import MODELES, appliquer_modele, liste_modeles
-from .reception import dossiers_visibles, recevoir
+from .reception import dossiers_visibles, lire_envoi, recevoir
 from .serializers import (
     ActionCorrectiveSerializer,
     CategorieSerializer,
@@ -40,6 +42,7 @@ from .serializers import (
     JourFerieSerializer,
     PrestataireSerializer,
     MecanismeSerializer,
+    ModeleMessageSerializer,
     PrioriteSerializer,
     TypeRetourSerializer,
     VueDossiersSerializer,
@@ -226,6 +229,20 @@ VUES = {
 }
 
 
+class ModeleMessageViewSet(_Base):
+    """Modèles de messages au plaignant, par objet et par langue."""
+
+    queryset = ModeleMessage.objects.all()
+    serializer_class = ModeleMessageSerializer
+
+    @action(detail=False, methods=["post"])
+    def installer(self, request):
+        """Ajoute les modèles par défaut qui manquent (sans écraser ceux de l'organisation)."""
+        from .messages import installer_modeles
+
+        return Response({"ajoutes": installer_modeles()})
+
+
 class PrestataireViewSet(_Base):
     """Annuaire des prestataires d'assistance (référencement)."""
 
@@ -266,6 +283,7 @@ class DossierViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
     """
 
     permission_classes = (HasGlobalVisibilityOrAssigned,)
+    parser_classes = (JSONParser, MultiPartParser, FormParser)  # pièces jointes : saisie et ajout
     filterset_class = FiltreDossiers
     search_fields = ("numero",)
 
@@ -284,14 +302,15 @@ class DossierViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
         if vue:
             qs = vue(qs, self.request.user)
         if self.action == "retrieve":
-            qs = qs.prefetch_related("actions__auteur")
+            qs = qs.prefetch_related("actions__auteur", "pieces__ajoute_par")
         return qs
 
     def create(self, request, *args, **kwargs):
-        canal = request.data.get("canal")
+        donnees, fichiers = lire_envoi(request)
+        canal = donnees.get("canal")
         if canal == Canal.FORMULAIRE:
             raise ValidationError({"canal": "Choisissez le canal par lequel le retour a été reçu."})
-        dossier, code = recevoir(request.data, canal, saisi_par=request.user)
+        dossier, code = recevoir(donnees, canal, saisi_par=request.user, fichiers=fichiers)
         visible = dossiers_visibles(request.user).filter(pk=dossier.pk).exists()
         reponse = {"numero": dossier.numero, "code_suivi": code, "sensible": dossier.sensible, "visible": visible}
         if visible:
@@ -328,6 +347,10 @@ class DossierViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
         return self._agir(traitement.noter, request.data)
 
     @action(detail=True, methods=["post"])
+    def plaignant(self, request, pk=None):
+        return self._agir(traitement.modifier_plaignant, request.data)
+
+    @action(detail=True, methods=["post"])
     def communiquer(self, request, pk=None):
         return self._agir(traitement.communiquer, request.data)
 
@@ -350,6 +373,25 @@ class DossierViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=["post"])
     def prolonger(self, request, pk=None):
         return self._agir(delais.prolonger, request.data)
+
+    @action(detail=True, methods=["get"], url_path="apercu-message")
+    def apercu_message(self, request, pk=None):
+        """Message prérempli d'après le modèle (?objet=&canal=), à relire avant l'envoi."""
+        from . import messages
+
+        # Sans les filtres de la liste : « canal » désigne ici le moyen d'envoi, pas le canal de réception.
+        dossier = get_object_or_404(self.get_queryset(), pk=pk)
+        canal = request.query_params.get("canal", messages.SMS)
+        sujet, texte, langue = messages.rediger(dossier, request.query_params.get("objet", ""), canal)
+        return Response({"sujet": sujet, "texte": texte, "langue": langue,
+                         "sms_simule": not getattr(settings, "PLAINTES_SMS_URL", ""),
+                         "nombre_sms": -(-len(texte) // 160) if canal == messages.SMS else None})
+
+    @action(detail=True, methods=["post"], url_path="envoyer-message")
+    def envoyer_message(self, request, pk=None):
+        from . import messages
+
+        return self._agir(messages.envoyer, request.data)
 
     @action(detail=False, methods=["post"], url_path="exporter-liste")
     @dans_la_langue_demandee
@@ -409,6 +451,28 @@ class DossierViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
         return reponse
 
     @action(detail=True, methods=["post"])
+    def pieces(self, request, pk=None):
+        """Ajout de pièces jointes par l'équipe (multipart, champ « fichiers »)."""
+        from . import pieces
+
+        return self._agir(pieces.ajouter, request.FILES.getlist("fichiers"))
+
+    @action(detail=True, methods=["post"], url_path="retirer-piece")
+    def retirer_piece(self, request, pk=None):
+        from . import pieces
+
+        return self._agir(pieces.retirer, request.data)
+
+    @action(detail=True, methods=["get"], url_path=r"pieces/(?P<piece_id>\d+)/lien")
+    def lien_piece(self, request, pk=None, piece_id=None):
+        """Lien de téléchargement valable quelques minutes, délivré après contrôle d'accès au dossier."""
+        from . import pieces
+
+        piece = get_object_or_404(self.get_object().pieces, pk=piece_id)
+        return Response({"url": request.build_absolute_uri(f"/api/v1/plaintes-piece/{pieces.lien(piece, request.user)}/"),
+                         "duree_minutes": pieces.duree_lien_minutes()})
+
+    @action(detail=True, methods=["post"])
     def lier(self, request, pk=None):
         """{numero, delier?} : lie (ou délie) un autre dossier visible."""
         autre = dossiers_visibles(request.user).filter(numero__iexact=(request.data.get("numero") or "").strip()).first()
@@ -435,6 +499,36 @@ class DossierViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
         libelles = dict(Role.objects.values_list("code", "libelle"))
         return Response([{"id": u.id, "nom": traitement.nom_personne(u), "role": libelles.get(u.role, u.role)}
                          for u in personnes])
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def telecharger_piece(request, jeton):
+    """
+    Téléchargement par lien temporaire signé : l'accès de la personne qui a demandé le lien est
+    vérifié de nouveau ; le téléchargement est inscrit au journal du dossier. Jamais mis en cache.
+    """
+    from urllib.parse import quote
+
+    from . import pieces
+    from .models import ActionDossier
+
+    piece, utilisateur = pieces.piece_du_lien(jeton)
+    if piece is None:
+        return Response({"detail": v("Lien expiré ou non autorisé. Rouvrez la fiche du dossier pour en obtenir un nouveau.")},
+                        status=status.HTTP_404_NOT_FOUND)
+    try:
+        contenu = pieces.lire(piece)
+    except Exception:  # fichier absent ou clé changée : rien n'est divulgué
+        return Response({"detail": v("Ce fichier n'est plus lisible.")}, status=status.HTTP_410_GONE)
+    ActionDossier.objects.create(dossier=piece.dossier, type=ActionDossier.Type.TELECHARGEMENT, auteur=utilisateur,
+                                 texte=piece.nom, details={"piece": piece.pk})
+    reponse = HttpResponse(contenu, content_type=piece.type_mime)
+    reponse["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(piece.nom)}"
+    reponse["X-Content-Type-Options"] = "nosniff"
+    reponse["Cache-Control"] = "no-store"
+    return reponse
 
 
 class VueDossiersViewSet(viewsets.ModelViewSet):

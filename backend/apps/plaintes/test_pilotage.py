@@ -70,6 +70,7 @@ def _element(resultat, code):
 
 @pytest.mark.django_db
 def test_indicateurs_de_base(actif, admin):
+    Mecanisme.objects.filter(pk=1).update(accuse_reception_auto=False)  # accusés comptés à la main ci-dessous
     a, b, c = _dossier(jours=40), _dossier(jours=30), _dossier(jours=5)
     _clore(a, 10)                 # dans le délai (30 j)
     _clore(b, 25, retour=False)   # dans le délai, plaignant non informé

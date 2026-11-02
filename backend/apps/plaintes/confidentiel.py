@@ -206,7 +206,7 @@ def a_anonymiser(queryset=None, aujourdhui=None):
 @transaction.atomic
 def anonymiser(dossier, auteur, donnees):
     """
-    Supprime le contenu et l'identité (récit, coordonnées, personnes mises en cause, notes, décision,
+    Supprime le contenu et l'identité (récit, coordonnées, personnes mises en cause, notes, décision, pièces jointes,
     historique détaillé), garde ce qui sert aux statistiques. Irréversible : confirmation exigée.
     """
     _reserve_admin(auteur, v("L'anonymisation est réservée à l'Administrateur."))
@@ -227,6 +227,9 @@ def anonymiser(dossier, auteur, donnees):
     dossier.date_anonymisation = timezone.localdate()
     dossier.save()
     dossier.mis_en_cause_utilisateurs.clear()
+    from .pieces import supprimer_toutes
+
+    supprimer_toutes(dossier)  # pièces jointes et leurs fichiers
     ActionDossier.objects.filter(dossier=dossier).update(texte="", details={})
     dossier.history.all().delete()  # copies de l'historique : le contenu ne doit survivre nulle part
     ActionDossier.objects.create(dossier=dossier, type=A.ANONYMISATION, auteur=auteur)

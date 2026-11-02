@@ -1135,5 +1135,13 @@
  "moins de {0}": "أقل من {0}",
  "À faire": "للإنجاز",
  "Échéances des 7 prochains jours": "آجال الأيام السبعة القادمة",
- "Édité par": "أعدّه"
+ "Édité par": "أعدّه",
+ "Ajoutée par l'équipe": "أضافها الفريق",
+ "Complément du plaignant": "معلومات إضافية من صاحب الشكوى",
+ "Correction du plaignant": "تصحيح بيانات صاحب الشكوى",
+ "Déposée par le plaignant": "قدّمها صاحب الشكوى",
+ "Fichiers joints par les plaignants (Oui / Non)": "الملفات التي يرفقها أصحاب الشكاوى (نعم / لا)",
+ "Pièce jointe": "مرفق",
+ "Taille maximale d'un fichier joint (Mo)": "الحجم الأقصى للملف المرفق (ميغابايت)",
+ "Téléchargement d'une pièce jointe": "تنزيل مرفق"
 }

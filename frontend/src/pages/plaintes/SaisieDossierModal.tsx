@@ -21,6 +21,7 @@ import { messageErreurApi } from "../../utils/erreurs";
 import { langue } from "../../utils/i18n";
 import { voc } from "../../utils/vocabulaire";
 import { ChampsRetour } from "./ChampsRetour";
+import { ChoixFichiers } from "./ChoixFichiers";
 import { RETOUR_VIDE, erreursParChamp } from "./saisieRetour";
 import { RecuRetour } from "./public/FormulairePublicPage";
 
@@ -54,6 +55,7 @@ export function SaisieDossierModal({ opened, onClose }: { opened: boolean; onClo
   const [valeurs, setValeurs] = useState<SaisieAgent>(SAISIE_VIDE);
   const [erreurs, setErreurs] = useState<Record<string, string>>({});
   const [recu, setRecu] = useState<RecuDossier | null>(null);
+  const [fichiers, setFichiers] = useState<File[]>([]);
 
   const couverts = mecanisme?.projets ?? [];
   const projets = couverts.length ? tousProjets.filter((p) => couverts.includes(p.id)) : tousProjets;
@@ -68,13 +70,14 @@ export function SaisieDossierModal({ opened, onClose }: { opened: boolean; onClo
     setValeurs(SAISIE_VIDE());
     setErreurs({});
     setRecu(null);
+    setFichiers([]);
     onClose();
   };
 
   const envoyer = async () => {
     setErreurs({});
     try {
-      setRecu(await enregistrer.mutateAsync({ ...valeurs, langue: langue() }));
+      setRecu(await enregistrer.mutateAsync({ ...valeurs, langue: langue(), fichiers }));
     } catch (error) {
       const parChamp = erreursParChamp(error);
       setErreurs(Object.keys(parChamp).length ? parChamp : { detail: messageErreurApi(error, voc("Erreur lors de l'enregistrement")) });
@@ -96,7 +99,7 @@ export function SaisieDossierModal({ opened, onClose }: { opened: boolean; onClo
           )}
           <RecuRetour recu={recu} agent />
           <Group justify="flex-end">
-            <Button variant="light" onClick={() => { setValeurs(SAISIE_VIDE()); setRecu(null); }}>{voc("Enregistrer un autre retour")}</Button>
+            <Button variant="light" onClick={() => { setValeurs(SAISIE_VIDE()); setRecu(null); setFichiers([]); }}>{voc("Enregistrer un autre retour")}</Button>
             <Button onClick={fermer}>{voc("Fermer")}</Button>
           </Group>
         </Stack>
@@ -160,6 +163,15 @@ export function SaisieDossierModal({ opened, onClose }: { opened: boolean; onClo
               onChange={(e) => { const texte = e.currentTarget.value; setValeurs((s) => ({ ...s, mis_en_cause_libre: texte })); }}
             />
           </SimpleGrid>
+          {mecanisme && (
+            <ChoixFichiers
+              valeur={fichiers}
+              onChange={setFichiers}
+              limites={mecanisme.pieces_equipe}
+              label={voc("Pièces remises par le plaignant (facultatif)")}
+              erreur={erreurs.fichiers}
+            />
+          )}
           <Switch
             label={voc("Le plaignant accepte que ses informations soient utilisées pour traiter son retour")}
             checked={valeurs.consentement}

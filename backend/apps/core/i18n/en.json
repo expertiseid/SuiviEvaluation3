@@ -1135,5 +1135,13 @@
  "moins de {0}": "fewer than {0}",
  "À faire": "To do",
  "Échéances des 7 prochains jours": "Deadlines in the next 7 days",
- "Édité par": "Produced by"
+ "Édité par": "Produced by",
+ "Ajoutée par l'équipe": "Added by the team",
+ "Complément du plaignant": "Complainant's additional information",
+ "Correction du plaignant": "Correction of complainant details",
+ "Déposée par le plaignant": "Submitted by the complainant",
+ "Fichiers joints par les plaignants (Oui / Non)": "Files attached by complainants (Yes / No)",
+ "Pièce jointe": "Attachment",
+ "Taille maximale d'un fichier joint (Mo)": "Maximum size of an attached file (MB)",
+ "Téléchargement d'une pièce jointe": "Attachment download"
 }

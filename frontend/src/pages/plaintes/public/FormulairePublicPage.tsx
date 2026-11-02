@@ -8,6 +8,7 @@ import { messageErreurApi } from "../../../utils/erreurs";
 import { langue } from "../../../utils/i18n";
 import { voc } from "../../../utils/vocabulaire";
 import { ChampsRetour } from "../ChampsRetour";
+import { ChoixFichiers } from "../ChoixFichiers";
 import { RETOUR_VIDE, erreursParChamp } from "../saisieRetour";
 
 /** Cadre des pages publiques : léger, lisible sur téléphone, avec le choix de la langue. */
@@ -68,6 +69,7 @@ export function FormulairePublicPage() {
   const deposer = useDeposerRetour();
   const [valeurs, setValeurs] = useState<SaisieRetour>(RETOUR_VIDE);
   const [piege, setPiege] = useState("");
+  const [fichiers, setFichiers] = useState<File[]>([]);
   const [erreurs, setErreurs] = useState<Record<string, string>>({});
   const [recu, setRecu] = useState<RecuDossier | null>(null);
 
@@ -86,7 +88,7 @@ export function FormulairePublicPage() {
     setErreurs({});
     const projetFixe = formulaire.projet_fixe && formulaire.projets?.[0] ? formulaire.projets[0].id : null;
     try {
-      setRecu(await deposer.mutateAsync({ ...valeurs, projet: projetFixe ?? valeurs.projet, langue: langue(), site_web: piege }));
+      setRecu(await deposer.mutateAsync({ ...valeurs, projet: projetFixe ?? valeurs.projet, langue: langue(), site_web: piege, fichiers }));
       window.scrollTo(0, 0);
     } catch (error) {
       const parChamp = erreursParChamp(error);
@@ -108,7 +110,7 @@ export function FormulairePublicPage() {
               <Button component={Link} to="/plainte/suivi" variant="light" leftSection={<Search size={14} />}>
                 {voc("Suivre mon dossier")}
               </Button>
-              <Button variant="subtle" onClick={() => { setRecu(null); setValeurs(RETOUR_VIDE); }}>
+              <Button variant="subtle" onClick={() => { setRecu(null); setValeurs(RETOUR_VIDE); setFichiers([]); }}>
                 {voc("Envoyer un autre retour")}
               </Button>
             </Group>
@@ -140,6 +142,9 @@ export function FormulairePublicPage() {
             anonymatAutorise={!!formulaire.anonymat_autorise}
             erreurs={erreurs}
           />
+          {formulaire.pieces && (
+            <ChoixFichiers valeur={fichiers} onChange={setFichiers} limites={formulaire.pieces} erreur={erreurs.fichiers} />
+          )}
           {/* Champ piège : invisible pour une personne, rempli par les robots. */}
           <TextInput
             aria-hidden

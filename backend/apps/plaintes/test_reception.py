@@ -86,7 +86,7 @@ def test_plainte_anonyme_et_suivi_par_code(actif):
     assert re.fullmatch(r"[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}", code)
     assert code.replace("-", "") not in dossier.empreinte_code_suivi
     suivi = _client().post(PUBLIC + "suivi/", {"code": code.lower().replace("-", " ")}, format="json")
-    assert suivi.status_code == 200 and set(suivi.data) == {"numero", "date_reception", "statut"}
+    assert suivi.status_code == 200 and set(suivi.data) == {"numero", "date_reception", "statut", "complement_possible", "pieces"}
     assert _client().post(PUBLIC + "suivi/", {"code": "AAAA-BBBB-CCCC"}, format="json").status_code == 404
     # Second dossier : la séquence continue.
     assert _depot().data["numero"].endswith("-00002")

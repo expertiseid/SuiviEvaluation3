@@ -730,7 +730,7 @@ secondaire ne peut viser qu'un niveau supérieur, jamais le parent principal ni 
   pas. L'export Excel des bénéficiaires ne traduit que ses en-têtes : ses données se réimportent
   telles quelles. Tests : `core/test_modeles_traduits.py`, `suivi/test_canevas.py`.
 
-### 5.14 Mécanisme de gestion des plaintes et retours (lots 1 à 6 : paramétrage, réception, traitement, délais, confidentialité, pilotage)
+### 5.14 Mécanisme de gestion des plaintes et retours (lots 1 à 7 : paramétrage, réception, traitement, délais, confidentialité, pilotage, messages)
 
 Une installation = une organisation : tout le mécanisme se paramètre, sans rien coder, pour
 des communautés, des bénéficiaires, le personnel ou tout autre public. Application `plaintes`,
@@ -942,8 +942,74 @@ modèles `Prestataire` et `Referencement` :
 - Tests : `plaintes/test_pilotage.py` (indicateurs, masquage et scénario 11, vues personnalisées,
   exports, actions correctives et encart projet).
 
-Lots suivants possibles : modèles de messages multilingues et envoi effectif (SMS, courriel),
-pièces jointes, indicateurs de redevabilité dans les cadres de résultats, multi-organisations.
+**Messages au plaignant (lot 7)** — `messages.py`, modèle `ModeleMessage` :
+
+- **Modèles** par objet (accusé de réception, prise en charge, demande de complément, décision,
+  clôture, enquête de satisfaction) et par langue (fr, en, ar, es, de), avec objet et texte du
+  courriel et texte du SMS ; installés avec le modèle de mécanisme (`installer_modeles`, sans
+  écraser l'existant) ; modifiables dans le paramétrage (onglet « Messages »). Variables :
+  `{numero}`, `{nom}`, `{mecanisme}`, `{date_reception}`, `{lien_suivi}`, `{decision}`,
+  `{signature}` (`Mecanisme.signature_messages`).
+- **Rédaction** (`rediger`) dans la langue du dépôt, sinon en français ; pour un dossier
+  confidentiel, `{decision}` est remplacée par une phrase neutre — jamais de détail confidentiel.
+- **Envoi** (`envoyer`, opération `envoyer-message`, aperçu `apercu-message`) : courriel par le
+  serveur de courriel ; SMS par une passerelle HTTP (`PLAINTES_SMS_URL`, `PLAINTES_SMS_JETON`,
+  `PLAINTES_SMS_EXPEDITEUR` : POST JSON `{to, message, from}`, jeton en `Authorization: Bearer`).
+  Sans passerelle, ou avec le courriel en mode console, l'envoi est **simulé**. Chaque message est
+  inscrit au journal (échange sortant) avec son statut (`ENVOYE`, `ECHEC`, `SIMULE`) ; un échec ne
+  change pas l'état du dossier ; la décision envoyée passe le dossier à « Réponse donnée ».
+  Les journaux techniques ne contiennent jamais le texte ni le destinataire.
+- **Courriel réel** : `EMAIL_BACKEND=apps.core.courriel.EmailBackendFiltre` (SMTP), avec
+  `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USE_TLS` ou `EMAIL_USE_SSL`, `EMAIL_HOST_USER`,
+  `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL` et `EMAIL_TIMEOUT` (15 s). Les courriels partent
+  vers toute adresse réelle ; les adresses des domaines réservés aux exemples (`example.org`,
+  `example.com`, `example.net`, `.test`, `.invalid`, `.local`…), celles des comptes de
+  démonstration, sont toujours retirées et le message est alors marqué « simulé ».
+  `EMAIL_DESTINATAIRES_AUTORISES` (facultatif, ex : `@expertise-id.com`) restreint en plus les
+  envois à ces adresses, pour un poste de test isolé. Vide par défaut.
+- **Accusé de réception automatique** à la réception (`Mecanisme.accuse_reception_auto`) si le
+  plaignant n'est pas anonyme et a demandé une réponse par courriel (courriel) ou par SMS ou
+  téléphone (SMS). Envoyé après l'enregistrement (`transaction.on_commit`).
+- Tests : `plaintes/test_messages.py` (modèles dans les cinq langues, accusé automatique et
+  langue, SMS simulé puis par passerelle, décision et confidentialité, anonyme refusé).
+
+**Pièces jointes et compléments du plaignant (lot 8)** — `pieces.py`, modèle `PieceJointe` :
+
+- **Où** : formulaire public et saisie par un agent (envoi multipart, données en JSON dans
+  `donnees`, fichiers dans `fichiers` : `reception.lire_envoi`), ajout par l'équipe sur la fiche,
+  complément du plaignant depuis la page de suivi (précision écrite et/ou fichiers, avec son code ;
+  refusé sur un dossier clôturé ; journal « Complément du plaignant » et notification au
+  gestionnaire, neutre pour un dossier confidentiel).
+- **Contrôles** : type réel lu dans le contenu (jamais le nom ni le type annoncé) — PDF, Word,
+  Excel, OpenDocument, texte, JPEG, PNG, WebP, MP3, M4A, OGG, WAV, AMR, WebM ; l'extension du nom
+  est remise d'accord avec le type réel. Taille maximale `Mecanisme.taille_max_piece_mo` (défaut
+  10 Mo), jamais au-dessus du plafond `PLAINTES_PLAFOND_PIECE_MO`. 5 fichiers par envoi public
+  (20 au plus par dossier), 10 par ajout de l'équipe. Un fichier refusé fait refuser tout l'envoi :
+  aucun dossier n'est créé. `Mecanisme.pieces_formulaire_public` ferme les fichiers aux plaignants.
+- **Métadonnées effacées** au dépôt : photos réencodées sans EXIF (position GPS, appareil),
+  propriétés des documents Office et OpenDocument vidées, auteur, logiciel et bloc XMP des PDF
+  blanchis à longueur égale, étiquettes ID3 des MP3 retirées. Les autres formats audio et les PDF à
+  objets compressés gardent leurs métadonnées : la pièce le signale (`metadonnees_effacees`).
+- **Stockage** : contenu toujours chiffré (clé `PLAINTES_CLE_CHIFFREMENT`, comme les données
+  protégées), fichier `<PLAINTES_STOCKAGE_PRIVE>/<uid du dossier>/<uid de la pièce>.bin`, hors de
+  `MEDIA_ROOT` et de toute racine web, droits 600. Le nom d'origine est chiffré en base. Une pièce
+  supprimée (retrait, anonymisation, suppression du dossier) efface son fichier ; la tâche horaire
+  efface en plus les fichiers restés sans pièce depuis plus d'une heure (suppression faite hors de
+  l'application). **Le répertoire
+  privé est à sauvegarder avec la base** (volume persistant en production).
+- **Téléchargement** : `GET plaintes/dossiers/{id}/pieces/{piece}/lien/` (contrôle d'accès au
+  dossier) renvoie un lien signé valable `PLAINTES_DUREE_LIEN_PIECE_MIN` minutes (5 ; 1 à 15) ;
+  `GET plaintes-piece/<jeton>/`, sans jeton de connexion, revérifie que la personne a toujours
+  accès (compte actif, dossier visible, pas mise en cause), sert le fichier en pièce jointe
+  (`no-store`, `nosniff`) et inscrit le téléchargement au journal.
+- **Retrait** (`retirer-piece`, motif obligatoire) : Administrateur, gestionnaire du dossier ou
+  personne qui a ajouté la pièce ; le fichier est effacé, le retrait reste au journal.
+- Tests : `plaintes/test_pieces.py` (type réel et métadonnées, dépôt chiffré et refus sans dossier
+  créé, taille et désactivation, lien temporaire expiré ou falsifié, scénario 13 sur l'URL de
+  pièce d'un dossier confidentiel, ajout et retrait, complément, anonymisation, fichiers orphelins).
+
+Lots suivants possibles : réponses du plaignant par SMS (réception), indicateurs de redevabilité
+dans les cadres de résultats, analyse antivirus des pièces jointes, multi-organisations.
 
 ## 6. Utilisateurs, rôles et permissions
 
@@ -1080,7 +1146,10 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 | GET / POST | `plaintes/canevas/`, `plaintes/canevas/importer/` | Canevas Excel du paramétrage et son import |
 | CRUD | `plaintes/types/`, `plaintes/priorites/`, `plaintes/categories/`, `plaintes/circuits/`, `plaintes/etapes/` | Listes du paramétrage (sans pagination) |
 | GET / POST | `plaintes/dossiers/` | Dossiers visibles (vues `?vue=`, filtres `statut`, `canal`, `projet`, `categorie`, `priorite`, `responsable`, `date_du`, `date_au`, recherche par numéro) ; POST = saisie par un agent, renvoie numéro et code de suivi |
-| GET | `plaintes/dossiers/{id}/` | Fiche complète : journal (`actions`), dossiers liés visibles |
+| GET | `plaintes/dossiers/{id}/` | Fiche complète : journal (`actions`), pièces jointes (`pieces`), dossiers liés visibles |
+| POST | `plaintes/dossiers/{id}/pieces/`, `…/retirer-piece/` | Ajout de pièces jointes (multipart `fichiers`) ; retrait motivé (`piece`, `motif`) |
+| GET | `plaintes/dossiers/{id}/pieces/{piece}/lien/` | Lien de téléchargement temporaire (5 min) après contrôle d'accès |
+| GET | `plaintes-piece/<jeton>/` | Sans jeton de connexion : fichier servi par lien signé, accès revérifié, tracé au journal |
 | POST | `plaintes/dossiers/{id}/{classer,affecter,recuser,etape,noter,communiquer,decider,cloturer,rouvrir,recours,lier}/` | Opérations de traitement (règles dans `traitement.py`) |
 | GET | `plaintes/dossiers/{id}/responsables-possibles/`, `…/possiblement-lies/` | Personnes à qui confier le dossier ; dossiers proches à lier |
 | CRUD | `plaintes-vues/` | Filtres enregistrés de l'utilisateur connecté |
@@ -1094,9 +1163,12 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 | GET / PUT / DELETE | `plaintes-tableau/configuration/?vue=` | Composition d'une vue (copie personnelle ou vue de l'organisation) |
 | POST | `plaintes/dossiers/exporter-liste/` | Liste des dossiers filtrés en Excel (hors confidentiels), tracée au journal |
 | CRUD | `plaintes/actions-correctives/` | Actions correctives reliées aux dossiers |
+| GET / POST | `plaintes/dossiers/{id}/apercu-message/?objet=&canal=`, `…/envoyer-message/` | Message au plaignant prérempli, envoi (courriel ou SMS) tracé au journal |
+| CRUD | `plaintes/modeles-messages/` (+ POST `installer/`) | Modèles de messages par objet et par langue |
 | GET | `plaintes/projets/{id}/retours/` | Encart « Retours des communautés » de la fiche projet |
 | GET | `plaintes/qr/?projet=` | QR code (PNG) du formulaire public |
-| GET / POST | `public/plaintes/formulaire/`, `public/plaintes/deposer/`, `public/plaintes/suivi/` | Sans authentification : contenu du formulaire, dépôt d'un retour, état d'un dossier par son code |
+| GET / POST | `public/plaintes/formulaire/`, `public/plaintes/deposer/`, `public/plaintes/suivi/` | Sans authentification : contenu du formulaire, dépôt d'un retour (fichiers joints possibles), état d'un dossier par son code |
+| POST | `public/plaintes/complement/` | Sans authentification : complément du plaignant (code, précision, fichiers) |
 | GET | `beneficiaires/exporter/` | Export des bénéficiaires : `?fichier=excel` ou `pdf`, `?projets=1,3` pour choisir les projets |
 | POST | `beneficiaires/{id}/verifier-doublons/` | Recherche des doublons d'un bénéficiaire |
 | GET / POST | `documents/{id}/versions/`, `documents/{id}/nouvelle-version/` | Versions d'un document |
@@ -1207,7 +1279,7 @@ mutualisées) puis rejoue la requête, ou renvoie vers la page de connexion.
 | `/plaintes` | Plaintes et retours : dossiers (vues prêtes, filtres, mes vues), saisie d'un retour par un agent, adresse et QR code du formulaire public |
 | `/plaintes/tableau-de-bord` | Tableau de bord : vues opérationnelle, pilotage, projet et S&E, confidentielle ; personnalisation, exports |
 | `/plaintes/actions-correctives` | Suivi des actions correctives |
-| `/plaintes/dossiers/:id` | Dossier : informations, décision et clôture, dossiers liés, journal ; actions de traitement selon l'état du dossier |
+| `/plaintes/dossiers/:id` | Dossier : informations, décision et clôture, pièces jointes, dossiers liés, journal ; actions de traitement selon l'état du dossier |
 | `/plaintes/parametrage` | Paramétrage du mécanisme : onglets Mécanisme (modèles, réglages, activation), Types de retours, Catégories, Priorités, Circuits de traitement, Canevas Excel |
 | `/plainte`, `/plainte/suivi` | Formulaire public de dépôt et suivi par code (sans compte, hors du menu) |
 | `/utilisateurs` | Utilisateurs et rôles (Administrateur) |

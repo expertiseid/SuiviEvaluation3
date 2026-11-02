@@ -16,7 +16,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import SimpleRateThrottle
 
 from .models import Canal, Categorie, Dossier, Mecanisme, TypeRetour
-from .reception import empreinte_code, recevoir
+from .reception import empreinte_code, lire_envoi, recevoir
 
 
 class _Limite(SimpleRateThrottle):
@@ -63,6 +63,7 @@ def formulaire(request):
         "nom": mecanisme.nom,
         "texte_information": mecanisme.texte_information,
         "anonymat_autorise": mecanisme.anonymat_autorise,
+        "pieces": _pieces_acceptees(mecanisme),
         "langues": mecanisme.langues,
         "projet_fixe": fixe.isdigit() and projets.exists(),
         "types": [{"id": t.id, "nom": t.nom, "description": t.description}
@@ -81,7 +82,10 @@ def deposer(request):
         return TROP
     if request.data.get("site_web"):  # champ piège, invisible pour une personne
         return Response({"detail": "Envoi refusé."}, status=status.HTTP_400_BAD_REQUEST)
-    dossier, code = recevoir(request.data, Canal.FORMULAIRE, public=True)
+    donnees, fichiers = lire_envoi(request)
+    if donnees.get("site_web"):
+        return Response({"detail": "Envoi refusé."}, status=status.HTTP_400_BAD_REQUEST)
+    dossier, code = recevoir(donnees, Canal.FORMULAIRE, public=True, fichiers=fichiers)
     return Response({"numero": dossier.numero, "code_suivi": code}, status=status.HTTP_201_CREATED)
 
 
@@ -96,8 +100,38 @@ def suivi(request):
     if dossier is None:
         return Response({"detail": "Code de suivi inconnu. Vérifiez qu'il est recopié sans erreur."},
                         status=status.HTTP_404_NOT_FOUND)
+    mecanisme = Mecanisme.courant()
     return Response({
         "numero": dossier.numero,
         "date_reception": dossier.date_reception,
         "statut": dossier.statut,
+        # Peut-il encore compléter son dossier (précision, fichiers) ? Rien sur le contenu.
+        "complement_possible": not dossier.anonymise and dossier.statut != "CLOTURE",
+        "pieces": _pieces_acceptees(mecanisme),
     })
+
+
+def _pieces_acceptees(mecanisme):
+    from .pieces import FORMATS_ACCEPTES, PIECES_PAR_ENVOI, taille_max_mo
+
+    if not mecanisme.pieces_formulaire_public:
+        return None
+    return {"formats": FORMATS_ACCEPTES, "taille_max_mo": taille_max_mo(mecanisme), "nombre_max": PIECES_PAR_ENVOI}
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def complement(request):
+    """Le plaignant complète son dossier avec son code de suivi : précision écrite et/ou fichiers."""
+    from .pieces import completer
+
+    if not LimiteDepot().allow_request(request, None):
+        return TROP
+    donnees, fichiers = lire_envoi(request)
+    dossier = Dossier.objects.filter(empreinte_code_suivi=empreinte_code(donnees.get("code", ""))).first()
+    if dossier is None:
+        return Response({"detail": "Code de suivi inconnu. Vérifiez qu'il est recopié sans erreur."},
+                        status=status.HTTP_404_NOT_FOUND)
+    completer(dossier, donnees, fichiers)
+    return Response({"numero": dossier.numero}, status=status.HTTP_201_CREATED)

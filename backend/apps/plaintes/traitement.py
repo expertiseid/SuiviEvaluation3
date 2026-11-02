@@ -17,7 +17,7 @@ from apps.core.vocabulaire import v
 
 from . import delais
 from .models import ActionDossier, Categorie, Circuit, IssueDossier, ModeReponse, Priorite, StatutDossier, TypeRetour
-from .reception import circuit_pour
+from .reception import circuit_pour, erreurs_coordonnees
 
 A = ActionDossier.Type
 # Réouverture : exceptionnelle, réservée à ces rôles.
@@ -195,7 +195,50 @@ def noter(dossier, auteur, donnees):
 
 
 @transaction.atomic
-def communiquer(dossier, auteur, donnees):
+def modifier_plaignant(dossier, auteur, donnees):
+    """
+    Correction des informations du plaignant, possible même sur un dossier clôturé. Ancienne et
+    nouvelle valeur vont dans le texte (chiffré) du journal, jamais en clair dans les détails.
+    Un dossier anonyme le reste : seul le consentement peut y être corrigé.
+    """
+    if dossier.anonymise:
+        raise ValidationError({"detail": v("Ce dossier est anonymisé : il ne peut plus être modifié.")})
+    nouveau = {"consentement": bool(donnees.get("consentement", dossier.consentement))}
+    if not dossier.anonyme:
+        for champ, longueur in (("nom", 200), ("telephone", 40), ("courriel", 254)):
+            valeur = donnees.get(champ, getattr(dossier, champ))
+            nouveau[champ] = (valeur or "").strip()[:longueur]
+        nouveau["mode_reponse"] = donnees.get("mode_reponse") or dossier.mode_reponse
+        erreurs = erreurs_coordonnees(nouveau["telephone"], nouveau["courriel"], nouveau["mode_reponse"])
+        if erreurs:
+            raise ValidationError(erreurs)
+
+    libelles = {"nom": v("Nom"), "telephone": v("Téléphone"), "courriel": v("Courriel"),
+                "mode_reponse": v("Réponse souhaitée"), "consentement": v("Consentement")}
+
+    def lisible(champ, valeur):
+        if champ == "consentement":
+            return v("Oui") if valeur else v("Non")
+        if champ == "mode_reponse":
+            return v(ModeReponse(valeur).label)
+        return valeur or "—"
+
+    lignes, champs = [], []
+    for champ, valeur in nouveau.items():
+        ancien = getattr(dossier, champ)
+        if ancien != valeur:
+            champs.append(champ)
+            lignes.append(f"{libelles[champ]} : {lisible(champ, ancien)} → {lisible(champ, valeur)}")
+            setattr(dossier, champ, valeur)
+    if not champs:
+        return dossier
+    dossier.save()
+    journaliser(dossier, A.PLAIGNANT, auteur, "\n".join(lignes), details={"champs": champs})
+    return dossier
+
+
+@transaction.atomic
+def communiquer(dossier, auteur, donnees, details_envoi=None):
     """Trace un échange avec le plaignant ; la communication de la décision passe le dossier à « Réponse donnée »."""
     sens = donnees.get("sens") or ActionDossier.Sens.SORTANT
     objet = donnees.get("objet") or ActionDossier.Objet.AUTRE
@@ -212,7 +255,7 @@ def communiquer(dossier, auteur, donnees):
             raise ValidationError({"canal": v("Aucun numéro de téléphone n'est enregistré pour ce plaignant.")})
         if canal == ModeReponse.COURRIEL and not dossier.courriel:
             raise ValidationError({"canal": v("Aucune adresse courriel n'est enregistrée pour ce plaignant.")})
-    details = {}
+    details = dict(details_envoi or {})  # message réellement envoyé : statut d'envoi, langue (messages.py)
     if objet == ActionDossier.Objet.SATISFACTION and sens == ActionDossier.Sens.ENTRANT:
         if donnees.get("satisfait") not in (True, False):
             raise ValidationError({"satisfait": v("Indiquez si le plaignant se dit satisfait.")})
