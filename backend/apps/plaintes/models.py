@@ -9,7 +9,9 @@ confidentiel, contrôles d'activation : voir controles.py).
 
 Lot 2 : réception des dossiers (formulaire public et saisie par un agent, voir reception.py).
 Lot 3 : traitement (affectation, étapes, décision, communication, clôture, réouverture, recours,
-journal, dossiers liés, vues enregistrées ; voir traitement.py). Les délais, le circuit
+journal, dossiers liés, vues enregistrées ; voir traitement.py).
+Lot 4 : délais et alertes (échéances du dossier et de l'étape, jours ouvrés et jours fériés,
+rappels, escalade, prolongation motivée, notifications ; voir delais.py). Le circuit
 confidentiel complet et le pilotage arrivent dans les lots suivants.
 """
 import uuid
@@ -54,6 +56,19 @@ class Mecanisme(TimestampedModel):
     projets = models.ManyToManyField(
         "projects.Projet", blank=True, related_name="mecanismes_plaintes",
         help_text="Projets couverts ; aucun = tous les projets.",
+    )
+    # Délais et alertes (lot 4).
+    delai_defaut_jours = models.PositiveIntegerField(
+        default=30, help_text="Délai de traitement quand ni la catégorie ni la priorité n'en fixent.",
+    )
+    rappel_jours_avant = models.PositiveSmallIntegerField(
+        default=2, help_text="Rappel au gestionnaire quand l'échéance approche (jours avant).",
+    )
+    escalade_active = models.BooleanField(
+        default=True, help_text="Un dossier en retard est signalé aussi aux superviseurs.",
+    )
+    notifications_courriel = models.BooleanField(
+        default=True, help_text="Envoyer aussi les notifications par courriel (en plus de l'application).",
     )
 
     history = HistoricalRecords()
@@ -321,6 +336,13 @@ class Dossier(TimestampedModel):
     )
     dossiers_lies = models.ManyToManyField("self", blank=True, symmetrical=True)
 
+    # Délais (lot 4) : recalculés à chaque changement (delais.recalculer), contrôlés par la tâche planifiée.
+    echeance = models.DateField(null=True, blank=True, help_text="Échéance de traitement du dossier.")
+    date_entree_etape = models.DateField(null=True, blank=True)
+    echeance_etape = models.DateField(null=True, blank=True, help_text="Échéance de l'étape en cours.")
+    jours_prolongation = models.PositiveIntegerField(default=0)
+    en_retard = models.BooleanField(default=False, help_text="Échéance dépassée (mis à jour par la tâche planifiée).")
+
     history = HistoricalRecords(excluded_fields=["dossiers_lies"])
 
     class Meta:
@@ -349,6 +371,8 @@ class ActionDossier(models.Model):
         RECOURS = "RECOURS", "Recours"
         SENSIBILITE = "SENSIBILITE", "Sensibilité"
         LIEN = "LIEN", "Dossiers liés"
+        PROLONGATION = "PROLONGATION", "Prolongation du délai"
+        RETARD = "RETARD", "Retard"
 
     class Sens(models.TextChoices):
         SORTANT = "SORTANT", "Envoyé au plaignant"
@@ -390,3 +414,28 @@ class VueDossiers(models.Model):
     class Meta:
         ordering = ("nom",)
         constraints = [models.UniqueConstraint(fields=("utilisateur", "nom"), name="vue_plaintes_unique_par_utilisateur")]
+
+
+class JourFerie(models.Model):
+    """Jours fériés de l'organisation : exclus du calcul des délais en jours ouvrés."""
+
+    date = models.DateField(unique=True)
+    libelle = models.CharField(max_length=150)
+
+    class Meta:
+        ordering = ("date",)
+        verbose_name = "Jour férié"
+
+    def __str__(self):
+        return f"{self.date} — {self.libelle}"
+
+
+class RappelDossier(models.Model):
+    """Rappel envoyé pour un dossier : au plus un par dossier et par jour (pas de rappel en double)."""
+
+    dossier = models.ForeignKey(Dossier, on_delete=models.CASCADE, related_name="rappels")
+    date = models.DateField()
+    motif = models.CharField(max_length=20)  # PROCHE, RETARD
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("dossier", "date"), name="un_rappel_par_dossier_et_par_jour")]

@@ -9,6 +9,7 @@ router.register("plaintes/priorites", views.PrioriteViewSet, basename="plainte-p
 router.register("plaintes/circuits", views.CircuitViewSet, basename="plainte-circuit")
 router.register("plaintes/etapes", views.EtapeCircuitViewSet, basename="plainte-etape")
 router.register("plaintes/categories", views.CategorieViewSet, basename="plainte-categorie")
+router.register("plaintes/jours-feries", views.JourFerieViewSet, basename="plainte-jour-ferie")
 router.register("plaintes/dossiers", views.DossierViewSet, basename="plainte-dossier")
 # Hors de /plaintes/ : chacun enregistre ses propres vues, même en lecture seule sur le module.
 router.register("plaintes-vues", views.VueDossiersViewSet, basename="plainte-vue")

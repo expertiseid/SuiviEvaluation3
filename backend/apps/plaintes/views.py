@@ -6,6 +6,7 @@ en lecture (les dossiers contiennent des données personnelles). Pages publiques
 import io
 
 import django_filters
+from django.utils import timezone
 from django.db.models import ProtectedError, Q
 from django.http import HttpResponse
 from rest_framework import mixins, status, viewsets
@@ -19,10 +20,12 @@ from apps.core.langues import dans_la_langue_demandee, en_langue, langue_demande
 from apps.core.permissions import HasGlobalVisibilityOrAssigned
 from apps.core.vocabulaire import v
 
-from . import traitement
+from . import delais, traitement
 
 from .controles import controler_activation
-from .models import Canal, Categorie, Circuit, Dossier, EtapeCircuit, Mecanisme, Priorite, StatutDossier, TypeRetour, VueDossiers
+from .models import (
+    Canal, Categorie, Circuit, Dossier, EtapeCircuit, JourFerie, Mecanisme, Priorite, StatutDossier, TypeRetour, VueDossiers,
+)
 from .modeles_mecanisme import MODELES, appliquer_modele, liste_modeles
 from .reception import dossiers_visibles, recevoir
 from .serializers import (
@@ -31,6 +34,7 @@ from .serializers import (
     DossierDetailSerializer,
     DossierSerializer,
     EtapeCircuitSerializer,
+    JourFerieSerializer,
     MecanismeSerializer,
     PrioriteSerializer,
     TypeRetourSerializer,
@@ -49,6 +53,8 @@ def mecanisme(request):
         serializer = MecanismeSerializer(objet, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        if {"jours_ouvres", "delai_defaut_jours"} & set(request.data):
+            delais.recalculer_ouverts()
         objet.refresh_from_db()
     return Response(MecanismeSerializer(objet).data)
 
@@ -121,12 +127,27 @@ def importer_canevas(request):
 class _Base(viewsets.ModelViewSet):
     permission_classes = (HasGlobalVisibilityOrAssigned,)
     pagination_class = None
+    # Un changement de délai (catégorie, priorité, étape, calendrier) se répercute sur les dossiers ouverts.
+    recalcule_les_delais = False
+
+    def perform_update(self, serializer):
+        avant = {c: getattr(serializer.instance, c, None) for c in ("delai_jours", "date")}
+        super().perform_update(serializer)
+        if self.recalcule_les_delais and any(getattr(serializer.instance, c, None) != a for c, a in avant.items()):
+            delais.recalculer_ouverts()
+
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        if isinstance(serializer.instance, JourFerie):
+            delais.recalculer_ouverts()
 
     def perform_destroy(self, instance):
         try:
             instance.delete()
         except ProtectedError:
             raise ValidationError({"detail": "Cet élément est encore utilisé : retirez d'abord ce qui en dépend."})
+        if isinstance(instance, JourFerie):
+            delais.recalculer_ouverts()
 
 
 class TypeRetourViewSet(_Base):
@@ -135,6 +156,7 @@ class TypeRetourViewSet(_Base):
 
 
 class PrioriteViewSet(_Base):
+    recalcule_les_delais = True
     queryset = Priorite.objects.all()
     serializer_class = PrioriteSerializer
 
@@ -150,12 +172,14 @@ class CircuitViewSet(_Base):
 
 
 class EtapeCircuitViewSet(_Base):
+    recalcule_les_delais = True
     queryset = EtapeCircuit.objects.select_related("role", "responsable")
     serializer_class = EtapeCircuitSerializer
     filterset_fields = ("circuit",)
 
 
 class CategorieViewSet(_Base):
+    recalcule_les_delais = True
     queryset = Categorie.objects.select_related("parent", "circuit")
     serializer_class = CategorieSerializer
 
@@ -182,7 +206,7 @@ class FiltreDossiers(django_filters.FilterSet):
         return queryset.filter(Q(categorie_id=valeur) | Q(categorie__parent_id=valeur))
 
 
-# Vues prêtes de la liste (?vue=…). « En retard » arrive avec les délais (lot 4).
+# Vues prêtes de la liste (?vue=…).
 VUES = {
     "mes_dossiers": lambda qs, u: qs.filter(responsable=u),
     "a_traiter": lambda qs, u: qs.filter(responsable=u, statut__in=(StatutDossier.RECU, StatutDossier.EN_COURS)),
@@ -191,7 +215,17 @@ VUES = {
     "attente_decision": lambda qs, u: qs.filter(statut=StatutDossier.EN_COURS, decision=""),
     "a_cloturer": lambda qs, u: qs.filter(Q(statut=StatutDossier.REPONDU) | Q(statut=StatutDossier.EN_COURS) & ~Q(decision="")),
     "recours": lambda qs, u: qs.filter(en_recours=True),
+    "en_retard": lambda qs, u: qs.exclude(statut=StatutDossier.CLOTURE).filter(
+        Q(echeance__lt=timezone.localdate()) | Q(echeance_etape__lt=timezone.localdate())),
 }
+
+
+class JourFerieViewSet(_Base):
+    """Calendrier des jours fériés de l'organisation (délais en jours ouvrés)."""
+
+    queryset = JourFerie.objects.all()
+    serializer_class = JourFerieSerializer
+    recalcule_les_delais = True
 
 
 class DossierViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
@@ -283,6 +317,10 @@ class DossierViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=["post"])
     def recours(self, request, pk=None):
         return self._agir(traitement.recours, request.data)
+
+    @action(detail=True, methods=["post"])
+    def prolonger(self, request, pk=None):
+        return self._agir(delais.prolonger, request.data)
 
     @action(detail=True, methods=["post"])
     def lier(self, request, pk=None):

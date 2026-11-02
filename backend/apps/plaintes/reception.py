@@ -174,6 +174,10 @@ def recevoir(donnees: dict, canal: str, saisi_par=None, public: bool = False):
         dossier=dossier, type=ActionDossier.Type.RECEPTION, auteur=saisi_par,
         details={"canal": canal, "circuit": circuit.nom if circuit else "", "sensible": sensible},
     )
+    from . import delais
+
+    delais.recalculer(dossier, entree_etape=date_reception)
+    transaction.on_commit(lambda: delais.notifier_reception(dossier))
     return dossier, code
 
 

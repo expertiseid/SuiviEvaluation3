@@ -1,7 +1,9 @@
 from rest_framework import serializers
 
 from .controles import controler_activation, controler_circuit
-from .models import ActionDossier, Categorie, Circuit, Dossier, EtapeCircuit, Mecanisme, Priorite, TypeRetour, VueDossiers
+from .models import (
+    ActionDossier, Categorie, Circuit, Dossier, EtapeCircuit, JourFerie, Mecanisme, Priorite, TypeRetour, VueDossiers,
+)
 from .traitement import nom_personne
 
 LANGUES = {"fr", "en", "ar", "de", "es"}
@@ -17,6 +19,7 @@ class MecanismeSerializer(serializers.ModelSerializer):
         fields = (
             "id", "nom", "actif", "modele", "anonymat_autorise", "langues", "texte_information", "prefixe_numero",
             "jours_ouvres", "conservation_ordinaire_mois", "conservation_sensible_mois", "projets", "controles",
+            "delai_defaut_jours", "rappel_jours_avant", "escalade_active", "notifications_courriel",
         )
         read_only_fields = ("actif", "modele")
 
@@ -184,6 +187,7 @@ class DossierSerializer(serializers.ModelSerializer):
             "responsable", "responsable_nom", "decision", "date_decision", "date_reponse", "issue", "motif_cloture",
             "retour_donne", "raison_sans_retour", "oriente_vers", "consentement_reference", "date_cloture", "en_recours",
             "gestionnaire_initial", "gestionnaire_initial_nom",
+            "echeance", "echeance_etape", "date_entree_etape", "jours_prolongation", "en_retard",
         )
         read_only_fields = fields
 
@@ -238,3 +242,9 @@ class VueDossiersSerializer(serializers.ModelSerializer):
         if doublon.exists():
             raise serializers.ValidationError("Vous avez déjà une vue de ce nom.")
         return valeur
+
+
+class JourFerieSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JourFerie
+        fields = ("id", "date", "libelle")

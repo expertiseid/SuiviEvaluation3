@@ -12,6 +12,7 @@ class Notification(TimestampedModel):
         DOUBLON_SIGNALE = "DOUBLON_SIGNALE", "Doublon bénéficiaire signalé"
         ECHEANCE_ACTIVITE = "ECHEANCE_ACTIVITE", "Échéance d'activité proche"
         ACTIVITE_MODIFIEE = "ACTIVITE_MODIFIEE", "Activité planifiée modifiée"
+        PLAINTE = "PLAINTE", "Plaintes et retours"
 
     destinataire = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications"

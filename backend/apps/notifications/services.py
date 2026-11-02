@@ -8,11 +8,11 @@ from .models import Notification
 logger = logging.getLogger(__name__)
 
 
-def notifier(destinataires, type_, titre, message="", lien=""):
+def notifier(destinataires, type_, titre, message="", lien="", courriel=True):
     """
     Crée une notification in-app pour chaque destinataire et tente un envoi
     email best-effort (un échec d'envoi ne doit jamais faire échouer l'action
-    métier qui a déclenché la notification).
+    métier qui a déclenché la notification). `courriel=False` : dans l'application seulement.
     """
     destinataires = [d for d in destinataires if d is not None]
     notifications = Notification.objects.bulk_create(
@@ -22,7 +22,7 @@ def notifier(destinataires, type_, titre, message="", lien=""):
         ]
     )
 
-    emails = [d.email for d in destinataires if d.email]
+    emails = [d.email for d in destinataires if d.email] if courriel else []
     if emails:
         try:
             send_mail(

@@ -7,6 +7,7 @@ import {
   Checkbox,
   Group,
   Modal,
+  NumberInput,
   Radio,
   SegmentedControl,
   Select,
@@ -323,6 +324,25 @@ export function LierDossier({ dossier, onClose }: { dossier: DossierDetail; onCl
               ))}
             </Stack>
           )}
+        </>
+      )}
+    </Fenetre>
+  );
+}
+
+export function ProlongerDossier({ dossier, onClose }: { dossier: DossierDetail; onClose: () => void }) {
+  return (
+    <Fenetre dossier={dossier} operation="prolonger" titre={voc("Prolonger le délai")} onClose={onClose} libelleBouton={voc("Prolonger")} initiales={{ jours: 7 }}>
+      {(v, changer, erreurs) => (
+        <>
+          <Text size="sm" c="dimmed">
+            {dossier.echeance ? voc`Échéance actuelle : ${dateLisible(dossier.echeance)}.` : ""}{" "}
+            {voc("La prolongation est exceptionnelle et tracée au journal du dossier.")}
+          </Text>
+          <NumberInput label={voc("Nombre de jours supplémentaires")} withAsterisk min={1} max={180} w={220}
+            value={typeof v.jours === "number" ? v.jours : ""} onChange={(x) => changer({ jours: x === "" ? null : Number(x) })} error={erreurs.jours} />
+          <Textarea label={voc("Motif")} withAsterisk autosize minRows={2} value={texte(v.motif)}
+            onChange={(e) => changer({ motif: e.currentTarget.value })} error={erreurs.motif} />
         </>
       )}
     </Fenetre>

@@ -39,6 +39,7 @@ import { useProjets } from "../../api/projects";
 import { messageErreurApi } from "../../utils/erreurs";
 import { useAccesModules } from "../../utils/modules";
 import { voc } from "../../utils/vocabulaire";
+import { CalendrierPlaintes } from "./CalendrierPlaintes";
 import { CircuitsPlaintes } from "./CircuitsPlaintes";
 import { CategoriesPlainte, PrioritesPlainte, TypesRetour } from "./ListesPlaintes";
 
@@ -179,6 +180,10 @@ function FormulaireMecanisme({ mecanisme, modifiable }: { mecanisme: MecanismePl
         jours_ouvres: valeurs.jours_ouvres,
         conservation_ordinaire_mois: valeurs.conservation_ordinaire_mois,
         conservation_sensible_mois: valeurs.conservation_sensible_mois,
+        delai_defaut_jours: valeurs.delai_defaut_jours,
+        rappel_jours_avant: valeurs.rappel_jours_avant,
+        escalade_active: valeurs.escalade_active,
+        notifications_courriel: valeurs.notifications_courriel,
         projets: valeurs.projets,
       });
       notifications.show({ message: voc("Réglages enregistrés"), color: "teal" });
@@ -227,6 +232,38 @@ function FormulaireMecanisme({ mecanisme, modifiable }: { mecanisme: MecanismePl
             onChange={(v) => changer("conservation_sensible_mois", v === "" ? null : Number(v))}
           />
         </SimpleGrid>
+        <SimpleGrid cols={{ base: 1, sm: 2 }}>
+          <NumberInput
+            label={voc("Délai de traitement par défaut (jours)")}
+            description={voc("Quand ni la catégorie ni la priorité ne fixent de délai.")}
+            min={1}
+            value={valeurs.delai_defaut_jours}
+            disabled={!modifiable}
+            onChange={(v) => changer("delai_defaut_jours", Number(v) || 1)}
+          />
+          <NumberInput
+            label={voc("Rappel avant l'échéance (jours)")}
+            description={voc("Le gestionnaire est prévenu quand l'échéance approche.")}
+            min={0}
+            value={valeurs.rappel_jours_avant}
+            disabled={!modifiable}
+            onChange={(v) => changer("rappel_jours_avant", Number(v) || 0)}
+          />
+        </SimpleGrid>
+        <Group gap="xl">
+          <Switch
+            label={voc("Signaler les retards aux superviseurs (escalade)")}
+            checked={valeurs.escalade_active}
+            disabled={!modifiable}
+            onChange={(e) => changer("escalade_active", e.currentTarget.checked)}
+          />
+          <Switch
+            label={voc("Envoyer aussi les notifications par courriel")}
+            checked={valeurs.notifications_courriel}
+            disabled={!modifiable}
+            onChange={(e) => changer("notifications_courriel", e.currentTarget.checked)}
+          />
+        </Group>
         <Group gap="xl">
           <Switch
             label={voc("Accepter les retours anonymes")}
@@ -341,6 +378,7 @@ export function ParametragePlaintesPage() {
           <Tabs.Tab value="categories">{voc("Catégories")}</Tabs.Tab>
           <Tabs.Tab value="priorites">{voc("Priorités")}</Tabs.Tab>
           <Tabs.Tab value="circuits">{voc("Circuits de traitement")}</Tabs.Tab>
+          <Tabs.Tab value="calendrier">{voc("Calendrier")}</Tabs.Tab>
           <Tabs.Tab value="excel">{voc("Canevas Excel")}</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel value="mecanisme" pt="md">
@@ -354,6 +392,7 @@ export function ParametragePlaintesPage() {
         <Tabs.Panel value="categories" pt="md"><CategoriesPlainte modifiable={modifiable} /></Tabs.Panel>
         <Tabs.Panel value="priorites" pt="md"><PrioritesPlainte modifiable={modifiable} /></Tabs.Panel>
         <Tabs.Panel value="circuits" pt="md"><CircuitsPlaintes modifiable={modifiable} /></Tabs.Panel>
+        <Tabs.Panel value="calendrier" pt="md"><CalendrierPlaintes modifiable={modifiable} /></Tabs.Panel>
         <Tabs.Panel value="excel" pt="md"><CanevasExcel modifiable={modifiable} /></Tabs.Panel>
       </Tabs>
     </Stack>

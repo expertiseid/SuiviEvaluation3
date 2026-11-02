@@ -86,7 +86,25 @@ NOTES = [
 ]
 
 
+def dater_echeances(dossier):
+    """Échéances calculées depuis l'entrée réelle dans l'étape en cours (d'après le journal)."""
+    from apps.plaintes import delais
+    from apps.plaintes.models import ActionDossier, Dossier
+
+    derniere = ActionDossier.objects.filter(dossier=dossier, type__in=["ETAPE", "REOUVERTURE", "RECOURS"]).order_by("-date").first()
+    dossier = Dossier.objects.select_related("categorie__parent", "priorite", "etape").get(pk=dossier.pk)
+    entree = timezone.localtime(derniere.date).date() if derniere else dossier.date_reception
+    delais.recalculer(dossier, entree_etape=entree)
+
+
 def historiser(dossier, statut, rang, depart, alea, gestionnaires, points_focaux, chef):
+    try:
+        _historiser(dossier, statut, rang, depart, alea, gestionnaires, points_focaux, chef)
+    finally:
+        dater_echeances(dossier)
+
+
+def _historiser(dossier, statut, rang, depart, alea, gestionnaires, points_focaux, chef):
     """
     Fait passer le dossier par les opérations de traitement jusqu'à l'état visé, puis date chaque
     action (et les dates du dossier) en avançant de quelques jours à partir de sa réception.
@@ -153,8 +171,18 @@ class Command(BaseCommand):
         parser.add_argument("--historique", action="store_true",
                             help="Complète seulement le journal des dossiers qui n'en ont pas, sans rien supprimer.")
 
-    @transaction.atomic
     def handle(self, *args, **options):
+        from apps.plaintes import delais
+
+        # Données de démonstration : personne n'est notifié de dossiers fictifs.
+        delais.NOTIFICATIONS_ACTIVES = False
+        try:
+            self.remplir(**options)
+        finally:
+            delais.NOTIFICATIONS_ACTIVES = True
+
+    @transaction.atomic
+    def remplir(self, **options):
         from apps.plaintes import models as m
         from apps.plaintes.controles import controler_activation
         from apps.plaintes.modeles_mecanisme import appliquer_modele
@@ -245,7 +273,7 @@ class Command(BaseCommand):
                 dossier, _ = recevoir(donnees, alea.choice(CANAUX_AGENT), saisi_par=alea.choice(agents))
             # Dépôts du formulaire datés comme s'ils avaient été reçus ce jour-là ; avancement selon l'ancienneté.
             age = (aujourdhui - date_reception).days
-            statut = "CLOTURE" if age > 120 else "REPONDU" if age > 80 else "EN_COURS" if age > 25 else "RECU"
+            statut = "CLOTURE" if age > 70 else "REPONDU" if age > 40 else "EN_COURS" if age > 6 else "RECU"
             m.Dossier.objects.filter(pk=dossier.pk).update(
                 date_reception=date_reception,
                 priorite=dossier.priorite or (priorites["Normale"] if statut != "RECU" else None),

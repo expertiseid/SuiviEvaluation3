@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRightLeft,
+  CalendarPlus,
   CheckCheck,
   FolderCheck,
   Gavel,
@@ -48,9 +49,13 @@ import {
   LierDossier,
   MotifDossier,
   NoterDossier,
+  ProlongerDossier,
 } from "./OperationsDossier";
+import { BadgeDelai } from "./DelaiDossier";
 
 const COULEUR_ACTION: Partial<Record<ActionDossier["type"], string>> = {
+  RETARD: "red",
+  PROLONGATION: "orange",
   RECEPTION: "blue",
   AFFECTATION: "cyan",
   DECISION: "violet",
@@ -94,6 +99,12 @@ function DetailsAction({ action }: { action: ActionDossier }) {
       </Stack>
     );
   }
+  if (action.type === "PROLONGATION") {
+    return <Text size="xs">+{String(d.jours)} j · {d.de ? dateLisible(String(d.de)) : "—"} → {dateLisible(String(d.a))}</Text>;
+  }
+  if (action.type === "RETARD") {
+    return <Text size="xs" c="red.8">{voc("Échéance")} : {d.echeance ? dateLisible(String(d.echeance)) : "—"}</Text>;
+  }
   if ("de" in d || "a" in d) {
     return <Text size="xs">{String(d.de || "—")} → {String(d.a || "—")}</Text>;
   }
@@ -134,7 +145,8 @@ function Journal({ actions }: { actions: ActionDossier[] }) {
 }
 
 type Fenetre =
-  | "classer" | "affecter" | "etape" | "noter" | "communiquer" | "decider" | "cloturer" | "rouvrir" | "recours" | "recuser" | "lier" | null;
+  | "classer" | "affecter" | "etape" | "noter" | "communiquer" | "decider" | "cloturer" | "rouvrir" | "recours" | "recuser" | "lier"
+  | "prolonger" | null;
 
 /** Barre d'actions : seules les opérations possibles dans l'état du dossier sont proposées. */
 function Actions({ dossier, ouvrir }: { dossier: DossierDetail; ouvrir: (f: Fenetre) => void }) {
@@ -155,6 +167,7 @@ function Actions({ dossier, ouvrir }: { dossier: DossierDetail; ouvrir: (f: Fene
       {!clos && bouton("cloturer", voc("Clôturer"), <FolderCheck size={14} />, { color: "gray", variant: "filled" })}
       {(dossier.statut === "REPONDU" || clos) && bouton("recours", voc("Recours"), <Scale size={14} />, { color: "red" })}
       {clos && peutRouvrir && bouton("rouvrir", voc("Rouvrir"), <RotateCcw size={14} />, { color: "orange" })}
+      {!clos && peutRouvrir && bouton("prolonger", voc("Prolonger le délai"), <CalendarPlus size={14} />, { variant: "subtle" })}
       {bouton("lier", voc("Lier"), <Link2 size={14} />, { variant: "subtle" })}
       {!clos && dossier.responsable === user?.id && bouton("recuser", voc("Me récuser"), <UserX size={14} />, { variant: "subtle", color: "red" })}
     </Group>
@@ -209,6 +222,18 @@ export function DossierPlaintePage() {
                   <Ligne libelle={voc("Gestionnaire")}>{dossier.responsable_nom ?? <Text size="sm" c="orange.8">{voc("Sans responsable")}</Text>}</Ligne>
                   <Ligne libelle={voc("Circuit et étape")}>{[dossier.circuit_nom, dossier.etape_nom].filter(Boolean).join(" › ")}</Ligne>
                   <Ligne libelle={voc("Priorité")}>{dossier.priorite_nom ?? voc("À évaluer")}</Ligne>
+                  <Ligne libelle={voc("Échéance du dossier")}>
+                    <BadgeDelai dossier={dossier} />
+                    {dossier.jours_prolongation > 0 && <Text size="xs" c="dimmed">{voc`dont ${dossier.jours_prolongation} j de prolongation`}</Text>}
+                  </Ligne>
+                  <Ligne libelle={voc("Échéance de l'étape")}>
+                    {dossier.statut !== "CLOTURE" && dossier.echeance_etape && (
+                      <Text size="sm" c={new Date(`${dossier.echeance_etape}T23:59:59`) < new Date() ? "red.8" : undefined}>
+                        {dateLisible(dossier.echeance_etape)}
+                      </Text>
+                    )}
+                  </Ligne>
+                  <Ligne libelle={voc("Dans l'étape depuis le")}>{dossier.statut !== "CLOTURE" && dossier.date_entree_etape && dateLisible(dossier.date_entree_etape)}</Ligne>
                   <Ligne libelle={voc("Reçu le")}>{dateLisible(dossier.date_reception)}</Ligne>
                   <Ligne libelle={voc("Canal de réception")}>{libelleCanal(dossier.canal)}</Ligne>
                   <Ligne libelle={voc("Type de retour")}>{dossier.type_retour_nom}</Ligne>
@@ -314,6 +339,7 @@ export function DossierPlaintePage() {
       {fenetre === "decider" && <DeciderDossier dossier={dossier} onClose={fermer} />}
       {fenetre === "cloturer" && <CloturerDossier dossier={dossier} onClose={fermer} />}
       {fenetre === "lier" && <LierDossier dossier={dossier} onClose={fermer} />}
+      {fenetre === "prolonger" && <ProlongerDossier dossier={dossier} onClose={fermer} />}
       {fenetre === "recuser" && (
         <MotifDossier dossier={dossier} operation="recuser" titre={voc("Me récuser")} onClose={fermer} libelleBouton={voc("Me récuser")} couleur="red"
           aide={voc("Vous vous retirez de ce dossier (conflit d'intérêts, lien avec le plaignant…). Il devra être réaffecté.")} />

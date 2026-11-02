@@ -2,7 +2,8 @@
  * Mécanisme de gestion des plaintes et retours — lot 1 : paramétrage (mécanisme, types,
  * priorités, catégories, circuits et étapes, modèles, canevas Excel) ; lot 2 : réception
  * (dossiers, saisie par un agent, formulaire public et suivi par code) ; lot 3 : traitement
- * (actions sur un dossier, journal, vues prêtes et enregistrées, dossiers liés). API : /api/v1/plaintes/
+ * (actions sur un dossier, journal, vues prêtes et enregistrées, dossiers liés) ; lot 4 : délais
+ * (échéances, prolongation, jours fériés, réglages des rappels). API : /api/v1/plaintes/
  * et, sans compte, /api/v1/public/plaintes/.
  */
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -26,6 +27,10 @@ export interface MecanismePlaintes {
   projets: number[];
   /** Ce qui manque pour activer le mécanisme (vide = activable). */
   controles: string[];
+  delai_defaut_jours: number;
+  rappel_jours_avant: number;
+  escalade_active: boolean;
+  notifications_courriel: boolean;
 }
 
 export interface TypeRetour {
@@ -309,6 +314,22 @@ export interface DossierPlainte {
   date_cloture: string | null;
   en_recours: boolean;
   gestionnaire_initial_nom: string | null;
+  echeance: string | null;
+  echeance_etape: string | null;
+  date_entree_etape: string | null;
+  jours_prolongation: number;
+  en_retard: boolean;
+}
+
+/** État des délais d'un dossier ouvert : en retard (dossier ou étape), proche, ou dans les temps. */
+export function etatDelai(d: DossierPlainte, rappelJours = 2): { etat: "retard" | "proche" | "ok" | "clos"; jours: number | null } {
+  if (d.statut === "CLOTURE" || !d.echeance) return { etat: "clos", jours: null };
+  const jour = (x: string) => new Date(`${x.slice(0, 10)}T00:00:00`).getTime();
+  const aujourdhui = new Date(new Date().toDateString()).getTime();
+  const jours = Math.round((jour(d.echeance) - aujourdhui) / 86400000);
+  const etapeDepassee = !!d.echeance_etape && jour(d.echeance_etape) < aujourdhui;
+  if (jours < 0 || etapeDepassee) return { etat: "retard", jours };
+  return { etat: jours <= rappelJours ? "proche" : "ok", jours };
 }
 
 export type IssueDossier = "RESOLU" | "NON_FONDE" | "REFERE" | "HORS_PERIMETRE" | "SANS_SUITE";
@@ -324,7 +345,7 @@ export const libelleIssue = (i: IssueDossier): string =>
 
 export type TypeAction =
   | "RECEPTION" | "CLASSIFICATION" | "AFFECTATION" | "RECUSATION" | "ETAPE" | "NOTE" | "ACTION_CORRECTIVE"
-  | "COMMUNICATION" | "DECISION" | "CLOTURE" | "REOUVERTURE" | "RECOURS" | "SENSIBILITE" | "LIEN";
+  | "COMMUNICATION" | "DECISION" | "CLOTURE" | "REOUVERTURE" | "RECOURS" | "SENSIBILITE" | "LIEN" | "PROLONGATION" | "RETARD";
 export const libelleTypeAction = (t: TypeAction): string =>
   ({
     RECEPTION: voc("Réception"),
@@ -341,6 +362,8 @@ export const libelleTypeAction = (t: TypeAction): string =>
     RECOURS: voc("Recours"),
     SENSIBILITE: voc("Sensibilité"),
     LIEN: voc("Dossiers liés"),
+    PROLONGATION: voc("Prolongation du délai"),
+    RETARD: voc("Retard"),
   })[t];
 
 export type ObjetEchange = "ACCUSE_RECEPTION" | "PRISE_EN_CHARGE" | "DEMANDE_COMPLEMENT" | "DECISION" | "CLOTURE" | "SATISFACTION" | "AUTRE";
@@ -375,7 +398,8 @@ export interface DossierDetail extends DossierPlainte {
 
 /** Opérations de traitement (POST /plaintes/dossiers/{id}/{operation}/). */
 export type OperationDossier =
-  | "classer" | "affecter" | "recuser" | "etape" | "noter" | "communiquer" | "decider" | "cloturer" | "rouvrir" | "recours" | "lier";
+  | "classer" | "affecter" | "recuser" | "etape" | "noter" | "communiquer" | "decider" | "cloturer" | "rouvrir" | "recours" | "lier"
+  | "prolonger";
 
 /** Données d'un retour, communes au formulaire public et à la saisie par un agent. */
 export interface SaisieRetour {
@@ -568,3 +592,15 @@ export function useSupprimerVue() {
     onSuccess: rafraichir,
   });
 }
+
+// --- Lot 4 : calendrier des jours fériés --------------------------------------------------------
+
+export interface JourFerie {
+  id: number;
+  date: string;
+  libelle: string;
+}
+
+export const useJoursFeries = () => useListe<JourFerie>("jours-feries");
+export const useEnregistrerJourFerie = () => useEnregistrer<JourFerie>("jours-feries");
+export const useSupprimerJourFerie = () => useSupprimer("jours-feries");

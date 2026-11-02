@@ -15,6 +15,7 @@ from rest_framework.exceptions import ValidationError
 from apps.accounts.constants import ROLE_ADMIN, ROLE_COORDO_GENERAL
 from apps.core.vocabulaire import v
 
+from . import delais
 from .models import ActionDossier, Categorie, Circuit, IssueDossier, ModeReponse, Priorite, StatutDossier, TypeRetour
 from .reception import circuit_pour
 
@@ -110,9 +111,14 @@ def classer(dossier, auteur, donnees):
     journaliser(dossier, A.CLASSIFICATION, auteur, details=changements)
     # Dans le doute, protéger : un dossier devenu sensible quitte aussitôt le circuit ordinaire. L'inverse
     # (lever la sensibilité) n'est jamais automatique.
+    nouvelle_etape = None
     if not dossier.sensible and dossier.categorie and dossier.categorie.sensible_effective:
         _vers_confidentiel(dossier, auteur)
+        nouvelle_etape = timezone.localdate()
     dossier.save()
+    delais.recalculer(dossier, entree_etape=nouvelle_etape)
+    if "priorite" in changements and dossier.priorite and dossier.priorite.urgente:
+        transaction.on_commit(lambda: delais.notifier_urgence(dossier))
     return dossier
 
 
@@ -145,6 +151,8 @@ def affecter(dossier, auteur, responsable_id):
     _en_cours(dossier)
     dossier.save()
     journaliser(dossier, A.AFFECTATION, auteur, details={"de": nom_personne(ancien), "a": nom_personne(responsable)})
+    if responsable.pk != auteur.pk:
+        transaction.on_commit(lambda: delais.notifier_affectation(dossier))
     return dossier
 
 
@@ -176,6 +184,7 @@ def changer_etape(dossier, auteur, donnees):
     dossier.save()
     journaliser(dossier, A.ETAPE, auteur, (donnees.get("commentaire") or "").strip(),
                 details={"de": ancienne.nom if ancienne else "", "a": cible.nom})
+    delais.recalculer(dossier, entree_etape=timezone.localdate())
     return dossier
 
 
@@ -275,6 +284,7 @@ def cloturer(dossier, auteur, donnees):
     dossier.consentement_reference = consentement if issue == IssueDossier.REFERE else False
     dossier.date_cloture = timezone.localdate()
     dossier.en_recours = False
+    dossier.en_retard = False
     dossier.save()
     journaliser(dossier, A.CLOTURE, auteur, motif, details={
         "issue": issue, "retour_donne": retour, "raison_sans_retour": dossier.raison_sans_retour,
@@ -308,6 +318,7 @@ def rouvrir(dossier, auteur, donnees):
     _rouvrir_sur(dossier, donnees)
     dossier.save()
     journaliser(dossier, A.REOUVERTURE, auteur, motif, details={"etape": dossier.etape.nom if dossier.etape else ""})
+    delais.recalculer(dossier, entree_etape=timezone.localdate())
     return dossier
 
 
@@ -323,6 +334,8 @@ def recours(dossier, auteur, donnees):
     _rouvrir_sur(dossier, donnees)
     dossier.save()
     journaliser(dossier, A.RECOURS, auteur, motif)
+    delais.recalculer(dossier, entree_etape=timezone.localdate())
+    transaction.on_commit(lambda: delais.notifier_recours(dossier))
     return dossier
 
 

@@ -46,18 +46,20 @@ import { TitreRubrique } from "../../components/common/TitreRubrique";
 import { messageErreurApi } from "../../utils/erreurs";
 import { useAccesModules } from "../../utils/modules";
 import { voc } from "../../utils/vocabulaire";
+import { BadgeDelai } from "./DelaiDossier";
 import { SaisieDossierModal } from "./SaisieDossierModal";
 import { optionsCategories } from "./saisieRetour";
 
 const CANAUX: CanalPlainte[] = ["FORMULAIRE", "TELEPHONE", "EN_PERSONNE", "REUNION", "BOITE", "COURRIER", "COURRIEL", "AUTRE"];
 const PAR_PAGE = 25;
 
-// Vues prêtes (6.8 du cahier des charges) ; « En retard » arrive avec les délais.
+// Vues prêtes (6.8 du cahier des charges).
 const VUES = [
   { value: "tous", label: () => voc("Tous") },
   { value: "mes_dossiers", label: () => voc("Mes dossiers") },
   { value: "a_traiter", label: () => voc("À traiter") },
   { value: "urgents", label: () => voc("Urgents") },
+  { value: "en_retard", label: () => voc("En retard") },
   { value: "sans_responsable", label: () => voc("Sans responsable") },
   { value: "attente_decision", label: () => voc("En attente de décision") },
   { value: "a_cloturer", label: () => voc("À clôturer") },
@@ -239,6 +241,7 @@ export function DossiersPlaintesPage() {
             <Table.Th>{voc("Projet")}</Table.Th>
             <Table.Th>{voc("Gestionnaire")}</Table.Th>
             <Table.Th>{voc("Étape")}</Table.Th>
+            <Table.Th w={170}>{voc("Échéance")}</Table.Th>
             <Table.Th w={200}>{voc("Statut")}</Table.Th>
           </Table.Tr>
         </Table.Thead>
@@ -259,6 +262,7 @@ export function DossiersPlaintesPage() {
               <Table.Td>{d.projet_code || d.projet_nom || "—"}</Table.Td>
               <Table.Td>{d.responsable_nom ?? <Text size="sm" c="orange.8">{voc("Sans responsable")}</Text>}</Table.Td>
               <Table.Td>{d.etape_nom ?? "—"}</Table.Td>
+              <Table.Td style={{ whiteSpace: "nowrap" }}><BadgeDelai dossier={d} compact /></Table.Td>
               <Table.Td>
                 <Group gap={4} wrap="nowrap">
                   <Badge color={couleurStatutDossier(d.statut)} variant="light" tt="none">{libelleStatutDossier(d.statut)}</Badge>
@@ -269,7 +273,7 @@ export function DossiersPlaintesPage() {
           ))}
           {dossiers.length === 0 && (
             <Table.Tr>
-              <Table.Td colSpan={9}><Text size="sm" c="dimmed" ta="center" py="md">{voc("Aucun dossier.")}</Text></Table.Td>
+              <Table.Td colSpan={10}><Text size="sm" c="dimmed" ta="center" py="md">{voc("Aucun dossier.")}</Text></Table.Td>
             </Table.Tr>
           )}
         </Table.Tbody>

@@ -76,6 +76,9 @@ bénéficiaires, documents, alertes et tableaux de bord.
   Traitement : affectation, étapes, notes et actions correctives, échanges avec le plaignant,
   décision, clôture motivée (sorties Référée et Hors périmètre), réouverture, recours, journal du
   dossier, vues prêtes et vues enregistrées, dossiers liés.
+  Délais : échéances du dossier et de chaque étape (jours calendaires ou ouvrés, jours fériés),
+  rappels, escalade des retards, prolongation motivée, notifications (application et courriel,
+  neutres pour les dossiers confidentiels), vue « En retard ».
 
 ## Pile technique
 

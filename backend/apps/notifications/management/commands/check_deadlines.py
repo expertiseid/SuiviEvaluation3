@@ -54,6 +54,10 @@ class Command(BaseCommand):
             )
 
         self.stdout.write(self.style.SUCCESS(f"{total} notification(s) d'échéance créée(s)."))
+        # Mécanisme de plaintes : rappels et escalades sur les échéances des dossiers.
+        from django.core.management import call_command
+
+        call_command("verifier_echeances_plaintes", stdout=self.stdout)
 
     def notifier_echeance(self, *, destinataires, titre, projet_nom, echeance, lien):
         deja_notifie = Notification.objects.filter(

@@ -730,7 +730,7 @@ secondaire ne peut viser qu'un niveau supérieur, jamais le parent principal ni 
   pas. L'export Excel des bénéficiaires ne traduit que ses en-têtes : ses données se réimportent
   telles quelles. Tests : `core/test_modeles_traduits.py`, `suivi/test_canevas.py`.
 
-### 5.14 Mécanisme de gestion des plaintes et retours (lots 1 à 3 : paramétrage, réception, traitement)
+### 5.14 Mécanisme de gestion des plaintes et retours (lots 1 à 4 : paramétrage, réception, traitement, délais)
 
 Une installation = une organisation : tout le mécanisme se paramètre, sans rien coder, pour
 des communautés, des bénéficiaires, le personnel ou tout autre public. Application `plaintes`,
@@ -835,9 +835,42 @@ des communautés, des bénéficiaires, le personnel ou tout autre public. Applic
 - Tests : `plaintes/test_traitement.py` (scénario 3 de bout en bout, transitions interdites,
   recours, reclassement sensible, vues, liens, commande de démonstration).
 
-Lots suivants prévus : délais et alertes (échéances, rappels, escalade, vue « En retard »),
-circuit confidentiel complet (personne mise en cause, circuit alternatif, chiffrement, levée
-motivée de la sensibilité), pilotage (tableaux de bord, rapports), modèles de messages.
+**Délais et alertes (lot 4)** — `delais.py`, modèles `JourFerie` et `RappelDossier` :
+
+- **Échéance du dossier** (`Dossier.echeance`) : le plus court des délais fixés par la catégorie
+  (ou sa catégorie principale) et par la priorité, sinon le délai par défaut du mécanisme
+  (`delai_defaut_jours`), compté depuis la réception, plus les prolongations accordées.
+  **Échéance de l'étape** (`echeance_etape`) : délai de l'étape en cours, compté depuis l'entrée
+  dans l'étape (`date_entree_etape`). Jours calendaires ou ouvrés (`Mecanisme.jours_ouvres` : sans
+  samedis, dimanches ni jours fériés du calendrier `JourFerie`).
+- **Recalcul** (`recalculer`) à la réception, au classement, au changement d'étape, à la
+  réouverture, au recours et à la prolongation ; `recalculer_ouverts` après un changement de délai
+  dans le paramétrage (priorité, catégorie, étape, délai par défaut, jours ouvrés, jours fériés).
+- **Contrôle planifié** (`verifier_echeances`, commande `verifier_echeances_plaintes`, appelée par
+  `check_deadlines` toutes les heures — jamais au chargement des pages) : rappel au gestionnaire
+  quand l'échéance approche (`rappel_jours_avant`, aux superviseurs si personne n'est affecté) ;
+  en retard, notification au gestionnaire et escalade aux superviseurs (`escalade_active`) ; au plus
+  un rappel par dossier et par jour (`RappelDossier`, contrainte d'unicité) ; le passage en retard
+  est inscrit au journal (action `RETARD`, historique des retards) et marque `en_retard`.
+- **Superviseurs** : Administrateurs et Coordonnateur général pour un dossier ordinaire ; pour un
+  dossier confidentiel, seulement les personnes habilitées de son circuit et les Administrateurs.
+- **Prolongation** (`prolonger`) : 1 à 180 jours, motif obligatoire, réservée à l'Administrateur
+  et au Coordonnateur général, tracée au journal (`PROLONGATION`).
+- **Notifications d'événements** (type `PLAINTE`, dans l'application et par courriel si
+  `notifications_courriel`) : nouveau dossier (responsables de la première étape), dossier urgent
+  (superviseurs, aussitôt), affectation (nouveau gestionnaire), recours (superviseurs), échéance
+  proche, retard. Envoyées après l'enregistrement (`transaction.on_commit`). Pour un dossier
+  confidentiel : titre neutre avec le seul numéro, message « Connectez-vous… », aucun contenu.
+- **Vue « En retard »** (`?vue=en_retard`, calculée sur les dates, pas sur le drapeau) et colonne
+  Échéance de la liste ; fiche : échéances du dossier et de l'étape, bouton « Prolonger le délai ».
+- Paramétrage : délai par défaut, rappel avant l'échéance, escalade, courriel (onglet Mécanisme) ;
+  onglet **Calendrier** (jours fériés, bouton pour les jours fériés fixes du Burkina Faso).
+- Tests : `plaintes/test_delais.py` (jours ouvrés, échéances et recalcul, retard, rappel unique,
+  escalade, échéance proche, prolongation, notifications et confidentialité).
+
+Lots suivants prévus : circuit confidentiel complet (personne mise en cause, circuit alternatif,
+chiffrement, levée motivée de la sensibilité), pilotage (tableaux de bord, rapports), modèles de
+messages.
 
 ## 6. Utilisateurs, rôles et permissions
 
@@ -978,6 +1011,8 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 | POST | `plaintes/dossiers/{id}/{classer,affecter,recuser,etape,noter,communiquer,decider,cloturer,rouvrir,recours,lier}/` | Opérations de traitement (règles dans `traitement.py`) |
 | GET | `plaintes/dossiers/{id}/responsables-possibles/`, `…/possiblement-lies/` | Personnes à qui confier le dossier ; dossiers proches à lier |
 | CRUD | `plaintes-vues/` | Filtres enregistrés de l'utilisateur connecté |
+| POST | `plaintes/dossiers/{id}/prolonger/` | Prolongation motivée du délai (`jours`, `motif`) |
+| CRUD | `plaintes/jours-feries/` | Calendrier des jours fériés (délais en jours ouvrés) |
 | GET | `plaintes/qr/?projet=` | QR code (PNG) du formulaire public |
 | GET / POST | `public/plaintes/formulaire/`, `public/plaintes/deposer/`, `public/plaintes/suivi/` | Sans authentification : contenu du formulaire, dépôt d'un retour, état d'un dossier par son code |
 | GET | `beneficiaires/exporter/` | Export des bénéficiaires : `?fichier=excel` ou `pdf`, `?projets=1,3` pour choisir les projets |
@@ -1043,8 +1078,10 @@ Les utilitaires communs de mise en forme (bordures, en-têtes figés) sont dans
   dans les paramètres d'alerte) ou dépassée, et notifie tous les utilisateurs actifs.
 - La modification d'une activité déjà planifiée notifie le Coordonnateur général et le
   Chargé de Suivi-Évaluation.
+- `check_deadlines` lance aussi `verifier_echeances_plaintes` : rappels, retards et escalades des
+  dossiers de plaintes (voir 5.14, lot 4).
 - Types de notification : indicateur en alerte, échéance d'activité, activité modifiée,
-  doublon signalé, rapport soumis, rapport validé.
+  doublon signalé, rapport soumis, rapport validé, plaintes et retours.
 
 ## 10. Frontend
 
@@ -1117,6 +1154,7 @@ mutualisées) puis rejoue la requête, ou renvoie vers la page de connexion.
 | `seed_projets_complementaires` | Ajoute 4 projets de démonstration, sans rien supprimer |
 | `seed_projets_filtres` | Ajoute (ou supprime avec `--supprimer`) des projets `TEST-…` pour tester les filtres |
 | `seed_points_suivi` | Ajoute des points de suivi de démonstration |
+| `verifier_echeances_plaintes [--recalculer]` | Rappels, retards et escalades des dossiers de plaintes (lancée par `check_deadlines`) ; `--recalculer` recalcule d'abord toutes les échéances |
 | `seed_demo_complements` | Complète la démonstration sans rien supprimer : variables des bénéficiaires et réponses, doublons signalés, liens de partage, pièces justificatives des valeurs d'indicateurs ; relançable |
 | `seed_demo_plaintes [--reinitialiser \| --historique]` | Mécanisme de plaintes « standard » activé, points focaux du circuit confidentiel `admin` et `pf_psea` (`demo1234!`) ; les dossiers confidentiels sont visibles de l'Administrateur et de `pf_psea` et 42 dossiers sur six mois, tous canaux et états d'avancement, créés par l'interface d'entrée commune puis traités par les vraies opérations (journal daté, un recours) ; `--historique` complète seulement le journal des dossiers qui n'en ont pas |
 | `charger_limites BF [--niveaux 1 2 3] [--recalculer]` | Télécharge les limites administratives d'un pays (geoBoundaries) et place les zones sur la carte |
