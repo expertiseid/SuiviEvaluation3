@@ -2,8 +2,8 @@ from rest_framework import serializers
 
 from .controles import controler_activation, controler_circuit
 from .models import (
-    ActionDossier, Categorie, Circuit, Dossier, EtapeCircuit, JourFerie, Mecanisme, Prestataire, Priorite, TypeRetour,
-    VueDossiers,
+    ActionCorrective, ActionDossier, Categorie, Circuit, Dossier, EtapeCircuit, JourFerie, Mecanisme, Prestataire, Priorite,
+    TypeRetour, VueDossiers,
 )
 from .traitement import nom_personne
 
@@ -21,7 +21,7 @@ class MecanismeSerializer(serializers.ModelSerializer):
             "id", "nom", "actif", "modele", "anonymat_autorise", "langues", "texte_information", "prefixe_numero",
             "jours_ouvres", "conservation_ordinaire_mois", "conservation_sensible_mois", "projets", "controles",
             "delai_defaut_jours", "rappel_jours_avant", "escalade_active", "notifications_courriel",
-            "circuit_alternatif",
+            "circuit_alternatif", "seuil_masquage",
         )
         read_only_fields = ("actif", "modele")
 
@@ -33,6 +33,11 @@ class MecanismeSerializer(serializers.ModelSerializer):
         if inconnues:
             raise serializers.ValidationError(f"Langue(s) non proposée(s) : {', '.join(inconnues)}.")
         return list(dict.fromkeys(valeur))
+
+    def validate_seuil_masquage(self, valeur):
+        if valeur < 5:
+            raise serializers.ValidationError("Le seuil de masquage ne descend jamais en dessous de 5.")
+        return valeur
 
     def validate_circuit_alternatif(self, valeur):
         if valeur is not None and not valeur.sensible:
@@ -286,3 +291,35 @@ class PrestataireSerializer(serializers.ModelSerializer):
     class Meta:
         model = Prestataire
         fields = ("id", "nom", "type", "contact", "zone", "actif")
+
+
+class ActionCorrectiveSerializer(serializers.ModelSerializer):
+    """Action corrective ; seuls les dossiers que l'utilisateur peut voir sont montrés et peuvent être liés."""
+
+    responsable_nom = serializers.SerializerMethodField()
+    projet_code = serializers.CharField(source="projet.code", read_only=True, default=None)
+    dossiers_lies = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ActionCorrective
+        fields = ("id", "titre", "description", "projet", "projet_code", "responsable", "responsable_nom", "echeance",
+                  "statut", "date_realisation", "dossiers", "dossiers_lies", "created_at")
+        read_only_fields = ("date_realisation", "created_at")
+        extra_kwargs = {"dossiers": {"required": False}}
+
+    def get_responsable_nom(self, obj):
+        return nom_personne(obj.responsable) or None
+
+    def _visibles(self):
+        from .reception import dossiers_visibles
+
+        return dossiers_visibles(self.context["request"].user)
+
+    def get_dossiers_lies(self, obj):
+        return [{"id": d.id, "numero": d.numero} for d in self._visibles().filter(pk__in=obj.dossiers.values("pk")).order_by("numero")]
+
+    def validate_dossiers(self, dossiers):
+        visibles = set(self._visibles().filter(pk__in=[d.pk for d in dossiers]).values_list("pk", flat=True))
+        if any(d.pk not in visibles for d in dossiers):
+            raise serializers.ValidationError("Certains dossiers ne vous sont pas accessibles.")
+        return dossiers

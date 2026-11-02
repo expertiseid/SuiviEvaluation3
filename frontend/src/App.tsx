@@ -25,11 +25,13 @@ import { DocumentsGlobauxPage } from "./pages/documents/DocumentsGlobauxPage";
 import { LanguesPage } from "./pages/langues/LanguesPage";
 import { ParametresAlertePage } from "./pages/parametres/ParametresAlertePage";
 import { PagePartagee } from "./pages/partage/PagePartagee";
+import { ActionsCorrectivesPage } from "./pages/plaintes/ActionsCorrectivesPage";
 import { DossierPlaintePage } from "./pages/plaintes/DossierPlaintePage";
 import { DossiersPlaintesPage } from "./pages/plaintes/DossiersPlaintesPage";
 import { ParametragePlaintesPage } from "./pages/plaintes/ParametragePlaintesPage";
 import { FormulairePublicPage } from "./pages/plaintes/public/FormulairePublicPage";
 import { SuiviPublicPage } from "./pages/plaintes/public/SuiviPublicPage";
+import { TableauPlaintesPage } from "./pages/plaintes/TableauPlaintesPage";
 
 export default function App() {
   return (
@@ -71,6 +73,8 @@ export default function App() {
         <Route path="/plaintes" element={<DossiersPlaintesPage />} />
         <Route path="/plaintes/parametrage" element={<ParametragePlaintesPage />} />
         <Route path="/plaintes/dossiers/:id" element={<DossierPlaintePage />} />
+        <Route path="/plaintes/tableau-de-bord" element={<TableauPlaintesPage />} />
+        <Route path="/plaintes/actions-correctives" element={<ActionsCorrectivesPage />} />
         <Route
           path="/organisation"
           element={

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Bookmark, Copy, Download, ExternalLink, Lock, Plus, QrCode, Search, Settings, Siren, Trash2, X } from "lucide-react";
+import { Bookmark, ChartColumn, Copy, FileSpreadsheet, Wrench, Download, ExternalLink, Lock, Plus, QrCode, Search, Settings, Siren, Trash2, X } from "lucide-react";
 import {
   ActionIcon,
   Alert,
@@ -29,6 +29,7 @@ import {
   adresseFormulairePublic,
   couleurStatutDossier,
   dateLisible,
+  exporterListeDossiers,
   libelleCanal,
   libelleStatutDossier,
   telechargerQrFormulaire,
@@ -41,6 +42,7 @@ import {
   useVuesEnregistrees,
 } from "../../api/plaintes";
 import { useUtilisateurs } from "../../api/accounts";
+import { useAuth } from "../../auth/useAuth";
 import { useProjets } from "../../api/projects";
 import { TitreRubrique } from "../../components/common/TitreRubrique";
 import { messageErreurApi } from "../../utils/erreurs";
@@ -174,7 +176,11 @@ export function DossiersPlaintesPage() {
   const [page, setPage] = useState(1);
   // ?vue=… : lien d'une notification (ex : dossiers à anonymiser).
   const [parametres] = useSearchParams();
-  const [filtres, setFiltres] = useState<Filtres>({ ...SANS_FILTRE, vue: parametres.get("vue") ?? "" });
+  // Filtres repris de l'adresse : clic depuis le tableau de bord ou une notification.
+  const [filtres, setFiltres] = useState<Filtres>(() => ({
+    ...SANS_FILTRE,
+    ...Object.fromEntries(Object.keys(SANS_FILTRE).filter((cle) => parametres.get(cle)).map((cle) => [cle, parametres.get(cle)])),
+  }));
   const [rechercheDifferee] = useDebouncedValue(filtres.search ?? "", 300);
   const { data } = useDossiersPlainte({ ...filtres, search: rechercheDifferee, page });
   const [saisie, saisieControles] = useDisclosure(false);
@@ -183,6 +189,14 @@ export function DossiersPlaintesPage() {
   const pages = Math.ceil((data?.count ?? 0) / PAR_PAGE);
   const changer = (f: Partial<Filtres>) => { setFiltres((ancien) => ({ ...ancien, ...f })); setPage(1); };
   const filtresActifs = Object.entries(filtres).some(([cle, valeur]) => cle !== "vue" && valeur);
+  const { user } = useAuth();
+  const exporter = async (coordonnees: boolean) => {
+    try {
+      await exporterListeDossiers({ ...filtres, search: rechercheDifferee }, coordonnees);
+    } catch (error) {
+      notifications.show({ message: messageErreurApi(error, voc("Export impossible")), color: "red" });
+    }
+  };
 
   return (
     <Stack>
@@ -195,6 +209,8 @@ export function DossiersPlaintesPage() {
           {mecanisme?.actif && (
             <Button variant="light" leftSection={<QrCode size={14} />} onClick={formulaireControles.open}>{voc("Formulaire public")}</Button>
           )}
+          <Button component={Link} to="/plaintes/tableau-de-bord" variant="light" leftSection={<ChartColumn size={14} />}>{voc("Tableau de bord")}</Button>
+          <Button component={Link} to="/plaintes/actions-correctives" variant="light" leftSection={<Wrench size={14} />}>{voc("Actions correctives")}</Button>
           <Button component={Link} to="/plaintes/parametrage" variant="default" leftSection={<Settings size={14} />}>{voc("Paramétrage")}</Button>
         </Group>
       </Group>
@@ -232,6 +248,16 @@ export function DossiersPlaintesPage() {
           </Button>
         )}
         <MesVues filtres={filtres} appliquer={(f) => { setFiltres(f); setPage(1); }} />
+        <Menu position="bottom-end" withinPortal>
+          <Menu.Target>
+            <Button variant="default" size="sm" leftSection={<FileSpreadsheet size={14} />}>{voc("Exporter")}</Button>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Label>{voc("Dossiers de la liste filtrée, hors confidentiels ; l'export est inscrit au journal.")}</Menu.Label>
+            <Menu.Item onClick={() => exporter(false)}>{voc("Excel, sans coordonnées")}</Menu.Item>
+            {user?.role === "ADMIN" && <Menu.Item onClick={() => exporter(true)}>{voc("Excel, avec coordonnées des plaignants")}</Menu.Item>}
+          </Menu.Dropdown>
+        </Menu>
       </Group>
       <Text size="sm" c="dimmed">{voc`${data?.count ?? 0} dossier(s)`}</Text>
       <Table withTableBorder highlightOnHover verticalSpacing={6}>

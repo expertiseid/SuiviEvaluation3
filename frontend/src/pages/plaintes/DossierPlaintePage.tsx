@@ -25,6 +25,7 @@ import {
   Tags,
   UserCheck,
   UserX,
+  Wrench,
 } from "lucide-react";
 import { Alert, Anchor, Badge, Button, Card, Grid, Group, Loader, SimpleGrid, Stack, Text, Timeline, Title } from "@mantine/core";
 import {
@@ -42,6 +43,7 @@ import {
   libelleStatutDossier,
   libelleTypeAction,
   libelleTypePrestataire,
+  useActionsCorrectives,
   useDossierPlainte,
 } from "../../api/plaintes";
 import { useAuth } from "../../auth/useAuth";
@@ -66,6 +68,7 @@ import {
   SignalerDossier,
   SuspendreDossier,
 } from "./OperationsDossier";
+import { ActionCorrectiveModal, BadgeStatutAction } from "./ActionsCorrectivesPage";
 import { BadgeDelai } from "./DelaiDossier";
 
 const COULEUR_ACTION: Partial<Record<ActionDossier["type"], string>> = {
@@ -205,6 +208,34 @@ function Actions({ dossier, ouvrir }: { dossier: DossierDetail; ouvrir: (f: Fene
       {user?.role === "ADMIN" && bouton("suspendre", dossier.suspension_legale ? voc("Lever la suspension légale") : voc("Suspension légale"), <Landmark size={14} />, { color: "orange", variant: "subtle" })}
       {user?.role === "ADMIN" && clos && !dossier.suspension_legale && !dossier.anonymise && bouton("anonymiser", voc("Anonymiser"), <Eraser size={14} />, { color: "red", variant: "subtle" })}
     </Group>
+  );
+}
+
+/** Actions correctives reliées au dossier (suivies dans « Actions correctives »). */
+function ActionsCorrectivesDossier({ dossierId, modifiable }: { dossierId: number; modifiable: boolean }) {
+  const { data: actions = [] } = useActionsCorrectives({ dossiers: dossierId });
+  const [nouvelle, setNouvelle] = useState(false);
+  if (!actions.length && !modifiable) return null;
+  return (
+    <Card withBorder>
+      <Stack gap="xs">
+        <Group justify="space-between">
+          <Group gap="xs"><Wrench size={16} /><Text fw={600} size="sm">{voc("Actions correctives")}</Text></Group>
+          {modifiable && <Button size="xs" variant="subtle" onClick={() => setNouvelle(true)}>{voc("Nouvelle action corrective")}</Button>}
+        </Group>
+        {actions.map((a) => (
+          <Group key={a.id} justify="space-between" wrap="nowrap">
+            <Anchor component={Link} to="/plaintes/actions-correctives" size="sm">{a.titre}</Anchor>
+            <Group gap="xs" wrap="nowrap">
+              {a.echeance && <Text size="xs" c="dimmed">{dateLisible(a.echeance)}</Text>}
+              <BadgeStatutAction statut={a.statut} />
+            </Group>
+          </Group>
+        ))}
+        {actions.length === 0 && <Text size="sm" c="dimmed">{voc("Aucune action corrective liée.")}</Text>}
+      </Stack>
+      {nouvelle && <ActionCorrectiveModal dossierInitial={dossierId} onClose={() => setNouvelle(false)} />}
+    </Card>
   );
 }
 
@@ -377,6 +408,8 @@ export function DossierPlaintePage() {
                 </Stack>
               </Card>
             )}
+
+            <ActionsCorrectivesDossier dossierId={dossier.id} modifiable={modifiable} />
 
             {dossier.dossiers_lies.length > 0 && (
               <Card withBorder>

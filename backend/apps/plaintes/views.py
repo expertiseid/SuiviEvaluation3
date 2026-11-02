@@ -11,7 +11,7 @@ from django.db.models import ProtectedError, Q
 from django.http import HttpResponse
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action, api_view, parser_classes, permission_classes
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -20,16 +20,18 @@ from apps.core.langues import dans_la_langue_demandee, en_langue, langue_demande
 from apps.core.permissions import HasGlobalVisibilityOrAssigned
 from apps.core.vocabulaire import v
 
-from . import confidentiel, delais, traitement
+from . import confidentiel, delais, pilotage, traitement
 
 from .controles import controler_activation
 from .models import (
+    ActionCorrective,
     Canal, Categorie, Circuit, Dossier, EtapeCircuit, JourFerie, Mecanisme, Prestataire, Priorite, StatutDossier, TypeRetour,
     VueDossiers,
 )
 from .modeles_mecanisme import MODELES, appliquer_modele, liste_modeles
 from .reception import dossiers_visibles, recevoir
 from .serializers import (
+    ActionCorrectiveSerializer,
     CategorieSerializer,
     CircuitSerializer,
     DossierDetailSerializer,
@@ -349,6 +351,25 @@ class DossierViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
     def prolonger(self, request, pk=None):
         return self._agir(delais.prolonger, request.data)
 
+    @action(detail=False, methods=["post"], url_path="exporter-liste")
+    @dans_la_langue_demandee
+    def exporter_liste(self, request):
+        """
+        Liste des dossiers filtrés (mêmes filtres et vues que la liste) en Excel : sans les dossiers
+        confidentiels, coordonnées seulement pour l'Administrateur qui les demande, export inscrit au journal.
+        """
+        from apps.accounts.constants import ROLE_ADMIN
+
+        from .export_pilotage import liste_dossiers_excel
+
+        qs = self.filter_queryset(self.get_queryset()).select_related("etape", "responsable")
+        avec_coordonnees = bool(request.data.get("coordonnees")) and request.user.role == ROLE_ADMIN
+        contenu, nombre = liste_dossiers_excel(list(qs), request.user, avec_coordonnees)
+        reponse = HttpResponse(contenu, content_type=XLSX)
+        reponse["Content-Disposition"] = "attachment; filename=dossiers_plaintes.xlsx"
+        reponse["X-Nombre-Dossiers"] = str(nombre)
+        return reponse
+
     @action(detail=True, methods=["post"], url_path="lever-sensibilite")
     def lever_sensibilite(self, request, pk=None):
         return self._agir(confidentiel.lever_sensibilite, request.data)
@@ -448,3 +469,132 @@ def qr_formulaire(request):
     response = HttpResponse(sortie.getvalue(), content_type="image/png")
     response["Content-Disposition"] = "attachment; filename=qr_formulaire_plaintes.png"
     return response
+
+
+# --- Lot 6 : pilotage ------------------------------------------------------------------------------
+
+def _periode(request):
+    from datetime import date
+
+    def lire(cle):
+        try:
+            return date.fromisoformat(request.query_params.get(cle, "")[:10])
+        except ValueError:
+            return None
+
+    projet = request.query_params.get("projet", "")
+    return lire("du"), lire("au"), int(projet) if projet.isdigit() else None
+
+
+def _vue(request):
+    vue = request.query_params.get("vue") or request.data.get("vue") or "pilotage"
+    if vue not in pilotage.VUES:
+        raise ValidationError({"vue": v("Vue inconnue.")})
+    if vue == "confidentielle" and not pilotage.habilite_confidentiel(request.user):
+        raise PermissionDenied(v("La vue confidentielle est réservée aux personnes habilitées."))
+    return vue
+
+
+@api_view(["GET"])
+@permission_classes([HasGlobalVisibilityOrAssigned])
+@dans_la_langue_demandee
+def tableau_de_bord(request):
+    """Éléments calculés d'une vue (?vue=, ?du=, ?au=, ?projet=)."""
+    vue = _vue(request)
+    du, au, projet = _periode(request)
+    return Response(pilotage.calculer_vue(vue, request.user, du, au, projet))
+
+
+@api_view(["GET"])
+@permission_classes([HasGlobalVisibilityOrAssigned])
+@dans_la_langue_demandee
+def catalogue_tableau(request):
+    """Vues accessibles et catalogue des éléments (pour personnaliser une vue)."""
+    habilite = pilotage.habilite_confidentiel(request.user)
+    return Response({
+        "vues": [{"code": c, "libelle": v(l)} for c, (l, _) in pilotage.VUES.items() if c != "confidentielle" or habilite],
+        "elements": [{"code": c, "libelle": v(l), "nature": n, "confidentiel": conf}
+                     for c, (l, n, conf) in pilotage.CATALOGUE.items() if not conf or habilite],
+        "peut_regler_organisation": request.user.role == "ADMIN",
+    })
+
+
+@api_view(["GET", "PUT", "DELETE"])
+@permission_classes([IsAuthenticated])
+def configuration_tableau(request):
+    """
+    Composition d'une vue. PUT {vue, elements, portee} : « utilisateur » (sa copie, sans rien changer pour
+    les autres) ou « organisation » (Administrateur). DELETE ?vue= : revenir à la vue de l'organisation.
+    """
+    from .models import TableauPlaintes
+
+    vue = _vue(request)
+    if request.method == "GET":
+        return Response({"vue": vue, **pilotage.configuration(vue, request.user)})
+    if request.method == "DELETE":
+        TableauPlaintes.objects.filter(vue=vue, utilisateur=request.user).delete()
+        return Response({"vue": vue, **pilotage.configuration(vue, request.user)})
+    portee = request.data.get("portee", "utilisateur")
+    if portee == "organisation" and request.user.role != "ADMIN":
+        raise PermissionDenied(v("Seul l'Administrateur modifie la vue de l'organisation."))
+    utilisateur = None if portee == "organisation" else request.user
+    TableauPlaintes.objects.update_or_create(vue=vue, utilisateur=utilisateur,
+                                             defaults={"elements": pilotage.nettoyer(vue, request.data.get("elements"))})
+    return Response({"vue": vue, **pilotage.configuration(vue, request.user)})
+
+
+@api_view(["GET"])
+@permission_classes([HasGlobalVisibilityOrAssigned])
+@dans_la_langue_demandee
+def export_tableau(request, format_):
+    from .export_pilotage import vue_excel, vue_pdf
+
+    vue = _vue(request)
+    du, au, projet = _periode(request)
+    resultat = pilotage.calculer_vue(vue, request.user, du, au, projet)
+    if format_ == "pdf":
+        reponse = HttpResponse(vue_pdf(resultat, request.user), content_type="application/pdf")
+    else:
+        reponse = HttpResponse(vue_excel(resultat), content_type=XLSX)
+    reponse["Content-Disposition"] = f"attachment; filename=tableau_plaintes_{vue}.{'pdf' if format_ == 'pdf' else 'xlsx'}"
+    return reponse
+
+
+@api_view(["GET"])
+@permission_classes([HasGlobalVisibilityOrAssigned])
+@dans_la_langue_demandee
+def retours_projet(request, projet_id):
+    """Encart « Retours des communautés » de la fiche projet."""
+    return Response(pilotage.retours_projet(projet_id, request.user))
+
+
+class ActionCorrectiveViewSet(_Base):
+    """Actions correctives (responsable, échéance, statut), reliées à plusieurs dossiers."""
+
+    serializer_class = ActionCorrectiveSerializer
+    filterset_fields = ("projet", "statut", "responsable", "dossiers")
+
+    def get_queryset(self):
+        return ActionCorrective.objects.select_related("projet", "responsable").prefetch_related("dossiers")
+
+    def _journaliser(self, action, ajoutes):
+        from .models import ActionDossier
+
+        ActionDossier.objects.bulk_create([
+            ActionDossier(dossier=d, type=ActionDossier.Type.ACTION_CORRECTIVE, auteur=self.request.user,
+                          texte=v("Action corrective liée : ") + action.titre) for d in ajoutes])
+
+    def perform_create(self, serializer):
+        action = serializer.save(cree_par=self.request.user)
+        self._journaliser(action, action.dossiers.all())
+
+    def perform_update(self, serializer):
+        avant = set(serializer.instance.dossiers.values_list("pk", flat=True))
+        # Les liens vers des dossiers que l'utilisateur ne voit pas sont conservés tels quels.
+        invisibles = set(serializer.instance.dossiers.exclude(pk__in=dossiers_visibles(self.request.user)).values_list("pk", flat=True))
+        action = serializer.save()
+        if "dossiers" in serializer.validated_data and invisibles:
+            action.dossiers.add(*invisibles)
+        if action.statut == ActionCorrective.Statut.REALISEE and not action.date_realisation:
+            ActionCorrective.objects.filter(pk=action.pk).update(date_realisation=timezone.localdate())
+        self._journaliser(action, action.dossiers.exclude(pk__in=avant))

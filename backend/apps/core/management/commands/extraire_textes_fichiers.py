@@ -51,6 +51,8 @@ MODULES = [
     "plaintes/excel.py",
     "plaintes/modeles_mecanisme.py",
     "plaintes/export_fiche.py",
+    "plaintes/export_pilotage.py",
+    "plaintes/pilotage.py",
 ]
 
 # Textes absents du code tels quels : valeurs que l'utilisateur tape dans un modèle (à reconnaître

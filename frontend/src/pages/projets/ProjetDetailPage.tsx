@@ -21,7 +21,9 @@ import {
   Trash2,
   Users,
   Wallet,
+  MessagesSquare,
 } from "lucide-react";
+import { RetoursProjet } from "../plaintes/RetoursProjet";
 import {
   ActionIcon,
   Badge,
@@ -622,6 +624,7 @@ export function ProjetDetailPage() {
     { cle: "indicateurs", label: voc("Indicateurs"), icone: <Gauge size={15} />, onglets: [{ valeur: "indicateurs", label: voc("Indicateurs"), masque: "projet:indicateurs" }] },
     { cle: "financement", label: voc("Financement"), icone: <Wallet size={15} />, onglets: [{ valeur: "financement", label: voc("Financement"), masque: "projet:financement" }] },
     { cle: "documents", label: voc("Documents"), icone: <FileText size={15} />, onglets: [{ valeur: "documents", label: voc("Documents"), masque: "projet:documents" }] },
+    { cle: "retours", label: voc("Retours des communautés"), icone: <MessagesSquare size={15} />, onglets: [{ valeur: "retours", label: voc("Retours des communautés"), masque: "/plaintes" }] },
     {
       cle: "controle", label: voc("Contrôle"), icone: <ShieldCheck size={15} />,
       onglets: [
@@ -947,6 +950,12 @@ export function ProjetDetailPage() {
             </Stack>
           </Card>
         </Tabs.Panel>
+
+        {!estMasque("/plaintes") && (
+          <Tabs.Panel value="retours" pt="md">
+            {onglet === "retours" && <RetoursProjet projetId={projet.id} />}
+          </Tabs.Panel>
+        )}
 
         {!estMasque("projet:periode") && (
           <Tabs.Panel value="periode" pt="md">

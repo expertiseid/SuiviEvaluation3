@@ -257,6 +257,12 @@ export function CommuniquerDossier({ dossier, onClose }: { dossier: DossierDetai
           {(dossier.telephone || dossier.courriel) && (
             <Text size="xs" c="dimmed">{[dossier.nom, dossier.telephone, dossier.courriel].filter(Boolean).join(" · ")}</Text>
           )}
+          {v.objet === "SATISFACTION" && v.sens === "ENTRANT" && (
+            <Radio.Group label={voc("Le plaignant se dit-il satisfait du traitement ?")} withAsterisk error={erreurs.satisfait}
+              value={v.satisfait === true ? "oui" : v.satisfait === false ? "non" : ""} onChange={(x) => changer({ satisfait: x === "oui" })}>
+              <Group mt={6}><Radio value="oui" label={voc("Oui")} /><Radio value="non" label={voc("Non")} /></Group>
+            </Radio.Group>
+          )}
           <Textarea label={voc("Résumé de l'échange")} withAsterisk autosize minRows={3} value={texte(v.texte)}
             onChange={(e) => changer({ texte: e.currentTarget.value })} error={erreurs.texte} />
           <Text size="xs" c="dimmed">{voc("Ne jamais communiquer de détail confidentiel. La communication de la décision fait passer le dossier à « Réponse donnée ».")}</Text>

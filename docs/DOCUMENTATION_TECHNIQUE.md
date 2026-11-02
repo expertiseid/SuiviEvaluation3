@@ -730,7 +730,7 @@ secondaire ne peut viser qu'un niveau supérieur, jamais le parent principal ni 
   pas. L'export Excel des bénéficiaires ne traduit que ses en-têtes : ses données se réimportent
   telles quelles. Tests : `core/test_modeles_traduits.py`, `suivi/test_canevas.py`.
 
-### 5.14 Mécanisme de gestion des plaintes et retours (lots 1 à 5 : paramétrage, réception, traitement, délais, confidentialité)
+### 5.14 Mécanisme de gestion des plaintes et retours (lots 1 à 6 : paramétrage, réception, traitement, délais, confidentialité, pilotage)
 
 Une installation = une organisation : tout le mécanisme se paramètre, sans rien coder, pour
 des communautés, des bénéficiaires, le personnel ou tout autre public. Application `plaintes`,
@@ -907,7 +907,43 @@ modèles `Prestataire` et `Referencement` :
 - Non couvert à ce stade : habilitation « sensible » distincte validée par une deuxième personne,
   double authentification, pièces jointes chiffrées (à prévoir avec les pièces jointes).
 
-Lots suivants prévus : pilotage (tableaux de bord, indicateurs, rapports), modèles de messages.
+**Pilotage (lot 6)** — `pilotage.py`, `export_pilotage.py`, modèles `ActionCorrective` et `TableauPlaintes` :
+
+- **Indicateurs de base** (classe `Calcul`), chacun avec définition, période, numérateur et
+  dénominateur : volume reçu, ouverts en fin de période, clôturés, en retard, traitement dans les
+  délais, délai moyen et médian, accusés de réception, boucle bouclée, réouvertures et recours, en
+  attente d'affectation, satisfaction (à partir de 10 réponses : échanges « Enquête de
+  satisfaction » reçus, avec « satisfait » oui/non). Seuils d'alerte (« À surveiller », « Alerte »)
+  affichés avec libellé et icône en plus de la couleur.
+- **Statistiques ne valent pas accès** : les totaux portent sur tous les dossiers (sauf ceux qui
+  mettent l'utilisateur en cause) ; les ventilations ne comptent que les dossiers ordinaires et
+  donnent à part le total confidentiel ; toute case de moins de `Mecanisme.seuil_masquage`
+  dossiers confidentiels (5 minimum, réglable à la hausse seulement) est affichée « moins de N ».
+  Listes et clic vers les dossiers passent par `dossiers_visibles`.
+- **Tableaux de bord** (`/plaintes/tableau-de-bord`) : quatre vues par défaut — opérationnelle,
+  pilotage du mécanisme, projet et suivi-évaluation, confidentielle (Administrateur et points
+  focaux seulement, totaux sans détail) — composées à partir du catalogue (`CATALOGUE`) de chiffres
+  clés, graphiques et listes ; filtres communs (période, 12 derniers mois par défaut ; projet) ;
+  clic vers la liste des dossiers filtrée ; avertissement « une hausse des plaintes peut traduire
+  une meilleure accessibilité ». **Personnalisation** (`plaintes-tableau/configuration/`, hors de
+  `/plaintes/`) : copie personnelle (ne change rien pour les autres), vue de l'organisation
+  (Administrateur), « Revenir à la vue de l'organisation » ; un élément confidentiel ne sort
+  jamais de la vue confidentielle. Calcul dans la langue de l'utilisateur.
+- **Exports** : vue en Excel et en PDF (`tableau-de-bord/export/{excel,pdf}/`) ; liste des
+  dossiers filtrés en Excel (`dossiers/exporter-liste/`) sans les dossiers confidentiels, sans
+  coordonnées sauf pour l'Administrateur qui les demande, chaque dossier exporté inscrit à son
+  journal. Pas encore de tâche de fond ni de lien temporaire (volumes actuels modestes).
+- **Actions correctives** (`/plaintes/actions-correctives`) : titre, projet, responsable,
+  échéance, statut, plusieurs dossiers liés (seulement des dossiers visibles ; les liens vers des
+  dossiers invisibles sont conservés à la modification) ; lien inscrit au journal du dossier ;
+  bloc sur la fiche du dossier.
+- **Fiche projet** : onglet « Retours des communautés » (`plaintes/projets/{id}/retours/`),
+  agrégé, masqué si le module Plaintes est caché pour l'utilisateur.
+- Tests : `plaintes/test_pilotage.py` (indicateurs, masquage et scénario 11, vues personnalisées,
+  exports, actions correctives et encart projet).
+
+Lots suivants possibles : modèles de messages multilingues et envoi effectif (SMS, courriel),
+pièces jointes, indicateurs de redevabilité dans les cadres de résultats, multi-organisations.
 
 ## 6. Utilisateurs, rôles et permissions
 
@@ -1054,6 +1090,11 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 | POST | `plaintes/dossiers/{id}/exporter/` | Fiche PDF en filigrane (motif et confirmation pour un dossier confidentiel), tracée au journal |
 | POST | `plaintes-signaler/{id}/` | Signaler un dossier comme sensible (tout utilisateur qui le voit) |
 | CRUD | `plaintes/prestataires/` | Annuaire des prestataires d'assistance |
+| GET | `plaintes/tableau-de-bord/?vue=&du=&au=&projet=`, `…/catalogue/`, `…/export/{excel,pdf}/` | Tableau de bord du mécanisme, catalogue des éléments, exports |
+| GET / PUT / DELETE | `plaintes-tableau/configuration/?vue=` | Composition d'une vue (copie personnelle ou vue de l'organisation) |
+| POST | `plaintes/dossiers/exporter-liste/` | Liste des dossiers filtrés en Excel (hors confidentiels), tracée au journal |
+| CRUD | `plaintes/actions-correctives/` | Actions correctives reliées aux dossiers |
+| GET | `plaintes/projets/{id}/retours/` | Encart « Retours des communautés » de la fiche projet |
 | GET | `plaintes/qr/?projet=` | QR code (PNG) du formulaire public |
 | GET / POST | `public/plaintes/formulaire/`, `public/plaintes/deposer/`, `public/plaintes/suivi/` | Sans authentification : contenu du formulaire, dépôt d'un retour, état d'un dossier par son code |
 | GET | `beneficiaires/exporter/` | Export des bénéficiaires : `?fichier=excel` ou `pdf`, `?projets=1,3` pour choisir les projets |
@@ -1164,6 +1205,8 @@ mutualisées) puis rejoue la requête, ou renvoie vers la page de connexion.
 | `/zones-administratives` | Référentiel administratif |
 | `/documents` | Bibliothèque documentaire |
 | `/plaintes` | Plaintes et retours : dossiers (vues prêtes, filtres, mes vues), saisie d'un retour par un agent, adresse et QR code du formulaire public |
+| `/plaintes/tableau-de-bord` | Tableau de bord : vues opérationnelle, pilotage, projet et S&E, confidentielle ; personnalisation, exports |
+| `/plaintes/actions-correctives` | Suivi des actions correctives |
 | `/plaintes/dossiers/:id` | Dossier : informations, décision et clôture, dossiers liés, journal ; actions de traitement selon l'état du dossier |
 | `/plaintes/parametrage` | Paramétrage du mécanisme : onglets Mécanisme (modèles, réglages, activation), Types de retours, Catégories, Priorités, Circuits de traitement, Canevas Excel |
 | `/plainte`, `/plainte/suivi` | Formulaire public de dépôt et suivi par code (sans compte, hors du menu) |
@@ -1197,7 +1240,7 @@ mutualisées) puis rejoue la requête, ou renvoie vers la page de connexion.
 | `seed_points_suivi` | Ajoute des points de suivi de démonstration |
 | `verifier_echeances_plaintes [--recalculer]` | Rappels, retards et escalades des dossiers de plaintes (lancée par `check_deadlines`) ; `--recalculer` recalcule d'abord toutes les échéances |
 | `seed_demo_complements` | Complète la démonstration sans rien supprimer : variables des bénéficiaires et réponses, doublons signalés, liens de partage, pièces justificatives des valeurs d'indicateurs ; relançable |
-| `seed_demo_plaintes [--reinitialiser \| --historique \| --confidentiel]` | Mécanisme de plaintes « standard » activé, points focaux du circuit confidentiel `admin` et `pf_psea` (`demo1234!`) ; les dossiers confidentiels sont visibles de l'Administrateur et de `pf_psea` et 42 dossiers sur six mois, tous canaux et états d'avancement, créés par l'interface d'entrée commune puis traités par les vraies opérations (journal daté, un recours) ; `--historique` complète seulement le journal des dossiers qui n'en ont pas ; `--confidentiel` ajoute seulement la démonstration du circuit confidentiel (circuit alternatif, prestataires, mise en cause, suspension légale) |
+| `seed_demo_plaintes [--reinitialiser \| --historique \| --confidentiel \| --pilotage]` | Mécanisme de plaintes « standard » activé, points focaux du circuit confidentiel `admin` et `pf_psea` (`demo1234!`) ; les dossiers confidentiels sont visibles de l'Administrateur et de `pf_psea` et 42 dossiers sur six mois, tous canaux et états d'avancement, créés par l'interface d'entrée commune puis traités par les vraies opérations (journal daté, un recours) ; `--historique` complète seulement le journal des dossiers qui n'en ont pas ; `--pilotage` ajoute accusés de réception, réponses de satisfaction et actions correctives ; `--confidentiel` ajoute seulement la démonstration du circuit confidentiel (circuit alternatif, prestataires, mise en cause, suspension légale) |
 | `charger_limites BF [--niveaux 1 2 3] [--recalculer]` | Télécharge les limites administratives d'un pays (geoBoundaries) et place les zones sur la carte |
 | `importer_bndt WGS84.zip [--pays BF] [--recalculer]` | Importe une base topographique en shapefiles (archive ou dossier) : contours, routes, localités, puis place les zones |
 

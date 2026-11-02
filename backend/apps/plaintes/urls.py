@@ -11,6 +11,7 @@ router.register("plaintes/etapes", views.EtapeCircuitViewSet, basename="plainte-
 router.register("plaintes/categories", views.CategorieViewSet, basename="plainte-categorie")
 router.register("plaintes/jours-feries", views.JourFerieViewSet, basename="plainte-jour-ferie")
 router.register("plaintes/prestataires", views.PrestataireViewSet, basename="plainte-prestataire")
+router.register("plaintes/actions-correctives", views.ActionCorrectiveViewSet, basename="plainte-action-corrective")
 router.register("plaintes/dossiers", views.DossierViewSet, basename="plainte-dossier")
 # Hors de /plaintes/ : chacun enregistre ses propres vues, même en lecture seule sur le module.
 router.register("plaintes-vues", views.VueDossiersViewSet, basename="plainte-vue")
@@ -23,6 +24,12 @@ urlpatterns = [
     path("plaintes/canevas/", views.canevas, name="plaintes-canevas"),
     path("plaintes/canevas/importer/", views.importer_canevas, name="plaintes-canevas-importer"),
     path("plaintes/qr/", views.qr_formulaire, name="plaintes-qr"),
+    path("plaintes/tableau-de-bord/", views.tableau_de_bord, name="plaintes-tableau"),
+    path("plaintes/tableau-de-bord/catalogue/", views.catalogue_tableau, name="plaintes-tableau-catalogue"),
+    path("plaintes/tableau-de-bord/export/<str:format_>/", views.export_tableau, name="plaintes-tableau-export"),
+    path("plaintes/projets/<int:projet_id>/retours/", views.retours_projet, name="plaintes-retours-projet"),
+    # Hors de /plaintes/ : chacun règle sa propre copie d'une vue, même en lecture seule sur le module.
+    path("plaintes-tableau/configuration/", views.configuration_tableau, name="plaintes-tableau-configuration"),
     # Hors de /plaintes/ : tout utilisateur qui voit un dossier peut le signaler comme sensible.
     path("plaintes-signaler/<int:pk>/", views.signaler_sensible, name="plaintes-signaler"),
     # Sans compte : formulaire public et suivi par code (hors de /plaintes/, que protègent les droits du module).

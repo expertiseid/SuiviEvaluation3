@@ -82,6 +82,9 @@ bénéficiaires, documents, alertes et tableaux de bord.
   Confidentialité : données protégées chiffrées (clé propre à l'organisation), signalement manuel et
   levée motivée, personnes mises en cause exclues et circuit alternatif, assistance et référencement
   avec consentement, export PDF en filigrane, conservation, anonymisation et suspension légale.
+  Pilotage : indicateurs avec définition et dénominateur, quatre tableaux de bord personnalisables
+  (petits effectifs confidentiels masqués), exports Excel et PDF, actions correctives, onglet
+  « Retours des communautés » sur la fiche projet.
 
 ## Pile technique
 

@@ -15,6 +15,8 @@ rappels, escalade, prolongation motivée, notifications ; voir delais.py).
 Lot 5 : circuit confidentiel complet (marquage manuel et levée motivée, personnes mises en cause
 et circuit alternatif, chiffrement des données protégées — chiffrement.py —, assistance et
 référencement, export motivé, conservation et suspension légale ; voir confidentiel.py).
+Lot 6 : pilotage (indicateurs, tableaux de bord personnalisables, exports, actions correctives,
+encart projet ; voir pilotage.py).
 """
 import uuid
 
@@ -73,6 +75,10 @@ class Mecanisme(TimestampedModel):
     )
     notifications_courriel = models.BooleanField(
         default=True, help_text="Envoyer aussi les notifications par courriel (en plus de l'application).",
+    )
+    seuil_masquage = models.PositiveSmallIntegerField(
+        default=5, help_text="Tableaux de bord : une case comptant moins de dossiers confidentiels que ce seuil "
+        "est affichée « moins de N ». Jamais en dessous de 5.",
     )
     circuit_alternatif = models.ForeignKey(
         "Circuit", on_delete=models.SET_NULL, null=True, blank=True, related_name="+",
@@ -505,3 +511,49 @@ class Referencement(models.Model):
 
     class Meta:
         ordering = ("-date", "-id")
+
+
+class ActionCorrective(TimestampedModel):
+    """Action corrective décidée à la suite de plaintes : suivie (responsable, échéance, statut), reliée à plusieurs dossiers."""
+
+    class Statut(models.TextChoices):
+        A_FAIRE = "A_FAIRE", "À faire"
+        EN_COURS = "EN_COURS", "En cours"
+        REALISEE = "REALISEE", "Réalisée"
+        ABANDONNEE = "ABANDONNEE", "Abandonnée"
+
+    titre = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    projet = models.ForeignKey("projects.Projet", on_delete=models.SET_NULL, null=True, blank=True,
+                               related_name="actions_correctives_plaintes")
+    responsable = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name="actions_correctives_plaintes")
+    echeance = models.DateField(null=True, blank=True)
+    statut = models.CharField(max_length=20, choices=Statut.choices, default=Statut.A_FAIRE)
+    date_realisation = models.DateField(null=True, blank=True)
+    dossiers = models.ManyToManyField(Dossier, blank=True, related_name="actions_correctives")
+    cree_par = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+")
+
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ("statut", "echeance", "-id")
+
+    def __str__(self):
+        return self.titre
+
+
+class TableauPlaintes(models.Model):
+    """
+    Composition d'une vue du tableau de bord (éléments et types de graphiques). Utilisateur vide :
+    vue de l'organisation ; sinon copie personnelle, qui ne change rien pour les autres.
+    """
+
+    vue = models.CharField(max_length=30)
+    utilisateur = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True,
+                                    related_name="tableaux_plaintes")
+    elements = models.JSONField(default=list)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("vue", "utilisateur"), name="tableau_plaintes_unique",
+                                               nulls_distinct=False)]

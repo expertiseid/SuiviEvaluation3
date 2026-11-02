@@ -212,6 +212,11 @@ def communiquer(dossier, auteur, donnees):
             raise ValidationError({"canal": v("Aucun numéro de téléphone n'est enregistré pour ce plaignant.")})
         if canal == ModeReponse.COURRIEL and not dossier.courriel:
             raise ValidationError({"canal": v("Aucune adresse courriel n'est enregistrée pour ce plaignant.")})
+    details = {}
+    if objet == ActionDossier.Objet.SATISFACTION and sens == ActionDossier.Sens.ENTRANT:
+        if donnees.get("satisfait") not in (True, False):
+            raise ValidationError({"satisfait": v("Indiquez si le plaignant se dit satisfait.")})
+        details["satisfait"] = donnees["satisfait"]
     if objet == ActionDossier.Objet.DECISION and sens == ActionDossier.Sens.SORTANT:
         if not dossier.decision:
             raise ValidationError({"objet": v("Enregistrez d'abord la décision.")})
@@ -219,7 +224,7 @@ def communiquer(dossier, auteur, donnees):
             dossier.statut = StatutDossier.REPONDU
         dossier.date_reponse = timezone.localdate()
         dossier.save()
-    journaliser(dossier, A.COMMUNICATION, auteur, texte, sens=sens, canal=canal, objet=objet)
+    journaliser(dossier, A.COMMUNICATION, auteur, texte, sens=sens, canal=canal, objet=objet, details=details)
     return dossier
 
 

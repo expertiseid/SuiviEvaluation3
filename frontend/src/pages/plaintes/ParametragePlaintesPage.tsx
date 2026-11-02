@@ -189,6 +189,7 @@ function FormulaireMecanisme({ mecanisme, modifiable }: { mecanisme: MecanismePl
         escalade_active: valeurs.escalade_active,
         notifications_courriel: valeurs.notifications_courriel,
         circuit_alternatif: valeurs.circuit_alternatif,
+        seuil_masquage: valeurs.seuil_masquage,
         projets: valeurs.projets,
       });
       notifications.show({ message: voc("Réglages enregistrés"), color: "teal" });
@@ -254,6 +255,14 @@ function FormulaireMecanisme({ mecanisme, modifiable }: { mecanisme: MecanismePl
             value={valeurs.delai_defaut_jours}
             disabled={!modifiable}
             onChange={(v) => changer("delai_defaut_jours", Number(v) || 1)}
+          />
+          <NumberInput
+            label={voc("Seuil de masquage des petits effectifs confidentiels")}
+            description={voc("Tableaux de bord : une case comptant moins de dossiers confidentiels est affichée « moins de N ». Jamais en dessous de 5.")}
+            min={5}
+            value={valeurs.seuil_masquage}
+            disabled={!modifiable}
+            onChange={(v) => changer("seuil_masquage", Math.max(5, Number(v) || 5))}
           />
           <NumberInput
             label={voc("Rappel avant l'échéance (jours)")}

@@ -4,7 +4,8 @@
  * (dossiers, saisie par un agent, formulaire public et suivi par code) ; lot 3 : traitement
  * (actions sur un dossier, journal, vues prêtes et enregistrées, dossiers liés) ; lot 4 : délais
  * (échéances, prolongation, jours fériés, réglages des rappels) ; lot 5 : circuit confidentiel
- * (marquage, levée, personnes mises en cause, assistance, export, conservation). API : /api/v1/plaintes/
+ * (marquage, levée, personnes mises en cause, assistance, export, conservation) ; lot 6 : pilotage
+ * (tableaux de bord, exports, actions correctives, encart projet). API : /api/v1/plaintes/
  * et, sans compte, /api/v1/public/plaintes/.
  */
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -33,6 +34,7 @@ export interface MecanismePlaintes {
   escalade_active: boolean;
   notifications_courriel: boolean;
   circuit_alternatif: number | null;
+  seuil_masquage: number;
 }
 
 export interface TypeRetour {
@@ -673,4 +675,193 @@ export async function exporterFicheDossier(id: number, numero: string, motif: st
   lien.click();
   lien.remove();
   window.URL.revokeObjectURL(url);
+}
+
+// --- Lot 6 : pilotage -----------------------------------------------------------------------------
+
+export type ValeurMasquee = number | string | null;
+
+export interface ElementChiffre {
+  code: string;
+  nature: "chiffre";
+  libelle: string;
+  valeur: ValeurMasquee;
+  unite: string;
+  definition: string;
+  numerateur: ValeurMasquee;
+  denominateur: ValeurMasquee;
+  niveau: "ok" | "attention" | "alerte";
+  periode: { du?: string; au: string };
+  lien: Record<string, string> | null;
+  graphique?: string;
+}
+
+export interface ElementGraphique {
+  code: string;
+  nature: "graphique";
+  libelle: string;
+  categories: string[];
+  valeurs: ValeurMasquee[];
+  liens: (Record<string, string> | null)[];
+  /** Total confidentiel du même périmètre (« moins de 5 » si petit), hors ventilation. */
+  confidentiels: ValeurMasquee;
+  periode: { du?: string; au: string };
+  graphique?: string;
+}
+
+export interface ElementListe {
+  code: string;
+  nature: "liste";
+  libelle: string;
+  colonnes: string[];
+  lignes: { id: number; cellules: (string | number | null)[]; retard: boolean }[];
+  graphique?: string;
+}
+
+export type ElementTableau = ElementChiffre | ElementGraphique | ElementListe;
+
+export interface TableauPlaintes {
+  vue: string;
+  libelle: string;
+  source: "utilisateur" | "organisation" | "defaut";
+  du: string;
+  au: string;
+  seuil_masquage: number;
+  elements: ElementTableau[];
+}
+
+export interface FiltresTableau {
+  du?: string | null;
+  au?: string | null;
+  projet?: string | null;
+}
+
+const parametresTableau = (vue: string, f: FiltresTableau) =>
+  Object.fromEntries(Object.entries({ vue, ...f }).filter(([, x]) => x));
+
+export function useTableauPlaintes(vue: string, filtres: FiltresTableau) {
+  return useQuery({
+    queryKey: [CLE, "tableau", vue, filtres],
+    queryFn: async () => (await apiClient.get<TableauPlaintes>("/plaintes/tableau-de-bord/", { params: parametresTableau(vue, filtres) })).data,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export interface CatalogueTableau {
+  vues: { code: string; libelle: string }[];
+  elements: { code: string; libelle: string; nature: "chiffre" | "graphique" | "liste"; confidentiel: boolean }[];
+  peut_regler_organisation: boolean;
+}
+
+export function useCatalogueTableau() {
+  return useQuery({
+    queryKey: [CLE, "tableau", "catalogue"],
+    queryFn: async () => (await apiClient.get<CatalogueTableau>("/plaintes/tableau-de-bord/catalogue/")).data,
+  });
+}
+
+export interface ElementConfiguration {
+  code: string;
+  graphique: string;
+}
+
+export function useConfigurationTableau(vue: string) {
+  return useQuery({
+    queryKey: [CLE, "tableau", "configuration", vue],
+    queryFn: async () =>
+      (await apiClient.get<{ vue: string; elements: ElementConfiguration[]; source: string }>("/plaintes-tableau/configuration/", { params: { vue } })).data,
+  });
+}
+
+export function useEnregistrerConfigurationTableau() {
+  const rafraichir = useRafraichir();
+  return useMutation({
+    mutationFn: async (c: { vue: string; elements: ElementConfiguration[]; portee: "utilisateur" | "organisation" }) =>
+      (await apiClient.put("/plaintes-tableau/configuration/", c)).data,
+    onSuccess: rafraichir,
+  });
+}
+
+export function useRevenirVueOrganisation() {
+  const rafraichir = useRafraichir();
+  return useMutation({
+    mutationFn: async (vue: string) => (await apiClient.delete("/plaintes-tableau/configuration/", { params: { vue } })).data,
+    onSuccess: rafraichir,
+  });
+}
+
+function telecharger(donnees: BlobPart, nom: string, type: string) {
+  const url = window.URL.createObjectURL(new Blob([donnees], { type }));
+  const lien = document.createElement("a");
+  lien.href = url;
+  lien.setAttribute("download", nom);
+  document.body.appendChild(lien);
+  lien.click();
+  lien.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+export async function exporterTableau(format: "excel" | "pdf", vue: string, filtres: FiltresTableau) {
+  const r = await apiClient.get(`/plaintes/tableau-de-bord/export/${format}/`, { params: parametresTableau(vue, filtres), responseType: "blob" });
+  telecharger(r.data, `tableau_plaintes_${vue}.${format === "pdf" ? "pdf" : "xlsx"}`, format === "pdf" ? "application/pdf" : "application/octet-stream");
+}
+
+/** Liste des dossiers filtrés en Excel (sans les confidentiels ; coordonnées pour l'Administrateur qui les demande). */
+export async function exporterListeDossiers(filtres: Omit<FiltresDossiers, "page">, coordonnees: boolean) {
+  const params = Object.fromEntries(Object.entries(filtres).filter(([, x]) => x !== "" && x != null));
+  const r = await apiClient.post("/plaintes/dossiers/exporter-liste/", { coordonnees }, { params, responseType: "blob" });
+  telecharger(r.data, "dossiers_plaintes.xlsx", "application/octet-stream");
+}
+
+export type StatutActionCorrective = "A_FAIRE" | "EN_COURS" | "REALISEE" | "ABANDONNEE";
+export const STATUTS_ACTION: StatutActionCorrective[] = ["A_FAIRE", "EN_COURS", "REALISEE", "ABANDONNEE"];
+export const libelleStatutAction = (s: StatutActionCorrective): string =>
+  ({ A_FAIRE: voc("À faire"), EN_COURS: voc("En cours"), REALISEE: voc("Réalisée"), ABANDONNEE: voc("Abandonnée") })[s];
+
+export interface ActionCorrective {
+  id: number;
+  titre: string;
+  description: string;
+  projet: number | null;
+  projet_code: string | null;
+  responsable: number | null;
+  responsable_nom: string | null;
+  echeance: string | null;
+  statut: StatutActionCorrective;
+  date_realisation: string | null;
+  dossiers: number[];
+  dossiers_lies: { id: number; numero: string }[];
+  created_at: string;
+}
+
+export function useActionsCorrectives(params: { projet?: string | null; statut?: string | null; dossiers?: number } = {}) {
+  return useQuery({
+    queryKey: [CLE, "actions-correctives", params],
+    queryFn: async () =>
+      (await apiClient.get<ActionCorrective[]>("/plaintes/actions-correctives/", {
+        params: Object.fromEntries(Object.entries(params).filter(([, x]) => x)),
+      })).data,
+  });
+}
+export const useEnregistrerActionCorrective = () => useEnregistrer<ActionCorrective>("actions-correctives");
+export const useSupprimerActionCorrective = () => useSupprimer("actions-correctives");
+
+/** Numéros de tous les dossiers visibles (pour relier une action corrective). */
+export function useNumerosDossiers() {
+  return useQuery({
+    queryKey: [CLE, "dossiers", "numeros"],
+    queryFn: async () =>
+      (await apiClient.get<Paginated<DossierPlainte>>("/plaintes/dossiers/", { params: { page_size: 1000 } })).data.results.map((d) => ({
+        id: d.id,
+        numero: d.numero,
+        sensible: d.sensible,
+      })),
+  });
+}
+
+export function useRetoursProjet(projet: number) {
+  return useQuery({
+    queryKey: [CLE, "retours-projet", projet],
+    queryFn: async () => (await apiClient.get<TableauPlaintes>(`/plaintes/projets/${projet}/retours/`)).data,
+  });
 }

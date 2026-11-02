@@ -170,6 +170,8 @@ class Command(BaseCommand):
         parser.add_argument("--reinitialiser", action="store_true", help="Efface d'abord tout le module plaintes.")
         parser.add_argument("--historique", action="store_true",
                             help="Complète seulement le journal des dossiers qui n'en ont pas, sans rien supprimer.")
+        parser.add_argument("--pilotage", action="store_true",
+                            help="Ajoute seulement la démonstration du pilotage (lot 6), sans rien supprimer.")
         parser.add_argument("--confidentiel", action="store_true",
                             help="Ajoute seulement la démonstration du circuit confidentiel (lot 5), sans rien supprimer.")
 
@@ -195,6 +197,8 @@ class Command(BaseCommand):
             return self.completer_historique()
         if options["confidentiel"]:
             return self.confidentiel_de_demonstration()
+        if options["pilotage"]:
+            return self.pilotage_de_demonstration()
         if m.Dossier.objects.exists() or m.Categorie.objects.exists():
             if not options["reinitialiser"]:
                 raise CommandError("Le module contient déjà des données : relancer avec --reinitialiser pour les effacer.")
@@ -287,6 +291,7 @@ class Command(BaseCommand):
             compte["sensibles"] += dossier.sensible
         self.recours_de_demonstration(alea, point_focal)
         self.confidentiel_de_demonstration()
+        self.pilotage_de_demonstration()
 
         self.stdout.write(self.style.SUCCESS(
             f"Mécanisme activé ; {m.Dossier.objects.count()} dossiers dont {compte['sensibles']} confidentiels "
@@ -337,7 +342,6 @@ class Command(BaseCommand):
             completes += 1
         if not Dossier.objects.filter(en_recours=True).exists():
             self.recours_de_demonstration(alea, point_focal)
-        self.confidentiel_de_demonstration()
         self.stdout.write(self.style.SUCCESS(f"Journal complété pour {completes} dossier(s)."))
 
     def confidentiel_de_demonstration(self):
@@ -378,3 +382,50 @@ class Command(BaseCommand):
         if cloture and not Dossier.objects.filter(suspension_legale=True).exists():
             confidentiel.suspendre(cloture, admin, {"motif": "Procédure judiciaire en cours : conservation obligatoire."})
         self.stdout.write(self.style.SUCCESS("Démonstration du circuit confidentiel ajoutée."))
+
+    def pilotage_de_demonstration(self):
+        """
+        Lot 6 : accusés de réception, réponses à l'enquête de satisfaction (au moins 10, seuil d'affichage),
+        actions correctives (en cours, réalisée, en retard) reliées à des dossiers.
+        """
+        from datetime import datetime, time
+
+        from apps.plaintes.models import ActionCorrective, ActionDossier, Dossier
+
+        alea = random.Random(99)
+        admin = User.objects.filter(username="admin").first() or User.objects.filter(role="ADMIN").first()
+        joignables = Dossier.objects.filter(anonyme=False, sensible=False).exclude(telephone="").order_by("date_reception")
+        if not ActionDossier.objects.filter(objet="ACCUSE_RECEPTION").exists():
+            for d in joignables:
+                if alea.random() < 0.75:
+                    a = ActionDossier.objects.create(dossier=d, type="COMMUNICATION", auteur=d.saisi_par or admin, sens="SORTANT",
+                                                     canal="SMS", objet="ACCUSE_RECEPTION", texte="Accusé de réception envoyé par SMS.")
+                    ActionDossier.objects.filter(pk=a.pk).update(
+                        date=timezone.make_aware(datetime.combine(d.date_reception, time(10, 0))))
+        if not ActionDossier.objects.filter(objet="SATISFACTION").exists():
+            for d in joignables.filter(statut="CLOTURE"):
+                satisfait = alea.random() < 0.8
+                a = ActionDossier.objects.create(
+                    dossier=d, type="COMMUNICATION", auteur=d.responsable or admin, sens="ENTRANT", canal="TELEPHONE",
+                    objet="SATISFACTION", details={"satisfait": satisfait},
+                    texte="Satisfait du traitement." if satisfait else "Peu satisfait : délai jugé trop long.")
+                ActionDossier.objects.filter(pk=a.pk).update(date=timezone.make_aware(
+                    datetime.combine(d.date_cloture or d.date_reception, time(15, 0)) + timedelta(days=3)))
+        if not ActionCorrective.objects.exists():
+            aujourdhui = timezone.localdate()
+            chef = User.objects.filter(username="demo_chef_projet").first() or admin
+            for titre, categorie, statut, ecart in (
+                ("Revoir la liste des bénéficiaires avec les comités villageois", "Critères de sélection", "EN_COURS", 15),
+                ("Contrôler le poids des sacs avant chaque distribution", "Quantité ou qualité", "REALISEE", -20),
+                ("Afficher les dates de distribution au marché et à la radio", "Information et communication", "A_FAIRE", -3),
+                ("Réparer les pompes signalées en panne", "Accès aux services", "EN_COURS", 10),
+            ):
+                dossiers = list(Dossier.objects.filter(categorie__nom=categorie, sensible=False)[:3])
+                action = ActionCorrective.objects.create(
+                    titre=titre, projet=dossiers[0].projet if dossiers else None, responsable=chef, statut=statut,
+                    echeance=aujourdhui + timedelta(days=ecart), cree_par=admin,
+                    date_realisation=aujourdhui - timedelta(days=25) if statut == "REALISEE" else None)
+                action.dossiers.set(dossiers)
+                ActionDossier.objects.bulk_create([ActionDossier(dossier=d, type="ACTION_CORRECTIVE", auteur=admin,
+                                                                 texte="Action corrective liée : " + titre) for d in dossiers])
+        self.stdout.write(self.style.SUCCESS("Démonstration du pilotage ajoutée."))
