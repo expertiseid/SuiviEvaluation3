@@ -70,6 +70,12 @@ bénéficiaires, documents, alertes et tableaux de bord.
   de retours, catégories (dont sensibles), priorités et délais, circuits de traitement par
   étapes, modèles prêts à l'emploi, canevas Excel ; activation contrôlée et règles de
   protection des personnes non modifiables (circuit confidentiel confié à des personnes nommées).
+  Réception : formulaire public sans compte (QR code, anonymat, langues dont l'arabe, anti-abus),
+  saisie par un agent (canal, date réelle), numéro de dossier et code de suivi, page publique de
+  suivi ; un retour sensible part au circuit confidentiel et l'agent n'en garde que le numéro.
+  Traitement : affectation, étapes, notes et actions correctives, échanges avec le plaignant,
+  décision, clôture motivée (sorties Référée et Hors périmètre), réouverture, recours, journal du
+  dossier, vues prêtes et vues enregistrées, dossiers liés.
 
 ## Pile technique
 

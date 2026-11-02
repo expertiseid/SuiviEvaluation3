@@ -103,7 +103,7 @@ Une application Django par domaine métier, dans `backend/apps/` :
 | `planification` | Import combiné « planification complète » (un seul classeur Excel) |
 | `reports` | Calculs agrégés de progression d'un projet |
 | `audit` | Consultation de l'historique des modifications de n'importe quel objet |
-| `plaintes` | Mécanisme de gestion des plaintes et retours : paramétrage (mécanisme, types, priorités, catégories, circuits et étapes), modèles prêts à l'emploi, contrôles d'activation, canevas Excel |
+| `plaintes` | Mécanisme de gestion des plaintes et retours : paramétrage (mécanisme, types, priorités, catégories, circuits et étapes), modèles prêts à l'emploi, contrôles d'activation, canevas Excel ; réception des dossiers (formulaire public, saisie agent, suivi par code) |
 
 Dans chaque application, on retrouve les fichiers Django habituels : `models.py`,
 `serializers.py`, `views.py`, `urls.py`, `admin.py`, `tests.py`. La logique métier qui
@@ -730,7 +730,7 @@ secondaire ne peut viser qu'un niveau supérieur, jamais le parent principal ni 
   pas. L'export Excel des bénéficiaires ne traduit que ses en-têtes : ses données se réimportent
   telles quelles. Tests : `core/test_modeles_traduits.py`, `suivi/test_canevas.py`.
 
-### 5.14 Mécanisme de gestion des plaintes et retours (lot 1 : paramétrage)
+### 5.14 Mécanisme de gestion des plaintes et retours (lots 1 à 3 : paramétrage, réception, traitement)
 
 Une installation = une organisation : tout le mécanisme se paramètre, sans rien coder, pour
 des communautés, des bénéficiaires, le personnel ou tout autre public. Application `plaintes`,
@@ -765,9 +765,79 @@ des communautés, des bénéficiaires, le personnel ou tout autre public. Applic
   retrouvés par leur nom, étapes d'un circuit présent remplacées, erreurs ligne par ligne.
   Tests : `plaintes/tests.py`.
 
-Lots suivants prévus : réception (formulaire public, saisie assistée, accusé de réception),
-traitement (dossiers, étapes, réponses), délais et alertes, circuit confidentiel (accès
-restreint, journal), pilotage (tableaux de bord, rapports).
+**Réception (lot 2)** — `reception.py`, `public.py`, modèle `Dossier` :
+
+- **Interface d'entrée commune** : `recevoir(donnees, canal, saisi_par, public)` applique à tous
+  les canaux les mêmes règles (mécanisme ouvert, type et catégorie actifs, projet couvert,
+  anonymat, coordonnées cohérentes avec le mode de réponse, consentement), la sensibilité, le
+  circuit et la première étape, le numéro et le code de suivi. Les canaux futurs (courriel, SMS,
+  import, KoboToolbox…) n'auront qu'à l'appeler.
+- **Numéro et code** : numéro lisible `PREFIXE-ANNEE-00001` (séquence par année,
+  `CompteurDossiers` verrouillé), identifiant interne `uid` aléatoire ; code de suivi aléatoire
+  `XXXX-XXXX-XXXX` (sans caractères ambigus) remis une seule fois, conservé uniquement sous
+  forme d'empreinte SHA-256 (`empreinte_code_suivi`). Aucun ne contient de donnée personnelle.
+- **Sensibilité automatique** : catégorie sensible (ou sous-catégorie d'une catégorie
+  sensible), ou réponse « oui » à la question système « concerne le comportement d'un membre du
+  personnel ou d'un partenaire ». Le dossier part alors dans le circuit confidentiel par défaut.
+- **Visibilité** (`dossiers_visibles`) : l'Administrateur voit tous les dossiers, confidentiels
+  compris (choix de l'organisation, qui s'écarte de la règle 7.3 du cahier des charges) ; les
+  autres utilisateurs du module voient les dossiers ordinaires, et les dossiers sensibles
+  seulement s'ils sont responsables d'une étape de leur circuit. L'agent qui saisit un dossier
+  sensible n'en garde que le numéro (absent de ses listes, de sa recherche et des compteurs, 404 sur la fiche). Le module
+  « Plaintes et retours » caché est refusé même en lecture (`LECTURE_BLOQUEE_SI_MASQUE`).
+- **Formulaire public** (`/plainte`, `/plainte?projet=ID`) et **page de suivi**
+  (`/plainte/suivi`) : sans compte, sur téléphone, dans toutes les langues de l'interface (arabe
+  de droite à gauche). Anonymat : aucune coordonnée conservée. Anti-abus : champ piège
+  `site_web` et limite d'envois par connexion (10 dépôts et 30 consultations de suivi par heure,
+  réglables par `PLAINTES_LIMITE_DEPOTS` / `PLAINTES_LIMITE_SUIVIS`) ; le compteur ne garde
+  qu'une empreinte de l'adresse IP, jamais l'adresse. La page de suivi ne renvoie que numéro,
+  date et statut général (reçu, en cours, réponse donnée, clôturé).
+- **Saisie par un agent** : canal d'origine, date réelle de réception, recueilli directement ou
+  non, priorité facultative ; aucun champ ne l'oblige à saisir une information indisponible.
+  Avant l'envoi d'un retour sensible, un avertissement rappelle qu'il ne pourra plus le consulter.
+- **QR code** du formulaire public (général ou par projet) : `plaintes/qr/`.
+- Tests : `plaintes/test_reception.py` (anonymat et suivi par code, règles du formulaire,
+  limitation des envois, circuit confidentiel et perte d'accès de l'agent, module caché).
+- Limites connues, traitées aux lots suivants : coordonnées et récits non chiffrés (lot 5), pas
+  encore de pièces jointes ni d'accusé de réception par message, contenus paramétrés (types,
+  catégories, textes) non traduits par l'organisation. Avec plusieurs processus serveur, la
+  limite d'envois est comptée par processus tant qu'aucun cache partagé n'est configuré.
+
+**Traitement (lot 3)** — `traitement.py`, modèles `ActionDossier` (journal) et `VueDossiers` :
+
+- **Opérations** (POST `plaintes/dossiers/{id}/<opération>/`), toutes vérifiées côté serveur et
+  tracées dans le journal du dossier (auteur, date, détail du changement) :
+  `classer` (type, catégorie, priorité, projet), `affecter`, `recuser` (le gestionnaire se retire,
+  avec motif), `etape` (toute étape du circuit sauf la clôture), `noter` (note interne ou action
+  corrective, possible même clôturé), `communiquer` (échange avec le plaignant : sens, moyen,
+  objet — accusé de réception, prise en charge, demande de complément, décision, clôture,
+  satisfaction), `decider`, `cloturer`, `rouvrir`, `recours`, `lier`.
+- **Statut public** : « Reçu » jusqu'à la première action, « En cours » ensuite, « Réponse
+  donnée » quand la décision est communiquée (exige une décision enregistrée), « Clôturé ».
+- **Clôture motivée** : issue (réponse apportée, non fondé, référé, hors périmètre, sans suite),
+  motif, décision enregistrée et indication du retour au plaignant, ou la raison pour laquelle il
+  n'a pas pu être informé. Sortie « Référée » : acteur externe et consentement du plaignant exigés.
+- **Réouverture** : dossier clôturé, motif obligatoire, réservée à l'Administrateur et au
+  Coordonnateur général (`ROLES_REOUVERTURE`). **Recours** : sur une réponse donnée ; le dossier
+  repart sans gestionnaire et ne peut pas être confié au premier gestionnaire (`gestionnaire_initial`).
+- **Confidentialité** : un dossier reclassé dans une catégorie sensible passe aussitôt au circuit
+  confidentiel (la personne qui l'a reclassé en perd l'accès si elle n'est pas habilitée) ; la
+  sensibilité n'est jamais levée automatiquement. Un dossier confidentiel ne peut être confié qu'aux
+  points focaux de son circuit ou à un Administrateur (`personnes_habilitees`). Dossiers liés et
+  dossiers possiblement liés : seulement parmi les dossiers visibles.
+- **Liste** : vues prêtes (`?vue=` : `mes_dossiers`, `a_traiter`, `urgents`, `sans_responsable`,
+  `attente_decision`, `a_cloturer`, `recours`), filtres (statut, canal, projet, catégorie — une
+  catégorie principale inclut ses sous-catégories —, priorité, gestionnaire, période), recherche
+  par numéro, pagination. **Mes vues** : filtres enregistrés par utilisateur (`plaintes-vues/`,
+  hors de `/plaintes/` pour qu'un utilisateur en lecture seule puisse aussi enregistrer les siennes).
+- **Doublons** : `possiblement-lies/` propose les dossiers du même projet et de la même catégorie
+  reçus à moins de 30 jours ; rien n'est jamais fusionné automatiquement.
+- Tests : `plaintes/test_traitement.py` (scénario 3 de bout en bout, transitions interdites,
+  recours, reclassement sensible, vues, liens, commande de démonstration).
+
+Lots suivants prévus : délais et alertes (échéances, rappels, escalade, vue « En retard »),
+circuit confidentiel complet (personne mise en cause, circuit alternatif, chiffrement, levée
+motivée de la sensibilité), pilotage (tableaux de bord, rapports), modèles de messages.
 
 ## 6. Utilisateurs, rôles et permissions
 
@@ -903,6 +973,13 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 | GET / POST | `plaintes/modeles/` | Modèles prêts à l'emploi ; POST `{modele}` les copie dans le paramétrage |
 | GET / POST | `plaintes/canevas/`, `plaintes/canevas/importer/` | Canevas Excel du paramétrage et son import |
 | CRUD | `plaintes/types/`, `plaintes/priorites/`, `plaintes/categories/`, `plaintes/circuits/`, `plaintes/etapes/` | Listes du paramétrage (sans pagination) |
+| GET / POST | `plaintes/dossiers/` | Dossiers visibles (vues `?vue=`, filtres `statut`, `canal`, `projet`, `categorie`, `priorite`, `responsable`, `date_du`, `date_au`, recherche par numéro) ; POST = saisie par un agent, renvoie numéro et code de suivi |
+| GET | `plaintes/dossiers/{id}/` | Fiche complète : journal (`actions`), dossiers liés visibles |
+| POST | `plaintes/dossiers/{id}/{classer,affecter,recuser,etape,noter,communiquer,decider,cloturer,rouvrir,recours,lier}/` | Opérations de traitement (règles dans `traitement.py`) |
+| GET | `plaintes/dossiers/{id}/responsables-possibles/`, `…/possiblement-lies/` | Personnes à qui confier le dossier ; dossiers proches à lier |
+| CRUD | `plaintes-vues/` | Filtres enregistrés de l'utilisateur connecté |
+| GET | `plaintes/qr/?projet=` | QR code (PNG) du formulaire public |
+| GET / POST | `public/plaintes/formulaire/`, `public/plaintes/deposer/`, `public/plaintes/suivi/` | Sans authentification : contenu du formulaire, dépôt d'un retour, état d'un dossier par son code |
 | GET | `beneficiaires/exporter/` | Export des bénéficiaires : `?fichier=excel` ou `pdf`, `?projets=1,3` pour choisir les projets |
 | POST | `beneficiaires/{id}/verifier-doublons/` | Recherche des doublons d'un bénéficiaire |
 | GET / POST | `documents/{id}/versions/`, `documents/{id}/nouvelle-version/` | Versions d'un document |
@@ -1008,7 +1085,10 @@ mutualisées) puis rejoue la requête, ou renvoie vers la page de connexion.
 | `/doublons` | Doublons signalés |
 | `/zones-administratives` | Référentiel administratif |
 | `/documents` | Bibliothèque documentaire |
-| `/plaintes` | Plaintes et retours : onglets Mécanisme (modèles, réglages, activation), Types de retours, Catégories, Priorités, Circuits de traitement, Canevas Excel |
+| `/plaintes` | Plaintes et retours : dossiers (vues prêtes, filtres, mes vues), saisie d'un retour par un agent, adresse et QR code du formulaire public |
+| `/plaintes/dossiers/:id` | Dossier : informations, décision et clôture, dossiers liés, journal ; actions de traitement selon l'état du dossier |
+| `/plaintes/parametrage` | Paramétrage du mécanisme : onglets Mécanisme (modèles, réglages, activation), Types de retours, Catégories, Priorités, Circuits de traitement, Canevas Excel |
+| `/plainte`, `/plainte/suivi` | Formulaire public de dépôt et suivi par code (sans compte, hors du menu) |
 | `/utilisateurs` | Utilisateurs et rôles (Administrateur) |
 | `/organisation` | Structure de l'organisation, parties prenantes, partenaires (Administrateur) |
 | `/parametres-alerte` | Grilles d'alerte, délai d'échéance et périodes de rapportage (Administrateur) |
@@ -1037,6 +1117,8 @@ mutualisées) puis rejoue la requête, ou renvoie vers la page de connexion.
 | `seed_projets_complementaires` | Ajoute 4 projets de démonstration, sans rien supprimer |
 | `seed_projets_filtres` | Ajoute (ou supprime avec `--supprimer`) des projets `TEST-…` pour tester les filtres |
 | `seed_points_suivi` | Ajoute des points de suivi de démonstration |
+| `seed_demo_complements` | Complète la démonstration sans rien supprimer : variables des bénéficiaires et réponses, doublons signalés, liens de partage, pièces justificatives des valeurs d'indicateurs ; relançable |
+| `seed_demo_plaintes [--reinitialiser \| --historique]` | Mécanisme de plaintes « standard » activé, points focaux du circuit confidentiel `admin` et `pf_psea` (`demo1234!`) ; les dossiers confidentiels sont visibles de l'Administrateur et de `pf_psea` et 42 dossiers sur six mois, tous canaux et états d'avancement, créés par l'interface d'entrée commune puis traités par les vraies opérations (journal daté, un recours) ; `--historique` complète seulement le journal des dossiers qui n'en ont pas |
 | `charger_limites BF [--niveaux 1 2 3] [--recalculer]` | Télécharge les limites administratives d'un pays (geoBoundaries) et place les zones sur la carte |
 | `importer_bndt WGS84.zip [--pays BF] [--recalculer]` | Importe une base topographique en shapefiles (archive ou dossier) : contours, routes, localités, puis place les zones |
 

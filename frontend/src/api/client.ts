@@ -24,6 +24,8 @@ export const tokenStorage = {
 
 export const apiClient = axios.create({ baseURL: API_BASE_URL });
 
+const estPagePublique = () => /^\/(plainte|partage)(\/|$)/.test(window.location.pathname);
+
 apiClient.interceptors.request.use((config) => {
   const token = tokenStorage.getAccess();
   if (token) {
@@ -86,7 +88,9 @@ apiClient.interceptors.response.use(
         original.headers.Authorization = `Bearer ${newToken}`;
         return apiClient(original);
       }
-      window.location.href = "/login";
+      // Pages publiques (formulaire de plainte, suivi par code, lien de partage) : une session
+      // expirée dans ce navigateur ne doit pas les fermer ; elles restent utilisables sans compte.
+      if (!estPagePublique()) window.location.href = "/login";
     }
     return Promise.reject(error);
   },

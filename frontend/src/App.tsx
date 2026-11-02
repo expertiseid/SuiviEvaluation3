@@ -25,7 +25,11 @@ import { DocumentsGlobauxPage } from "./pages/documents/DocumentsGlobauxPage";
 import { LanguesPage } from "./pages/langues/LanguesPage";
 import { ParametresAlertePage } from "./pages/parametres/ParametresAlertePage";
 import { PagePartagee } from "./pages/partage/PagePartagee";
-import { PlaintesPage } from "./pages/plaintes/PlaintesPage";
+import { DossierPlaintePage } from "./pages/plaintes/DossierPlaintePage";
+import { DossiersPlaintesPage } from "./pages/plaintes/DossiersPlaintesPage";
+import { ParametragePlaintesPage } from "./pages/plaintes/ParametragePlaintesPage";
+import { FormulairePublicPage } from "./pages/plaintes/public/FormulairePublicPage";
+import { SuiviPublicPage } from "./pages/plaintes/public/SuiviPublicPage";
 
 export default function App() {
   return (
@@ -33,6 +37,9 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       {/* Lien de partage public : hors connexion, en lecture seule. */}
       <Route path="/partage/:jeton" element={<PagePartagee />} />
+      {/* Formulaire public des plaintes et suivi par code : sans compte. */}
+      <Route path="/plainte" element={<FormulairePublicPage />} />
+      <Route path="/plainte/suivi" element={<SuiviPublicPage />} />
       <Route
         element={
           <RequireAuth>
@@ -61,7 +68,9 @@ export default function App() {
         <Route path="/zones-administratives" element={<ZonesAdministrativesPage />} />
         <Route path="/planification" element={<PlanificationImportPage />} />
         <Route path="/documents" element={<DocumentsGlobauxPage />} />
-        <Route path="/plaintes" element={<PlaintesPage />} />
+        <Route path="/plaintes" element={<DossiersPlaintesPage />} />
+        <Route path="/plaintes/parametrage" element={<ParametragePlaintesPage />} />
+        <Route path="/plaintes/dossiers/:id" element={<DossierPlaintePage />} />
         <Route
           path="/organisation"
           element={

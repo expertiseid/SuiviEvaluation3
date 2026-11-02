@@ -1,29 +1,40 @@
 """
-API du paramétrage du mécanisme de plaintes (lot 1). Lecture pour tout utilisateur connecté (aucun
-contenu de plainte ici) ; écriture selon les droits du module « Plaintes et retours »
-(apps.core.modules : /api/v1/plaintes/).
+API du mécanisme de plaintes : paramétrage (lot 1) et dossiers reçus (lot 2). Droits du module
+« Plaintes et retours » (apps.core.modules : /api/v1/plaintes/) ; un module caché est refusé même
+en lecture (les dossiers contiennent des données personnelles). Pages publiques : public.py.
 """
-from django.db.models import ProtectedError
+import io
+
+import django_filters
+from django.db.models import ProtectedError, Q
 from django.http import HttpResponse
-from rest_framework import status, viewsets
-from rest_framework.decorators import api_view, parser_classes, permission_classes
+from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action, api_view, parser_classes, permission_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.core.langues import dans_la_langue_demandee, en_langue, langue_demandee, traduire
 from apps.core.permissions import HasGlobalVisibilityOrAssigned
+from apps.core.vocabulaire import v
+
+from . import traitement
 
 from .controles import controler_activation
-from .models import Categorie, Circuit, EtapeCircuit, Mecanisme, Priorite, TypeRetour
+from .models import Canal, Categorie, Circuit, Dossier, EtapeCircuit, Mecanisme, Priorite, StatutDossier, TypeRetour, VueDossiers
 from .modeles_mecanisme import MODELES, appliquer_modele, liste_modeles
+from .reception import dossiers_visibles, recevoir
 from .serializers import (
     CategorieSerializer,
     CircuitSerializer,
+    DossierDetailSerializer,
+    DossierSerializer,
     EtapeCircuitSerializer,
     MecanismeSerializer,
     PrioriteSerializer,
     TypeRetourSerializer,
+    VueDossiersSerializer,
 )
 
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -154,3 +165,183 @@ class CategorieViewSet(_Base):
         if instance.sous_categories.exists():
             raise ValidationError({"detail": "Supprimez ou déplacez d'abord ses sous-catégories."})
         super().perform_destroy(instance)
+
+
+class FiltreDossiers(django_filters.FilterSet):
+    date_du = django_filters.DateFilter(field_name="date_reception", lookup_expr="gte")
+    date_au = django_filters.DateFilter(field_name="date_reception", lookup_expr="lte")
+    # Une catégorie principale inclut ses sous-catégories.
+    categorie = django_filters.NumberFilter(method="filtrer_categorie")
+    sans_responsable = django_filters.BooleanFilter(field_name="responsable", lookup_expr="isnull")
+
+    class Meta:
+        model = Dossier
+        fields = ("statut", "canal", "projet", "type_retour", "priorite", "responsable", "sensible", "en_recours")
+
+    def filtrer_categorie(self, queryset, nom, valeur):
+        return queryset.filter(Q(categorie_id=valeur) | Q(categorie__parent_id=valeur))
+
+
+# Vues prêtes de la liste (?vue=…). « En retard » arrive avec les délais (lot 4).
+VUES = {
+    "mes_dossiers": lambda qs, u: qs.filter(responsable=u),
+    "a_traiter": lambda qs, u: qs.filter(responsable=u, statut__in=(StatutDossier.RECU, StatutDossier.EN_COURS)),
+    "urgents": lambda qs, u: qs.filter(priorite__urgente=True).exclude(statut=StatutDossier.CLOTURE),
+    "sans_responsable": lambda qs, u: qs.filter(responsable__isnull=True).exclude(statut=StatutDossier.CLOTURE),
+    "attente_decision": lambda qs, u: qs.filter(statut=StatutDossier.EN_COURS, decision=""),
+    "a_cloturer": lambda qs, u: qs.filter(Q(statut=StatutDossier.REPONDU) | Q(statut=StatutDossier.EN_COURS) & ~Q(decision="")),
+    "recours": lambda qs, u: qs.filter(en_recours=True),
+}
+
+
+class DossierViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
+    """
+    Dossiers. Création = saisie par un agent (même interface d'entrée que le formulaire public,
+    voir reception.py). Traitement par actions (POST …/{id}/affecter/, …/cloturer/…), dont les règles
+    sont dans traitement.py. Un dossier interdit n'apparaît ni dans les listes, ni dans les compteurs,
+    ni dans la recherche, ni dans les dossiers liés.
+    """
+
+    permission_classes = (HasGlobalVisibilityOrAssigned,)
+    filterset_class = FiltreDossiers
+    search_fields = ("numero",)
+
+    def get_serializer_class(self):
+        return DossierDetailSerializer if self.action != "list" else DossierSerializer
+
+    def get_serializer_context(self):
+        return {**super().get_serializer_context(), "visibles": dossiers_visibles(self.request.user)}
+
+    def get_queryset(self):
+        qs = dossiers_visibles(self.request.user).select_related(
+            "type_retour", "categorie__parent", "priorite", "projet", "circuit", "etape", "saisi_par", "responsable",
+            "gestionnaire_initial",
+        )
+        vue = VUES.get(self.request.query_params.get("vue", ""))
+        if vue:
+            qs = vue(qs, self.request.user)
+        if self.action == "retrieve":
+            qs = qs.prefetch_related("actions__auteur")
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        canal = request.data.get("canal")
+        if canal == Canal.FORMULAIRE:
+            raise ValidationError({"canal": "Choisissez le canal par lequel le retour a été reçu."})
+        dossier, code = recevoir(request.data, canal, saisi_par=request.user)
+        visible = dossiers_visibles(request.user).filter(pk=dossier.pk).exists()
+        reponse = {"numero": dossier.numero, "code_suivi": code, "sensible": dossier.sensible, "visible": visible}
+        if visible:
+            reponse["dossier"] = DossierSerializer(dossier).data
+        return Response(reponse, status=status.HTTP_201_CREATED)
+
+    def _agir(self, fonction, *args):
+        dossier = self.get_object()
+        fonction(dossier, self.request.user, *args)
+        # Le dossier peut ne plus être visible (devenu confidentiel) : on renvoie ce qui reste accessible.
+        visible = dossiers_visibles(self.request.user).filter(pk=dossier.pk).first()
+        if visible is None:
+            return Response({"numero": dossier.numero, "visible": False})
+        return Response(DossierDetailSerializer(visible, context=self.get_serializer_context()).data)
+
+    @action(detail=True, methods=["post"])
+    def classer(self, request, pk=None):
+        return self._agir(traitement.classer, request.data)
+
+    @action(detail=True, methods=["post"])
+    def affecter(self, request, pk=None):
+        return self._agir(traitement.affecter, request.data.get("responsable"))
+
+    @action(detail=True, methods=["post"])
+    def recuser(self, request, pk=None):
+        return self._agir(traitement.recuser, request.data)
+
+    @action(detail=True, methods=["post"])
+    def etape(self, request, pk=None):
+        return self._agir(traitement.changer_etape, request.data)
+
+    @action(detail=True, methods=["post"])
+    def noter(self, request, pk=None):
+        return self._agir(traitement.noter, request.data)
+
+    @action(detail=True, methods=["post"])
+    def communiquer(self, request, pk=None):
+        return self._agir(traitement.communiquer, request.data)
+
+    @action(detail=True, methods=["post"])
+    def decider(self, request, pk=None):
+        return self._agir(traitement.decider, request.data)
+
+    @action(detail=True, methods=["post"])
+    def cloturer(self, request, pk=None):
+        return self._agir(traitement.cloturer, request.data)
+
+    @action(detail=True, methods=["post"])
+    def rouvrir(self, request, pk=None):
+        return self._agir(traitement.rouvrir, request.data)
+
+    @action(detail=True, methods=["post"])
+    def recours(self, request, pk=None):
+        return self._agir(traitement.recours, request.data)
+
+    @action(detail=True, methods=["post"])
+    def lier(self, request, pk=None):
+        """{numero, delier?} : lie (ou délie) un autre dossier visible."""
+        autre = dossiers_visibles(request.user).filter(numero__iexact=(request.data.get("numero") or "").strip()).first()
+        if autre is None:
+            raise ValidationError({"numero": v("Aucun dossier accessible ne porte ce numéro.")})
+        return self._agir(traitement.lier, autre, bool(request.data.get("delier")))
+
+    @action(detail=True, methods=["get"], url_path="possiblement-lies")
+    def possiblement_lies(self, request, pk=None):
+        dossier = self.get_object()
+        proches = traitement.dossiers_possiblement_lies(dossier, dossiers_visibles(request.user))
+        return Response([{"id": d.id, "numero": d.numero, "date_reception": d.date_reception, "statut": d.statut}
+                         for d in proches])
+
+    @action(detail=True, methods=["get"], url_path="responsables-possibles")
+    def responsables_possibles(self, request, pk=None):
+        """Personnes à qui le dossier peut être confié (circuit confidentiel : points focaux et Administrateurs)."""
+        dossier = self.get_object()
+        personnes = traitement.personnes_habilitees(dossier).order_by("first_name", "last_name", "username")
+        if dossier.en_recours and dossier.gestionnaire_initial_id:
+            personnes = personnes.exclude(pk=dossier.gestionnaire_initial_id)
+        from apps.accounts.models import Role
+
+        libelles = dict(Role.objects.values_list("code", "libelle"))
+        return Response([{"id": u.id, "nom": traitement.nom_personne(u), "role": libelles.get(u.role, u.role)}
+                         for u in personnes])
+
+
+class VueDossiersViewSet(viewsets.ModelViewSet):
+    """Filtres enregistrés de l'utilisateur connecté (chacun ne voit que les siens)."""
+
+    serializer_class = VueDossiersSerializer
+    permission_classes = (IsAuthenticated,)
+    pagination_class = None
+
+    def get_queryset(self):
+        return VueDossiers.objects.filter(utilisateur=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(utilisateur=self.request.user)
+
+
+@api_view(["GET"])
+@permission_classes([HasGlobalVisibilityOrAssigned])
+def qr_formulaire(request):
+    """QR code (PNG) de l'adresse du formulaire public, éventuellement propre à un projet (?projet=)."""
+    import segno
+
+    origine = request.query_params.get("origine", "")
+    if not origine.startswith(("http://", "https://")):
+        origine = request.headers.get("Origin") or request.build_absolute_uri("/")
+    lien = origine.rstrip("/") + "/plainte"
+    projet = request.query_params.get("projet", "")
+    if projet.isdigit():
+        lien += f"?projet={projet}"
+    sortie = io.BytesIO()
+    segno.make(lien, error="m").save(sortie, kind="png", scale=10, border=2)
+    response = HttpResponse(sortie.getvalue(), content_type="image/png")
+    response["Content-Disposition"] = "attachment; filename=qr_formulaire_plaintes.png"
+    return response

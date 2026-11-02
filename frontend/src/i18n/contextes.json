@@ -265,7 +265,7 @@
   "serveur"
  ],
  "{0} créé(s), {1} mis à jour": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "{0} de la zone ({1})": [
   "pages/carte/CartePage.tsx"
@@ -275,6 +275,9 @@
  ],
  "{0} document(s) rattaché(s)": [
   "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "{0} dossier(s)": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
  "{0} doublon(s) potentiel(s) détecté(s) — à traiter dans l'écran « Doublons d'enregistrement ».": [
   "pages/beneficiaires/BeneficiaireForm.tsx"
@@ -442,11 +445,22 @@
  "À ajouter dans l'écran Organisation": [
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
+ "À classer": [
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/DossiersPlaintesPage.tsx",
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "À classer plus tard": [
+  "pages/plaintes/ChampsRetour.tsx"
+ ],
+ "À clôturer": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
  "À compléter": [
   "pages/plaintes/CircuitsPlaintes.tsx"
  ],
  "À compléter avant l'activation": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "À compléter en fin de projet : leçons apprises, bonnes pratiques.": [
   "pages/projets/ProjetForm.tsx"
@@ -459,11 +473,21 @@
   "pages/projets/PeriodeTableau.tsx",
   "pages/projets/PlanificationPeriodeTab.tsx"
  ],
+ "À évaluer": [
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "À évaluer plus tard": [
+  "pages/plaintes/SaisieDossierModal.tsx"
+ ],
  "à l'instant": [
   "components/notifications/NotificationBell.tsx"
  ],
  "À la date du": [
   "pages/projets/AvancementModal.tsx"
+ ],
+ "À traiter": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
  "À venir": [
   "pages/parametres/RapportageCard.tsx"
@@ -479,10 +503,16 @@
   "components/common/MultiSelectOrCreate.tsx"
  ],
  "Accepter les retours anonymes": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Accès": [
   "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Accessible sans compte, sur téléphone, dans les langues choisies. Affichez l'adresse ou le QR code dans les lieux d'intervention, sur les affiches et les documents du projet.": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
+ "Accusé de réception": [
+  "api/plaintes.ts"
  ],
  "Achèvement (%)": [
   "pages/projets/AvancementModal.tsx"
@@ -494,9 +524,15 @@
   "components/partage/BoutonPartage.tsx",
   "pages/plaintes/CircuitsPlaintes.tsx",
   "pages/plaintes/ListesPlaintes.tsx",
-  "pages/plaintes/PlaintesPage.tsx",
+  "pages/plaintes/ParametragePlaintesPage.tsx",
   "pages/projets/RisquesTab.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Action corrective": [
+  "api/plaintes.ts"
+ ],
+ "Action corrective (mesure prise pour corriger le problème)": [
+  "pages/plaintes/OperationsDossier.tsx"
  ],
  "Actions": [
   "pages/beneficiaires/DoublonsPage.tsx"
@@ -508,16 +544,16 @@
   "pages/projets/RisquesTab.tsx"
  ],
  "Activation impossible": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Active": [
   "pages/plaintes/ListesPlaintes.tsx"
  ],
  "Activer": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Activer le mécanisme": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Activité": [
   "pages/projets/PlanificationPeriodeTab.tsx",
@@ -572,11 +608,20 @@
  "Administrateur": [
   "utils/roles.ts"
  ],
+ "Affectation": [
+  "api/plaintes.ts"
+ ],
  "Affectations — {0}": [
   "pages/organisation/OrganisationPage.tsx"
  ],
  "Affectations enregistrées": [
   "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Affecter": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Affecter le dossier": [
+  "pages/plaintes/OperationsDossier.tsx"
  ],
  "Afficher": [
   "pages/beneficiaires/ChampsVariables.tsx",
@@ -741,6 +786,9 @@
  "Ajouter une étape": [
   "pages/plaintes/CircuitsPlaintes.tsx"
  ],
+ "Ajouter une note": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Ajouter une nouvelle version": [
   "components/documents/DocumentsTab.tsx"
  ],
@@ -798,13 +846,18 @@
   "pages/carte/FenetresCarte.tsx",
   "pages/langues/LanguesPage.tsx",
   "pages/plaintes/ListesPlaintes.tsx",
-  "pages/plaintes/PlaintesPage.tsx",
+  "pages/plaintes/OperationsDossier.tsx",
+  "pages/plaintes/ParametragePlaintesPage.tsx",
+  "pages/plaintes/SaisieDossierModal.tsx",
   "pages/projets/ActiviteForm.tsx",
   "pages/projets/CadreLogiqueTab.tsx",
   "pages/projets/EquipeTab.tsx",
   "pages/projets/FinancementsTab.tsx",
   "pages/projets/RisquesTab.tsx",
   "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Anonyme : aucune information d'identité enregistrée.": [
+  "pages/plaintes/DossierPlaintePage.tsx"
  ],
  "Antenne régionale": [
   "pages/organisation/OrganisationPage.tsx"
@@ -966,6 +1019,12 @@
  "Aucun document pour le moment — crée le premier pour définir sa structuration.": [
   "pages/strategie/CadresStrategiquesListPage.tsx"
  ],
+ "Aucun dossier accessible ne porte ce numéro.": [
+  "serveur"
+ ],
+ "Aucun dossier.": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
  "Aucun doublon en attente de traitement.": [
   "pages/beneficiaires/DoublonsPage.tsx"
  ],
@@ -1030,6 +1089,9 @@
  ],
  "Aucun niveau nommé pour l'instant — les éléments s'affichent sous le nom « Activité ». Ajoute ci-dessous les niveaux de ta planification, du plus haut au plus bas.": [
   "pages/projets/NiveauxActiviteTab.tsx"
+ ],
+ "Aucun numéro de téléphone n'est enregistré pour ce plaignant.": [
+  "serveur"
  ],
  "Aucun partenaire de mise en œuvre renseigné.": [
   "pages/DashboardConsolidePage.tsx"
@@ -1120,6 +1182,9 @@
  "Aucune activité.": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
  ],
+ "Aucune adresse courriel n'est enregistrée pour ce plaignant.": [
+  "serveur"
+ ],
  "Aucune appréciation pour l'instant.": [
   "pages/strategie/SuiviStrategiqueTab.tsx"
  ],
@@ -1128,6 +1193,9 @@
  ],
  "Aucune colonne de niveau trouvée sur la ligne d'en-têtes.": [
   "serveur"
+ ],
+ "Aucune coordonnée n'est alors enregistrée. Le code de suivi permet quand même de suivre le dossier.": [
+  "pages/plaintes/ChampsRetour.tsx"
  ],
  "Aucune couche importée.": [
   "pages/carte/FenetresCarte.tsx"
@@ -1222,6 +1290,12 @@
  ],
  "Autour des bénéficiaires": [
   "pages/carte/FenetresCarte.tsx"
+ ],
+ "Autre": [
+  "api/plaintes.ts"
+ ],
+ "Autre échange": [
+  "api/plaintes.ts"
  ],
  "Autres éléments d'un niveau supérieur (de ce cadre ou d'un autre document) auxquels celui-ci contribue. Seul le rattachement principal compte dans les totaux.": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
@@ -1408,6 +1482,9 @@
  "Binaire (achevé / non achevé)": [
   "utils/methodesCalcul.ts"
  ],
+ "Boîte à suggestions": [
+  "api/plaintes.ts"
+ ],
  "Bonne progression": [
   "pages/strategie/SuiviStrategiqueTab.tsx"
  ],
@@ -1527,6 +1604,16 @@
  "Camembert": [
   "components/charts/GraphiqueAdaptable.tsx"
  ],
+ "Canal": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
+ "Canal de réception": [
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/SaisieDossierModal.tsx"
+ ],
+ "Canal de réception inconnu.": [
+  "serveur"
+ ],
  "Canevas complété": [
   "components/suivi/ImportCanevasSuiviModal.tsx"
  ],
@@ -1535,7 +1622,7 @@
   "pages/strategie/CadreTableau.tsx"
  ],
  "Canevas Excel": [
-  "pages/plaintes/PlaintesPage.tsx",
+  "pages/plaintes/ParametragePlaintesPage.tsx",
   "pages/projets/PlanificationPeriodeTab.tsx"
  ],
  "Carte": [
@@ -1556,15 +1643,22 @@
  ],
  "Catégorie": [
   "pages/organisation/OrganisationPage.tsx",
+  "pages/plaintes/ChampsRetour.tsx",
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/DossiersPlaintesPage.tsx",
   "pages/plaintes/ListesPlaintes.tsx",
+  "pages/plaintes/OperationsDossier.tsx",
   "pages/projets/RisquesTab.tsx"
  ],
  "Catégorie déjà existante ?": [
   "pages/organisation/OrganisationPage.tsx"
  ],
+ "Catégorie sensible": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Catégories": [
   "pages/organisation/OrganisationPage.tsx",
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Catégories : « {0} » est sensible, elle doit utiliser un circuit confidentiel.": [
   "serveur"
@@ -1583,6 +1677,18 @@
  ],
  "Ce classeur crée en une fois : un cadre stratégique, un projet et sa planification, ses indicateurs et ses bénéficiaires (automatiquement inscrits à ce projet).": [
   "serveur"
+ ],
+ "Ce dossier est clôturé : rouvrez-le d'abord.": [
+  "serveur"
+ ],
+ "Ce dossier est désormais réservé aux personnes désignées.": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Ce dossier est désormais réservé aux personnes désignées. Il n'apparaîtra plus dans vos listes : seul son numéro vous reste.": [
+  "pages/plaintes/SaisieDossierModal.tsx"
+ ],
+ "Ce dossier sera traité dans le circuit confidentiel : seuls l'Administrateur et les personnes désignées par l'organisation y ont accès. N'en parlez qu'aux personnes prévues par les règles de confidentialité et de signalement de votre organisation.": [
+  "pages/plaintes/SaisieDossierModal.tsx"
  ],
  "Ce financement a des rallonges : à gérer dans l'onglet Financement": [
   "pages/projets/BailleursMontants.tsx"
@@ -1627,6 +1733,9 @@
  "Ce projet n'a pas encore de planification : commence par l'onglet « Planification ».": [
   "pages/projets/PlanificationPeriodeTab.tsx"
  ],
+ "Ce projet n'est pas couvert par le mécanisme.": [
+  "serveur"
+ ],
  "Ce projet n'est plus accessible.": [
   "serveur"
  ],
@@ -1656,6 +1765,9 @@
  ],
  "Ce réglage protège les personnes et ne peut pas être modifié.": [
   "pages/plaintes/ListesPlaintes.tsx"
+ ],
+ "Ce retour concerne-t-il le comportement d'un membre du personnel ou d'un partenaire ?": [
+  "pages/plaintes/ChampsRetour.tsx"
  ],
  "Celle du niveau au-dessus, sinon du projet, sinon de l'organisation.": [
   "components/suivi/MethodeCalculLigne.tsx"
@@ -1714,6 +1826,9 @@
  "Cette personne est déjà dans l'équipe.": [
   "pages/projets/EquipeTab.tsx"
  ],
+ "Cette personne ne peut pas recevoir ce dossier (accès au module ou au circuit confidentiel).": [
+  "serveur"
+ ],
  "Cette saisie a été approuvée : seul un approbateur peut la supprimer.": [
   "serveur"
  ],
@@ -1729,8 +1844,15 @@
  "Changement approuvé et appliqué": [
   "pages/approbations/ApprobationsPage.tsx"
  ],
+ "Changement d'étape": [
+  "api/plaintes.ts"
+ ],
  "Changements de planification": [
   "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Changer d'étape": [
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/OperationsDossier.tsx"
  ],
  "Changer l'icône": [
   "layouts/AppLayout.tsx"
@@ -1942,7 +2064,22 @@
   "pages/projets/RapportFinancierModal.tsx",
   "serveur"
  ],
+ "Choisissez l'issue du dossier.": [
+  "serveur"
+ ],
+ "Choisissez l'objet de l'échange.": [
+  "serveur"
+ ],
+ "Choisissez le canal par lequel le retour a été reçu.": [
+  "serveur"
+ ],
+ "Choisissez le moyen utilisé.": [
+  "serveur"
+ ],
  "Choisissez le projet à partager.": [
+  "serveur"
+ ],
+ "Choisissez le sens de l'échange.": [
   "serveur"
  ],
  "Choisissez un fichier et le nom de la couche.": [
@@ -1952,6 +2089,27 @@
   "serveur"
  ],
  "Choisissez un modèle de la liste.": [
+  "serveur"
+ ],
+ "Choisissez un type de retour de la liste.": [
+  "serveur"
+ ],
+ "Choisissez un type de retour.": [
+  "serveur"
+ ],
+ "Choisissez une catégorie de la liste.": [
+  "serveur"
+ ],
+ "Choisissez une étape du circuit du dossier.": [
+  "serveur"
+ ],
+ "Choisissez une personne de la liste.": [
+  "serveur"
+ ],
+ "Choisissez une priorité de la liste.": [
+  "serveur"
+ ],
+ "Choisissez une valeur de la liste.": [
   "serveur"
  ],
  "Choix multiple": [
@@ -2024,6 +2182,9 @@
  "Circuit": [
   "pages/plaintes/ListesPlaintes.tsx"
  ],
+ "Circuit et étape": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
  "Circuit par défaut": [
   "pages/plaintes/ListesPlaintes.tsx"
  ],
@@ -2034,7 +2195,16 @@
   "serveur"
  ],
  "Circuits de traitement": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
+ ],
+ "Classer": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Classer le dossier": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Classification": [
+  "api/plaintes.ts"
  ],
  "Climatique et environnemental": [
   "pages/projets/RisquesTab.tsx"
@@ -2058,10 +2228,22 @@
   "pages/projets/RisquesTab.tsx"
  ],
  "Clôture": [
+  "api/plaintes.ts",
   "pages/plaintes/CircuitsPlaintes.tsx"
  ],
  "Clôturé": [
+  "api/plaintes.ts",
   "utils/statusTones.ts"
+ ],
+ "Clôturé le": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Clôturer": [
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Clôturer le dossier": [
+  "pages/plaintes/OperationsDossier.tsx"
  ],
  "Clôturés": [
   "utils/carteParZone.ts"
@@ -2089,6 +2271,16 @@
  "Code administratif (pcode), si connu — facultatif": [
   "pages/geo/ZonesAdministrativesPage.tsx"
  ],
+ "Code de suivi": [
+  "pages/plaintes/public/SuiviPublicPage.tsx"
+ ],
+ "Code de suivi à remettre au plaignant": [
+  "pages/plaintes/public/FormulairePublicPage.tsx"
+ ],
+ "Code de suivi inconnu. Vérifiez qu'il est recopié sans erreur.": [
+  "pages/plaintes/public/SuiviPublicPage.tsx",
+  "serveur"
+ ],
  "Code projet inconnu ignoré : « ": [
   "serveur"
  ],
@@ -2107,6 +2299,7 @@
  "Commentaire": [
   "components/indicators/SaisieValeurIndicateurForm.tsx",
   "components/suivi/SaisiePointSuiviForm.tsx",
+  "pages/plaintes/OperationsDossier.tsx",
   "pages/projets/ActiviteForm.tsx",
   "pages/projets/AvancementModal.tsx",
   "pages/projets/PlanificationPeriodeTab.tsx",
@@ -2128,6 +2321,12 @@
   "pages/carte/CartePage.tsx",
   "pages/carte/FenetresCarte.tsx"
  ],
+ "Communication avec le plaignant": [
+  "api/plaintes.ts"
+ ],
+ "Communication de la décision": [
+  "api/plaintes.ts"
+ ],
  "Complet": [
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
@@ -2137,8 +2336,13 @@
  "Compte lié": [
   "pages/projets/EquipeTab.tsx"
  ],
+ "Concerne le personnel ou un partenaire": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
  "Confidentiel": [
-  "pages/plaintes/CircuitsPlaintes.tsx"
+  "pages/plaintes/CircuitsPlaintes.tsx",
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
  "Configuration de la structuration": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
@@ -2149,6 +2353,9 @@
   "pages/projets/ProjetDetailPage.tsx",
   "pages/strategie/CadreStrategiqueDetailPage.tsx",
   "utils/modules.ts"
+ ],
+ "Confirmation de clôture": [
+  "api/plaintes.ts"
  ],
  "Confirmer doublon": [
   "pages/beneficiaires/DoublonsPage.tsx"
@@ -2162,11 +2369,14 @@
  "Connexion": [
   "pages/langues/LanguesPage.tsx"
  ],
+ "Consentement": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
  "Conservation des dossiers ordinaires (mois)": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Conservation des dossiers sensibles (mois)": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Conserver (ajouter seulement)": [
   "components/suivi/ImportCanevasSuiviModal.tsx"
@@ -2249,8 +2459,19 @@
  "Coordonnateur général": [
   "utils/roles.ts"
  ],
+ "Coordonnées (facultatives)": [
+  "pages/plaintes/ChampsRetour.tsx"
+ ],
  "Copié": [
-  "components/partage/BoutonPartage.tsx"
+  "components/partage/BoutonPartage.tsx",
+  "pages/plaintes/DossiersPlaintesPage.tsx",
+  "pages/plaintes/public/FormulairePublicPage.tsx"
+ ],
+ "Copier": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
+ "Copier le code": [
+  "pages/plaintes/public/FormulairePublicPage.tsx"
  ],
  "Copier le lien": [
   "components/partage/BoutonPartage.tsx"
@@ -2289,6 +2510,14 @@
  ],
  "Courbes": [
   "components/charts/GraphiqueAdaptable.tsx"
+ ],
+ "Courriel": [
+  "api/plaintes.ts",
+  "pages/plaintes/ChampsRetour.tsx",
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Courrier": [
+  "api/plaintes.ts"
  ],
  "Coût total": [
   "pages/projets/FinancementsTab.tsx"
@@ -2400,6 +2629,12 @@
   "pages/projets/ActiviteForm.tsx",
   "pages/projets/ProjetForm.tsx"
  ],
+ "Date de réception": [
+  "pages/plaintes/SaisieDossierModal.tsx"
+ ],
+ "Date de réception invalide.": [
+  "serveur"
+ ],
  "Date début": [
   "pages/projets/PlanificationTableau.tsx",
   "pages/strategie/CadreTableau.tsx",
@@ -2442,6 +2677,9 @@
  "De haut en bas : chaque maillon est une rubrique du menu, avec ses propres documents. Un document se rattache à un document d'un maillon au-dessus ; les projets se rattachent au dernier maillon.": [
   "pages/strategie/ChaineDocumentsModal.tsx"
  ],
+ "De quoi s'agit-il ?": [
+  "pages/plaintes/ChampsRetour.tsx"
+ ],
  "Début": [
   "pages/projets/PeriodeTableau.tsx"
  ],
@@ -2452,12 +2690,23 @@
   "components/indicators/SaisieValeurIndicateurForm.tsx",
   "components/suivi/SaisiePointSuiviForm.tsx"
  ],
+ "Décision": [
+  "api/plaintes.ts",
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Décision et clôture": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
  "Déclenche une alerte à cette date précise, indépendamment du seuil de jours avant l'échéance.": [
   "pages/projets/ActiviteForm.tsx",
   "pages/projets/ProjetForm.tsx"
  ],
  "Déconnexion": [
   "layouts/AppLayout.tsx"
+ ],
+ "Décrivez votre retour.": [
+  "serveur"
  ],
  "Déjà associé": [
   "pages/projets/BeneficiairesProjetSection.tsx"
@@ -2473,10 +2722,13 @@
   "pages/plaintes/ListesPlaintes.tsx"
  ],
  "Délais comptés en jours ouvrés": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Demande": [
   "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Demande de complément": [
+  "api/plaintes.ts"
  ],
  "Demande rejetée": [
   "pages/approbations/ApprobationsPage.tsx"
@@ -2523,6 +2775,9 @@
  "Des catégories sensibles utilisent ce circuit : il doit rester confidentiel.": [
   "serveur"
  ],
+ "Dès l'envoi, ce dossier est réservé aux personnes désignées par l'organisation et vous ne pourrez plus le consulter ; seul son numéro vous restera. N'en parlez qu'aux personnes prévues par les règles de confidentialité et de signalement de votre organisation.": [
+  "pages/plaintes/SaisieDossierModal.tsx"
+ ],
  "Des utilisateurs ont ce rôle": [
   "pages/utilisateurs/RolesTab.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
@@ -2532,10 +2787,10 @@
   "pages/plaintes/CircuitsPlaintes.tsx"
  ],
  "Désactiver": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Désactiver le mécanisme": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Descendre": [
   "pages/geo/ZonesAdministrativesPage.tsx",
@@ -2545,11 +2800,15 @@
  ],
  "Description": [
   "pages/organisation/OrganisationPage.tsx",
+  "pages/plaintes/DossierPlaintePage.tsx",
   "pages/plaintes/ListesPlaintes.tsx",
   "pages/projets/ActiviteForm.tsx",
   "pages/strategie/CadreStrategiqueDetailPage.tsx",
   "pages/strategie/DocumentModal.tsx",
   "pages/strategie/FicheDocument.tsx"
+ ],
+ "Description du retour": [
+  "pages/plaintes/ChampsRetour.tsx"
  ],
  "Destinataire ou objet (facultatif)": [
   "components/partage/BoutonPartage.tsx"
@@ -2661,11 +2920,30 @@
   "pages/projets/ProjetForm.tsx",
   "pages/strategie/FicheDocument.tsx"
  ],
+ "Dossier {0}, reçu le {1}": [
+  "pages/plaintes/public/SuiviPublicPage.tsx"
+ ],
+ "Dossier confidentiel : seules les personnes désignées dans son circuit peuvent le recevoir.": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Dossier créé": [
   "components/documents/DocumentsTab.tsx"
  ],
+ "Dossier introuvable, ou réservé aux personnes désignées (circuit confidentiel).": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Dossier mis à jour": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Dossier supprimé": [
   "components/documents/DocumentsTab.tsx"
+ ],
+ "Dossiers liés": [
+  "api/plaintes.ts",
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Dossiers possiblement liés (même projet, même catégorie, dates proches)": [
+  "pages/plaintes/OperationsDossier.tsx"
  ],
  "Doublon bénéficiaire potentiel : ": [
   "serveur"
@@ -2699,6 +2977,10 @@
  "Écarter (faux positif)": [
   "pages/beneficiaires/DoublonsPage.tsx"
  ],
+ "Échange avec le plaignant": [
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Échéance dépassée le {0}": [
   "pages/suivi/SuiviProjetDashboard.tsx"
  ],
@@ -2715,6 +2997,12 @@
  "Écran": [
   "pages/langues/LanguesPage.tsx"
  ],
+ "Écrivez la décision.": [
+  "serveur"
+ ],
+ "Écrivez la note.": [
+  "serveur"
+ ],
  "Éditer": [
   "components/common/BoutonModeEdition.tsx"
  ],
@@ -2724,6 +3012,9 @@
  "Effacer l'objectif de la période": [
   "pages/projets/PeriodeTableau.tsx",
   "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Effacer les filtres": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
  "Effacer les objectifs de « {0} » sur {1} (quantité, budget, dates, commentaire) ? La planification globale et les saisies de suivi ne changent pas.": [
   "pages/projets/PlanificationPeriodeTab.tsx"
@@ -2820,6 +3111,9 @@
  "En attente d'approbation (non comptée)": [
   "pages/suivi/SuiviProjetDashboard.tsx"
  ],
+ "En attente de décision": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
  "en consortium": [
   "pages/organisation/OrganisationPage.tsx"
  ],
@@ -2837,11 +3131,20 @@
   "utils/carteParZone.ts",
   "utils/statusTones.ts"
  ],
+ "En cours de traitement": [
+  "api/plaintes.ts"
+ ],
  "En cours pendant la période": [
   "components/dashboard/FiltresTableauDeBord.tsx"
  ],
  "en mise en œuvre": [
   "pages/organisation/OrganisationPage.tsx"
+ ],
+ "En personne": [
+  "api/plaintes.ts"
+ ],
+ "En personne, sur le terrain": [
+  "api/plaintes.ts"
  ],
  "En plus de l'avancement calculé depuis les projets, renseignez pour chaque élément ses indicateurs propres, une appréciation par période et les pièces qui la justifient.": [
   "pages/strategie/SuiviStrategiqueTab.tsx"
@@ -2858,6 +3161,9 @@
   "components/suivi/TranchesPlanifieesTab.tsx",
   "pages/suivi/SuiviProjetDashboard.tsx",
   "utils/statusTones.ts"
+ ],
+ "Enquête de satisfaction": [
+  "api/plaintes.ts"
  ],
  "Enregistre d'abord le projet pour pouvoir y associer des bénéficiaires (import Excel ou recherche dans la base).": [
   "pages/projets/ProjetForm.tsx"
@@ -2877,7 +3183,10 @@
   "pages/langues/LanguesPage.tsx",
   "pages/organisation/OrganisationPage.tsx",
   "pages/parametres/ParametresAlertePage.tsx",
-  "pages/plaintes/PlaintesPage.tsx",
+  "pages/plaintes/DossiersPlaintesPage.tsx",
+  "pages/plaintes/OperationsDossier.tsx",
+  "pages/plaintes/ParametragePlaintesPage.tsx",
+  "pages/plaintes/SaisieDossierModal.tsx",
   "pages/projets/ActiviteForm.tsx",
   "pages/projets/AvancementModal.tsx",
   "pages/projets/CadreLogiqueTab.tsx",
@@ -2894,18 +3203,57 @@
   "pages/utilisateurs/RolesTab.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
+ "Enregistrer la décision": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Enregistrer la rallonge": [
   "pages/projets/FinancementsTab.tsx"
+ ],
+ "Enregistrer la vue": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
+ "Enregistrer le recours": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Enregistrer les filtres actuels": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
  "Enregistrer les modifications": [
   "components/indicators/SaisieValeurIndicateurForm.tsx",
   "components/suivi/SaisiePointSuiviForm.tsx"
  ],
+ "Enregistrer un autre retour": [
+  "pages/plaintes/SaisieDossierModal.tsx"
+ ],
+ "Enregistrer un recours": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Enregistrer un retour": [
+  "pages/plaintes/DossiersPlaintesPage.tsx",
+  "pages/plaintes/SaisieDossierModal.tsx"
+ ],
+ "Enregistrez d'abord la décision.": [
+  "serveur"
+ ],
+ "Envoi refusé.": [
+  "serveur"
+ ],
+ "Envoyé au plaignant": [
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Envoyé pour approbation": [
   "api/client.ts"
  ],
  "Envoyer": [
-  "components/documents/DocumentsTab.tsx"
+  "components/documents/DocumentsTab.tsx",
+  "pages/plaintes/public/FormulairePublicPage.tsx"
+ ],
+ "Envoyer un autre retour": [
+  "pages/plaintes/public/FormulairePublicPage.tsx"
+ ],
+ "Envoyer un nouveau retour": [
+  "pages/plaintes/public/SuiviPublicPage.tsx"
  ],
  "Équipe": [
   "pages/projets/ProjetDetailPage.tsx"
@@ -2964,8 +3312,11 @@
   "pages/organisation/OrganisationPage.tsx",
   "pages/parametres/ParametresAlertePage.tsx",
   "pages/plaintes/CircuitsPlaintes.tsx",
+  "pages/plaintes/DossiersPlaintesPage.tsx",
   "pages/plaintes/ListesPlaintes.tsx",
-  "pages/plaintes/PlaintesPage.tsx",
+  "pages/plaintes/OperationsDossier.tsx",
+  "pages/plaintes/ParametragePlaintesPage.tsx",
+  "pages/plaintes/SaisieDossierModal.tsx",
   "pages/projets/AvancementModal.tsx",
   "pages/projets/CadreLogiqueTab.tsx",
   "pages/projets/FinancementsTab.tsx",
@@ -3166,7 +3517,12 @@
   "pages/strategie/ChaineDocumentsModal.tsx"
  ],
  "Étape": [
-  "pages/plaintes/CircuitsPlaintes.tsx"
+  "pages/plaintes/CircuitsPlaintes.tsx",
+  "pages/plaintes/DossiersPlaintesPage.tsx",
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Étape avant la clôture": [
+  "pages/plaintes/OperationsDossier.tsx"
  ],
  "Étape de clôture": [
   "pages/plaintes/CircuitsPlaintes.tsx"
@@ -3227,7 +3583,7 @@
   "pages/geo/ZonesAdministrativesPage.tsx"
  ],
  "Ex : MGP → MGP-2026-0001": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Ex : Note, Contrat, Rapport bailleur…": [
   "components/documents/DocumentsTab.tsx"
@@ -3276,6 +3632,9 @@
  ],
  "Ex : Taille du ménage": [
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Ex : Urgences du projet PAEF": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
  "Ex. : Budget des projets par province": [
   "pages/carte/FenetresCarte.tsx"
@@ -3342,16 +3701,19 @@
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
  ],
  "Exemple indicatif : 120 mois. À fixer selon les règles de l'organisation.": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Exemple indicatif : 60 mois. À fixer selon les règles de l'organisation.": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Expiré": [
   "components/partage/BoutonPartage.tsx"
  ],
  "Expire le (facultatif)": [
   "components/partage/BoutonPartage.tsx"
+ ],
+ "Expliquez pourquoi le plaignant n'a pas pu être informé.": [
+  "serveur"
  ],
  "Export de tous les bénéficiaires, une feuille par projet.": [
   "pages/beneficiaires/ExportBeneficiairesModal.tsx"
@@ -3446,6 +3808,7 @@
   "pages/beneficiaires/ImportBeneficiairesModal.tsx",
   "pages/carte/FenetresCarte.tsx",
   "pages/indicateurs/ImportIndicateursModal.tsx",
+  "pages/plaintes/SaisieDossierModal.tsx",
   "pages/projets/ImportProjetModal.tsx",
   "pages/strategie/ImportStructurationModal.tsx"
  ],
@@ -3476,7 +3839,7 @@
   "pages/strategie/ImportStructurationModal.tsx"
  ],
  "Fichier complété": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Fichier de la chaîne des documents : {0} document(s) créé(s), {1} mis à jour.": [
   "serveur"
@@ -3561,6 +3924,13 @@
  "Format papier": [
   "pages/carte/FenetresCarte.tsx"
  ],
+ "Formulaire": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
+ "Formulaire public": [
+  "api/plaintes.ts",
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
  "Fréquence": [
   "pages/strategie/SuiviStrategiqueTab.tsx"
  ],
@@ -3587,6 +3957,9 @@
  "Général : fixez les durées de conservation des dossiers ordinaires et sensibles.": [
   "serveur"
  ],
+ "Général (tous les projets couverts)": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
  "Géographie": [
   "pages/DashboardConsolidePage.tsx"
  ],
@@ -3595,6 +3968,13 @@
  ],
  "Gérer les périodes et leurs objectifs": [
   "pages/suivi/SuiviPeriodeTab.tsx"
+ ],
+ "Gestionnaire": [
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
+ "Gestionnaire du dossier": [
+  "pages/plaintes/OperationsDossier.tsx"
  ],
  "Global": [
   "pages/projets/PeriodeTableau.tsx"
@@ -3664,6 +4044,9 @@
   "pages/projets/PeriodeTableau.tsx",
   "pages/projets/PlanificationPeriodeTab.tsx"
  ],
+ "Hors périmètre": [
+  "api/plaintes.ts"
+ ],
  "Hors période : suivis, valeurs d'indicateurs, taux manuels, avancement des tâches et validation des livrables sont fermés ; la planification reste modifiable.": [
   "utils/rapportage.ts"
  ],
@@ -3716,7 +4099,7 @@
   "pages/planification/PlanificationImportPage.tsx"
  ],
  "Import impossible": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Import terminé": [
   "components/suivi/ImportCanevasSuiviModal.tsx"
@@ -3729,7 +4112,7 @@
   "pages/carte/FenetresCarte.tsx",
   "pages/indicateurs/ImportIndicateursModal.tsx",
   "pages/langues/LanguesPage.tsx",
-  "pages/plaintes/PlaintesPage.tsx",
+  "pages/plaintes/ParametragePlaintesPage.tsx",
   "pages/planification/PlanificationImportPage.tsx",
   "pages/projets/ExportPlanification.tsx",
   "pages/projets/ImportProjetModal.tsx",
@@ -3808,7 +4191,7 @@
   "pages/beneficiaires/BeneficiairesListPage.tsx"
  ],
  "Inactif": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Indicateur": [
   "pages/projets/PlanificationPeriodeTab.tsx",
@@ -3896,10 +4279,22 @@
  "Indiquer au moins deux réponses possibles.": [
   "serveur"
  ],
+ "Indiquez ce que le plaignant conteste.": [
+  "serveur"
+ ],
  "Indiquez la période.": [
   "pages/strategie/SuiviStrategiqueTab.tsx"
  ],
+ "Indiquez le motif de la clôture.": [
+  "serveur"
+ ],
  "Indiquez le motif de la rallonge.": [
+  "serveur"
+ ],
+ "Indiquez le motif de la récusation.": [
+  "serveur"
+ ],
+ "Indiquez le motif de la réouverture.": [
   "serveur"
  ],
  "Indiquez le risque.": [
@@ -3911,8 +4306,23 @@
  "Indiquez le titre de la carte.": [
   "pages/carte/FenetresCarte.tsx"
  ],
+ "Indiquez si le plaignant a été informé de la réponse.": [
+  "serveur"
+ ],
+ "Indiquez un numéro de téléphone pour recevoir la réponse, ou choisissez un autre mode.": [
+  "serveur"
+ ],
+ "Indiquez une adresse courriel pour recevoir la réponse, ou choisissez un autre mode.": [
+  "serveur"
+ ],
+ "Indiquez vers qui le dossier est orienté.": [
+  "serveur"
+ ],
  "Indispensable pour qu'un chef de projet, animateur, etc. puisse se connecter et voir ce projet — sans ça, même désigné ci-dessus, il ne verra rien après connexion.": [
   "pages/projets/ProjetForm.tsx"
+ ],
+ "Information de prise en charge": [
+  "api/plaintes.ts"
  ],
  "Informations": [
   "pages/beneficiaires/BeneficiaireDetailPage.tsx"
@@ -3936,14 +4346,33 @@
  "Interne": [
   "pages/projets/RisquesTab.tsx"
  ],
+ "Issue": [
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "J'accepte que les informations de ce formulaire soient utilisées pour traiter mon retour.": [
+  "pages/plaintes/public/FormulairePublicPage.tsx"
+ ],
+ "J'ai déjà un code de suivi": [
+  "pages/plaintes/public/FormulairePublicPage.tsx"
+ ],
  "Jalon": [
   "pages/projets/AvancementModal.tsx"
+ ],
+ "Je ne sais pas": [
+  "pages/plaintes/ChampsRetour.tsx"
+ ],
+ "Je souhaite rester anonyme": [
+  "pages/plaintes/ChampsRetour.tsx"
  ],
  "Jeunes": [
   "pages/DashboardConsolidePage.tsx"
  ],
  "Jeunes :": [
   "pages/DashboardConsolidePage.tsx"
+ ],
+ "Journal du dossier": [
+  "pages/plaintes/DossierPlaintePage.tsx"
  ],
  "L'élément « {0} » n'appartient pas à « {1} ».": [
   "serveur"
@@ -3955,6 +4384,12 @@
   "serveur"
  ],
  "L'élément principal n'a pas à être repris dans les autres liens.": [
+  "serveur"
+ ],
+ "L'envoi n'a pas abouti. Réessayez.": [
+  "pages/plaintes/public/FormulairePublicPage.tsx"
+ ],
+ "L'orientation vers un acteur externe exige le consentement du plaignant.": [
   "serveur"
  ],
  "La carte n'a pas pu être générée (réessayez dans un instant).": [
@@ -3983,6 +4418,12 @@
  ],
  "La date de fin prévue doit être postérieure à la date de début prévue.": [
   "serveur"
+ ],
+ "La date de réception ne peut pas être dans le futur.": [
+  "serveur"
+ ],
+ "La dernière étape se franchit avec « Clôturer » (motif, décision et retour au plaignant).": [
+  "pages/plaintes/OperationsDossier.tsx"
  ],
  "La feuille « Projet » du modèle porte sa fiche (nom, code, dates, modalités, bailleur…) en une ligne par champ. La feuille « Planification » porte sa planification : une colonne par niveau (en jaune dans le modèle, avec les noms et le nombre que tu veux, ex : Résultat → Pilier → Activité), puis Sous-activité — une seule colonne de niveau remplie par ligne.": [
   "pages/projets/ImportProjetModal.tsx"
@@ -4024,11 +4465,17 @@
  "La période se termine dans le futur ({0}) : une réalisation ne peut pas encore avoir eu lieu.": [
   "serveur"
  ],
+ "La réouverture est exceptionnelle : indiquez ce qui la justifie.": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "La réouverture est réservée à l'Administrateur et au Coordonnateur général.": [
+  "serveur"
+ ],
  "La saisie des valeurs réalisées et leur évolution dans le temps se font depuis le module Suivi.": [
   "pages/indicateurs/IndicateurDetailPage.tsx"
  ],
  "Laisser vide pour couvrir tous les projets.": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Laisser vide pour ne pas le changer": [
   "pages/utilisateurs/UtilisateursPage.tsx"
@@ -4047,7 +4494,7 @@
   "pages/langues/LanguesPage.tsx"
  ],
  "Langues de réception": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Latitude": [
   "pages/beneficiaires/BeneficiaireForm.tsx"
@@ -4063,13 +4510,22 @@
   "serveur"
  ],
  "Le canevas contient tout le paramétrage actuel (une feuille par rubrique). Modifiez-le ou complétez-le puis réimportez-le : les éléments sont retrouvés par leur nom, les étapes d'un circuit présent dans le fichier sont remplacées.": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
+ ],
+ "Le dépôt de retours n'est pas ouvert pour le moment.": [
+  "pages/plaintes/public/FormulairePublicPage.tsx"
  ],
  "Le détail de ce budget est saisi sur les éléments en dessous : il n'est pas compté une seconde fois dans les totaux.": [
   "pages/strategie/AxesBudgetsTab.tsx"
  ],
  "Le document lui-même": [
   "pages/strategie/DocumentModal.tsx"
+ ],
+ "Le dossier figure maintenant dans la liste.": [
+  "pages/plaintes/SaisieDossierModal.tsx"
+ ],
+ "Le dossier passera au circuit confidentiel : seules les personnes désignées (et l'Administrateur) y auront accès.": [
+  "pages/plaintes/OperationsDossier.tsx"
  ],
  "Le fichier est un classeur à plusieurs feuilles (Cadre stratégique, Structuration, Projet, Planification, Indicateurs, Bénéficiaires), avec une colonne par niveau pour les hiérarchies. Seule la feuille « Projet » est obligatoire — les autres sections sont ignorées si elles sont laissées vides. Les bénéficiaires importés sont automatiquement inscrits au projet créé.": [
   "pages/planification/PlanificationImportPage.tsx"
@@ -4081,14 +4537,20 @@
   "pages/projets/ActiviteForm.tsx",
   "pages/projets/SousActiviteForm.tsx"
  ],
+ "Le mécanisme de plaintes et retours n'est pas ouvert.": [
+  "serveur"
+ ],
+ "Le mécanisme n'est pas encore ouvert": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
  "Le mécanisme ne peut pas encore être activé.": [
   "serveur"
  ],
  "Le mécanisme reçoit les retours. Les réglages restent modifiables.": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Le modèle installe des types, priorités, catégories et circuits courants, que vous adaptez ensuite. Le circuit confidentiel est toujours ajouté.": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Le montant de la rallonge doit être positif.": [
   "serveur"
@@ -4115,6 +4577,21 @@
  ],
  "Le parent principal n'a pas à être repris dans les autres liens.": [
   "serveur"
+ ],
+ "Le plaignant (formulaire public)": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Le plaignant a donné son consentement à cette orientation": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Le plaignant a-t-il été informé de la réponse ?": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Le plaignant accepte que ses informations soient utilisées pour traiter son retour": [
+  "pages/plaintes/SaisieDossierModal.tsx"
+ ],
+ "Le plaignant conteste la réponse. Le dossier sera réexaminé par une autre personne que le premier gestionnaire.": [
+  "pages/plaintes/DossierPlaintePage.tsx"
  ],
  "Le préfixe ne contient que des lettres et des chiffres (ex : MGP).": [
   "serveur"
@@ -4176,11 +4653,20 @@
  "Les niveaux sont libres : leur nom et leur nombre sont propres à ce projet. Clique sur l'étiquette d'un élément pour nommer ou renommer son niveau ; le bouton + ajoute un élément au niveau en dessous.": [
   "pages/projets/ProjetDetailPage.tsx"
  ],
+ "Les notes sont internes : le plaignant ne les voit jamais.": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Les réalisations seulement": [
   "utils/rapportage.ts"
  ],
+ "Les retours anonymes ne sont pas acceptés par ce mécanisme.": [
+  "serveur"
+ ],
+ "Les retours ne peuvent être reçus qu'une fois le mécanisme paramétré et activé.": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
  "Les retours pourront être reçus et traités selon ce paramétrage.": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "les risques maîtrisés ou clos (": [
   "pages/projets/RisquesTab.tsx"
@@ -4234,17 +4720,34 @@
  "Libellé, unité et valeur cible sont obligatoires — ligne ignorée.": [
   "serveur"
  ],
+ "Lié au dossier {0}.": [
+  "serveur"
+ ],
  "Lien créé : copiez-le pour l'envoyer.": [
   "components/partage/BoutonPartage.tsx"
  ],
  "Lien indisponible": [
   "pages/partage/PagePartagee.tsx"
  ],
+ "Lien retiré avec {0}.": [
+  "serveur"
+ ],
  "Lien valable jusqu'au": [
   "pages/partage/PagePartagee.tsx"
  ],
  "Liens existants": [
   "components/partage/BoutonPartage.tsx"
+ ],
+ "Lier": [
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Lier à un autre dossier": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Lieu": [
+  "pages/plaintes/ChampsRetour.tsx",
+  "pages/plaintes/DossierPlaintePage.tsx"
  ],
  "Ligne": [
   "pages/beneficiaires/ImportBeneficiairesModal.tsx",
@@ -4258,7 +4761,7 @@
   "pages/strategie/ChaineDocumentsModal.tsx"
  ],
  "Ligne {0} : {1}": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Limité au cadre stratégique du projet choisi ci-dessus.": [
   "pages/indicateurs/IndicateurForm.tsx"
@@ -4338,11 +4841,14 @@
  "Matrice des risques ouverts": [
   "pages/projets/RisquesTab.tsx"
  ],
+ "Me récuser": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
  "Mécanisme": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Mécanisme actif": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Membre ajouté à l'équipe": [
   "pages/projets/EquipeTab.tsx"
@@ -4410,6 +4916,15 @@
  "Merci de renseigner la période.": [
   "components/suivi/SaisiePointSuiviForm.tsx"
  ],
+ "Merci, votre retour a bien été reçu.": [
+  "pages/plaintes/public/FormulairePublicPage.tsx"
+ ],
+ "Mes dossiers": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
+ "Mes vues": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
  "Message envoyé par le serveur": [
   "pages/langues/LanguesPage.tsx"
  ],
@@ -4466,8 +4981,11 @@
  "Mise en page": [
   "pages/carte/FenetresCarte.tsx"
  ],
+ "Mode de réponse inconnu.": [
+  "serveur"
+ ],
  "Modèle appliqué : complétez maintenant les réglages.": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Modéré": [
   "pages/projets/RisquesTab.tsx"
@@ -4623,12 +5141,18 @@
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
  "Motif": [
+  "pages/plaintes/OperationsDossier.tsx",
   "pages/projets/FinancementsTab.tsx"
+ ],
+ "Motif de la clôture": [
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/OperationsDossier.tsx"
  ],
  "Motif du rejet": [
   "pages/approbations/ApprobationsPage.tsx"
  ],
  "Moyen": [
+  "pages/plaintes/OperationsDossier.tsx",
   "pages/projets/RisquesTab.tsx"
  ],
  "Moyenne des activités dont l'objectif est défini": [
@@ -4663,6 +5187,12 @@
  ],
  "Nature": [
   "pages/projets/RisquesTab.tsx"
+ ],
+ "Ne jamais communiquer de détail confidentiel. La communication de la décision fait passer le dossier à « Réponse donnée ».": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Ne sait pas": [
+  "pages/plaintes/DossierPlaintePage.tsx"
  ],
  "Négligeable": [
   "pages/projets/RisquesTab.tsx"
@@ -4728,6 +5258,8 @@
   "pages/carte/FenetresCarte.tsx",
   "pages/geo/ZonesAdministrativesPage.tsx",
   "pages/organisation/OrganisationPage.tsx",
+  "pages/plaintes/ChampsRetour.tsx",
+  "pages/plaintes/DossierPlaintePage.tsx",
   "pages/projets/BeneficiairesProjetSection.tsx",
   "pages/projets/EquipeTab.tsx",
   "pages/projets/ProjetsListPage.tsx",
@@ -4768,6 +5300,9 @@
  "Nom de la sous-catégorie": [
   "pages/plaintes/ListesPlaintes.tsx"
  ],
+ "Nom de la vue": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
  "Nom du bailleur": [
   "pages/projets/BailleursMontants.tsx"
  ],
@@ -4778,7 +5313,7 @@
   "components/documents/DocumentsTab.tsx"
  ],
  "Nom du mécanisme": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Nom du niveau": [
   "pages/geo/ZonesAdministrativesPage.tsx",
@@ -4846,10 +5381,16 @@
  ],
  "Non": [
   "pages/beneficiaires/ChampsVariables.tsx",
+  "pages/plaintes/ChampsRetour.tsx",
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/OperationsDossier.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
  "non additionné": [
   "pages/strategie/AxesBudgetsTab.tsx"
+ ],
+ "Non fondé": [
+  "api/plaintes.ts"
  ],
  "Non précisée": [
   "pages/utilisateurs/UtilisateursPage.tsx"
@@ -4864,6 +5405,9 @@
   "pages/DashboardConsolidePage.tsx",
   "utils/carteParZone.ts"
  ],
+ "non recueilli directement": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
  "Non traduit": [
   "pages/langues/LanguesPage.tsx"
  ],
@@ -4873,8 +5417,18 @@
  "Non validé": [
   "pages/projets/AvancementModal.tsx"
  ],
+ "Note": [
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Note interne": [
+  "api/plaintes.ts"
+ ],
  "Note libre (ex : validation, remarque) — n'affecte ni le suivi ni les calculs.": [
   "pages/projets/ActiviteForm.tsx"
+ ],
+ "Notez ce code : il ne sera plus affiché. Il permet de suivre l'état du dossier sur la page de suivi, sans jamais en montrer le contenu.": [
+  "pages/plaintes/public/FormulairePublicPage.tsx"
  ],
  "Notifications": [
   "components/notifications/NotificationBell.tsx",
@@ -5009,6 +5563,16 @@
  "Nouvelle version ajoutée": [
   "components/documents/DocumentsTab.tsx"
  ],
+ "Numéro": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
+ "Numéro de dossier": [
+  "pages/plaintes/DossiersPlaintesPage.tsx",
+  "pages/plaintes/public/FormulairePublicPage.tsx"
+ ],
+ "Numéro du dossier": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Objectif": [
   "pages/projets/PeriodeTableau.tsx"
  ],
@@ -5047,6 +5611,9 @@
  ],
  "Objectifs, résultats, activités… de la planification dont ce partenaire est chargé (ce qui est en dessous en fait partie).": [
   "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Objet": [
+  "pages/plaintes/OperationsDossier.tsx"
  ],
  "objet(s) ·": [
   "pages/carte/FenetresCarte.tsx"
@@ -5092,6 +5659,13 @@
  "Orientation": [
   "pages/carte/FenetresCarte.tsx"
  ],
+ "orienté vers": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Orienté vers": [
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Ou cocher un ou plusieurs projets :": [
   "pages/beneficiaires/ExportBeneficiairesModal.tsx"
  ],
@@ -5106,6 +5680,9 @@
  ],
  "Oui": [
   "pages/beneficiaires/ChampsVariables.tsx",
+  "pages/plaintes/ChampsRetour.tsx",
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/OperationsDossier.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
  "Oui / non": [
@@ -5126,6 +5703,15 @@
  "Ouvrir cet écran": [
   "pages/planification/PlanificationImportPage.tsx"
  ],
+ "Ouvrir le formulaire": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
+ "Ouvrir le paramétrage": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
+ "Page de suivi": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
  "par": [
   "components/partage/BoutonPartage.tsx",
   "pages/carte/FenetresCarte.tsx"
@@ -5138,6 +5724,9 @@
  ],
  "Par « {0} »": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Par courriel": [
+  "api/plaintes.ts"
  ],
  "Par défaut": [
   "pages/plaintes/CircuitsPlaintes.tsx"
@@ -5163,14 +5752,26 @@
  "Par quantité": [
   "utils/methodesCalcul.ts"
  ],
+ "Par SMS": [
+  "api/plaintes.ts"
+ ],
  "Par tâches pondérées": [
   "utils/methodesCalcul.ts"
+ ],
+ "Par téléphone": [
+  "api/plaintes.ts"
  ],
  "Par zone :": [
   "pages/carte/CartePage.tsx"
  ],
  "Par zone administrative": [
   "pages/DashboardConsolidePage.tsx"
+ ],
+ "Paramétrage": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
+ "Paramétrage du mécanisme": [
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Paramètre bbox attendu : sud,ouest,nord,est.": [
   "serveur"
@@ -5251,10 +5852,16 @@
   "pages/strategie/FicheDocument.tsx"
  ],
  "Partir d'un modèle": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Pas de contact renseigné": [
   "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Pas de réponse souhaitée": [
+  "api/plaintes.ts"
+ ],
+ "Pas encore de décision.": [
+  "pages/plaintes/DossierPlaintePage.tsx"
  ],
  "Pas encore rattaché à un document d'un maillon au-dessus.": [
   "serveur"
@@ -5328,6 +5935,9 @@
  "Période de rapportage ajoutée": [
   "pages/parametres/RapportageCard.tsx"
  ],
+ "Période de réception": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
  "Période des dépenses (facultatif)": [
   "pages/projets/RapportFinancierModal.tsx"
  ],
@@ -5398,9 +6008,30 @@
  "Plage de dates": [
   "components/dashboard/FiltresTableauDeBord.tsx"
  ],
+ "Plaignant": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Plaignant anonyme : aucune coordonnée. Il suit son dossier avec son code de suivi.": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Plaignant anonyme, injoignable…": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "plaignant informé": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Plaignant informé": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "plaignant non informé": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
  "Plaintes et retours": [
   "layouts/AppLayout.tsx",
-  "pages/plaintes/PlaintesPage.tsx",
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/DossiersPlaintesPage.tsx",
+  "pages/plaintes/ParametragePlaintesPage.tsx",
+  "pages/plaintes/public/FormulairePublicPage.tsx",
   "utils/modules.ts"
  ],
  "Plan de contingence": [
@@ -5458,7 +6089,7 @@
   "layouts/AppLayout.tsx"
  ],
  "Plus aucun retour ne sera reçu ; les dossiers existants sont conservés.": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Poids": [
   "pages/projets/ActiviteForm.tsx"
@@ -5514,6 +6145,12 @@
   "pages/strategie/CadresStrategiquesListPage.tsx",
   "pages/strategie/FicheDocument.tsx"
  ],
+ "Pour rapprocher des retours qui concernent le même problème. Rien n'est fusionné automatiquement.": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Pour terminer le dossier, utilisez « Clôturer » (motif, décision et retour au plaignant).": [
+  "serveur"
+ ],
  "Pour tous les éléments du projet qui ne fixent pas la leur.": [
   "pages/projets/ProjetForm.tsx"
  ],
@@ -5526,6 +6163,9 @@
  "Pourquoi": [
   "pages/beneficiaires/DoublonsPage.tsx"
  ],
+ "Pourquoi ?": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Précise au plus un seul parmi projet/indicateur/activité.": [
   "serveur"
  ],
@@ -5533,7 +6173,10 @@
   "pages/projets/PartenairesProjetTab.tsx"
  ],
  "Préfixe des numéros de dossier": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
+ ],
+ "Premier gestionnaire": [
+  "pages/plaintes/DossierPlaintePage.tsx"
  ],
  "Prénom": [
   "components/common/IntervenantsMultiples.tsx",
@@ -5545,10 +6188,10 @@
   "pages/projets/EquipeTab.tsx"
  ],
  "Présenté aux personnes qui déposent un retour : à quoi sert le mécanisme, comment leurs données sont protégées.": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Prêt à être activé": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Prévu": [
   "pages/projets/PeriodeTableau.tsx"
@@ -5563,10 +6206,13 @@
   "pages/projets/RapportFinancierModal.tsx"
  ],
  "Priorité": [
-  "pages/plaintes/ListesPlaintes.tsx"
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/ListesPlaintes.tsx",
+  "pages/plaintes/OperationsDossier.tsx",
+  "pages/plaintes/SaisieDossierModal.tsx"
  ],
  "Priorités": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Priorités : gardez au moins une priorité urgente active.": [
   "serveur"
@@ -5615,6 +6261,10 @@
   "pages/organisation/OrganisationPage.tsx",
   "pages/parametres/ParametresAlertePage.tsx",
   "pages/parametres/RapportageCard.tsx",
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/DossiersPlaintesPage.tsx",
+  "pages/plaintes/OperationsDossier.tsx",
+  "pages/plaintes/public/FormulairePublicPage.tsx",
   "pages/planification/PlanificationImportPage.tsx"
  ],
  "Projet ": [
@@ -5628,6 +6278,9 @@
  ],
  "Projet clôturé": [
   "components/common/BandeauProjetCloture.tsx"
+ ],
+ "Projet concerné": [
+  "pages/plaintes/ChampsRetour.tsx"
  ],
  "Projet créé": [
   "pages/projets/ProjetForm.tsx"
@@ -5681,7 +6334,7 @@
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
  ],
  "Projets couverts": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Projets dont cette structure est chargée (un projet peut relever de plusieurs services). Une partie d'un projet s'affecte depuis sa planification.": [
   "pages/organisation/OrganisationPage.tsx"
@@ -5834,6 +6487,9 @@
  "Rattachez la pièce à une valeur d'indicateur ou à une appréciation.": [
   "serveur"
  ],
+ "Réaffecter": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
  "Réalise": [
   "pages/projets/PartenairesProjetTab.tsx"
  ],
@@ -5859,6 +6515,9 @@
  "Réalisées": [
   "pages/DashboardConsolidePage.tsx",
   "utils/carteParZone.ts"
+ ],
+ "Réception": [
+  "api/plaintes.ts"
  ],
  "Recherche de": [
   "pages/beneficiaires/BeneficiaireParIdentifiant.tsx"
@@ -5926,6 +6585,34 @@
  "Recommandations :": [
   "pages/strategie/SuiviStrategiqueTab.tsx"
  ],
+ "Recours": [
+  "api/plaintes.ts",
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
+ "Recours : le dossier est réexaminé par une autre personne que {0}.": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Recours en cours": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Reçu": [
+  "api/plaintes.ts"
+ ],
+ "Reçu du plaignant": [
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Reçu le": [
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
+ "Recueilli directement auprès du plaignant": [
+  "pages/plaintes/SaisieDossierModal.tsx"
+ ],
+ "Récusation": [
+  "api/plaintes.ts"
+ ],
  "Réévaluation enregistrée": [
   "pages/projets/RisquesTab.tsx"
  ],
@@ -5938,6 +6625,9 @@
  "Réf.": [
   "pages/projets/CadreLogiqueTab.tsx",
   "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Référé à un acteur externe": [
+  "api/plaintes.ts"
  ],
  "Région": [
   "pages/carte/FenetresCarte.tsx"
@@ -5957,7 +6647,7 @@
   "pages/parametres/ParametresAlertePage.tsx"
  ],
  "Réglages enregistrés": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Regrouper par :": [
   "pages/strategie/AxesBudgetsTab.tsx"
@@ -5997,8 +6687,24 @@
  "Renommer le niveau": [
   "pages/projets/NiveauxActiviteTab.tsx"
  ],
+ "Réouverture": [
+  "api/plaintes.ts"
+ ],
  "Replier": [
   "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Réponse apportée": [
+  "api/plaintes.ts"
+ ],
+ "Réponse communiquée le": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Réponse donnée": [
+  "api/plaintes.ts"
+ ],
+ "Réponse souhaitée": [
+  "pages/plaintes/ChampsRetour.tsx",
+  "pages/plaintes/DossierPlaintePage.tsx"
  ],
  "Réponses": [
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
@@ -6008,6 +6714,9 @@
  ],
  "Réponses proposées": [
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Reprendre à l'étape": [
+  "pages/plaintes/OperationsDossier.tsx"
  ],
  "Responsable": [
   "pages/organisation/OrganisationPage.tsx",
@@ -6035,6 +6744,12 @@
   "pages/planification/PlanificationImportPage.tsx",
   "pages/projets/ImportProjetModal.tsx",
   "pages/strategie/ImportStructurationModal.tsx"
+ ],
+ "Résumé de l'échange": [
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Résumez l'échange.": [
+  "serveur"
  ],
  "Retiré de l'équipe du projet": [
   "pages/projets/EquipeTab.tsx"
@@ -6065,6 +6780,18 @@
  ],
  "Retirer le rôle de « {0} » ? Il reste associé au projet.": [
   "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Retour anonyme (aucune information d'identité)": [
+  "pages/plaintes/ChampsRetour.tsx"
+ ],
+ "Retour enregistré": [
+  "pages/plaintes/SaisieDossierModal.tsx"
+ ],
+ "Retour sensible : circuit confidentiel": [
+  "pages/plaintes/SaisieDossierModal.tsx"
+ ],
+ "Réunion communautaire": [
+  "api/plaintes.ts"
  ],
  "Revenir à la grille héritée": [
   "pages/parametres/ParametresAlertePage.tsx"
@@ -6159,11 +6886,20 @@
   "pages/carte/CartePage.tsx",
   "pages/carte/FenetresCarte.tsx"
  ],
+ "Rouvrir": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Rouvrir le dossier": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
  "Rouvrir le projet": [
   "components/common/BandeauProjetCloture.tsx"
  ],
  "Rubrique du menu": [
   "pages/strategie/ChaineDocumentsModal.tsx"
+ ],
+ "Saisi par": [
+  "pages/plaintes/DossierPlaintePage.tsx"
  ],
  "Saisie": [
   "pages/approbations/ApprobationsPage.tsx"
@@ -6257,6 +6993,13 @@
  "Sans projet": [
   "pages/beneficiaires/BeneficiairesListPage.tsx"
  ],
+ "Sans responsable": [
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
+ "Sans suite (plaignant injoignable, abandon…)": [
+  "api/plaintes.ts"
+ ],
  "Satellite": [
   "pages/carte/CartePage.tsx",
   "pages/carte/FenetresCarte.tsx"
@@ -6293,6 +7036,7 @@
   "pages/strategie/SuiviStrategiqueTab.tsx"
  ],
  "Sensibilité": [
+  "api/plaintes.ts",
   "pages/plaintes/ListesPlaintes.tsx"
  ],
  "Sensible": [
@@ -6303,6 +7047,9 @@
  ],
  "Service": [
   "pages/projets/PartenairesProjetTab.tsx"
+ ],
+ "Service, organisation ou prestataire": [
+  "pages/plaintes/OperationsDossier.tsx"
  ],
  "Services": [
   "pages/organisation/OrganisationPage.tsx",
@@ -6345,6 +7092,9 @@
  "Seul l'Administrateur peut renommer les rubriques du menu.": [
   "serveur"
  ],
+ "Seul le gestionnaire du dossier peut se récuser.": [
+  "serveur"
+ ],
  "Seul un administrateur peut le rouvrir.": [
   "components/common/BandeauProjetCloture.tsx"
  ],
@@ -6352,6 +7102,9 @@
   "serveur"
  ],
  "Seul un administrateur peut rouvrir un projet clôturé.": [
+  "serveur"
+ ],
+ "Seul un dossier clôturé peut être rouvert.": [
   "serveur"
  ],
  "Seulement les éléments prévus à ces dates": [
@@ -6367,6 +7120,9 @@
  ],
  "Shapefile dans une archive .zip (avec ses fichiers .shp, .shx, .dbf et .prj), GeoPackage (.gpkg), GeoJSON ou KML. La projection est lue dans le fichier et convertie automatiquement.": [
   "pages/carte/FenetresCarte.tsx"
+ ],
+ "Si oui, il est traité de façon confidentielle par des personnes désignées.": [
+  "pages/plaintes/ChampsRetour.tsx"
  ],
  "Si survenu :": [
   "pages/projets/RisquesTab.tsx"
@@ -6438,6 +7194,7 @@
   "components/suivi/TranchesPlanifieesTab.tsx",
   "pages/DashboardConsolidePage.tsx",
   "pages/indicateurs/IndicateursListPage.tsx",
+  "pages/plaintes/DossiersPlaintesPage.tsx",
   "pages/projets/PeriodeTableau.tsx",
   "pages/projets/ProjetForm.tsx",
   "pages/projets/ProjetsListPage.tsx",
@@ -6519,6 +7276,10 @@
  "Suivis, valeurs d'indicateurs et taux manuels ne comptent qu'une fois approuvés (écran Approbations).": [
   "pages/projets/ProjetForm.tsx"
  ],
+ "Suivre mon dossier": [
+  "pages/plaintes/public/FormulairePublicPage.tsx",
+  "pages/plaintes/public/SuiviPublicPage.tsx"
+ ],
  "Suppression de l'élément et de tout ce qui est en dessous.": [
   "pages/approbations/ApprobationsPage.tsx"
  ],
@@ -6539,6 +7300,7 @@
   "pages/geo/ZonesAdministrativesPage.tsx",
   "pages/organisation/OrganisationPage.tsx",
   "pages/plaintes/CircuitsPlaintes.tsx",
+  "pages/plaintes/DossiersPlaintesPage.tsx",
   "pages/plaintes/ListesPlaintes.tsx",
   "pages/projets/AvancementModal.tsx",
   "pages/projets/NiveauxActiviteTab.tsx",
@@ -6809,7 +7571,7 @@
   "pages/carte/FenetresCarte.tsx"
  ],
  "Télécharger le canevas": [
-  "pages/plaintes/PlaintesPage.tsx",
+  "pages/plaintes/ParametragePlaintesPage.tsx",
   "pages/projets/PlanificationPeriodeTab.tsx"
  ],
  "Télécharger le canevas de la planification": [
@@ -6830,6 +7592,9 @@
  "Télécharger le modèle Excel complet": [
   "pages/planification/PlanificationImportPage.tsx"
  ],
+ "Télécharger le QR code": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
  "Télécharger le rapport d'erreurs": [
   "components/suivi/ImportCanevasSuiviModal.tsx"
  ],
@@ -6837,9 +7602,12 @@
   "pages/projets/ExportPlanification.tsx"
  ],
  "Téléphone": [
+  "api/plaintes.ts",
   "pages/beneficiaires/BeneficiaireForm.tsx",
   "pages/beneficiaires/BeneficiairesListPage.tsx",
   "pages/organisation/OrganisationPage.tsx",
+  "pages/plaintes/ChampsRetour.tsx",
+  "pages/plaintes/DossierPlaintePage.tsx",
   "pages/projets/BeneficiairesProjetSection.tsx"
  ],
  "Terme par défaut": [
@@ -6859,7 +7627,7 @@
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
  ],
  "Texte d'information du public": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Texte français": [
   "pages/langues/LanguesPage.tsx"
@@ -6907,7 +7675,8 @@
   "pages/projets/ProjetForm.tsx"
  ],
  "Tous": [
-  "pages/langues/LanguesPage.tsx"
+  "pages/langues/LanguesPage.tsx",
+  "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
  "Tous ({0})": [
   "pages/organisation/OrganisationPage.tsx"
@@ -6918,8 +7687,11 @@
  "Tous les blocs sont masqués — clique sur « Personnaliser » pour en afficher.": [
   "pages/DashboardConsolidePage.tsx"
  ],
+ "Tous les canaux": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
  "Tous les contrôles sont satisfaits.": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Tous les dossiers": [
   "components/documents/DocumentsTab.tsx"
@@ -6927,14 +7699,19 @@
  "Tous les écrans": [
   "pages/langues/LanguesPage.tsx"
  ],
+ "Tous les gestionnaires": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
  "Tous les projets": [
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
   "pages/carte/CartePage.tsx",
   "pages/parametres/RapportageCard.tsx",
+  "pages/plaintes/DossiersPlaintesPage.tsx",
   "pages/utilisateurs/RolesTab.tsx"
  ],
  "Tous les statuts": [
-  "components/dashboard/FiltresTableauDeBord.tsx"
+  "components/dashboard/FiltresTableauDeBord.tsx",
+  "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
  "Tout afficher": [
   "components/dashboard/PersonnalisationModal.tsx"
@@ -6982,6 +7759,12 @@
  "Toutes : {0}": [
   "components/suivi/ImportCanevasSuiviModal.tsx"
  ],
+ "Toutes les catégories": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
+ "Toutes les priorités": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
  "Toutes les zones (région, province, commune…)": [
   "pages/carte/CartePage.tsx"
  ],
@@ -7003,6 +7786,13 @@
  "Tranche supprimée": [
   "components/suivi/TranchesPlanifieesTab.tsx"
  ],
+ "Transmettre au circuit confidentiel": [
+  "pages/plaintes/SaisieDossierModal.tsx"
+ ],
+ "Transmis au circuit confidentiel": [
+  "pages/plaintes/OperationsDossier.tsx",
+  "pages/plaintes/SaisieDossierModal.tsx"
+ ],
  "Trimestres": [
   "pages/projets/PlanificationTableau.tsx",
   "pages/strategie/CadreTableau.tsx"
@@ -7011,10 +7801,14 @@
   "pages/indicateurs/IndicateurForm.tsx",
   "pages/strategie/SuiviStrategiqueTab.tsx"
  ],
+ "Trop d'envois depuis cette connexion. Réessayez un peu plus tard.": [
+  "serveur"
+ ],
  "Type": [
   "components/documents/DocumentsTab.tsx",
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
   "pages/organisation/OrganisationPage.tsx",
+  "pages/plaintes/DossiersPlaintesPage.tsx",
   "pages/plaintes/ListesPlaintes.tsx"
  ],
  "Type d'activité inconnu ignoré : « {0} ».": [
@@ -7037,6 +7831,11 @@
  "Type de réponse": [
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
  ],
+ "Type de retour": [
+  "pages/plaintes/ChampsRetour.tsx",
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Type de saisie inconnu.": [
   "serveur"
  ],
@@ -7047,7 +7846,7 @@
   "components/dashboard/PersonnalisationModal.tsx"
  ],
  "Types de retours": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Types de retours : activez au moins un type.": [
   "serveur"
@@ -7068,6 +7867,9 @@
   "pages/parametres/ParametresAlertePage.tsx"
  ],
  "Un document ne peut pas être rattaché à lui-même.": [
+  "serveur"
+ ],
+ "Un dossier ne peut pas être lié à lui-même.": [
   "serveur"
  ],
  "Un élément de niveau « {0} » (niveau racine) ne peut pas avoir de parent.": [
@@ -7109,6 +7911,12 @@
  "Un projet avec le code « ": [
   "serveur"
  ],
+ "Un recours est réexaminé par une autre personne que le premier gestionnaire.": [
+  "serveur"
+ ],
+ "Un recours porte sur une réponse déjà donnée.": [
+  "serveur"
+ ],
  "Un rôle avec le code « {0} » existe déjà.": [
   "serveur"
  ],
@@ -7131,6 +7939,9 @@
   "pages/plaintes/ListesPlaintes.tsx"
  ],
  "Une catégorie sensible utilise un circuit confidentiel.": [
+  "serveur"
+ ],
+ "Une décision doit être enregistrée avant la clôture.": [
   "serveur"
  ],
  "Une ligne = un indicateur. Le rattachement (Projet, ou nom d'un niveau de la planification : Objectif, Résultat, Pilier, Activité…) se fait par le code exact du projet et le libellé exact de l'élément — laisse « Aucun » pour un indicateur stratégique sans projet.": [
@@ -7179,7 +7990,11 @@
   "pages/indicateurs/IndicateurDetailPage.tsx"
  ],
  "Urgente": [
+  "pages/plaintes/DossiersPlaintesPage.tsx",
   "pages/plaintes/ListesPlaintes.tsx"
+ ],
+ "Urgents": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
  "Utilisateur créé": [
   "pages/utilisateurs/UtilisateursPage.tsx"
@@ -7223,7 +8038,7 @@
   "pages/langues/LanguesPage.tsx"
  ],
  "Utiliser ce modèle": [
-  "pages/plaintes/PlaintesPage.tsx"
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Valeur": [
   "components/common/AttributsLibres.tsx",
@@ -7331,6 +8146,9 @@
  "Vide : rattaché au document lui-même.": [
   "pages/strategie/DocumentModal.tsx"
  ],
+ "Village, quartier, site…": [
+  "pages/plaintes/ChampsRetour.tsx"
+ ],
  "Villes et villages": [
   "pages/carte/CartePage.tsx",
   "pages/carte/FenetresCarte.tsx"
@@ -7347,20 +8165,38 @@
  "Vocabulaire mis à jour": [
   "layouts/AppLayout.tsx"
  ],
+ "Voir l'état": [
+  "pages/plaintes/public/SuiviPublicPage.tsx"
+ ],
  "Voir seulement": [
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
  "Voit tous les projets": [
   "pages/utilisateurs/RolesTab.tsx"
  ],
+ "Vos coordonnées": [
+  "pages/plaintes/ChampsRetour.tsx"
+ ],
  "Vos saisies et demandes de changement en attente d'approbation, et celles qui ont été rejetées (avec le motif). Une saisie rejetée peut être corrigée depuis la page Suivi : elle repart alors en approbation.": [
   "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Votre accord est nécessaire pour que votre retour soit traité.": [
+  "serveur"
+ ],
+ "Votre code de suivi": [
+  "pages/plaintes/public/FormulairePublicPage.tsx"
  ],
  "Votre compte permet de consulter ce module, pas d'y créer ou modifier.": [
   "serveur"
  ],
+ "Votre message": [
+  "pages/plaintes/ChampsRetour.tsx"
+ ],
  "Votre navigateur ne permet pas la géolocalisation.": [
   "pages/carte/OutilsCarte.tsx"
+ ],
+ "Vous avez déjà une vue de ce nom.": [
+  "serveur"
  ],
  "Vous êtes ici (±": [
   "pages/carte/OutilsCarte.tsx"
@@ -7371,8 +8207,14 @@
  "Vous n'avez pas le droit d'approuver.": [
   "serveur"
  ],
+ "Vous vous retirez de ce dossier (conflit d'intérêts, lien avec le plaignant…). Il devra être réaffecté.": [
+  "pages/plaintes/DossierPlaintePage.tsx"
+ ],
  "Vue d'ensemble": [
   "utils/carteParZone.ts"
+ ],
+ "Vue enregistrée": [
+  "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
  "Word": [
   "pages/projets/CadreLogiqueTab.tsx",

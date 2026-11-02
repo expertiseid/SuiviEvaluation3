@@ -49,7 +49,7 @@ API_PAR_MODULE = {
     "projet:financement": ["/api/v1/financements", "/api/v1/rallonges-financement", "/api/v1/rapports/financier"],
 }
 # Modules refusés même en lecture quand ils sont cachés.
-LECTURE_BLOQUEE_SI_MASQUE = {"/beneficiaires", "/documents", "projet:financement"}
+LECTURE_BLOQUEE_SI_MASQUE = {"/beneficiaires", "/documents", "projet:financement", "/plaintes"}
 
 # Module de la requête en cours (voir core.permissions.peut_modifier).
 module_courant: ContextVar[str | None] = ContextVar("module_courant", default=None)

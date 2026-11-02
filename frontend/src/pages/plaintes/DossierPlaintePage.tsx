@@ -1,0 +1,331 @@
+import { useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import {
+  ArrowLeft,
+  ArrowRightLeft,
+  CheckCheck,
+  FolderCheck,
+  Gavel,
+  Link2,
+  Lock,
+  MessageSquareText,
+  RotateCcw,
+  Scale,
+  Siren,
+  StickyNote,
+  Tags,
+  UserCheck,
+  UserX,
+} from "lucide-react";
+import { Alert, Anchor, Badge, Button, Card, Grid, Group, Loader, SimpleGrid, Stack, Text, Timeline, Title } from "@mantine/core";
+import {
+  type ActionDossier,
+  type DossierDetail,
+  type IssueDossier,
+  type ModeReponse,
+  type ObjetEchange,
+  couleurStatutDossier,
+  dateLisible,
+  libelleCanal,
+  libelleIssue,
+  libelleModeReponse,
+  libelleObjetEchange,
+  libelleStatutDossier,
+  libelleTypeAction,
+  useDossierPlainte,
+} from "../../api/plaintes";
+import { useAuth } from "../../auth/useAuth";
+import { locale } from "../../utils/i18n";
+import { useAccesModules } from "../../utils/modules";
+import { voc } from "../../utils/vocabulaire";
+import {
+  AffecterDossier,
+  ClasserDossier,
+  CloturerDossier,
+  CommuniquerDossier,
+  DeciderDossier,
+  EtapeDossier,
+  LierDossier,
+  MotifDossier,
+  NoterDossier,
+} from "./OperationsDossier";
+
+const COULEUR_ACTION: Partial<Record<ActionDossier["type"], string>> = {
+  RECEPTION: "blue",
+  AFFECTATION: "cyan",
+  DECISION: "violet",
+  COMMUNICATION: "teal",
+  CLOTURE: "gray",
+  REOUVERTURE: "orange",
+  RECOURS: "red",
+  SENSIBILITE: "grape",
+  ACTION_CORRECTIVE: "lime",
+};
+
+function Ligne({ libelle, children }: { libelle: string; children: React.ReactNode }) {
+  return (
+    <Stack gap={0}>
+      <Text size="xs" c="dimmed">{libelle}</Text>
+      <Text size="sm" component="div">{children || "—"}</Text>
+    </Stack>
+  );
+}
+
+const NOMS_CHAMPS: Record<string, string> = {
+  type_retour: "Type de retour",
+  categorie: "Catégorie",
+  priorite: "Priorité",
+  projet: "Projet",
+};
+
+/** Ce qu'une action a changé, en clair. */
+function DetailsAction({ action }: { action: ActionDossier }) {
+  const d = action.details as Record<string, unknown>;
+  if (action.type === "RECEPTION") {
+    return <Text size="xs" c="dimmed">{libelleCanal(d.canal as never)}{d.circuit ? ` · ${d.circuit}` : ""}</Text>;
+  }
+  if (action.type === "CLASSIFICATION") {
+    return (
+      <Stack gap={0}>
+        {Object.entries(d).map(([champ, valeurs]) => {
+          const [de, a] = valeurs as [string, string];
+          return <Text key={champ} size="xs">{voc(NOMS_CHAMPS[champ] ?? champ)} : {de || "—"} → {a || "—"}</Text>;
+        })}
+      </Stack>
+    );
+  }
+  if ("de" in d || "a" in d) {
+    return <Text size="xs">{String(d.de || "—")} → {String(d.a || "—")}</Text>;
+  }
+  if (action.type === "CLOTURE") {
+    return (
+      <Text size="xs">
+        {libelleIssue(d.issue as IssueDossier)} · {d.retour_donne ? voc("plaignant informé") : voc("plaignant non informé")}
+        {d.oriente_vers ? ` · ${voc("orienté vers")} ${String(d.oriente_vers)}` : ""}
+      </Text>
+    );
+  }
+  if (action.type === "COMMUNICATION") {
+    return (
+      <Text size="xs" c="dimmed">
+        {action.sens === "ENTRANT" ? voc("Reçu du plaignant") : voc("Envoyé au plaignant")} · {libelleObjetEchange(action.objet as ObjetEchange)} ·{" "}
+        {libelleModeReponse(action.canal as ModeReponse)}
+      </Text>
+    );
+  }
+  return null;
+}
+
+function Journal({ actions }: { actions: ActionDossier[] }) {
+  return (
+    <Timeline bulletSize={14} lineWidth={2} active={actions.length}>
+      {actions.map((a) => (
+        <Timeline.Item key={a.id} color={COULEUR_ACTION[a.type] ?? "gray"} title={<Text size="sm" fw={600}>{libelleTypeAction(a.type)}</Text>}>
+          <Text size="xs" c="dimmed">
+            {new Date(a.date).toLocaleString(locale(), { dateStyle: "short", timeStyle: "short" })}
+            {a.auteur_nom ? ` · ${a.auteur_nom}` : ""}
+          </Text>
+          <DetailsAction action={a} />
+          {a.texte && <Text size="sm" mt={2} style={{ whiteSpace: "pre-line" }}>{a.texte}</Text>}
+        </Timeline.Item>
+      ))}
+    </Timeline>
+  );
+}
+
+type Fenetre =
+  | "classer" | "affecter" | "etape" | "noter" | "communiquer" | "decider" | "cloturer" | "rouvrir" | "recours" | "recuser" | "lier" | null;
+
+/** Barre d'actions : seules les opérations possibles dans l'état du dossier sont proposées. */
+function Actions({ dossier, ouvrir }: { dossier: DossierDetail; ouvrir: (f: Fenetre) => void }) {
+  const { user } = useAuth();
+  const clos = dossier.statut === "CLOTURE";
+  const peutRouvrir = user?.role === "ADMIN" || user?.role === "COORDO_GENERAL";
+  const bouton = (f: Fenetre, libelle: string, icone: React.ReactNode, props: Record<string, unknown> = {}) => (
+    <Button size="xs" variant="light" leftSection={icone} onClick={() => ouvrir(f)} {...props}>{libelle}</Button>
+  );
+  return (
+    <Group gap={6}>
+      {!clos && bouton("affecter", dossier.responsable ? voc("Réaffecter") : voc("Affecter"), <UserCheck size={14} />, dossier.responsable ? {} : { variant: "filled" })}
+      {!clos && bouton("classer", voc("Classer"), <Tags size={14} />)}
+      {!clos && bouton("etape", voc("Changer d'étape"), <ArrowRightLeft size={14} />)}
+      {bouton("noter", voc("Note"), <StickyNote size={14} />)}
+      {bouton("communiquer", voc("Échange avec le plaignant"), <MessageSquareText size={14} />)}
+      {!clos && bouton("decider", voc("Décision"), <Gavel size={14} />)}
+      {!clos && bouton("cloturer", voc("Clôturer"), <FolderCheck size={14} />, { color: "gray", variant: "filled" })}
+      {(dossier.statut === "REPONDU" || clos) && bouton("recours", voc("Recours"), <Scale size={14} />, { color: "red" })}
+      {clos && peutRouvrir && bouton("rouvrir", voc("Rouvrir"), <RotateCcw size={14} />, { color: "orange" })}
+      {bouton("lier", voc("Lier"), <Link2 size={14} />, { variant: "subtle" })}
+      {!clos && dossier.responsable === user?.id && bouton("recuser", voc("Me récuser"), <UserX size={14} />, { variant: "subtle", color: "red" })}
+    </Group>
+  );
+}
+
+/** Fiche d'un dossier et son traitement. */
+export function DossierPlaintePage() {
+  const id = Number(useParams().id);
+  const { data: dossier, isLoading, isError } = useDossierPlainte(id);
+  const modifiable = useAccesModules().peutEcrire("/plaintes");
+  const [fenetre, setFenetre] = useState<Fenetre>(null);
+  const fermer = () => setFenetre(null);
+
+  const retour = (
+    <Anchor component={Link} to="/plaintes" size="sm">
+      <Group gap={4}><ArrowLeft size={14} />{voc("Plaintes et retours")}</Group>
+    </Anchor>
+  );
+  if (isLoading) return <Loader />;
+  if (isError || !dossier) {
+    return (
+      <Stack>
+        {retour}
+        <Alert color="gray">{voc("Dossier introuvable, ou réservé aux personnes désignées (circuit confidentiel).")}</Alert>
+      </Stack>
+    );
+  }
+
+  return (
+    <Stack>
+      <Stack gap={4}>
+        {retour}
+        <Group justify="space-between" align="flex-start">
+          <Group gap="xs">
+            <Title order={2}>{dossier.numero}</Title>
+            <Badge color={couleurStatutDossier(dossier.statut)} variant="light" tt="none" size="lg">{libelleStatutDossier(dossier.statut)}</Badge>
+            {dossier.sensible && <Badge color="grape" leftSection={<Lock size={11} />} tt="none" size="lg">{voc("Confidentiel")}</Badge>}
+            {dossier.priorite_urgente && <Badge color="red" leftSection={<Siren size={11} />} tt="none" size="lg">{dossier.priorite_nom}</Badge>}
+            {dossier.en_recours && <Badge color="red" variant="outline" tt="none" size="lg">{voc("Recours en cours")}</Badge>}
+          </Group>
+        </Group>
+        {modifiable && <Actions dossier={dossier} ouvrir={setFenetre} />}
+      </Stack>
+
+      <Grid gap="md">
+        <Grid.Col span={{ base: 12, md: 7 }}>
+          <Stack>
+            <Card withBorder>
+              <Stack gap="sm">
+                <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
+                  <Ligne libelle={voc("Gestionnaire")}>{dossier.responsable_nom ?? <Text size="sm" c="orange.8">{voc("Sans responsable")}</Text>}</Ligne>
+                  <Ligne libelle={voc("Circuit et étape")}>{[dossier.circuit_nom, dossier.etape_nom].filter(Boolean).join(" › ")}</Ligne>
+                  <Ligne libelle={voc("Priorité")}>{dossier.priorite_nom ?? voc("À évaluer")}</Ligne>
+                  <Ligne libelle={voc("Reçu le")}>{dateLisible(dossier.date_reception)}</Ligne>
+                  <Ligne libelle={voc("Canal de réception")}>{libelleCanal(dossier.canal)}</Ligne>
+                  <Ligne libelle={voc("Type de retour")}>{dossier.type_retour_nom}</Ligne>
+                  <Ligne libelle={voc("Catégorie")}>
+                    {dossier.categorie_nom ? [dossier.categorie_parent_nom, dossier.categorie_nom].filter(Boolean).join(" › ") : voc("À classer")}
+                  </Ligne>
+                  <Ligne libelle={voc("Projet")}>{dossier.projet_code ? `${dossier.projet_code} — ${dossier.projet_nom}` : dossier.projet_nom}</Ligne>
+                  <Ligne libelle={voc("Lieu")}>{dossier.lieu}</Ligne>
+                </SimpleGrid>
+                <Ligne libelle={voc("Description")}><Text size="sm" style={{ whiteSpace: "pre-line" }}>{dossier.description}</Text></Ligne>
+                <Ligne libelle={voc("Concerne le personnel ou un partenaire")}>
+                  {dossier.concerne_personnel === null ? voc("Ne sait pas") : dossier.concerne_personnel ? voc("Oui") : voc("Non")}
+                </Ligne>
+              </Stack>
+            </Card>
+
+            <Card withBorder>
+              <Stack gap="sm">
+                <Text fw={600} size="sm">{voc("Plaignant")}</Text>
+                {dossier.anonyme ? (
+                  <Text size="sm">{voc("Anonyme : aucune information d'identité enregistrée.")}</Text>
+                ) : (
+                  <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                    <Ligne libelle={voc("Nom")}>{dossier.nom}</Ligne>
+                    <Ligne libelle={voc("Téléphone")}>{dossier.telephone}</Ligne>
+                    <Ligne libelle={voc("Courriel")}>{dossier.courriel}</Ligne>
+                    <Ligne libelle={voc("Réponse souhaitée")}>{libelleModeReponse(dossier.mode_reponse)}</Ligne>
+                  </SimpleGrid>
+                )}
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                  <Ligne libelle={voc("Consentement")}>{dossier.consentement ? voc("Oui") : voc("Non")}</Ligne>
+                  <Ligne libelle={voc("Saisi par")}>
+                    {dossier.saisi_par_nom ?? voc("Le plaignant (formulaire public)")}
+                    {dossier.recueilli_directement === false && ` — ${voc("non recueilli directement")}`}
+                  </Ligne>
+                </SimpleGrid>
+              </Stack>
+            </Card>
+
+            <Card withBorder>
+              <Stack gap="sm">
+                <Group gap="xs"><CheckCheck size={16} /><Text fw={600} size="sm">{voc("Décision et clôture")}</Text></Group>
+                <Ligne libelle={voc("Décision")}>
+                  {dossier.decision ? (
+                    <Text size="sm" style={{ whiteSpace: "pre-line" }}>
+                      {dossier.decision}
+                      {dossier.date_decision && <Text span size="xs" c="dimmed"> — {dateLisible(dossier.date_decision)}</Text>}
+                    </Text>
+                  ) : (
+                    <Text size="sm" c="dimmed">{voc("Pas encore de décision.")}</Text>
+                  )}
+                </Ligne>
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                  <Ligne libelle={voc("Réponse communiquée le")}>{dossier.date_reponse && dateLisible(dossier.date_reponse)}</Ligne>
+                  {dossier.gestionnaire_initial_nom && <Ligne libelle={voc("Premier gestionnaire")}>{dossier.gestionnaire_initial_nom}</Ligne>}
+                </SimpleGrid>
+                {dossier.statut === "CLOTURE" && (
+                  <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                    <Ligne libelle={voc("Issue")}>{dossier.issue && libelleIssue(dossier.issue)}</Ligne>
+                    <Ligne libelle={voc("Clôturé le")}>{dossier.date_cloture && dateLisible(dossier.date_cloture)}</Ligne>
+                    <Ligne libelle={voc("Motif de la clôture")}>{dossier.motif_cloture}</Ligne>
+                    <Ligne libelle={voc("Plaignant informé")}>
+                      {dossier.retour_donne ? voc("Oui") : `${voc("Non")} — ${dossier.raison_sans_retour}`}
+                    </Ligne>
+                    {dossier.oriente_vers && <Ligne libelle={voc("Orienté vers")}>{dossier.oriente_vers}</Ligne>}
+                  </SimpleGrid>
+                )}
+              </Stack>
+            </Card>
+
+            {dossier.dossiers_lies.length > 0 && (
+              <Card withBorder>
+                <Stack gap={6}>
+                  <Group gap="xs"><Link2 size={16} /><Text fw={600} size="sm">{voc("Dossiers liés")}</Text></Group>
+                  <Group gap="xs">
+                    {dossier.dossiers_lies.map((l) => (
+                      <Badge key={l.id} component={Link} to={`/plaintes/dossiers/${l.id}`} variant="light" color={couleurStatutDossier(l.statut)}
+                        tt="none" style={{ cursor: "pointer" }}>
+                        {l.numero} · {libelleStatutDossier(l.statut)}
+                      </Badge>
+                    ))}
+                  </Group>
+                </Stack>
+              </Card>
+            )}
+          </Stack>
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, md: 5 }}>
+          <Card withBorder>
+            <Stack gap="sm">
+              <Text fw={600} size="sm">{voc("Journal du dossier")}</Text>
+              <Journal actions={dossier.actions} />
+            </Stack>
+          </Card>
+        </Grid.Col>
+      </Grid>
+
+      {fenetre === "classer" && <ClasserDossier dossier={dossier} onClose={fermer} />}
+      {fenetre === "affecter" && <AffecterDossier dossier={dossier} onClose={fermer} />}
+      {fenetre === "etape" && <EtapeDossier dossier={dossier} onClose={fermer} />}
+      {fenetre === "noter" && <NoterDossier dossier={dossier} onClose={fermer} />}
+      {fenetre === "communiquer" && <CommuniquerDossier dossier={dossier} onClose={fermer} />}
+      {fenetre === "decider" && <DeciderDossier dossier={dossier} onClose={fermer} />}
+      {fenetre === "cloturer" && <CloturerDossier dossier={dossier} onClose={fermer} />}
+      {fenetre === "lier" && <LierDossier dossier={dossier} onClose={fermer} />}
+      {fenetre === "recuser" && (
+        <MotifDossier dossier={dossier} operation="recuser" titre={voc("Me récuser")} onClose={fermer} libelleBouton={voc("Me récuser")} couleur="red"
+          aide={voc("Vous vous retirez de ce dossier (conflit d'intérêts, lien avec le plaignant…). Il devra être réaffecté.")} />
+      )}
+      {fenetre === "rouvrir" && (
+        <MotifDossier dossier={dossier} operation="rouvrir" titre={voc("Rouvrir le dossier")} onClose={fermer} libelleBouton={voc("Rouvrir")} couleur="orange" avecEtape
+          aide={voc("La réouverture est exceptionnelle : indiquez ce qui la justifie.")} />
+      )}
+      {fenetre === "recours" && (
+        <MotifDossier dossier={dossier} operation="recours" titre={voc("Enregistrer un recours")} onClose={fermer} libelleBouton={voc("Enregistrer le recours")} couleur="red" avecEtape
+          aide={voc("Le plaignant conteste la réponse. Le dossier sera réexaminé par une autre personne que le premier gestionnaire.")} />
+      )}
+    </Stack>
+  );
+}

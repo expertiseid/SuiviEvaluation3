@@ -1,9 +1,15 @@
 /**
  * Mécanisme de gestion des plaintes et retours — lot 1 : paramétrage (mécanisme, types,
- * priorités, catégories, circuits et étapes, modèles, canevas Excel). API : /api/v1/plaintes/.
+ * priorités, catégories, circuits et étapes, modèles, canevas Excel) ; lot 2 : réception
+ * (dossiers, saisie par un agent, formulaire public et suivi par code) ; lot 3 : traitement
+ * (actions sur un dossier, journal, vues prêtes et enregistrées, dossiers liés). API : /api/v1/plaintes/
+ * et, sans compte, /api/v1/public/plaintes/.
  */
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
+import type { Paginated } from "../types";
+import { locale } from "../utils/i18n";
+import { voc } from "../utils/vocabulaire";
 
 export interface MecanismePlaintes {
   id: number;
@@ -209,6 +215,356 @@ export function useImporterCanevasParametrage() {
         })
       ).data;
     },
+    onSuccess: rafraichir,
+  });
+}
+
+// --- Lot 2 : réception ----------------------------------------------------------------------
+
+export type CanalPlainte = "FORMULAIRE" | "TELEPHONE" | "EN_PERSONNE" | "REUNION" | "BOITE" | "COURRIER" | "COURRIEL" | "AUTRE";
+export type StatutDossier = "RECU" | "EN_COURS" | "REPONDU" | "CLOTURE";
+export type ModeReponse = "AUCUN" | "TELEPHONE" | "SMS" | "COURRIEL" | "EN_PERSONNE";
+
+export const libelleCanal = (c: CanalPlainte): string =>
+  ({
+    FORMULAIRE: voc("Formulaire public"),
+    TELEPHONE: voc("Téléphone"),
+    EN_PERSONNE: voc("En personne, sur le terrain"),
+    REUNION: voc("Réunion communautaire"),
+    BOITE: voc("Boîte à suggestions"),
+    COURRIER: voc("Courrier"),
+    COURRIEL: voc("Courriel"),
+    AUTRE: voc("Autre"),
+  })[c];
+
+export const libelleStatutDossier = (s: StatutDossier): string =>
+  ({ RECU: voc("Reçu"), EN_COURS: voc("En cours de traitement"), REPONDU: voc("Réponse donnée"), CLOTURE: voc("Clôturé") })[s];
+
+/** Couleur du statut d'un dossier (liste, fiche, dossiers liés). */
+export const couleurStatutDossier = (s: StatutDossier) => ({ RECU: "blue", EN_COURS: "orange", REPONDU: "teal", CLOTURE: "gray" })[s];
+
+/** Date (AAAA-MM-JJ) dans le format de la langue. */
+export const dateLisible = (d: string) => new Date(`${d.slice(0, 10)}T00:00:00`).toLocaleDateString(locale());
+
+export const STATUTS_DOSSIER: StatutDossier[] = ["RECU", "EN_COURS", "REPONDU", "CLOTURE"];
+
+export const libelleModeReponse = (m: ModeReponse): string =>
+  ({
+    AUCUN: voc("Pas de réponse souhaitée"),
+    TELEPHONE: voc("Par téléphone"),
+    SMS: voc("Par SMS"),
+    COURRIEL: voc("Par courriel"),
+    EN_PERSONNE: voc("En personne"),
+  })[m];
+
+export const MODES_REPONSE: ModeReponse[] = ["AUCUN", "TELEPHONE", "SMS", "COURRIEL", "EN_PERSONNE"];
+export const CANAUX_AGENT: CanalPlainte[] = ["TELEPHONE", "EN_PERSONNE", "REUNION", "BOITE", "COURRIER", "COURRIEL", "AUTRE"];
+
+export interface DossierPlainte {
+  id: number;
+  numero: string;
+  canal: CanalPlainte;
+  date_reception: string;
+  recueilli_directement: boolean | null;
+  type_retour: number;
+  type_retour_nom: string;
+  categorie: number | null;
+  categorie_nom: string | null;
+  categorie_parent_nom: string | null;
+  priorite: number | null;
+  priorite_nom: string | null;
+  priorite_urgente: boolean;
+  projet: number | null;
+  projet_nom: string | null;
+  projet_code: string | null;
+  lieu: string;
+  description: string;
+  concerne_personnel: boolean | null;
+  sensible: boolean;
+  circuit: number | null;
+  circuit_nom: string | null;
+  etape: number | null;
+  etape_nom: string | null;
+  statut: StatutDossier;
+  anonyme: boolean;
+  nom: string;
+  telephone: string;
+  courriel: string;
+  mode_reponse: ModeReponse;
+  consentement: boolean;
+  langue: string;
+  saisi_par_nom: string | null;
+  created_at: string;
+  responsable: number | null;
+  responsable_nom: string | null;
+  decision: string;
+  date_decision: string | null;
+  date_reponse: string | null;
+  issue: IssueDossier | "";
+  motif_cloture: string;
+  retour_donne: boolean | null;
+  raison_sans_retour: string;
+  oriente_vers: string;
+  consentement_reference: boolean;
+  date_cloture: string | null;
+  en_recours: boolean;
+  gestionnaire_initial_nom: string | null;
+}
+
+export type IssueDossier = "RESOLU" | "NON_FONDE" | "REFERE" | "HORS_PERIMETRE" | "SANS_SUITE";
+export const ISSUES: IssueDossier[] = ["RESOLU", "NON_FONDE", "REFERE", "HORS_PERIMETRE", "SANS_SUITE"];
+export const libelleIssue = (i: IssueDossier): string =>
+  ({
+    RESOLU: voc("Réponse apportée"),
+    NON_FONDE: voc("Non fondé"),
+    REFERE: voc("Référé à un acteur externe"),
+    HORS_PERIMETRE: voc("Hors périmètre"),
+    SANS_SUITE: voc("Sans suite (plaignant injoignable, abandon…)"),
+  })[i];
+
+export type TypeAction =
+  | "RECEPTION" | "CLASSIFICATION" | "AFFECTATION" | "RECUSATION" | "ETAPE" | "NOTE" | "ACTION_CORRECTIVE"
+  | "COMMUNICATION" | "DECISION" | "CLOTURE" | "REOUVERTURE" | "RECOURS" | "SENSIBILITE" | "LIEN";
+export const libelleTypeAction = (t: TypeAction): string =>
+  ({
+    RECEPTION: voc("Réception"),
+    CLASSIFICATION: voc("Classification"),
+    AFFECTATION: voc("Affectation"),
+    RECUSATION: voc("Récusation"),
+    ETAPE: voc("Changement d'étape"),
+    NOTE: voc("Note interne"),
+    ACTION_CORRECTIVE: voc("Action corrective"),
+    COMMUNICATION: voc("Communication avec le plaignant"),
+    DECISION: voc("Décision"),
+    CLOTURE: voc("Clôture"),
+    REOUVERTURE: voc("Réouverture"),
+    RECOURS: voc("Recours"),
+    SENSIBILITE: voc("Sensibilité"),
+    LIEN: voc("Dossiers liés"),
+  })[t];
+
+export type ObjetEchange = "ACCUSE_RECEPTION" | "PRISE_EN_CHARGE" | "DEMANDE_COMPLEMENT" | "DECISION" | "CLOTURE" | "SATISFACTION" | "AUTRE";
+export const OBJETS_ECHANGE: ObjetEchange[] = ["ACCUSE_RECEPTION", "PRISE_EN_CHARGE", "DEMANDE_COMPLEMENT", "DECISION", "CLOTURE", "SATISFACTION", "AUTRE"];
+export const libelleObjetEchange = (o: ObjetEchange): string =>
+  ({
+    ACCUSE_RECEPTION: voc("Accusé de réception"),
+    PRISE_EN_CHARGE: voc("Information de prise en charge"),
+    DEMANDE_COMPLEMENT: voc("Demande de complément"),
+    DECISION: voc("Communication de la décision"),
+    CLOTURE: voc("Confirmation de clôture"),
+    SATISFACTION: voc("Enquête de satisfaction"),
+    AUTRE: voc("Autre échange"),
+  })[o];
+
+export interface ActionDossier {
+  id: number;
+  type: TypeAction;
+  auteur_nom: string | null;
+  date: string;
+  texte: string;
+  details: Record<string, unknown>;
+  sens: "SORTANT" | "ENTRANT" | "";
+  canal: ModeReponse | "";
+  objet: ObjetEchange | "";
+}
+
+export interface DossierDetail extends DossierPlainte {
+  actions: ActionDossier[];
+  dossiers_lies: { id: number; numero: string; statut: StatutDossier }[];
+}
+
+/** Opérations de traitement (POST /plaintes/dossiers/{id}/{operation}/). */
+export type OperationDossier =
+  | "classer" | "affecter" | "recuser" | "etape" | "noter" | "communiquer" | "decider" | "cloturer" | "rouvrir" | "recours" | "lier";
+
+/** Données d'un retour, communes au formulaire public et à la saisie par un agent. */
+export interface SaisieRetour {
+  type_retour: number | null;
+  categorie: number | null;
+  projet: number | null;
+  lieu: string;
+  description: string;
+  concerne_personnel: boolean | null;
+  anonyme: boolean;
+  nom: string;
+  telephone: string;
+  courriel: string;
+  mode_reponse: ModeReponse;
+  consentement: boolean;
+  langue: string;
+}
+
+export interface SaisieAgent extends SaisieRetour {
+  canal: CanalPlainte | null;
+  date_reception: string | null;
+  recueilli_directement: boolean;
+  priorite: number | null;
+}
+
+/** Réponse à un enregistrement : le code de suivi n'est donné qu'une fois. */
+export interface RecuDossier {
+  numero: string;
+  code_suivi: string;
+  sensible?: boolean;
+  /** Faux pour un dossier sensible : l'agent n'en garde que le numéro. */
+  visible?: boolean;
+}
+
+export interface FiltresDossiers {
+  page: number;
+  vue?: string | null;
+  search?: string;
+  statut?: string | null;
+  canal?: string | null;
+  projet?: string | null;
+  categorie?: string | null;
+  priorite?: string | null;
+  responsable?: string | null;
+  date_du?: string | null;
+  date_au?: string | null;
+}
+
+export function useDossiersPlainte(filtres: FiltresDossiers) {
+  return useQuery({
+    queryKey: [CLE, "dossiers", filtres],
+    queryFn: async () =>
+      (await apiClient.get<Paginated<DossierPlainte>>("/plaintes/dossiers/", {
+        // Filtres vides omis.
+        params: Object.fromEntries(Object.entries(filtres).filter(([, valeur]) => valeur !== "" && valeur != null)),
+      })).data,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useEnregistrerDossier() {
+  const rafraichir = useRafraichir();
+  return useMutation({
+    mutationFn: async (saisie: SaisieAgent) => (await apiClient.post<RecuDossier>("/plaintes/dossiers/", saisie)).data,
+    onSuccess: rafraichir,
+  });
+}
+
+/** QR code (PNG) du formulaire public, général ou propre à un projet. */
+export async function telechargerQrFormulaire(projet: number | null) {
+  const response = await apiClient.get("/plaintes/qr/", {
+    responseType: "blob",
+    params: { projet: projet ?? undefined, origine: window.location.origin },
+  });
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const lien = document.createElement("a");
+  lien.href = url;
+  lien.setAttribute("download", "qr_formulaire_plaintes.png");
+  document.body.appendChild(lien);
+  lien.click();
+  lien.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+/** Adresse du formulaire public (à afficher, imprimer, partager). */
+export const adresseFormulairePublic = (projet: number | null) =>
+  `${window.location.origin}/plainte${projet ? `?projet=${projet}` : ""}`;
+
+// Pages publiques (sans compte).
+
+export interface FormulairePublic {
+  disponible: boolean;
+  nom: string;
+  texte_information?: string;
+  anonymat_autorise?: boolean;
+  langues?: string[];
+  projet_fixe?: boolean;
+  types?: { id: number; nom: string; description: string }[];
+  categories?: { id: number; nom: string; parent: number | null }[];
+  projets?: { id: number; code: string; nom: string }[];
+}
+
+export function useFormulairePublic(projet: string | null) {
+  return useQuery({
+    queryKey: ["plaintes-public", "formulaire", projet],
+    queryFn: async () =>
+      (await apiClient.get<FormulairePublic>("/public/plaintes/formulaire/", { params: { projet: projet || undefined } })).data,
+  });
+}
+
+export function useDeposerRetour() {
+  return useMutation({
+    mutationFn: async (saisie: SaisieRetour & { site_web: string }) =>
+      (await apiClient.post<RecuDossier>("/public/plaintes/deposer/", saisie)).data,
+  });
+}
+
+export function useSuiviPublic() {
+  return useMutation({
+    mutationFn: async (code: string) =>
+      (await apiClient.post<{ numero: string; date_reception: string; statut: StatutDossier }>("/public/plaintes/suivi/", { code })).data,
+  });
+}
+
+// --- Lot 3 : traitement --------------------------------------------------------------------
+
+export function useDossierPlainte(id: number) {
+  return useQuery({
+    queryKey: [CLE, "dossiers", id],
+    queryFn: async () => (await apiClient.get<DossierDetail>(`/plaintes/dossiers/${id}/`)).data,
+    retry: false,
+  });
+}
+
+/** Une opération de traitement ; renvoie le dossier à jour, ou {visible: false} s'il est devenu confidentiel. */
+export function useOperationDossier(id: number) {
+  const rafraichir = useRafraichir();
+  return useMutation({
+    mutationFn: async ({ operation, donnees }: { operation: OperationDossier; donnees: Record<string, unknown> }) =>
+      (await apiClient.post<DossierDetail | { numero: string; visible: false }>(`/plaintes/dossiers/${id}/${operation}/`, donnees)).data,
+    onSuccess: rafraichir,
+  });
+}
+
+export function useResponsablesPossibles(id: number, actif: boolean) {
+  return useQuery({
+    queryKey: [CLE, "dossiers", id, "responsables"],
+    queryFn: async () =>
+      (await apiClient.get<{ id: number; nom: string; role: string }[]>(`/plaintes/dossiers/${id}/responsables-possibles/`)).data,
+    enabled: actif,
+  });
+}
+
+export function usePossiblementLies(id: number) {
+  return useQuery({
+    queryKey: [CLE, "dossiers", id, "possiblement-lies"],
+    queryFn: async () =>
+      (await apiClient.get<{ id: number; numero: string; date_reception: string; statut: StatutDossier }[]>(
+        `/plaintes/dossiers/${id}/possiblement-lies/`,
+      )).data,
+  });
+}
+
+/** Filtres enregistrés par l'utilisateur connecté. */
+export interface VueEnregistree {
+  id: number;
+  nom: string;
+  filtres: Partial<FiltresDossiers>;
+}
+
+export function useVuesEnregistrees() {
+  return useQuery({
+    queryKey: [CLE, "vues"],
+    queryFn: async () => (await apiClient.get<VueEnregistree[]>("/plaintes-vues/")).data,
+  });
+}
+
+export function useEnregistrerVue() {
+  const rafraichir = useRafraichir();
+  return useMutation({
+    mutationFn: async (vue: Omit<VueEnregistree, "id">) => (await apiClient.post<VueEnregistree>("/plaintes-vues/", vue)).data,
+    onSuccess: rafraichir,
+  });
+}
+
+export function useSupprimerVue() {
+  const rafraichir = useRafraichir();
+  return useMutation({
+    mutationFn: async (id: number) => apiClient.delete(`/plaintes-vues/${id}/`),
     onSuccess: rafraichir,
   });
 }

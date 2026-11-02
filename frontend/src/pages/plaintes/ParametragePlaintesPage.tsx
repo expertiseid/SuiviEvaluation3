@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { CircleAlert, CircleCheck, Download, Power, PowerOff, Upload } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowLeft, CircleAlert, CircleCheck, Download, Power, PowerOff, Upload } from "lucide-react";
 import {
   Alert,
+  Anchor,
   Badge,
   Button,
   Card,
@@ -17,6 +19,7 @@ import {
   Text,
   TextInput,
   Textarea,
+  Title,
 } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
@@ -33,7 +36,6 @@ import {
   useModelesMecanisme,
 } from "../../api/plaintes";
 import { useProjets } from "../../api/projects";
-import { TitreRubrique } from "../../components/common/TitreRubrique";
 import { messageErreurApi } from "../../utils/erreurs";
 import { useAccesModules } from "../../utils/modules";
 import { voc } from "../../utils/vocabulaire";
@@ -309,8 +311,8 @@ function CanevasExcel({ modifiable }: { modifiable: boolean }) {
   );
 }
 
-/** Mécanisme de gestion des plaintes et retours — lot 1 : paramétrage. */
-export function PlaintesPage() {
+/** Paramétrage du mécanisme de gestion des plaintes et retours (lot 1). */
+export function ParametragePlaintesPage() {
   const { data: mecanisme } = useMecanisme();
   const { data: categories } = useCategoriesPlainte();
   const modifiable = useAccesModules().peutEcrire("/plaintes");
@@ -320,7 +322,12 @@ export function PlaintesPage() {
   return (
     <Stack>
       <Group justify="space-between">
-        <TitreRubrique route="/plaintes" defaut={voc("Plaintes et retours")} />
+        <Stack gap={2}>
+          <Anchor component={Link} to="/plaintes" size="sm">
+            <Group gap={4}><ArrowLeft size={14} />{voc("Plaintes et retours")}</Group>
+          </Anchor>
+          <Title order={2}>{voc("Paramétrage du mécanisme")}</Title>
+        </Stack>
         {mecanisme.actif ? (
           <Badge color="teal" size="lg" leftSection={<Power size={13} />}>{voc("Actif")}</Badge>
         ) : (

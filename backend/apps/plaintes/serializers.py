@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
 from .controles import controler_activation, controler_circuit
-from .models import Categorie, Circuit, EtapeCircuit, Mecanisme, Priorite, TypeRetour
+from .models import ActionDossier, Categorie, Circuit, Dossier, EtapeCircuit, Mecanisme, Priorite, TypeRetour, VueDossiers
+from .traitement import nom_personne
 
 LANGUES = {"fr", "en", "ar", "de", "es"}
 
@@ -154,3 +155,86 @@ class CategorieSerializer(serializers.ModelSerializer):
         if doublon.exists():
             raise serializers.ValidationError({"nom": "Une catégorie porte déjà ce nom à ce niveau."})
         return attrs
+
+
+class DossierSerializer(serializers.ModelSerializer):
+    """Dossier en lecture ; il se modifie par les actions de traitement (traitement.py), jamais directement."""
+
+    type_retour_nom = serializers.CharField(source="type_retour.nom", read_only=True)
+    categorie_nom = serializers.CharField(source="categorie.nom", read_only=True, default=None)
+    categorie_parent_nom = serializers.CharField(source="categorie.parent.nom", read_only=True, default=None)
+    priorite_nom = serializers.CharField(source="priorite.nom", read_only=True, default=None)
+    priorite_urgente = serializers.BooleanField(source="priorite.urgente", read_only=True, default=False)
+    projet_nom = serializers.CharField(source="projet.nom", read_only=True, default=None)
+    projet_code = serializers.CharField(source="projet.code", read_only=True, default=None)
+    circuit_nom = serializers.CharField(source="circuit.nom", read_only=True, default=None)
+    etape_nom = serializers.CharField(source="etape.nom", read_only=True, default=None)
+    saisi_par_nom = serializers.SerializerMethodField()
+    responsable_nom = serializers.SerializerMethodField()
+    gestionnaire_initial_nom = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Dossier
+        fields = (
+            "id", "numero", "canal", "date_reception", "recueilli_directement", "type_retour", "type_retour_nom",
+            "categorie", "categorie_nom", "categorie_parent_nom", "priorite", "priorite_nom", "priorite_urgente",
+            "projet", "projet_nom", "projet_code", "lieu", "description", "concerne_personnel", "sensible", "circuit",
+            "circuit_nom", "etape", "etape_nom", "statut", "anonyme", "nom", "telephone", "courriel", "mode_reponse",
+            "consentement", "langue", "saisi_par", "saisi_par_nom", "created_at",
+            "responsable", "responsable_nom", "decision", "date_decision", "date_reponse", "issue", "motif_cloture",
+            "retour_donne", "raison_sans_retour", "oriente_vers", "consentement_reference", "date_cloture", "en_recours",
+            "gestionnaire_initial", "gestionnaire_initial_nom",
+        )
+        read_only_fields = fields
+
+    def get_saisi_par_nom(self, obj):
+        return nom_personne(obj.saisi_par) or None
+
+    def get_responsable_nom(self, obj):
+        return nom_personne(obj.responsable) or None
+
+    def get_gestionnaire_initial_nom(self, obj):
+        return nom_personne(obj.gestionnaire_initial) or None
+
+
+class ActionDossierSerializer(serializers.ModelSerializer):
+    auteur_nom = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ActionDossier
+        fields = ("id", "type", "auteur", "auteur_nom", "date", "texte", "details", "sens", "canal", "objet")
+        read_only_fields = fields
+
+    def get_auteur_nom(self, obj):
+        return nom_personne(obj.auteur) or None
+
+
+class DossierDetailSerializer(DossierSerializer):
+    """Fiche complète : journal, dossiers liés (seulement ceux que l'utilisateur peut voir)."""
+
+    actions = ActionDossierSerializer(many=True, read_only=True)
+    dossiers_lies = serializers.SerializerMethodField()
+
+    class Meta(DossierSerializer.Meta):
+        fields = DossierSerializer.Meta.fields + ("actions", "dossiers_lies")
+        read_only_fields = fields
+
+    def get_dossiers_lies(self, obj):
+        visibles = self.context.get("visibles")
+        lies = obj.dossiers_lies.all() if visibles is None else visibles.filter(pk__in=obj.dossiers_lies.values("pk"))
+        return [{"id": d.id, "numero": d.numero, "statut": d.statut} for d in lies.order_by("numero")]
+
+
+class VueDossiersSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VueDossiers
+        fields = ("id", "nom", "filtres")
+
+    def validate_nom(self, valeur):
+        valeur = valeur.strip()
+        doublon = VueDossiers.objects.filter(utilisateur=self.context["request"].user, nom__iexact=valeur)
+        if self.instance:
+            doublon = doublon.exclude(pk=self.instance.pk)
+        if doublon.exists():
+            raise serializers.ValidationError("Vous avez déjà une vue de ce nom.")
+        return valeur
