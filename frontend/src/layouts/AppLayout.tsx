@@ -23,6 +23,7 @@ import {
   UserCog,
   Users,
   type LucideIcon,
+  ScrollText,
 } from "lucide-react";
 import {
   ActionIcon,
@@ -86,6 +87,7 @@ const ITEMS_ADMIN: NavItem[] = [
   { to: "/organisation", label: voc("Organisation"), icon: Building2 },
   { to: "/parametres-alerte", label: voc("Paramètres d'alerte"), icon: Sliders },
   { to: "/langues", label: voc("Langues"), icon: Languages },
+  { to: "/journal-audit", label: voc("Journal d'audit"), icon: ScrollText },
 ];
 
 const TOUS_LES_ITEMS = [ITEM_ACCUEIL, ...ITEMS_PRINCIPAUX, ...ITEMS_ADMIN];

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, CircleAlert, CircleCheck, Download, Power, PowerOff, Upload } from "lucide-react";
 import {
   Alert,
@@ -38,6 +38,9 @@ import {
   useModelesMecanisme,
 } from "../../api/plaintes";
 import { useProjets } from "../../api/projects";
+import { useAuth } from "../../auth/useAuth";
+import { DonneesPersonnellesPlaintes } from "./DonneesPersonnellesPlaintes";
+import { HabilitationsPlaintes } from "./HabilitationsPlaintes";
 import { messageErreurApi } from "../../utils/erreurs";
 import { useAccesModules } from "../../utils/modules";
 import { voc } from "../../utils/vocabulaire";
@@ -194,6 +197,8 @@ function FormulaireMecanisme({ mecanisme, modifiable }: { mecanisme: MecanismePl
         accuse_reception_auto: valeurs.accuse_reception_auto,
         signature_messages: valeurs.signature_messages,
         pieces_formulaire_public: valeurs.pieces_formulaire_public,
+        responsable_traitement: valeurs.responsable_traitement,
+        contact_donnees: valeurs.contact_donnees,
         taille_max_piece_mo: valeurs.taille_max_piece_mo,
         projets: valeurs.projets,
       });
@@ -327,6 +332,22 @@ function FormulaireMecanisme({ mecanisme, modifiable }: { mecanisme: MecanismePl
             onChange={(e) => changer("pieces_formulaire_public", e.currentTarget.checked)}
           />
         </Group>
+        <SimpleGrid cols={{ base: 1, sm: 2 }}>
+          <TextInput
+            label={voc("Responsable du traitement des données")}
+            description={voc("Organisation, adresse : figure dans le registre des traitements.")}
+            value={valeurs.responsable_traitement}
+            disabled={!modifiable}
+            onChange={(e) => changer("responsable_traitement", e.currentTarget.value)}
+          />
+          <TextInput
+            label={voc("Contact pour les données personnelles")}
+            description={voc("Personne ou adresse à qui adresser les demandes d'accès, de rectification, d'effacement.")}
+            value={valeurs.contact_donnees}
+            disabled={!modifiable}
+            onChange={(e) => changer("contact_donnees", e.currentTarget.value)}
+          />
+        </SimpleGrid>
         <TextInput
           label={voc("Signature des messages au plaignant")}
           description={voc("Remplace {signature} dans les messages (ex : « L'équipe du projet »). Vide : le nom du mécanisme.")}
@@ -409,6 +430,8 @@ export function ParametragePlaintesPage() {
   const { data: mecanisme } = useMecanisme();
   const { data: categories } = useCategoriesPlainte();
   const modifiable = useAccesModules().peutEcrire("/plaintes");
+  const estAdmin = useAuth().user?.role === "ADMIN";
+  const [params] = useSearchParams();
   if (!mecanisme) return null;
   const vide = categories !== undefined && categories.length === 0;
 
@@ -427,7 +450,7 @@ export function ParametragePlaintesPage() {
           <Badge color="gray" size="lg" leftSection={<PowerOff size={13} />}>{voc("Inactif")}</Badge>
         )}
       </Group>
-      <Tabs defaultValue="mecanisme" keepMounted={false}>
+      <Tabs defaultValue={params.get("onglet") ?? "mecanisme"} keepMounted={false}>
         <Tabs.List>
           <Tabs.Tab value="mecanisme">{voc("Mécanisme")}</Tabs.Tab>
           <Tabs.Tab value="types">{voc("Types de retours")}</Tabs.Tab>
@@ -437,6 +460,8 @@ export function ParametragePlaintesPage() {
           <Tabs.Tab value="messages">{voc("Messages")}</Tabs.Tab>
           <Tabs.Tab value="calendrier">{voc("Calendrier")}</Tabs.Tab>
           <Tabs.Tab value="prestataires">{voc("Prestataires d'assistance")}</Tabs.Tab>
+          <Tabs.Tab value="habilitations">{voc("Habilitations")}</Tabs.Tab>
+          {estAdmin && <Tabs.Tab value="donnees">{voc("Données personnelles")}</Tabs.Tab>}
           <Tabs.Tab value="excel">{voc("Canevas Excel")}</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel value="mecanisme" pt="md">
@@ -453,6 +478,8 @@ export function ParametragePlaintesPage() {
         <Tabs.Panel value="messages" pt="md"><MessagesPlaintes modifiable={modifiable} /></Tabs.Panel>
         <Tabs.Panel value="calendrier" pt="md"><CalendrierPlaintes modifiable={modifiable} /></Tabs.Panel>
         <Tabs.Panel value="prestataires" pt="md"><PrestatairesPlaintes modifiable={modifiable} /></Tabs.Panel>
+        <Tabs.Panel value="habilitations" pt="md"><HabilitationsPlaintes modifiable={modifiable} /></Tabs.Panel>
+        {estAdmin && <Tabs.Panel value="donnees" pt="md"><DonneesPersonnellesPlaintes /></Tabs.Panel>}
         <Tabs.Panel value="excel" pt="md"><CanevasExcel modifiable={modifiable} /></Tabs.Panel>
       </Tabs>
     </Stack>

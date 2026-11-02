@@ -1008,7 +1008,53 @@ modèles `Prestataire` et `Referencement` :
   créé, taille et désactivation, lien temporaire expiré ou falsifié, scénario 13 sur l'URL de
   pièce d'un dossier confidentiel, ajout et retrait, complément, anonymisation, fichiers orphelins).
 
-Lots suivants possibles : réponses du plaignant par SMS (réception), indicateurs de redevabilité
+**Habilitation confidentielle, journal d'audit, droits des personnes (lot 9)** :
+
+- **Habilitation confidentielle** (`habilitations.py`, modèle `HabilitationSensible`) : distincte des
+  rôles. Seule une personne habilitée (habilitation en vigueur) peut être responsable d'une étape
+  d'un circuit confidentiel (refus dans `EtapeCircuitSerializer`, erreur dans `controler_circuit`),
+  voir les dossiers confidentiels de ce circuit (`dossiers_visibles`), s'en voir confier un
+  (`personnes_habilitees`), lever la sensibilité (`est_habilite`) ou en être notifiée
+  (`notifier_dossier`). L'Administrateur garde l'accès d'office (choix de l'organisation).
+  - Double validation : demande motivée par l'Administrateur ou une personne habilitée, validation
+    (ou refus motivé) par une deuxième, ni le demandeur ni l'intéressé. Personne ne s'habilite soi-même.
+  - Première habilitation de l'organisation (aucun valideur possible) : code envoyé par courriel au
+    demandeur, saisi dans l'écran, puis effet 24 heures plus tard (`EN_DELAI` ; la tâche horaire
+    passe l'habilitation « Active », `activer_echues`).
+  - Retrait motivé, effet à la requête suivante ; les dossiers confidentiels ouverts confiés à la
+    personne repassent « sans responsable » (journal du dossier).
+  - Tout est notifié aux habilités et aux Administrateurs, et inscrit au journal d'audit.
+  - Reprise de l'existant (migration 0011) : les responsables déjà désignés d'étapes confidentielles
+    ont été habilités d'office, avec une trace « reprise de l'existant » dans le journal d'audit.
+    `habiliter_d_office` sert aux données de démonstration et aux tests.
+- **Journal d'audit** (`apps/core/audit.py`, modèle `core.EvenementAudit`), en ajout uniquement :
+  le modèle refuse toute modification ou suppression, et un déclencheur PostgreSQL (migration
+  core 0003) refuse `UPDATE` et `DELETE`. Pas de clé étrangère vers le compte (identifiant et nom
+  au moment de l'événement). Sont journalisés : connexions réussies et refusées (identifiant tenté),
+  chaque entrée du journal d'un dossier (sans texte), consultations de dossiers confidentiels (une
+  fois par personne et par dossier toutes les 10 minutes), téléchargements, exports (fiche, liste,
+  tableaux de bord, registre, journal), paramétrage (création, modification avec les noms des
+  champs changés, suppression ; mécanisme, activation, modèles, canevas), droits des comptes
+  (rôle, niveau d'accès, accès aux modules, actif), habilitations et demandes sur les données.
+  Jamais de contenu protégé. Consultation filtrée et export Excel : page « Journal d'audit »
+  (Administrateur).
+- **Droits des personnes** (`droits.py`, modèle `DemandeDroits`) : accès, rectification, effacement,
+  opposition ; demande enregistrée avec une échéance d'un mois, traitée avec une réponse motivée
+  (coordonnées et contenus chiffrés) ; Administrateur seulement. La rectification passe par la
+  correction du plaignant, l'effacement par l'anonymisation. **Registre des traitements** (Excel,
+  traduit) : finalités, base légale, données, destinataires, durées de conservation, mesures de
+  sécurité, et la liste des demandes sans donnée personnelle ; `Mecanisme.responsable_traitement` et
+  `contact_donnees` y figurent.
+- **Correction de sécurité** : l'historique générique (`audit/{app}/{modèle}/{id}/historique/`)
+  refuse désormais tout le module Plaintes ; il permettait à tout compte à visibilité globale de lire
+  les changements d'un dossier confidentiel (coordonnées comprises).
+- Tests : `plaintes/test_habilitations.py` (double validation, refus, accès et désignation refusés
+  sans habilitation, retrait immédiat, première habilitation par courriel et délai, journal du
+  mécanisme), `plaintes/test_droits.py`, `core/test_audit.py` (ajout uniquement jusque dans la base,
+  connexions, droits des comptes, consultation réservée et export), `audit/test_historique.py`.
+
+Lots suivants possibles : double authentification (administrateurs et personnes habilitées),
+accès de support temporaire, réponses du plaignant par SMS (réception), indicateurs de redevabilité
 dans les cadres de résultats, analyse antivirus des pièces jointes, multi-organisations.
 
 ## 6. Utilisateurs, rôles et permissions
@@ -1083,7 +1129,7 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 
 | Méthode | Route | Rôle |
 |---|---|---|
-| POST | `auth/token/` | Obtenir les jetons d'accès et de rafraîchissement (`username`, `password`) |
+| POST | `auth/token/` | Obtenir les jetons d'accès et de rafraîchissement (`username`, `password`) ; connexion réussie ou refusée inscrite au journal d'audit |
 | POST | `auth/token/refresh/` | Renouveler le jeton d'accès (rotation du jeton de rafraîchissement) |
 | POST | `auth/token/verify/` | Vérifier un jeton |
 | GET | `utilisateurs/me/` | Utilisateur connecté |
@@ -1169,6 +1215,8 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 | GET | `plaintes/qr/?projet=` | QR code (PNG) du formulaire public |
 | GET / POST | `public/plaintes/formulaire/`, `public/plaintes/deposer/`, `public/plaintes/suivi/` | Sans authentification : contenu du formulaire, dépôt d'un retour (fichiers joints possibles), état d'un dossier par son code |
 | POST | `public/plaintes/complement/` | Sans authentification : complément du plaignant (code, précision, fichiers) |
+| GET / POST | `plaintes/habilitations/`, `…/{id}/{valider,confirmer,retirer}/`, `…/actives/` | Habilitations confidentielles : liste et demande (Administrateur et habilités), validation par une deuxième personne, code de la première habilitation, retrait ; identifiants des habilités |
+| GET / POST | `plaintes/demandes-droits/`, `…/{id}/traiter/`, `…/registre/` | Demandes sur les données personnelles, traitement, registre des traitements en Excel (Administrateur) |
 | GET | `beneficiaires/exporter/` | Export des bénéficiaires : `?fichier=excel` ou `pdf`, `?projets=1,3` pour choisir les projets |
 | POST | `beneficiaires/{id}/verifier-doublons/` | Recherche des doublons d'un bénéficiaire |
 | GET / POST | `documents/{id}/versions/`, `documents/{id}/nouvelle-version/` | Versions d'un document |
@@ -1191,7 +1239,8 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 | POST | `suivi/projets/{id}/canevas/apercu/`, `…/importer/`, `…/rapport-erreurs/` | Aperçu, import et rapport d'erreurs du canevas de suivi (`fichier`, `mode` : ajout ou mise_a_jour) |
 | GET / PUT | `interface/menu/` | Noms et icônes des rubriques du menu, vocabulaire de l'organisation (modification : Administrateur) |
 | GET / POST | `planification/modele-import/`, `planification/importer/` | Import combiné « planification complète » |
-| GET | `audit/{app}/{modele}/{id}/historique/` | Historique des modifications d'un objet |
+| GET | `audit/{app}/{modele}/{id}/historique/` | Historique des modifications d'un objet (refusé pour le module Plaintes) |
+| GET | `journal-audit/`, `journal-audit/exporter/` | Journal d'audit en lecture seule (`?action=&utilisateur=&objet=&du=&au=`), export Excel (Administrateur) |
 | CRUD | `structures-organisation/` | Structure de l'organisation (modification : Administrateur) |
 | CRUD | `parties-prenantes/`, `categories-parties-prenantes/` | Parties prenantes et leurs catégories |
 | CRUD | `partenaires-projet/` | Rôle des partenaires dans un projet (`?projet=`) |
@@ -1286,6 +1335,7 @@ mutualisées) puis rejoue la requête, ou renvoie vers la page de connexion.
 | `/organisation` | Structure de l'organisation, parties prenantes, partenaires (Administrateur) |
 | `/parametres-alerte` | Grilles d'alerte, délai d'échéance et périodes de rapportage (Administrateur) |
 | `/langues` | Langue par défaut, correction, export et import des traductions, historique (Administrateur) |
+| `/journal-audit` | Journal d'audit : filtres, export Excel (Administrateur) |
 | `/partage/:jeton` | Page partagée par lien, sans compte et en lecture seule (hors du menu) |
 
 ### 10.4 Points d'attention

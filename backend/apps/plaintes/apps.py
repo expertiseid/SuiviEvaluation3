@@ -10,7 +10,7 @@ class PlaintesConfig(AppConfig):
 
     def ready(self):
         register(verifier_cle_chiffrement)
-        from . import pieces  # noqa: F401  (effacement des fichiers des pièces supprimées)
+        from . import audit_plaintes, pieces  # noqa: F401  (journal d'audit ; effacement des fichiers des pièces supprimées)
 
 
 def verifier_cle_chiffrement(app_configs, **kwargs):

@@ -73,3 +73,55 @@ class TraductionCorrigee(TimestampedModel):
 
     def __str__(self):
         return f"[{self.langue}] {self.source[:40]}"
+
+
+class EvenementAuditQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise PermissionError("Le journal d'audit ne se modifie pas.")
+
+    def delete(self):
+        raise PermissionError("Le journal d'audit ne se supprime pas.")
+
+
+class EvenementAudit(models.Model):
+    """
+    Journal d'audit en ajout uniquement (apps.core.audit) : aucune interface, API ni méthode ne permet de
+    modifier ou de supprimer un événement, et la base le refuse aussi (déclencheur, migration 0003).
+    Jamais de contenu protégé : l'objet désigne un élément (numéro de dossier, réglage), sans son contenu.
+    La personne est gardée par son identifiant et son nom au moment de l'événement (pas de clé
+    étrangère : supprimer un compte ne doit rien modifier ici).
+    """
+
+    class Action(models.TextChoices):
+        CONNEXION = "CONNEXION", "Connexion"
+        CONNEXION_ECHOUEE = "CONNEXION_ECHOUEE", "Connexion refusée"
+        CONSULTATION_SENSIBLE = "CONSULTATION_SENSIBLE", "Consultation d'un dossier confidentiel"
+        DOSSIER = "DOSSIER", "Action sur un dossier"
+        TELECHARGEMENT = "TELECHARGEMENT", "Téléchargement d'une pièce jointe"
+        EXPORT = "EXPORT", "Export"
+        CONFIGURATION = "CONFIGURATION", "Modification de la configuration"
+        PERMISSION = "PERMISSION", "Modification des droits d'un compte"
+        HABILITATION = "HABILITATION", "Habilitation confidentielle"
+        DROITS_PERSONNES = "DROITS_PERSONNES", "Demande d'une personne sur ses données"
+
+    date = models.DateTimeField(auto_now_add=True, db_index=True)
+    utilisateur_id = models.IntegerField(null=True, blank=True, db_index=True)
+    utilisateur = models.CharField(max_length=200, blank=True, help_text="Nom et identifiant au moment de l'événement.")
+    action = models.CharField(max_length=30, choices=Action.choices, db_index=True)
+    module = models.CharField(max_length=40, blank=True)
+    objet = models.CharField(max_length=255, blank=True)
+    details = models.JSONField(default=dict, blank=True)
+
+    objects = EvenementAuditQuerySet.as_manager()
+
+    class Meta:
+        ordering = ("-date", "-id")
+        verbose_name = "Événement du journal d'audit"
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise PermissionError("Le journal d'audit ne se modifie pas.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise PermissionError("Le journal d'audit ne se supprime pas.")

@@ -5,6 +5,8 @@ from rest_framework.response import Response
 
 from apps.core.permissions import HasGlobalVisibilityOrAssigned
 
+APPS_EXCLUES = {"plaintes"}
+
 
 @api_view(["GET"])
 @permission_classes([HasGlobalVisibilityOrAssigned])
@@ -14,6 +16,10 @@ def historique_generique(request, app_label, model_name, object_id):
     django-simple-history, réutilisable côté frontend sans dupliquer la
     logique par entité : GET /api/v1/audit/{app}/{model}/{id}/historique/
     """
+    # Plaintes : données protégées et règles de confidentialité propres (dossiers visibles des seules
+    # personnes habilitées) — leur historique passe uniquement par le journal du dossier.
+    if app_label.lower() in APPS_EXCLUES:
+        return Response({"detail": "Historique non disponible pour ce module."}, status=404)
     model = django_apps.get_model(app_label, model_name)
     instance = get_object_or_404(model, pk=object_id)
 

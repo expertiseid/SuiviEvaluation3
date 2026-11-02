@@ -14,6 +14,8 @@ router.register("plaintes/prestataires", views.PrestataireViewSet, basename="pla
 router.register("plaintes/modeles-messages", views.ModeleMessageViewSet, basename="plainte-modele-message")
 router.register("plaintes/actions-correctives", views.ActionCorrectiveViewSet, basename="plainte-action-corrective")
 router.register("plaintes/dossiers", views.DossierViewSet, basename="plainte-dossier")
+router.register("plaintes/habilitations", views.HabilitationViewSet, basename="plainte-habilitation")
+router.register("plaintes/demandes-droits", views.DemandeDroitsViewSet, basename="plainte-demande-droits")
 # Hors de /plaintes/ : chacun enregistre ses propres vues, même en lecture seule sur le module.
 router.register("plaintes-vues", views.VueDossiersViewSet, basename="plainte-vue")
 

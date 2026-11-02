@@ -219,6 +219,9 @@ class Command(BaseCommand):
             point_focal.set_password(MOT_DE_PASSE)
             point_focal.save()
         m.EtapeCircuit.objects.filter(circuit__sensible=True).update(responsable=point_focal)
+        from apps.plaintes.habilitations import habiliter_d_office
+
+        habiliter_d_office(point_focal)  # démonstration : sans double validation, tracé au journal d'audit
         # L'Administrateur est aussi point focal : réception, évaluation des risques, décision, clôture.
         admin = User.objects.filter(role="ADMIN", is_active=True, username="admin").first()
         if admin:
@@ -358,6 +361,9 @@ class Command(BaseCommand):
         mecanisme = Mecanisme.courant()
         referent = User.objects.filter(username="demo_coordo_general").first() or User.objects.filter(role="ADMIN").first()
         EtapeCircuit.objects.filter(circuit=mecanisme.circuit_alternatif, responsable=None).update(responsable=referent)
+        from apps.plaintes.habilitations import habiliter_d_office
+
+        habiliter_d_office(referent)
         prestataires = [Prestataire.objects.get_or_create(nom=nom, defaults={"type": type_, "contact": contact, "zone": zone})[0]
                         for nom, type_, contact, zone in (
                             ("Centre d'écoute et de prise en charge psychosociale", "PSYCHOSOCIAL", "+226 25 30 00 00", "Ouagadougou"),

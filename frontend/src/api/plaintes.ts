@@ -44,6 +44,8 @@ export interface MecanismePlaintes {
   plafond_piece_mo: number;
   /** Formats et limites des fichiers joints par l'équipe (lecture seule). */
   pieces_equipe: PiecesAcceptees;
+  responsable_traitement: string;
+  contact_donnees: string;
 }
 
 export interface TypeRetour {
@@ -1004,4 +1006,119 @@ export function useApercuMessage(dossier: number, objet: string | null, canal: "
     enabled: !!objet,
     retry: false,
   });
+}
+
+// --- Lot 9 : habilitations confidentielles, droits des personnes ---------------------------------
+
+export type StatutHabilitation = "EN_ATTENTE" | "EN_DELAI" | "ACTIVE" | "REFUSEE" | "RETIREE";
+export const libelleStatutHabilitation = (s: StatutHabilitation): string =>
+  ({
+    EN_ATTENTE: voc("En attente de validation"),
+    EN_DELAI: voc("Confirmée, active après le délai de sécurité"),
+    ACTIVE: voc("Active"),
+    REFUSEE: voc("Refusée"),
+    RETIREE: voc("Retirée"),
+  })[s];
+
+export interface Habilitation {
+  id: number;
+  utilisateur: number;
+  utilisateur_nom: string;
+  utilisateur_role: string;
+  statut: StatutHabilitation;
+  motif: string;
+  demandee_par: number | null;
+  demandee_par_nom: string | null;
+  date_demande: string;
+  /** Première habilitation de l'organisation : code par courriel puis 24 heures de délai. */
+  premiere: boolean;
+  validee_par_nom: string | null;
+  date_validation: string | null;
+  active_le: string | null;
+  commentaire_validation: string;
+  retiree_par_nom: string | null;
+  date_retrait: string | null;
+  motif_retrait: string;
+  en_vigueur: boolean;
+  peut_valider: boolean;
+  peut_confirmer: boolean;
+}
+
+export function useHabilitations(actif = true) {
+  return useQuery({
+    queryKey: [CLE, "habilitations"],
+    queryFn: async () => (await apiClient.get<Habilitation[]>("/plaintes/habilitations/")).data,
+    enabled: actif,
+    retry: false,
+  });
+}
+
+/** Identifiants des personnes habilitées (choix des responsables d'étapes confidentielles). */
+export function useHabilitesActifs() {
+  return useQuery({
+    queryKey: [CLE, "habilitations", "actives"],
+    queryFn: async () => (await apiClient.get<number[]>("/plaintes/habilitations/actives/")).data,
+  });
+}
+
+/** Demande (sans id) ou opération sur une habilitation : valider, confirmer, retirer. */
+export function useOperationHabilitation() {
+  const rafraichir = useRafraichir();
+  return useMutation({
+    mutationFn: async ({ id, operation, donnees }: { id?: number; operation?: "valider" | "confirmer" | "retirer"; donnees: Record<string, unknown> }) =>
+      (await apiClient.post<Habilitation>(id ? `/plaintes/habilitations/${id}/${operation}/` : "/plaintes/habilitations/", donnees)).data,
+    onSuccess: rafraichir,
+  });
+}
+
+export type TypeDroit = "ACCES" | "RECTIFICATION" | "EFFACEMENT" | "OPPOSITION";
+export const TYPES_DROIT: TypeDroit[] = ["ACCES", "RECTIFICATION", "EFFACEMENT", "OPPOSITION"];
+export const libelleTypeDroit = (t: TypeDroit): string =>
+  ({
+    ACCES: voc("Accès à ses données"),
+    RECTIFICATION: voc("Rectification"),
+    EFFACEMENT: voc("Effacement"),
+    OPPOSITION: voc("Opposition au traitement"),
+  })[t];
+
+export type StatutDemandeDroits = "RECUE" | "EN_COURS" | "SATISFAITE" | "REFUSEE";
+export const libelleStatutDemandeDroits = (s: StatutDemandeDroits): string =>
+  ({ RECUE: voc("Reçue"), EN_COURS: voc("En cours"), SATISFAITE: voc("Satisfaite"), REFUSEE: voc("Refusée (motivée)") })[s];
+
+export interface DemandeDroits {
+  id: number;
+  type: TypeDroit;
+  statut: StatutDemandeDroits;
+  date_reception: string;
+  echeance: string;
+  demandeur: string;
+  contact: string;
+  description: string;
+  dossier: number | null;
+  numero_dossier: string;
+  reponse: string;
+  date_reponse: string | null;
+  traitee_par_nom: string | null;
+  en_retard: boolean;
+}
+
+export function useDemandesDroits() {
+  return useQuery({
+    queryKey: [CLE, "demandes-droits"],
+    queryFn: async () => (await apiClient.get<DemandeDroits[]>("/plaintes/demandes-droits/")).data,
+  });
+}
+
+export function useEnregistrerDemandeDroits() {
+  const rafraichir = useRafraichir();
+  return useMutation({
+    mutationFn: async ({ id, ...donnees }: Record<string, unknown> & { id?: number }) =>
+      (await apiClient.post<DemandeDroits>(id ? `/plaintes/demandes-droits/${id}/traiter/` : "/plaintes/demandes-droits/", donnees)).data,
+    onSuccess: rafraichir,
+  });
+}
+
+export async function telechargerRegistre() {
+  const r = await apiClient.get("/plaintes/demandes-droits/registre/", { responseType: "blob" });
+  telecharger(r.data, "registre_des_traitements.xlsx", "application/octet-stream");
 }

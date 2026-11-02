@@ -18,16 +18,18 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
+from apps.core.audit import A, auditer
 from apps.core.langues import dans_la_langue_demandee, en_langue, langue_demandee, traduire
 from apps.core.permissions import HasGlobalVisibilityOrAssigned
 from apps.core.vocabulaire import v
 
 from . import confidentiel, delais, pilotage, traitement
+from .audit_plaintes import configuration as auditer_configuration
 
 from .controles import controler_activation
 from .models import (
     ActionCorrective,
-    Canal, Categorie, Circuit, Dossier, EtapeCircuit, JourFerie, Mecanisme, ModeleMessage, Prestataire, Priorite,
+    Canal, Categorie, DemandeDroits, HabilitationSensible, Circuit, Dossier, EtapeCircuit, JourFerie, Mecanisme, ModeleMessage, Prestataire, Priorite,
     StatutDossier, TypeRetour, VueDossiers,
 )
 from .modeles_mecanisme import MODELES, appliquer_modele, liste_modeles
@@ -37,8 +39,10 @@ from .serializers import (
     CategorieSerializer,
     CircuitSerializer,
     DossierDetailSerializer,
+    DemandeDroitsSerializer,
     DossierSerializer,
     EtapeCircuitSerializer,
+    HabilitationSerializer,
     JourFerieSerializer,
     PrestataireSerializer,
     MecanismeSerializer,
@@ -59,7 +63,11 @@ def mecanisme(request):
     if request.method == "PATCH":
         serializer = MecanismeSerializer(objet, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
+        avant = {c: getattr(objet, c) for c in serializer.validated_data}
         serializer.save()
+        changes = sorted(c for c in avant if avant[c] != getattr(objet, c))
+        if changes:
+            auditer_configuration(request.user, "Mécanisme", "modification", champs=changes)
         if {"jours_ouvres", "delai_defaut_jours"} & set(request.data):
             delais.recalculer_ouverts()
         objet.refresh_from_db()
@@ -77,6 +85,7 @@ def activer(request):
                         status=status.HTTP_400_BAD_REQUEST)
     objet.actif = True
     objet.save(update_fields=["actif", "updated_at"])
+    auditer_configuration(request.user, "Mécanisme", "activation")
     return Response(MecanismeSerializer(objet).data)
 
 
@@ -86,6 +95,7 @@ def desactiver(request):
     objet = Mecanisme.courant()
     objet.actif = False
     objet.save(update_fields=["actif", "updated_at"])
+    auditer_configuration(request.user, "Mécanisme", "desactivation")
     return Response(MecanismeSerializer(objet).data)
 
 
@@ -101,6 +111,7 @@ def modeles(request):
     if code not in MODELES:
         raise ValidationError({"modele": "Choisissez un modèle de la liste."})
     ajouts = appliquer_modele(code)
+    auditer_configuration(request.user, "Modèle de mécanisme", "application", modele=code)
     return Response({"ajouts": ajouts, "mecanisme": MecanismeSerializer(Mecanisme.courant()).data})
 
 
@@ -126,7 +137,10 @@ def importer_canevas(request):
     if not fichier:
         raise ValidationError({"fichier": "Un fichier Excel (.xlsx) est requis."})
     try:
-        return Response(importer_parametrage(fichier))
+        rapport = importer_parametrage(fichier)
+        auditer_configuration(request.user, "Canevas de paramétrage", "import", crees=rapport.get("crees"),
+                              mis_a_jour=rapport.get("mis_a_jour"), erreurs=len(rapport.get("erreurs", [])))
+        return Response(rapport)
     except (KeyError, OSError, ValueError) as exc:
         raise ValidationError({"fichier": f"Impossible de lire ce fichier : {exc}"})
 
@@ -136,23 +150,37 @@ class _Base(viewsets.ModelViewSet):
     pagination_class = None
     # Un changement de délai (catégorie, priorité, étape, calendrier) se répercute sur les dossiers ouverts.
     recalcule_les_delais = False
+    # Paramétrage : chaque création, modification et suppression va au journal d'audit.
+    audite = True
+
+    def _auditer(self, instance, operation, **details):
+        if self.audite:
+            auditer_configuration(self.request.user, f"{instance._meta.verbose_name} « {instance} »"[:255], operation,
+                                  identifiant=instance.pk, **details)
 
     def perform_update(self, serializer):
-        avant = {c: getattr(serializer.instance, c, None) for c in ("delai_jours", "date")}
+        avant = {c: getattr(serializer.instance, c, None) for c in serializer.validated_data}
         super().perform_update(serializer)
-        if self.recalcule_les_delais and any(getattr(serializer.instance, c, None) != a for c, a in avant.items()):
+        changes = sorted(c for c, a in avant.items() if getattr(serializer.instance, c, None) != a)
+        if changes:
+            self._auditer(serializer.instance, "modification", champs=changes)
+        if self.recalcule_les_delais and {"delai_jours", "date"} & set(changes):
             delais.recalculer_ouverts()
 
     def perform_create(self, serializer):
         super().perform_create(serializer)
+        self._auditer(serializer.instance, "creation")
         if isinstance(serializer.instance, JourFerie):
             delais.recalculer_ouverts()
 
     def perform_destroy(self, instance):
+        pk, libelle = instance.pk, f"{instance._meta.verbose_name} « {instance} »"[:255]
         try:
             instance.delete()
         except ProtectedError:
             raise ValidationError({"detail": "Cet élément est encore utilisé : retirez d'abord ce qui en dépend."})
+        if self.audite:
+            auditer_configuration(self.request.user, libelle, "suppression", identifiant=pk)
         if isinstance(instance, JourFerie):
             delais.recalculer_ouverts()
 
@@ -305,6 +333,13 @@ class DossierViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
             qs = qs.prefetch_related("actions__auteur", "pieces__ajoute_par")
         return qs
 
+    def retrieve(self, request, *args, **kwargs):
+        from .audit_plaintes import consultation
+
+        dossier = self.get_object()
+        consultation(dossier, request.user)
+        return Response(self.get_serializer(dossier).data)
+
     def create(self, request, *args, **kwargs):
         donnees, fichiers = lire_envoi(request)
         canal = donnees.get("canal")
@@ -407,6 +442,7 @@ class DossierViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
         qs = self.filter_queryset(self.get_queryset()).select_related("etape", "responsable")
         avec_coordonnees = bool(request.data.get("coordonnees")) and request.user.role == ROLE_ADMIN
         contenu, nombre = liste_dossiers_excel(list(qs), request.user, avec_coordonnees)
+        auditer(request.user, A.EXPORT, "Liste des dossiers", nombre=nombre, coordonnees=avec_coordonnees)
         reponse = HttpResponse(contenu, content_type=XLSX)
         reponse["Content-Disposition"] = "attachment; filename=dossiers_plaintes.xlsx"
         reponse["X-Nombre-Dossiers"] = str(nombre)
@@ -531,6 +567,96 @@ def telecharger_piece(request, jeton):
     return reponse
 
 
+class HabilitationViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Habilitations confidentielles (habilitations.py) : liste et gestion réservées à l'Administrateur et
+    aux personnes habilitées. POST = demande ; …/valider/, …/confirmer/ (code reçu par courriel),
+    …/retirer/. « actives/ » : personnes habilitées (choix des responsables d'étapes confidentielles).
+    """
+
+    permission_classes = (HasGlobalVisibilityOrAssigned,)
+    serializer_class = HabilitationSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        from . import habilitations
+
+        if self.action != "actives" and not habilitations.est_habilite(self.request.user):
+            raise PermissionDenied(v("Seuls l'Administrateur et les personnes habilitées gèrent les habilitations confidentielles."))
+        return HabilitationSensible.objects.select_related("utilisateur", "demandee_par", "validee_par", "retiree_par")
+
+    def _rendre(self, habilitation):
+        return Response(HabilitationSerializer(habilitation, context=self.get_serializer_context()).data)
+
+    def create(self, request, *args, **kwargs):
+        from . import habilitations
+
+        return self._rendre(habilitations.demander(request.user, request.data))
+
+    @action(detail=True, methods=["post"])
+    def valider(self, request, pk=None):
+        from . import habilitations
+
+        return self._rendre(habilitations.valider(request.user, pk, request.data))
+
+    @action(detail=True, methods=["post"])
+    def confirmer(self, request, pk=None):
+        from . import habilitations
+
+        return self._rendre(habilitations.confirmer(request.user, pk, request.data))
+
+    @action(detail=True, methods=["post"])
+    def retirer(self, request, pk=None):
+        from . import habilitations
+
+        return self._rendre(habilitations.retirer(request.user, pk, request.data))
+
+    @action(detail=False, methods=["get"])
+    def actives(self, request):
+        from . import habilitations
+
+        return Response(sorted(habilitations.ids_habilites()))
+
+
+class DemandeDroitsViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Demandes des personnes sur leurs données (droits.py), réservées à l'Administrateur : POST = nouvelle
+    demande ; …/traiter/ ; registre/ = registre des traitements (Excel), tracé au journal d'audit.
+    """
+
+    serializer_class = DemandeDroitsSerializer
+    pagination_class = None
+
+    def get_permissions(self):
+        from apps.core.permissions import IsAdmin
+
+        return [IsAdmin()]
+
+    def get_queryset(self):
+        return DemandeDroits.objects.select_related("traitee_par")
+
+    def create(self, request, *args, **kwargs):
+        from . import droits
+
+        return Response(DemandeDroitsSerializer(droits.enregistrer(request.user, request.data)).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"])
+    def traiter(self, request, pk=None):
+        from . import droits
+
+        return Response(DemandeDroitsSerializer(droits.traiter(request.user, self.get_object(), request.data)).data)
+
+    @action(detail=False, methods=["get"])
+    @dans_la_langue_demandee
+    def registre(self, request):
+        from . import droits
+
+        reponse = HttpResponse(droits.registre_excel(), content_type=XLSX)
+        reponse["Content-Disposition"] = "attachment; filename=registre_des_traitements.xlsx"
+        auditer(request.user, A.EXPORT, "Registre des traitements")
+        return reponse
+
+
 class VueDossiersViewSet(viewsets.ModelViewSet):
     """Filtres enregistrés de l'utilisateur connecté (chacun ne voit que les siens)."""
 
@@ -646,6 +772,7 @@ def export_tableau(request, format_):
     vue = _vue(request)
     du, au, projet = _periode(request)
     resultat = pilotage.calculer_vue(vue, request.user, du, au, projet)
+    auditer(request.user, A.EXPORT, f"Tableau de bord « {vue} »", format=format_)
     if format_ == "pdf":
         reponse = HttpResponse(vue_pdf(resultat, request.user), content_type="application/pdf")
     else:
@@ -667,6 +794,7 @@ class ActionCorrectiveViewSet(_Base):
 
     serializer_class = ActionCorrectiveSerializer
     filterset_fields = ("projet", "statut", "responsable", "dossiers")
+    audite = False  # suivi opérationnel, pas du paramétrage : tracé au journal de chaque dossier lié
 
     def get_queryset(self):
         return ActionCorrective.objects.select_related("projet", "responsable").prefetch_related("dossiers")
@@ -674,9 +802,9 @@ class ActionCorrectiveViewSet(_Base):
     def _journaliser(self, action, ajoutes):
         from .models import ActionDossier
 
-        ActionDossier.objects.bulk_create([
-            ActionDossier(dossier=d, type=ActionDossier.Type.ACTION_CORRECTIVE, auteur=self.request.user,
-                          texte=v("Action corrective liée : ") + action.titre) for d in ajoutes])
+        for d in ajoutes:  # un par un : chaque entrée est aussi reportée au journal d'audit
+            ActionDossier.objects.create(dossier=d, type=ActionDossier.Type.ACTION_CORRECTIVE, auteur=self.request.user,
+                                         texte=v("Action corrective liée : ") + action.titre)
 
     def perform_create(self, serializer):
         action = serializer.save(cree_par=self.request.user)

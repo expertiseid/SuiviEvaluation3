@@ -5,6 +5,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from apps.core.audit import A, auditer
 from apps.core.permissions import IsAdmin, IsAdminOrReadOnly
 from apps.core.vocabulaire import v
 
@@ -42,11 +43,28 @@ class UserViewSet(viewsets.ModelViewSet):
             request.user.save(update_fields=["langue"])
         return Response(UserSerializer(request.user).data)
 
+    # Droits d'un compte : inscrits au journal d'audit (champs changés seulement, jamais le mot de passe).
+    CHAMPS_DROITS = ("role", "niveau_acces", "acces_modules", "is_active")
+
+    def perform_create(self, serializer):
+        compte = serializer.save()
+        auditer(self.request.user, A.PERMISSION, compte.username, module="comptes", operation="creation",
+                **{c: getattr(compte, c) for c in self.CHAMPS_DROITS})
+
+    def perform_update(self, serializer):
+        avant = {c: getattr(serializer.instance, c) for c in self.CHAMPS_DROITS}
+        compte = serializer.save()
+        changes = {c: [avant[c], getattr(compte, c)] for c in self.CHAMPS_DROITS if avant[c] != getattr(compte, c)}
+        if changes:
+            auditer(self.request.user, A.PERMISSION, compte.username, module="comptes", operation="modification", **changes)
+
     def perform_destroy(self, instance):
         if instance == self.request.user:
             raise ValidationError({"detail": "Impossible de supprimer ton propre compte."})
         try:
+            nom = instance.username
             instance.delete()
+            auditer(self.request.user, A.PERMISSION, nom, module="comptes", operation="suppression")
         except ProtectedError:
             raise ValidationError(
                 {

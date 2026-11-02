@@ -23,6 +23,7 @@ import { ZonesAdministrativesPage } from "./pages/geo/ZonesAdministrativesPage";
 import { PlanificationImportPage } from "./pages/planification/PlanificationImportPage";
 import { DocumentsGlobauxPage } from "./pages/documents/DocumentsGlobauxPage";
 import { LanguesPage } from "./pages/langues/LanguesPage";
+import { JournalAuditPage } from "./pages/journal-audit/JournalAuditPage";
 import { ParametresAlertePage } from "./pages/parametres/ParametresAlertePage";
 import { PagePartagee } from "./pages/partage/PagePartagee";
 import { ActionsCorrectivesPage } from "./pages/plaintes/ActionsCorrectivesPage";
@@ -88,6 +89,14 @@ export default function App() {
           element={
             <RequireAuth roles={["ADMIN"]}>
               <UtilisateursPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/journal-audit"
+          element={
+            <RequireAuth roles={["ADMIN"]}>
+              <JournalAuditPage />
             </RequireAuth>
           }
         />

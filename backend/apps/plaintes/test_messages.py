@@ -8,6 +8,7 @@ from rest_framework.test import APIClient
 from apps.accounts.constants import ROLE_ADMIN, ROLE_CHARGE_SE
 from apps.accounts.models import User
 
+from .habilitations import habiliter_d_office
 from . import messages
 from .models import ActionDossier, Categorie, Dossier, EtapeCircuit, Mecanisme, ModeleMessage, TypeRetour
 from .reception import recevoir
@@ -33,6 +34,7 @@ def actif(admin):
     Mecanisme.objects.filter(pk=1).update(conservation_ordinaire_mois=60, conservation_sensible_mois=120,
                                           signature_messages="L'équipe du projet")
     EtapeCircuit.objects.filter(circuit__sensible=True).update(responsable=pf)
+    habiliter_d_office(pf)
     assert _client(admin).post(URL + "mecanisme/activer/").status_code == 200
 
 

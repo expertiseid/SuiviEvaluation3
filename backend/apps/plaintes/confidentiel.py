@@ -47,12 +47,14 @@ def circuit_confidentiel_pour(dossier, categorie_circuit=None):
 
 
 def est_habilite(dossier, user):
-    """Point focal du circuit confidentiel du dossier, ou Administrateur — jamais une personne mise en cause."""
+    """Point focal habilité du circuit confidentiel du dossier, ou Administrateur — jamais une personne mise en cause."""
+    from . import habilitations
+
     if user.pk in ids_mis_en_cause(dossier):
         return False
     if user.role == ROLE_ADMIN:
         return True
-    return bool(dossier.circuit_id and dossier.circuit.etapes.filter(responsable=user).exists())
+    return habilitations.est_habilite(user) and bool(dossier.circuit_id and dossier.circuit.etapes.filter(responsable=user).exists())
 
 
 def _passer_au_confidentiel(dossier, auteur, texte):

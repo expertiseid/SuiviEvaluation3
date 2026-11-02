@@ -11,6 +11,7 @@ from apps.accounts.constants import NIVEAU_ACCES_LECTURE_ECRITURE, ROLE_ADMIN, R
 from apps.accounts.models import User
 from apps.notifications.models import Notification
 
+from .habilitations import habiliter_d_office
 from . import confidentiel
 from .controles import controler_activation
 from .models import ActionDossier, Categorie, Circuit, Dossier, EtapeCircuit, Mecanisme, Prestataire, TypeRetour
@@ -56,6 +57,7 @@ def actif(admin, point_focal, referent):
     mecanisme = Mecanisme.courant()
     EtapeCircuit.objects.filter(circuit__sensible=True).exclude(circuit=mecanisme.circuit_alternatif).update(responsable=point_focal)
     EtapeCircuit.objects.filter(circuit=mecanisme.circuit_alternatif).update(responsable=referent)
+    habiliter_d_office(point_focal, referent)
     assert _client(admin).post(URL + "mecanisme/activer/").status_code == 200
 
 

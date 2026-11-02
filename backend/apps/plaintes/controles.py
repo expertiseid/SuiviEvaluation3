@@ -23,10 +23,16 @@ def controler_circuit(circuit) -> list[str]:
         erreurs.append(f"{circuit.nom} : l'étape de clôture doit être la dernière.")
     # Un message par circuit, qui nomme les étapes encore sans responsable.
     if circuit.sensible:
+        from .habilitations import est_habilite
+
         sans = [e.nom for e in etapes if e.responsable_id is None]
         if sans:
             erreurs.append(f"{circuit.nom} : désignez une personne responsable pour chaque étape (encore sans : "
                            f"{', '.join(sans)}).")
+        non_habilites = [e.nom for e in etapes if e.responsable_id and not est_habilite(e.responsable)]
+        if non_habilites:
+            erreurs.append(f"{circuit.nom} : le responsable de ces étapes n'a pas (ou plus) d'habilitation "
+                           f"confidentielle : {', '.join(non_habilites)}.")
     else:
         sans = [e.nom for e in etapes if e.responsable_id is None and e.role_id is None]
         if sans:

@@ -14,6 +14,7 @@ from rest_framework.test import APIClient
 from apps.accounts.constants import NIVEAU_ACCES_LECTURE_ECRITURE, ROLE_ADMIN, ROLE_CHARGE_SE, ROLE_CHEF_PROJET
 from apps.accounts.models import User
 
+from .habilitations import habiliter_d_office
 from . import pieces
 from .models import ActionDossier, Categorie, Dossier, EtapeCircuit, Mecanisme, PieceJointe, TypeRetour
 
@@ -65,6 +66,7 @@ def actif(admin, point_focal):
     Mecanisme.objects.filter(pk=1).update(conservation_ordinaire_mois=12, conservation_sensible_mois=24)
     mecanisme = Mecanisme.courant()
     EtapeCircuit.objects.filter(circuit__sensible=True).update(responsable=point_focal)
+    habiliter_d_office(point_focal)
     assert _client(admin).post(URL + "mecanisme/activer/").status_code == 200
     return mecanisme
 

@@ -156,6 +156,12 @@ def notifier_dossier(dossier, destinataires, titre_ordinaire, titre_confidentiel
     destinataires = [d for d in {d.pk: d for d in destinataires if d is not None}.values() if d.pk not in vises]
     if not destinataires:
         return []
+    if dossier.sensible:  # dossier confidentiel : jamais une personne sans habilitation en vigueur
+        from .habilitations import est_habilite
+
+        destinataires = [d for d in destinataires if est_habilite(d)]
+        if not destinataires:
+            return []
     titre = titre_confidentiel if dossier.sensible else titre_ordinaire
     if dossier.sensible:
         message = v("Connectez-vous à la plateforme pour consulter ce dossier.")

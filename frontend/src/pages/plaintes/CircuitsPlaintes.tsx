@@ -21,6 +21,7 @@ import {
 import { notifications } from "@mantine/notifications";
 import { useRoles, useUtilisateurs } from "../../api/accounts";
 import {
+  useHabilitesActifs,
   type CircuitPlainte,
   type EtapeCircuit,
   useCircuitsPlainte,
@@ -54,6 +55,7 @@ function LigneEtape({
   const supprimer = useSupprimerEtape();
   const { data: roles = [] } = useRoles();
   const { data: utilisateurs = [] } = useUtilisateurs();
+  const { data: habilites = [] } = useHabilitesActifs();
   const [nom, setNom] = useState(etape.nom);
 
   async function sauver(champs: Partial<EtapeCircuit>) {
@@ -69,7 +71,10 @@ function LigneEtape({
     ...(circuit.sensible ? [] : [{ group: voc("Rôles"), items: roles.map((r) => ({ value: `r${r.id}`, label: r.libelle })) }]),
     {
       group: voc("Personnes"),
-      items: utilisateurs.map((u) => ({ value: `u${u.id}`, label: `${u.first_name} ${u.last_name}`.trim() || u.username })),
+      // Circuit confidentiel : seulement les personnes habilitées (et l'Administrateur), voir l'onglet Habilitations.
+      items: utilisateurs
+        .filter((u) => !circuit.sensible || u.role === "ADMIN" || habilites.includes(u.id) || u.id === etape.responsable)
+        .map((u) => ({ value: `u${u.id}`, label: `${u.first_name} ${u.last_name}`.trim() || u.username })),
     },
   ];
   const valeur = etape.responsable ? `u${etape.responsable}` : etape.role ? `r${etape.role}` : null;

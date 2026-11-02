@@ -227,9 +227,9 @@ def recevoir(donnees: dict, canal: str, saisi_par=None, public: bool = False, fi
 def dossiers_visibles(user):
     """
     Dossiers que l'utilisateur peut voir : l'Administrateur voit tout (choix de l'organisation) ;
-    les autres voient les dossiers ordinaires, et les dossiers sensibles seulement s'ils sont
-    responsables d'une étape de leur circuit. Un dossier interdit n'apparaît ni dans les listes ni
-    dans les compteurs.
+    les autres voient les dossiers ordinaires, et les dossiers sensibles seulement s'ils ont une
+    habilitation confidentielle en vigueur et sont responsables d'une étape de leur circuit (lot 9).
+    Un dossier interdit n'apparaît ni dans les listes ni dans les compteurs.
     """
     from django.db.models import Exists, OuterRef
 
@@ -241,6 +241,10 @@ def dossiers_visibles(user):
     if user.role == ROLE_ADMIN:
         return Dossier.objects.exclude(mis_en_cause_utilisateurs=user)
 
+    from .habilitations import est_habilite
+
+    if not est_habilite(user):
+        return Dossier.objects.filter(sensible=False).exclude(mis_en_cause_utilisateurs=user)
     habilite = EtapeCircuit.objects.filter(circuit=OuterRef("circuit"), responsable=user)
     visibles = Dossier.objects.filter(sensible=False) | Dossier.objects.filter(sensible=True).filter(Exists(habilite))
     return visibles.exclude(mis_en_cause_utilisateurs=user)

@@ -56,14 +56,18 @@ def etapes(dossier):
 def personnes_habilitees(dossier):
     """
     Personnes à qui le dossier peut être confié : pour un dossier confidentiel, les responsables des
-    étapes de son circuit et les Administrateurs ; sinon, les utilisateurs qui ont accès au module.
+    étapes de son circuit qui ont une habilitation en vigueur, et les Administrateurs ; sinon, les
+    utilisateurs qui ont accès au module.
     """
     from apps.accounts.models import User
     from apps.core.modules import MASQUE, acces_module
 
     vises = set(dossier.mis_en_cause_utilisateurs.values_list("pk", flat=True)) if dossier.pk else set()
     if dossier.sensible:
+        from .habilitations import ids_habilites
+
         ids = set(dossier.circuit.etapes.exclude(responsable=None).values_list("responsable_id", flat=True)) if dossier.circuit_id else set()
+        ids &= ids_habilites()
         qs = User.objects.filter(is_active=True).filter(pk__in=ids) | User.objects.filter(is_active=True, role=ROLE_ADMIN)
         return qs.exclude(pk__in=vises)
     ids = [u.pk for u in User.objects.filter(is_active=True) if acces_module(u, "/plaintes") != MASQUE and u.pk not in vises]

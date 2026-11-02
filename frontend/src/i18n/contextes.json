@@ -215,6 +215,9 @@
  "{0} : l'étape de clôture doit être la dernière.": [
   "serveur"
  ],
+ "{0} : le responsable de ces étapes n'a pas (ou plus) d'habilitation confidentielle : {1}.": [
+  "serveur"
+ ],
  "{0} {1} réalisé(s) sur {2} prévu(s).": [
   "components/suivi/MethodeCalculLigne.tsx"
  ],
@@ -325,6 +328,9 @@
  "{0} et plus": [
   "pages/carte/CarteParZone.tsx"
  ],
+ "{0} événement(s)": [
+  "pages/journal-audit/JournalAuditPage.tsx"
+ ],
  "{0} F, {1} H": [
   "pages/carte/CartePage.tsx",
   "pages/carte/CarteParZone.tsx"
@@ -352,6 +358,9 @@
  ],
  "{0} Ko": [
   "api/plaintes.ts"
+ ],
+ "{0} ligne(s)": [
+  "pages/journal-audit/JournalAuditPage.tsx"
  ],
  "{0} ligne(s) à corriger dans le fichier : rien n'a été importé. Corrigez-les puis importez à nouveau.": [
   "pages/langues/LanguesPage.tsx"
@@ -564,6 +573,9 @@
  "Accès": [
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
+ "Accès à ses données": [
+  "api/plaintes.ts"
+ ],
  "Accessible sans compte, sur téléphone, dans les langues choisies. Affichez l'adresse ou le QR code dans les lieux d'intervention, sur les affiches et les documents du projet.": [
   "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
@@ -590,6 +602,7 @@
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
  "Action": [
+  "pages/journal-audit/JournalAuditPage.tsx",
   "pages/plaintes/ActionsCorrectivesPage.tsx"
  ],
  "Action corrective": [
@@ -603,6 +616,9 @@
  ],
  "Action corrective liée : ": [
   "serveur"
+ ],
+ "Action sur un dossier": [
+  "api/journalAudit.ts"
  ],
  "Actions": [
   "pages/beneficiaires/DoublonsPage.tsx"
@@ -618,11 +634,18 @@
  "Actions menées depuis la dernière revue": [
   "pages/projets/RisquesTab.tsx"
  ],
+ "activation": [
+  "pages/journal-audit/JournalAuditPage.tsx"
+ ],
  "Activation impossible": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Active": [
+  "api/plaintes.ts",
   "pages/plaintes/ListesPlaintes.tsx"
+ ],
+ "Active le {0}": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
  ],
  "Activer": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
@@ -701,6 +724,9 @@
  "Afficher": [
   "pages/beneficiaires/ChampsVariables.tsx",
   "pages/projets/RisquesTab.tsx"
+ ],
+ "Afficher l'historique ({0})": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
  ],
  "Afficher les {0} autres": [
   "pages/DashboardConsolidePage.tsx"
@@ -948,6 +974,8 @@
   "pages/carte/FenetresCarte.tsx",
   "pages/langues/LanguesPage.tsx",
   "pages/plaintes/ActionsCorrectivesPage.tsx",
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx",
+  "pages/plaintes/HabilitationsPlaintes.tsx",
   "pages/plaintes/ListesPlaintes.tsx",
   "pages/plaintes/OperationsDossier.tsx",
   "pages/plaintes/ParametragePlaintesPage.tsx",
@@ -981,6 +1009,9 @@
  ],
  "Antenne régionale": [
   "pages/organisation/OrganisationPage.tsx"
+ ],
+ "application d'un modèle": [
+  "pages/journal-audit/JournalAuditPage.tsx"
  ],
  "Appliqué aux modules non réglés ci-dessous": [
   "pages/utilisateurs/UtilisateursPage.tsx"
@@ -1078,6 +1109,7 @@
  "Au": [
   "components/dashboard/FiltresTableauDeBord.tsx",
   "components/suivi/TranchesPlanifieesTab.tsx",
+  "pages/journal-audit/JournalAuditPage.tsx",
   "pages/projets/RapportFinancierModal.tsx",
   "pages/strategie/SuiviStrategiqueTab.tsx"
  ],
@@ -1149,6 +1181,9 @@
  "Aucun dossier accessible ne porte ce numéro.": [
   "serveur"
  ],
+ "Aucun dossier ne porte ce numéro.": [
+  "serveur"
+ ],
  "Aucun dossier.": [
   "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
@@ -1175,6 +1210,9 @@
  ],
  "Aucun élément.": [
   "serveur"
+ ],
+ "Aucun événement pour ces critères.": [
+  "pages/journal-audit/JournalAuditPage.tsx"
  ],
  "Aucun indicateur ne correspond à la recherche.": [
   "pages/indicateurs/IndicateursListPage.tsx",
@@ -1352,8 +1390,14 @@
  "Aucune date de rappel fixe n'est programmée pour le moment.": [
   "pages/parametres/ParametresAlertePage.tsx"
  ],
+ "Aucune demande enregistrée.": [
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
+ ],
  "Aucune dépense saisie dans le suivi.": [
   "pages/DashboardConsolidePage.tsx"
+ ],
+ "Aucune deuxième personne ne peut encore valider : saisissez le code reçu par courriel. L'habilitation prendra effet 24 heures après la confirmation.": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
  ],
  "Aucune donnée.": [
   "components/charts/CamembertChart.tsx",
@@ -1364,6 +1408,9 @@
  ],
  "Aucune feuille du canevas de suivi trouvée (Suivi, Jalons et livrables, Indicateurs).": [
   "serveur"
+ ],
+ "Aucune habilitation en cours.": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
  ],
  "Aucune incohérence repérée dans ce projet.": [
   "pages/projets/CoherenceTab.tsx"
@@ -2020,6 +2067,12 @@
  "Cette demande a déjà été traitée.": [
   "serveur"
  ],
+ "Cette demande n'est plus en attente.": [
+  "serveur"
+ ],
+ "Cette habilitation n'est plus en cours.": [
+  "serveur"
+ ],
  "Cette période": [
   "components/suivi/HistoriqueSuiviTable.tsx"
  ],
@@ -2029,8 +2082,14 @@
  "Cette période chevauche une autre valeur du même indicateur : elles s'additionnent.": [
   "serveur"
  ],
+ "Cette personne a déjà une habilitation en cours ou en attente.": [
+  "serveur"
+ ],
  "Cette personne est déjà dans l'équipe.": [
   "pages/projets/EquipeTab.tsx"
+ ],
+ "Cette personne n'a pas d'habilitation confidentielle : demandez-la d'abord (Paramétrage › Habilitations), puis faites-la valider par une deuxième personne.": [
+  "serveur"
  ],
  "Cette personne ne peut pas recevoir ce dossier (accès au module ou au circuit confidentiel).": [
   "serveur"
@@ -2046,6 +2105,9 @@
  ],
  "Champ obligatoire manquant": [
   "pages/projets/ProjetForm.tsx"
+ ],
+ "champs : {0}": [
+  "pages/journal-audit/JournalAuditPage.tsx"
  ],
  "Changement approuvé et appliqué": [
   "pages/approbations/ApprobationsPage.tsx"
@@ -2276,6 +2338,9 @@
   "pages/projets/RapportFinancierModal.tsx",
   "serveur"
  ],
+ "Choisissez l'état de la demande.": [
+  "serveur"
+ ],
  "Choisissez l'issue du dossier.": [
   "serveur"
  ],
@@ -2286,6 +2351,9 @@
   "serveur"
  ],
  "Choisissez le canal par lequel le retour a été reçu.": [
+  "serveur"
+ ],
+ "Choisissez le droit exercé.": [
   "serveur"
  ],
  "Choisissez le moyen utilisé.": [
@@ -2319,6 +2387,9 @@
   "serveur"
  ],
  "Choisissez une étape du circuit du dossier.": [
+  "serveur"
+ ],
+ "Choisissez une personne active.": [
   "serveur"
  ],
  "Choisissez une personne de la liste.": [
@@ -2501,6 +2572,9 @@
  "Code administratif (pcode), si connu — facultatif": [
   "pages/geo/ZonesAdministrativesPage.tsx"
  ],
+ "Code de confirmation de la première habilitation confidentielle : {0}\n\nSaisissez-le dans Plaintes et retours › Paramétrage › Habilitations. L'habilitation prendra effet 24 heures après la confirmation. Si vous n'êtes pas à l'origine de cette demande, ne saisissez pas ce code et prévenez votre organisation.": [
+  "serveur"
+ ],
  "Code de suivi": [
   "pages/plaintes/public/SuiviPublicPage.tsx"
  ],
@@ -2513,6 +2587,9 @@
  ],
  "Code projet inconnu ignoré : « ": [
   "serveur"
+ ],
+ "Code reçu par courriel": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
  ],
  "Collecte": [
   "pages/projets/ProjetDetailPage.tsx"
@@ -2529,6 +2606,7 @@
  "Commentaire": [
   "components/indicators/SaisieValeurIndicateurForm.tsx",
   "components/suivi/SaisiePointSuiviForm.tsx",
+  "pages/plaintes/HabilitationsPlaintes.tsx",
   "pages/plaintes/OperationsDossier.tsx",
   "pages/projets/ActiviteForm.tsx",
   "pages/projets/AvancementModal.tsx",
@@ -2578,6 +2656,9 @@
  "Confidentialité et conservation": [
   "pages/plaintes/DossierPlaintePage.tsx"
  ],
+ "confidentiel": [
+  "pages/journal-audit/JournalAuditPage.tsx"
+ ],
  "Confidentiel": [
   "pages/plaintes/CircuitsPlaintes.tsx",
   "pages/plaintes/DossierPlaintePage.tsx",
@@ -2596,11 +2677,26 @@
   "pages/strategie/CadreStrategiqueDetailPage.tsx",
   "utils/modules.ts"
  ],
+ "Confirmation d'une habilitation confidentielle": [
+  "serveur"
+ ],
  "Confirmation de clôture": [
   "api/plaintes.ts"
  ],
+ "confirmation par courriel": [
+  "pages/journal-audit/JournalAuditPage.tsx"
+ ],
+ "Confirmée, active après le délai de sécurité": [
+  "api/plaintes.ts"
+ ],
+ "Confirmer": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
+ ],
  "Confirmer doublon": [
   "pages/beneficiaires/DoublonsPage.tsx"
+ ],
+ "Confirmer la première habilitation": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
  ],
  "Confirmer la suppression": [
   "components/common/confirmerSuppression.tsx"
@@ -2618,7 +2714,14 @@
   "auth/LoginPage.tsx"
  ],
  "Connexion": [
+  "api/journalAudit.ts",
   "pages/langues/LanguesPage.tsx"
+ ],
+ "Connexion refusée": [
+  "api/journalAudit.ts"
+ ],
+ "Connexions, consultations de dossiers confidentiels, actions sur les dossiers, téléchargements, exports, modifications de la configuration, des droits et des habilitations. Le journal est en ajout uniquement : personne ne peut le modifier ni le supprimer. Il ne contient jamais le contenu des plaintes.": [
+  "pages/journal-audit/JournalAuditPage.tsx"
  ],
  "Consentement": [
   "pages/plaintes/DossierPlaintePage.tsx"
@@ -2647,13 +2750,20 @@
   "pages/utilisateurs/DroitsModules.tsx",
   "pages/utilisateurs/RolesTab.tsx"
  ],
+ "Consultation d'un dossier confidentiel": [
+  "api/journalAudit.ts"
+ ],
  "consultation(s)": [
   "components/partage/BoutonPartage.tsx"
  ],
  "Contact": [
   "pages/organisation/OrganisationPage.tsx",
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx",
   "pages/plaintes/PrestatairesPlaintes.tsx",
   "pages/projets/EquipeTab.tsx"
+ ],
+ "Contact pour les données personnelles": [
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Contenu": [
   "pages/carte/FenetresCarte.tsx"
@@ -2782,6 +2892,9 @@
  "Couverture géographique (nombre de zones)": [
   "pages/DashboardConsolidePage.tsx"
  ],
+ "création": [
+  "pages/journal-audit/JournalAuditPage.tsx"
+ ],
  "Création": [
   "components/audit/HistoriqueModification.tsx"
  ],
@@ -2852,6 +2965,7 @@
  ],
  "Date": [
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
+  "pages/journal-audit/JournalAuditPage.tsx",
   "pages/langues/LanguesPage.tsx",
   "pages/plaintes/CalendrierPlaintes.tsx",
   "pages/projets/RisquesTab.tsx"
@@ -2994,14 +3108,33 @@
  "Délais comptés en jours ouvrés": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
+ "demande": [
+  "pages/journal-audit/JournalAuditPage.tsx"
+ ],
  "Demande": [
-  "pages/approbations/ApprobationsPage.tsx"
+  "pages/approbations/ApprobationsPage.tsx",
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
+ ],
+ "Demande d'une personne sur ses données": [
+  "api/journalAudit.ts"
  ],
  "Demande de complément": [
   "api/plaintes.ts"
  ],
+ "Demande enregistrée": [
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
+ ],
  "Demande rejetée": [
   "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "Demandée par": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
+ ],
+ "Demander une habilitation": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
+ ],
+ "Demander une habilitation confidentielle": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
  ],
  "Départementale": [
   "pages/carte/CartePage.tsx"
@@ -3061,6 +3194,9 @@
   "pages/utilisateurs/RolesTab.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
+ "désactivation": [
+  "pages/journal-audit/JournalAuditPage.tsx"
+ ],
  "Désactivé": [
   "components/partage/BoutonPartage.tsx",
   "pages/plaintes/CircuitsPlaintes.tsx"
@@ -3100,6 +3236,9 @@
  ],
  "Détail par élément": [
   "pages/projets/RapportFinancierModal.tsx"
+ ],
+ "Détails": [
+  "pages/journal-audit/JournalAuditPage.tsx"
  ],
  "Détermine les éléments (axes, orientations…) proposés ensuite pour les activités de ce projet.": [
   "pages/projets/ProjetForm.tsx"
@@ -3185,6 +3324,9 @@
  "Donne un nom à la période et choisis ses dates.": [
   "pages/parametres/RapportageCard.tsx"
  ],
+ "Données personnelles": [
+  "pages/plaintes/ParametragePlaintesPage.tsx"
+ ],
  "dont {0} j de prolongation": [
   "pages/plaintes/DossierPlaintePage.tsx"
  ],
@@ -3204,6 +3346,9 @@
   "pages/projets/ProjetForm.tsx",
   "pages/strategie/FicheDocument.tsx"
  ],
+ "Dossier": [
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
+ ],
  "Dossier {0}, reçu le {1}": [
   "pages/plaintes/public/SuiviPublicPage.tsx"
  ],
@@ -3212,6 +3357,9 @@
  ],
  "Dossier anonymisé le {0} : seules les données statistiques sont conservées.": [
   "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Dossier concerné (numéro, facultatif)": [
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
  ],
  "Dossier confidentiel : la décision n'est jamais insérée dans le message.": [
   "pages/plaintes/OperationsDossier.tsx"
@@ -3227,6 +3375,9 @@
  ],
  "Dossier introuvable, ou réservé aux personnes désignées (circuit confidentiel).": [
   "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Dossier lié": [
+  "serveur"
  ],
  "Dossier lié à une procédure (enquête, justice…) : il ne sera jamais anonymisé tant que la suspension dure.": [
   "pages/plaintes/OperationsDossier.tsx"
@@ -3274,6 +3425,10 @@
  "Doublons potentiels détectés": [
   "pages/beneficiaires/BeneficiaireForm.tsx"
  ],
+ "Droit exercé": [
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx",
+  "serveur"
+ ],
  "Droits par module": [
   "pages/utilisateurs/DroitsModules.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
@@ -3282,6 +3437,7 @@
   "components/dashboard/FiltresTableauDeBord.tsx",
   "components/suivi/EnTetePeriode.tsx",
   "components/suivi/TranchesPlanifieesTab.tsx",
+  "pages/journal-audit/JournalAuditPage.tsx",
   "pages/projets/RapportFinancierModal.tsx",
   "pages/strategie/SuiviStrategiqueTab.tsx"
  ],
@@ -3301,6 +3457,7 @@
  ],
  "Échéance": [
   "pages/plaintes/ActionsCorrectivesPage.tsx",
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx",
   "pages/plaintes/DossierPlaintePage.tsx",
   "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
@@ -3358,6 +3515,9 @@
  ],
  "Effacé": [
   "components/audit/HistoriqueModification.tsx"
+ ],
+ "Effacement": [
+  "api/plaintes.ts"
  ],
  "Effacer l'objectif de la période": [
   "pages/projets/PeriodeTableau.tsx",
@@ -3464,6 +3624,9 @@
  "En attente de décision": [
   "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
+ "En attente de validation": [
+  "api/plaintes.ts"
+ ],
  "en consortium": [
   "pages/organisation/OrganisationPage.tsx"
  ],
@@ -3526,6 +3689,9 @@
  "Enregistrées une fois, puis sélectionnées sur les projets et les éléments du cadre stratégique.": [
   "pages/organisation/OrganisationPage.tsx"
  ],
+ "enregistrement": [
+  "pages/journal-audit/JournalAuditPage.tsx"
+ ],
  "Enregistrer": [
   "components/indicators/SaisieValeurIndicateurForm.tsx",
   "components/suivi/MethodeCalculLigne.tsx",
@@ -3539,6 +3705,7 @@
   "pages/organisation/OrganisationPage.tsx",
   "pages/parametres/ParametresAlertePage.tsx",
   "pages/plaintes/ActionsCorrectivesPage.tsx",
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx",
   "pages/plaintes/DossiersPlaintesPage.tsx",
   "pages/plaintes/OperationsDossier.tsx",
   "pages/plaintes/ParametragePlaintesPage.tsx",
@@ -3600,6 +3767,9 @@
  "Entre 1 et {0} Mo (plafond de la plateforme).": [
   "serveur"
  ],
+ "entrée en vigueur": [
+  "pages/journal-audit/JournalAuditPage.tsx"
+ ],
  "Envoi par": [
   "pages/plaintes/OperationsDossier.tsx"
  ],
@@ -3627,6 +3797,9 @@
  ],
  "Envoyer aussi les notifications par courriel": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
+ ],
+ "Envoyer la demande": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
  ],
  "Envoyer un autre retour": [
   "pages/plaintes/public/FormulairePublicPage.tsx"
@@ -3700,7 +3873,9 @@
   "pages/plaintes/ActionsCorrectivesPage.tsx",
   "pages/plaintes/CalendrierPlaintes.tsx",
   "pages/plaintes/CircuitsPlaintes.tsx",
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx",
   "pages/plaintes/DossiersPlaintesPage.tsx",
+  "pages/plaintes/HabilitationsPlaintes.tsx",
   "pages/plaintes/ListesPlaintes.tsx",
   "pages/plaintes/MessagesPlaintes.tsx",
   "pages/plaintes/OperationsDossier.tsx",
@@ -3923,7 +4098,9 @@
   "pages/plaintes/DelaiDossier.tsx"
  ],
  "État": [
-  "pages/parametres/RapportageCard.tsx"
+  "pages/parametres/RapportageCard.tsx",
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx",
+  "pages/plaintes/HabilitationsPlaintes.tsx"
  ],
  "Étendue": [
   "pages/carte/FenetresCarte.tsx"
@@ -4120,6 +4297,9 @@
  "Expliquez pourquoi le plaignant n'a pas pu être informé.": [
   "serveur"
  ],
+ "Export": [
+  "api/journalAudit.ts"
+ ],
  "Export de la fiche": [
   "api/plaintes.ts"
  ],
@@ -4149,6 +4329,9 @@
   "pages/projets/RisquesTab.tsx",
   "pages/strategie/CadreTableau.tsx",
   "pages/suivi/SuiviProjetDashboard.tsx"
+ ],
+ "Exporter (Excel)": [
+  "pages/journal-audit/JournalAuditPage.tsx"
  ],
  "Exporter (PDF)": [
   "pages/plaintes/DossierPlaintePage.tsx"
@@ -4444,6 +4627,36 @@
  "Grille héritée de nouveau en vigueur": [
   "pages/parametres/ParametresAlertePage.tsx"
  ],
+ "Habilitation confidentielle": [
+  "api/journalAudit.ts"
+ ],
+ "Habilitation confidentielle à valider pour {0}": [
+  "serveur"
+ ],
+ "Habilitation confidentielle accordée à {0}": [
+  "serveur"
+ ],
+ "Habilitation confidentielle de {0} : active dans 24 heures": [
+  "serveur"
+ ],
+ "Habilitation confidentielle de {0} : désormais active": [
+  "serveur"
+ ],
+ "Habilitation confidentielle refusée pour {0}": [
+  "serveur"
+ ],
+ "Habilitation confidentielle retirée : dossier à réaffecter.": [
+  "serveur"
+ ],
+ "Habilitation confidentielle retirée à {0}": [
+  "serveur"
+ ],
+ "habilitation d'office": [
+  "pages/journal-audit/JournalAuditPage.tsx"
+ ],
+ "Habilitations": [
+  "pages/plaintes/ParametragePlaintesPage.tsx"
+ ],
  "Hériter (niveau au-dessus / projet)": [
   "components/suivi/MethodeCalculLigne.tsx",
   "pages/projets/ActiviteForm.tsx"
@@ -4506,6 +4719,9 @@
   "pages/beneficiaires/BeneficiairesListPage.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
+ "identifiant tenté : {0}": [
+  "pages/journal-audit/JournalAuditPage.tsx"
+ ],
  "Identifiant, mot de passe et rôle requis.": [
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
@@ -4529,6 +4745,9 @@
  ],
  "Impact": [
   "pages/projets/RisquesTab.tsx"
+ ],
+ "import": [
+  "pages/journal-audit/JournalAuditPage.tsx"
  ],
  "Import / export Excel": [
   "pages/strategie/ChaineDocumentsModal.tsx"
@@ -4723,6 +4942,9 @@
  "Indiquez la période.": [
   "pages/strategie/SuiviStrategiqueTab.tsx"
  ],
+ "Indiquez la réponse donnée à la personne (et le motif d'un refus).": [
+  "serveur"
+ ],
  "Indiquez le motif de l'export de ce dossier confidentiel.": [
   "serveur"
  ],
@@ -4744,6 +4966,9 @@
  "Indiquez le motif de la réouverture.": [
   "serveur"
  ],
+ "Indiquez le motif du retrait.": [
+  "serveur"
+ ],
  "Indiquez le motif.": [
   "serveur"
  ],
@@ -4756,7 +4981,13 @@
  "Indiquez le titre de la carte.": [
   "pages/carte/FenetresCarte.tsx"
  ],
+ "Indiquez pourquoi cette personne doit accéder aux dossiers confidentiels.": [
+  "serveur"
+ ],
  "Indiquez pourquoi cette pièce est retirée.": [
+  "serveur"
+ ],
+ "Indiquez pourquoi la demande est refusée.": [
   "serveur"
  ],
  "Indiquez si le plaignant a été informé de la réponse.": [
@@ -4845,6 +5076,10 @@
  "Joignez au plus {0} fichiers à la fois.": [
   "serveur"
  ],
+ "Journal d'audit": [
+  "layouts/AppLayout.tsx",
+  "pages/journal-audit/JournalAuditPage.tsx"
+ ],
  "Journal du dossier": [
   "pages/plaintes/DossierPlaintePage.tsx"
  ],
@@ -4853,6 +5088,12 @@
  ],
  "Jusqu'à {0} fichiers de {1} Mo au plus. Formats : {2}.": [
   "pages/plaintes/ChoixFichiers.tsx"
+ ],
+ "L'accès aux dossiers confidentiels est une habilitation distincte des rôles. Seules les personnes habilitées peuvent être responsables d'une étape d'un circuit confidentiel. Chaque habilitation est demandée par une personne et validée par une deuxième ; tout est inscrit au journal d'audit. L'Administrateur y accède d'office.": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
+ ],
+ "L'Administrateur accède déjà aux dossiers confidentiels.": [
+  "serveur"
  ],
  "L'ancienne et la nouvelle valeur seront inscrites au journal du dossier, avec votre nom.": [
   "pages/plaintes/OperationsDossier.tsx"
@@ -4865,6 +5106,9 @@
  ],
  "L'échéance de traitement est dépassée.": [
   "serveur"
+ ],
+ "L'effacement se fait en anonymisant le dossier clôturé (impossible pendant une suspension légale).": [
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
  ],
  "L'élément « {0} » n'appartient pas à « {1} ».": [
   "serveur"
@@ -4881,6 +5125,10 @@
  "L'envoi n'a pas abouti. Réessayez.": [
   "pages/plaintes/public/FormulairePublicPage.tsx",
   "pages/plaintes/public/SuiviPublicPage.tsx"
+ ],
+ "L'export n'a pas abouti.": [
+  "pages/journal-audit/JournalAuditPage.tsx",
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
  ],
  "L'orientation exige le consentement de la personne.": [
   "serveur"
@@ -4920,6 +5168,12 @@
  ],
  "La date de réception ne peut pas être dans le futur.": [
   "serveur"
+ ],
+ "La date ne peut pas être dans le futur.": [
+  "serveur"
+ ],
+ "La demande devra être validée par une deuxième personne (Administrateur ou personne déjà habilitée). Personne ne peut demander sa propre habilitation.": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
  ],
  "La dernière étape se franchit avec « Clôturer » (motif, décision et retour au plaignant).": [
   "pages/plaintes/OperationsDossier.tsx"
@@ -4986,6 +5240,9 @@
   "pages/indicateurs/IndicateurDetailPage.tsx"
  ],
  "La suspension légale est réservée à l'Administrateur.": [
+  "serveur"
+ ],
+ "La validation doit venir d'une deuxième personne, ni la personne concernée ni celle qui a demandé.": [
   "serveur"
  ],
  "La vue confidentielle est réservée aux personnes habilitées.": [
@@ -5178,6 +5435,9 @@
  ],
  "Le retour vise le personnel ou un partenaire : il reste confidentiel.": [
   "serveur"
+ ],
+ "Le retrait prend effet immédiatement. Les dossiers confidentiels ouverts confiés à cette personne devront être réaffectés.": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
  ],
  "Le seuil {0}% est défini plusieurs fois.": [
   "serveur"
@@ -5450,6 +5710,9 @@
   "pages/beneficiaires/ChampsVariables.tsx",
   "pages/projets/RisquesTab.tsx"
  ],
+ "Masquer l'historique": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
+ ],
  "Matrice des risques ouverts": [
   "pages/projets/RisquesTab.tsx"
  ],
@@ -5620,8 +5883,17 @@
  "Modéré": [
   "pages/projets/RisquesTab.tsx"
  ],
+ "modification": [
+  "pages/journal-audit/JournalAuditPage.tsx"
+ ],
  "Modification": [
   "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Modification de la configuration": [
+  "api/journalAudit.ts"
+ ],
+ "Modification des droits d'un compte": [
+  "api/journalAudit.ts"
  ],
  "modification(s) enregistré(s)": [
   "components/suivi/ImportCanevasSuiviModal.tsx"
@@ -5783,6 +6055,7 @@
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
  "Motif": [
+  "pages/plaintes/HabilitationsPlaintes.tsx",
   "pages/plaintes/OperationsDossier.tsx",
   "pages/projets/FinancementsTab.tsx"
  ],
@@ -6189,6 +6462,12 @@
  "Nouvelle catégorie (Entrée)": [
   "pages/organisation/OrganisationPage.tsx"
  ],
+ "Nouvelle demande": [
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
+ ],
+ "Nouvelle demande sur les données": [
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
+ ],
  "Nouvelle équipe": [
   "pages/projets/ActiviteForm.tsx"
  ],
@@ -6273,6 +6552,7 @@
   "pages/projets/PartenairesProjetTab.tsx"
  ],
  "Objet": [
+  "pages/journal-audit/JournalAuditPage.tsx",
   "pages/plaintes/OperationsDossier.tsx"
  ],
  "Objet du courriel": [
@@ -6284,6 +6564,12 @@
  ],
  "objet(s) (": [
   "pages/carte/FenetresCarte.tsx"
+ ],
+ "Obligatoire pour conclure ; motivez tout refus.": [
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
+ ],
+ "Obligatoire pour un refus.": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
  ],
  "OK": [
   "pages/projets/ProjetDetailPage.tsx"
@@ -6307,6 +6593,9 @@
  "Opérationnel": [
   "pages/projets/RisquesTab.tsx"
  ],
+ "Opposition au traitement": [
+  "api/plaintes.ts"
+ ],
  "Organigramme": [
   "pages/organisation/OrganisationPage.tsx"
  ],
@@ -6319,6 +6608,9 @@
  ],
  "Organisation (interne)": [
   "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Organisation, adresse : figure dans le registre des traitements.": [
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Orientation": [
   "pages/carte/FenetresCarte.tsx"
@@ -6644,6 +6936,20 @@
  "Personnaliser le tableau de bord": [
   "components/dashboard/PersonnalisationModal.tsx"
  ],
+ "Personne": [
+  "pages/journal-audit/JournalAuditPage.tsx",
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx",
+  "pages/plaintes/HabilitationsPlaintes.tsx"
+ ],
+ "Personne ne peut s'attribuer à soi-même une habilitation : une autre personne doit la demander.": [
+  "serveur"
+ ],
+ "Personne ou adresse à qui adresser les demandes d'accès, de rectification, d'effacement.": [
+  "pages/plaintes/ParametragePlaintesPage.tsx"
+ ],
+ "Personne qui exerce son droit": [
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
+ ],
  "personnes": [
   "pages/DashboardConsolidePage.tsx"
  ],
@@ -6744,6 +7050,9 @@
   "pages/plaintes/TableauPlaintesPage.tsx",
   "pages/plaintes/public/FormulairePublicPage.tsx",
   "utils/modules.ts"
+ ],
+ "Plaintes et retours › Paramétrage › Habilitations.": [
+  "serveur"
  ],
  "Plaintes, suggestions et autres retours reçus sur les 12 derniers mois pour ce projet. Les dossiers confidentiels n'apparaissent que dans des totaux.": [
   "pages/plaintes/RetoursProjet.tsx"
@@ -6883,6 +7192,9 @@
  "Pourquoi ? (facultatif)": [
   "pages/plaintes/OperationsDossier.tsx"
  ],
+ "Pourquoi cette personne doit accéder aux dossiers confidentiels (fonction, protocole).": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
+ ],
  "Précise au plus un seul parmi projet/indicateur/activité.": [
   "serveur"
  ],
@@ -6894,6 +7206,12 @@
  ],
  "Premier gestionnaire": [
   "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "première demande (code par courriel)": [
+  "pages/journal-audit/JournalAuditPage.tsx"
+ ],
+ "Première habilitation : elle se confirme avec le code reçu par courriel.": [
+  "serveur"
  ],
  "Prénom": [
   "components/common/IntervenantsMultiples.tsx",
@@ -7350,6 +7668,12 @@
  "Recours sur le dossier confidentiel {0}": [
   "serveur"
  ],
+ "Rectification": [
+  "api/plaintes.ts"
+ ],
+ "Rectifiez les coordonnées depuis la fiche du dossier (« Modifier » dans le bloc Plaignant).": [
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
+ ],
  "Reçu": [
   "api/plaintes.ts"
  ],
@@ -7360,6 +7684,13 @@
  "Reçu le": [
   "pages/plaintes/DossierPlaintePage.tsx",
   "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
+ "Reçue": [
+  "api/plaintes.ts"
+ ],
+ "Reçue le": [
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx",
+  "serveur"
  ],
  "Recueilli directement auprès du plaignant": [
   "pages/plaintes/SaisieDossierModal.tsx"
@@ -7383,6 +7714,18 @@
  "Référé à un acteur externe": [
   "api/plaintes.ts"
  ],
+ "refus": [
+  "pages/journal-audit/JournalAuditPage.tsx"
+ ],
+ "Refusée": [
+  "api/plaintes.ts"
+ ],
+ "Refusée (motivée)": [
+  "api/plaintes.ts"
+ ],
+ "Refuser": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
+ ],
  "Région": [
   "pages/carte/FenetresCarte.tsx"
  ],
@@ -7392,6 +7735,12 @@
  "Régions": [
   "pages/carte/CartePage.tsx",
   "pages/carte/FenetresCarte.tsx"
+ ],
+ "Registre des traitements": [
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
+ ],
+ "Registre des traitements — mécanisme de plaintes et retours": [
+  "serveur"
  ],
  "Réglage enregistré": [
   "pages/parametres/ParametresAlertePage.tsx",
@@ -7459,6 +7808,12 @@
  "Réponse donnée": [
   "api/plaintes.ts"
  ],
+ "Réponse donnée à la personne": [
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
+ ],
+ "Réponse le": [
+  "serveur"
+ ],
  "Réponse souhaitée": [
   "pages/plaintes/ChampsRetour.tsx",
   "pages/plaintes/DossierPlaintePage.tsx",
@@ -7477,6 +7832,12 @@
  "Reprendre à l'étape": [
   "pages/plaintes/OperationsDossier.tsx"
  ],
+ "reprise de l'existant": [
+  "pages/journal-audit/JournalAuditPage.tsx"
+ ],
+ "Reprise de l'existant": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
+ ],
  "Responsable": [
   "pages/organisation/OrganisationPage.tsx",
   "pages/plaintes/ActionsCorrectivesPage.tsx",
@@ -7491,6 +7852,9 @@
  ],
  "Responsable du suivi": [
   "pages/projets/RisquesTab.tsx"
+ ],
+ "Responsable du traitement des données": [
+  "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Responsables": [
   "pages/projets/ActiviteForm.tsx"
@@ -7517,8 +7881,12 @@
  "Retiré de l'équipe du projet": [
   "pages/projets/EquipeTab.tsx"
  ],
+ "Retirée": [
+  "api/plaintes.ts"
+ ],
  "Retirer": [
   "components/beneficiaires/BeneficiairesTab.tsx",
+  "pages/plaintes/HabilitationsPlaintes.tsx",
   "pages/plaintes/OperationsDossier.tsx",
   "pages/plaintes/PiecesJointesDossier.tsx",
   "pages/plaintes/TableauPlaintesPage.tsx"
@@ -7537,6 +7905,9 @@
  ],
  "Retirer l'attribut": [
   "components/common/AttributsLibres.tsx"
+ ],
+ "Retirer l'habilitation": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
  ],
  "Retirer la pièce": [
   "pages/strategie/SuiviStrategiqueTab.tsx"
@@ -7562,6 +7933,10 @@
  "Retours des communautés": [
   "pages/plaintes/RetoursProjet.tsx",
   "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "retrait": [
+  "pages/journal-audit/JournalAuditPage.tsx",
+  "pages/plaintes/HabilitationsPlaintes.tsx"
  ],
  "Réunion communautaire": [
   "api/plaintes.ts"
@@ -7742,6 +8117,9 @@
  "Saisir": [
   "pages/strategie/SuiviStrategiqueTab.tsx"
  ],
+ "Saisir le code": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
+ ],
  "saisir un suivi": [
   "pages/suivi/SuiviPeriodeTab.tsx"
  ],
@@ -7785,6 +8163,9 @@
  ],
  "Satisfait": [
   "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Satisfaite": [
+  "api/plaintes.ts"
  ],
  "Saut autorisé": [
   "pages/geo/ZonesAdministrativesPage.tsx"
@@ -7904,11 +8285,21 @@
  "Seul un dossier clôturé peut être rouvert.": [
   "serveur"
  ],
+ "Seule la personne qui a demandé cette première habilitation peut la confirmer.": [
+  "serveur"
+ ],
  "Seule une personne habilitée du circuit confidentiel peut lever la sensibilité.": [
   "serveur"
  ],
  "Seulement les éléments prévus à ces dates": [
   "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Seuls l'Administrateur et les personnes habilitées gèrent les habilitations confidentielles.": [
+  "pages/plaintes/HabilitationsPlaintes.tsx",
+  "serveur"
+ ],
+ "Seuls l'Administrateur et les personnes habilitées valident une habilitation.": [
+  "serveur"
  ],
  "Seuls l'Administrateur, le gestionnaire du dossier ou la personne qui l'a ajoutée peuvent retirer cette pièce.": [
   "serveur"
@@ -8104,6 +8495,9 @@
  "Suivre mon dossier": [
   "pages/plaintes/public/FormulairePublicPage.tsx",
   "pages/plaintes/public/SuiviPublicPage.tsx"
+ ],
+ "suppression": [
+  "pages/journal-audit/JournalAuditPage.tsx"
  ],
  "Suppression de l'élément et de tout ce qui est en dessous.": [
   "pages/approbations/ApprobationsPage.tsx"
@@ -8330,6 +8724,9 @@
  "Suspension légale en cours : ce dossier ne peut pas être anonymisé.": [
   "serveur"
  ],
+ "Système": [
+  "pages/journal-audit/JournalAuditPage.tsx"
+ ],
  "Tableau": [
   "components/charts/GraphiqueAdaptable.tsx",
   "pages/organisation/OrganisationPage.tsx",
@@ -8415,6 +8812,7 @@
   "utils/methodesCalcul.ts"
  ],
  "Téléchargement d'une pièce jointe": [
+  "api/journalAudit.ts",
   "api/plaintes.ts"
  ],
  "Télécharger": [
@@ -8615,11 +9013,15 @@
   "pages/projets/ProjetDetailPage.tsx",
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
  ],
+ "Toute personne peut demander l'accès à ses données, leur rectification, leur effacement ou s'opposer à leur traitement. Chaque demande est enregistrée, suivie jusqu'à la réponse (sous un mois) et inscrite au journal d'audit.": [
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
+ ],
  "Toute personne qui a le lien voit la page en lecture seule, sans compte ni mot de passe, et sans pouvoir rien modifier.": [
   "components/partage/BoutonPartage.tsx"
  ],
  "Toutes": [
-  "components/dashboard/FiltresTableauDeBord.tsx"
+  "components/dashboard/FiltresTableauDeBord.tsx",
+  "pages/journal-audit/JournalAuditPage.tsx"
  ],
  "Toutes : {0}": [
   "components/suivi/ImportCanevasSuiviModal.tsx"
@@ -8644,6 +9046,15 @@
  ],
  "Traductions de l'interface": [
   "pages/langues/LanguesPage.tsx"
+ ],
+ "traitement": [
+  "pages/journal-audit/JournalAuditPage.tsx"
+ ],
+ "Traiter": [
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
+ ],
+ "Traiter la demande": [
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
  ],
  "Tranche ajoutée": [
   "components/suivi/TranchesPlanifieesTab.tsx"
@@ -8733,6 +9144,9 @@
  ],
  "Un circuit est la suite des étapes que suit un dossier, de la réception à la clôture. Chaque catégorie utilise le circuit par défaut de sa nature, ou un circuit qui lui est propre.": [
   "pages/plaintes/CircuitsPlaintes.tsx"
+ ],
+ "Un code de confirmation vous a été envoyé par courriel.": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
  ],
  "Un dépassement de cible (ex : 130 %) reste affiché, mais compte pour 100 % dans les moyennes.": [
   "pages/parametres/ParametresAlertePage.tsx"
@@ -8847,6 +9261,9 @@
  ],
  "Une priorité urgente déclenche une notification immédiate et un traitement accéléré. Il en reste toujours au moins une.": [
   "pages/plaintes/ListesPlaintes.tsx"
+ ],
+ "Une réponse est attendue au plus tard un mois après la réception.": [
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
  ],
  "Une seule colonne de niveau doit être remplie par ligne — ligne ignorée.": [
   "serveur"
@@ -8996,6 +9413,9 @@
  "Valeurs dont les périodes se chevauchent : elles s'additionnent.": [
   "serveur"
  ],
+ "validation": [
+  "pages/journal-audit/JournalAuditPage.tsx"
+ ],
  "Validation déjà enregistrée — conservée (mode ajouter)": [
   "serveur"
  ],
@@ -9008,14 +9428,24 @@
  "Validé": [
   "pages/projets/AvancementModal.tsx"
  ],
+ "Validée par": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
+ ],
  "Valider": [
-  "pages/langues/LanguesPage.tsx"
+  "pages/langues/LanguesPage.tsx",
+  "pages/plaintes/HabilitationsPlaintes.tsx"
  ],
  "Valider l'import ({0} ligne)": [
   "components/suivi/ImportCanevasSuiviModal.tsx"
  ],
  "Valider l'import ({0} lignes)": [
   "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Valider la demande": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
+ ],
+ "Valider ou refuser": [
+  "pages/plaintes/HabilitationsPlaintes.tsx"
  ],
  "Variable": [
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
@@ -9066,6 +9496,9 @@
  "Vocabulaire mis à jour": [
   "layouts/AppLayout.tsx"
  ],
+ "Voir": [
+  "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
+ ],
  "Voir l'état": [
   "pages/plaintes/public/SuiviPublicPage.tsx"
  ],
@@ -9092,6 +9525,9 @@
  ],
  "Votre code de suivi": [
   "pages/plaintes/public/FormulairePublicPage.tsx"
+ ],
+ "Votre compte n'a pas d'adresse courriel : le code de confirmation ne peut pas être envoyé.": [
+  "serveur"
  ],
  "Votre compte permet de consulter ce module, pas d'y créer ou modifier.": [
   "serveur"

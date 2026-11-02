@@ -21,6 +21,8 @@ Lot 7 : messages au plaignant (modèles multilingues, envoi par courriel et SMS,
 automatique ; voir messages.py).
 Lot 8 : pièces jointes (chiffrées, type réel contrôlé, métadonnées effacées, liens de 5 minutes) et
 compléments du plaignant depuis la page de suivi ; voir pieces.py.
+Lot 9 : habilitation confidentielle à double validation (habilitations.py), journal d'audit
+(apps.core.audit), demandes des personnes sur leurs données et registre des traitements (droits.py).
 """
 import uuid
 
@@ -96,6 +98,13 @@ class Mecanisme(TimestampedModel):
         "confidentiel habituel (direction, siège, référent extérieur…). Obligatoire pour l'activation.",
     )
 
+    # Protection des données (lot 9) : figurent dans le registre des traitements.
+    responsable_traitement = models.CharField(
+        max_length=255, blank=True, help_text="Organisation responsable du traitement (nom, adresse).",
+    )
+    contact_donnees = models.CharField(
+        max_length=255, blank=True, help_text="Contact pour les questions et demandes sur les données personnelles.",
+    )
     # Pièces jointes (lot 8).
     pieces_formulaire_public = models.BooleanField(
         default=True, help_text="Le plaignant peut joindre des fichiers au formulaire public et à un complément.",
@@ -486,6 +495,88 @@ class PieceJointe(models.Model):
 
     def __str__(self):
         return f"{self.dossier.numero} — pièce {self.pk}"
+
+
+class HabilitationSensible(models.Model):
+    """
+    Habilitation aux dossiers confidentiels (habilitations.py) : distincte des rôles, demandée par une
+    personne et validée par une deuxième déjà habilitée (ou Administrateur) ; jamais par soi-même. Pour
+    la toute première habilitation de l'organisation (aucun valideur possible), confirmation par un code
+    envoyé par courriel à la personne qui la demande, puis délai de sécurité de 24 heures.
+    """
+
+    class Statut(models.TextChoices):
+        EN_ATTENTE = "EN_ATTENTE", "En attente de validation"
+        EN_DELAI = "EN_DELAI", "Confirmée, active après le délai de sécurité"
+        ACTIVE = "ACTIVE", "Active"
+        REFUSEE = "REFUSEE", "Refusée"
+        RETIREE = "RETIREE", "Retirée"
+
+    EN_COURS = (Statut.EN_ATTENTE, Statut.EN_DELAI, Statut.ACTIVE)
+
+    utilisateur = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="habilitations_sensibles")
+    statut = models.CharField(max_length=12, choices=Statut.choices, default=Statut.EN_ATTENTE)
+    motif = models.TextField(help_text="Pourquoi cette personne doit accéder aux dossiers confidentiels.")
+    demandee_par = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    date_demande = models.DateTimeField(auto_now_add=True)
+    premiere = models.BooleanField(default=False, help_text="Première habilitation : confirmation par courriel et délai.")
+    empreinte_code = models.CharField(max_length=64, blank=True, help_text="Empreinte du code de confirmation envoyé.")
+    validee_par = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    date_validation = models.DateTimeField(null=True, blank=True)
+    active_le = models.DateTimeField(null=True, blank=True, help_text="Début d'effet (après le délai pour une première).")
+    commentaire_validation = models.TextField(blank=True)
+    retiree_par = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    date_retrait = models.DateTimeField(null=True, blank=True)
+    motif_retrait = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ("-date_demande", "-id")
+        verbose_name = "Habilitation confidentielle"
+        constraints = [
+            models.UniqueConstraint(fields=["utilisateur"], condition=models.Q(statut__in=["EN_ATTENTE", "EN_DELAI", "ACTIVE"]),
+                                    name="une_habilitation_en_cours_par_personne"),
+        ]
+
+    def __str__(self):
+        return f"{self.utilisateur} — {self.get_statut_display()}"
+
+
+class DemandeDroits(models.Model):
+    """
+    Demande d'une personne sur ses données (accès, rectification, effacement, opposition) : procédure
+    tracée (droits.py), réponse attendue sous un mois. Les coordonnées et le contenu sont chiffrés.
+    """
+
+    class Type(models.TextChoices):
+        ACCES = "ACCES", "Accès à ses données"
+        RECTIFICATION = "RECTIFICATION", "Rectification"
+        EFFACEMENT = "EFFACEMENT", "Effacement"
+        OPPOSITION = "OPPOSITION", "Opposition au traitement"
+
+    class Statut(models.TextChoices):
+        RECUE = "RECUE", "Reçue"
+        EN_COURS = "EN_COURS", "En cours"
+        SATISFAITE = "SATISFAITE", "Satisfaite"
+        REFUSEE = "REFUSEE", "Refusée (motivée)"
+
+    type = models.CharField(max_length=15, choices=Type.choices)
+    statut = models.CharField(max_length=12, choices=Statut.choices, default=Statut.RECUE)
+    date_reception = models.DateField()
+    echeance = models.DateField(help_text="Réponse attendue au plus tard (un mois après la réception).")
+    demandeur = TexteChiffre(help_text="Nom de la personne qui exerce son droit.")
+    contact = TexteChiffre(blank=True)
+    description = TexteChiffre(blank=True)
+    dossier = models.ForeignKey(Dossier, on_delete=models.SET_NULL, null=True, blank=True, related_name="demandes_droits")
+    numero_dossier = models.CharField(max_length=40, blank=True, help_text="Gardé si le dossier est supprimé.")
+    reponse = TexteChiffre(blank=True)
+    date_reponse = models.DateField(null=True, blank=True)
+    enregistree_par = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    traitee_par = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-date_reception", "-id")
+        verbose_name = "Demande sur les données personnelles"
 
 
 class VueDossiers(models.Model):

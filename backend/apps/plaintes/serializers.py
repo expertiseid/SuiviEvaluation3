@@ -1,9 +1,11 @@
 from rest_framework import serializers
 
+from apps.core.vocabulaire import v
+
 from .controles import controler_activation, controler_circuit
 from .models import (
     ActionCorrective, ActionDossier, Categorie, Circuit, Dossier, EtapeCircuit, JourFerie, Mecanisme, ModeleMessage,
-    PieceJointe, Prestataire, Priorite, TypeRetour, VueDossiers,
+    DemandeDroits, HabilitationSensible, PieceJointe, Prestataire, Priorite, TypeRetour, VueDossiers,
 )
 from .traitement import nom_personne
 
@@ -25,6 +27,7 @@ class MecanismeSerializer(serializers.ModelSerializer):
             "delai_defaut_jours", "rappel_jours_avant", "escalade_active", "notifications_courriel",
             "circuit_alternatif", "seuil_masquage", "accuse_reception_auto", "signature_messages",
             "pieces_formulaire_public", "taille_max_piece_mo", "plafond_piece_mo", "pieces_equipe",
+            "responsable_traitement", "contact_donnees",
         )
         read_only_fields = ("actif", "modele")
 
@@ -113,6 +116,14 @@ class EtapeCircuitSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"role": "Un circuit confidentiel est confié à des personnes nommément désignées, pas à un rôle."}
             )
+        responsable = attrs.get("responsable") if "responsable" in attrs else None
+        if circuit is not None and circuit.sensible and responsable is not None:
+            from .habilitations import est_habilite
+
+            if not est_habilite(responsable):
+                raise serializers.ValidationError({"responsable": v(
+                    "Cette personne n'a pas d'habilitation confidentielle : demandez-la d'abord "
+                    "(Paramétrage › Habilitations), puis faites-la valider par une deuxième personne.")})
         return attrs
 
 
@@ -250,6 +261,79 @@ class ActionDossierSerializer(serializers.ModelSerializer):
 
     def get_auteur_nom(self, obj):
         return nom_personne(obj.auteur) or None
+
+
+class HabilitationSerializer(serializers.ModelSerializer):
+    """Habilitation confidentielle ; « peut_* » : ce que la personne connectée peut en faire."""
+
+    utilisateur_nom = serializers.SerializerMethodField()
+    utilisateur_role = serializers.CharField(source="utilisateur.role", read_only=True)
+    demandee_par_nom = serializers.SerializerMethodField()
+    validee_par_nom = serializers.SerializerMethodField()
+    retiree_par_nom = serializers.SerializerMethodField()
+    en_vigueur = serializers.SerializerMethodField()
+    peut_valider = serializers.SerializerMethodField()
+    peut_confirmer = serializers.SerializerMethodField()
+
+    class Meta:
+        model = HabilitationSensible
+        fields = ("id", "utilisateur", "utilisateur_nom", "utilisateur_role", "statut", "motif", "demandee_par",
+                  "demandee_par_nom", "date_demande", "premiere", "validee_par_nom", "date_validation", "active_le",
+                  "commentaire_validation", "retiree_par_nom", "date_retrait", "motif_retrait", "en_vigueur",
+                  "peut_valider", "peut_confirmer")
+        read_only_fields = fields
+
+    def get_utilisateur_nom(self, obj):
+        return nom_personne(obj.utilisateur)
+
+    def get_demandee_par_nom(self, obj):
+        return nom_personne(obj.demandee_par) or None
+
+    def get_validee_par_nom(self, obj):
+        return nom_personne(obj.validee_par) or None
+
+    def get_retiree_par_nom(self, obj):
+        return nom_personne(obj.retiree_par) or None
+
+    def get_en_vigueur(self, obj):
+        from django.utils import timezone
+
+        return obj.statut == "ACTIVE" or (obj.statut == "EN_DELAI" and obj.active_le and obj.active_le <= timezone.now())
+
+    def _moi(self):
+        return self.context["request"].user
+
+    def get_peut_valider(self, obj):
+        from .habilitations import valideurs_possibles
+
+        return obj.statut == "EN_ATTENTE" and not obj.premiere and valideurs_possibles(obj).filter(pk=self._moi().pk).exists()
+
+    def get_peut_confirmer(self, obj):
+        return obj.statut == "EN_ATTENTE" and obj.premiere and obj.demandee_par_id == self._moi().pk
+
+
+class DemandeDroitsSerializer(serializers.ModelSerializer):
+    """Demande sur les données personnelles (lecture) ; créée et traitée par droits.py."""
+
+    type_libelle = serializers.CharField(source="get_type_display", read_only=True)
+    statut_libelle = serializers.CharField(source="get_statut_display", read_only=True)
+    traitee_par_nom = serializers.SerializerMethodField()
+    en_retard = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DemandeDroits
+        fields = ("id", "type", "type_libelle", "statut", "statut_libelle", "date_reception", "echeance", "demandeur",
+                  "contact", "description", "dossier", "numero_dossier", "reponse", "date_reponse", "traitee_par_nom",
+                  "en_retard", "created_at")
+        read_only_fields = fields
+
+    def get_traitee_par_nom(self, obj):
+        return nom_personne(obj.traitee_par) or None
+
+    def get_en_retard(self, obj):
+        from django.utils import timezone
+
+        return obj.statut in ("RECUE", "EN_COURS") and obj.echeance < timezone.localdate()
 
 
 class PieceJointeSerializer(serializers.ModelSerializer):

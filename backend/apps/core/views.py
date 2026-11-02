@@ -1,16 +1,20 @@
 import re
 
 from django.db import transaction
+from django.http import HttpResponse
 from rest_framework import serializers, viewsets
 from rest_framework.decorators import action, api_view, authentication_classes, permission_classes
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from apps.accounts.constants import ROLE_ADMIN
 
-from .models import CODES_LANGUES, LANGUES, TraductionCorrigee
-from .permissions import IsAdminOrReadOnly
+from .audit import A, auditer
+from .langues import dans_la_langue_demandee
+from .models import CODES_LANGUES, LANGUES, EvenementAudit, TraductionCorrigee
+from .permissions import IsAdmin, IsAdminOrReadOnly
 
 REPERE = re.compile(r"\{\d+\}")
 
@@ -150,3 +154,69 @@ class TraductionCorrigeeViewSet(viewsets.ModelViewSet):
             }
             for h in historique[:200]
         ])
+
+
+# --- Journal d'audit ---------------------------------------------------------------------------------
+
+class ConnexionAuditee(TokenObtainPairView):
+    """Connexion (jeton JWT), inscrite au journal d'audit, réussie ou refusée (identifiant tenté seulement)."""
+
+    def post(self, request, *args, **kwargs):
+        from apps.accounts.models import User
+
+        try:
+            reponse = super().post(request, *args, **kwargs)
+        except Exception:
+            auditer(None, A.CONNEXION_ECHOUEE, module="comptes", identifiant=str(request.data.get("username", ""))[:150])
+            raise
+        auditer(User.objects.filter(username=request.data.get("username")).first(), A.CONNEXION, module="comptes")
+        return reponse
+
+
+class EvenementAuditSerializer(serializers.ModelSerializer):
+    action_libelle = serializers.CharField(source="get_action_display", read_only=True)
+
+    class Meta:
+        model = EvenementAudit
+        fields = ("id", "date", "utilisateur_id", "utilisateur", "action", "action_libelle", "module", "objet", "details")
+        read_only_fields = fields
+
+
+def filtrer_audit(params):
+    qs = EvenementAudit.objects.all()
+    if params.get("action"):
+        qs = qs.filter(action=params["action"])
+    if params.get("utilisateur"):
+        qs = qs.filter(utilisateur__icontains=params["utilisateur"])
+    if params.get("objet"):
+        qs = qs.filter(objet__icontains=params["objet"])
+    if params.get("du"):
+        qs = qs.filter(date__date__gte=params["du"])
+    if params.get("au"):
+        qs = qs.filter(date__date__lte=params["au"])
+    return qs
+
+
+class JournalAuditViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Journal d'audit (Administrateur) : consultation filtrée (?action=&utilisateur=&objet=&du=&au=) et export
+    Excel. Lecture seule : aucune route ne modifie ni ne supprime un événement.
+    """
+
+    serializer_class = EvenementAuditSerializer
+    permission_classes = (IsAdmin,)
+
+    def get_queryset(self):
+        return filtrer_audit(self.request.query_params)
+
+    @action(detail=False, methods=["get"])
+    @dans_la_langue_demandee
+    def exporter(self, request):
+        from .audit import journal_excel
+
+        evenements = list(self.get_queryset()[:50000])
+        contenu = journal_excel(evenements)
+        auditer(request.user, A.EXPORT, "Journal d'audit", module="comptes", nombre=len(evenements))
+        reponse = HttpResponse(contenu, content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        reponse["Content-Disposition"] = "attachment; filename=journal_audit.xlsx"
+        return reponse

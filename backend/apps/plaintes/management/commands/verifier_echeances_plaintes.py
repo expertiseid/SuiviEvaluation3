@@ -6,7 +6,7 @@ orphelins (pieces.effacer_fichiers_orphelins).
 """
 from django.core.management.base import BaseCommand
 
-from apps.plaintes import delais, pieces
+from apps.plaintes import delais, habilitations, pieces
 
 
 class Command(BaseCommand):
@@ -20,6 +20,9 @@ class Command(BaseCommand):
             delais.recalculer_ouverts()
         signales = delais.verifier_echeances()
         self.stdout.write(self.style.SUCCESS(f"{signales} dossier(s) de plaintes signalé(s)."))
+        actives = habilitations.activer_echues()
+        if actives:
+            self.stdout.write(f"{actives} habilitation(s) confidentielle(s) entrée(s) en vigueur.")
         effaces = pieces.effacer_fichiers_orphelins()
         if effaces:
             self.stdout.write(f"{effaces} fichier(s) de pièces jointes orphelin(s) effacé(s).")
