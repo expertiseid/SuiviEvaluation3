@@ -1,10 +1,14 @@
-import { type MouseEvent, useEffect, useState } from "react";
-import { Check, Pencil, Trash2 } from "lucide-react";
+import { type MouseEvent, useEffect, useMemo, useState } from "react";
+import { Check, Mail, Pencil, Search, Trash2, UserPlus } from "lucide-react";
 import {
   ActionIcon,
+  Avatar,
   Badge,
   Button,
+  Card,
   Group,
+  SimpleGrid,
+  UnstyledButton,
   Modal,
   PasswordInput,
   Select,
@@ -31,12 +35,16 @@ import { confirmerSuppression } from "../../components/common/confirmerSuppressi
 import { messageErreurApi } from "../../utils/erreurs";
 import type { NiveauModule, RoleUtilisateur, TypeStructureUtilisateur, User } from "../../types";
 import { ModifierRoleModal, RolesTab } from "./RolesTab";
+import { useIdentiteOrganisation } from "../../api/identite";
+import { DemandesInscription } from "./DemandesInscription";
 import { DroitsModules } from "./DroitsModules";
 import { usePartiesPrenantes, useStructures, useTousPartenaires } from "../../api/organisation";
 import { optionsStructures } from "../../utils/organisation";
 import { TitreRubrique } from "../../components/common/TitreRubrique";
 import { voc } from "../../utils/vocabulaire";
 import { libelleRole } from "../../utils/roles";
+import { correspond } from "../../utils/recherche";
+import { initiales } from "../../utils/texte";
 
 const PREFIXE_CREATION = "__creer__";
 
@@ -49,6 +57,16 @@ const TYPES_STRUCTURE: { value: TypeStructureUtilisateur; label: string }[] = [
 ];
 
 type StructureUtilisateur = Pick<User, "type_structure" | "structure_interne" | "partenaire" | "partie_prenante">;
+
+const droitsParModule = (u: User) => u.role !== "ADMIN" && Object.keys(u.acces_modules ?? {}).length > 0;
+/** Compteurs du haut de la liste, qui servent aussi de filtre. */
+const FILTRES = {
+  tous: { libelle: voc("Tous les comptes"), couleur: "teal", garde: (_u: User) => true },
+  actifs: { libelle: voc("Actifs"), couleur: "teal", garde: (u: User) => u.is_active },
+  admins: { libelle: voc("Administrateurs"), couleur: "blue", garde: (u: User) => u.role === "ADMIN" },
+  modules: { libelle: voc("Droits par module"), couleur: "orange", garde: droitsParModule },
+  inactifs: { libelle: voc("Désactivés"), couleur: "gray", garde: (u: User) => !u.is_active },
+} as const;
 
 /** Structure de l'utilisateur : son type, puis le service, le partenaire ou la partie prenante concerné. */
 function ChoixStructure({ value, onChange }: { value: StructureUtilisateur; onChange: (v: StructureUtilisateur) => void }) {
@@ -345,6 +363,8 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
 
 export function UtilisateursPage() {
   const { user: utilisateurConnecte } = useAuth();
+  // Plateforme multi-organisations : les demandes d'inscription se suivent dans la console Expertise-ID.
+  const { data: plateforme } = useIdentiteOrganisation();
   const { data: utilisateurs, isLoading } = useUtilisateurs();
   const createUtilisateur = useCreateUtilisateur();
   const deleteUtilisateur = useDeleteUtilisateur();
@@ -374,6 +394,15 @@ export function UtilisateursPage() {
   const [role, setRole] = useState<string | null>("ANIMATEUR_TERRAIN");
   const [niveauAcces, setNiveauAcces] = useState<string | null>("LECTURE_ECRITURE");
   const [password, setPassword] = useState("");
+  const [creationOuverte, setCreationOuverte] = useState(false);
+  const [recherche, setRecherche] = useState("");
+  const [filtre, setFiltre] = useState<"tous" | "actifs" | "admins" | "modules" | "inactifs">("tous");
+  const utilisateursFiltres = useMemo(
+    () => (utilisateurs ?? []).filter((u) => FILTRES[filtre].garde(u)
+      && [u.username, u.first_name, u.last_name, u.email, u.role_libelle ?? ""].some((t) => correspond(t ?? "", recherche))),
+    [utilisateurs, filtre, recherche],
+
+  );
 
   const estAdmin = role === "ADMIN";
 
@@ -397,6 +426,7 @@ export function UtilisateursPage() {
       setNom("");
       setEmail("");
       setPassword("");
+      setCreationOuverte(false);
       notifications.show({ message: voc("Utilisateur créé"), color: "green" });
     } catch {
       notifications.show({ message: voc("Erreur lors de la création (identifiant déjà utilisé ?)"), color: "red" });
@@ -405,79 +435,111 @@ export function UtilisateursPage() {
 
   return (
     <Stack gap="md">
-      <div>
-        <TitreRubrique route="/utilisateurs" defaut={voc("Utilisateurs")} />
-        <Text c="dimmed" size="sm">
-          {voc("Un Administrateur a toujours accès à tout. Pour les autres, choisis le rôle (détermine les projets visibles) et le niveau d'accès (voir seulement, ou créer et modifier dans son périmètre).")}</Text>
-      </div>
+      <Group justify="space-between" align="flex-start">
+        <div>
+          <TitreRubrique route="/utilisateurs" defaut={voc("Utilisateurs")} />
+          <Text c="dimmed" size="sm" maw={820}>
+            {voc("Un Administrateur a toujours accès à tout. Pour les autres, choisissez le rôle (les projets visibles) et le niveau d'accès (consulter seulement, ou créer et modifier dans son périmètre).")}</Text>
+        </div>
+        <Button leftSection={<UserPlus size={16} />} onClick={() => setCreationOuverte(true)}>{voc("Nouvel utilisateur")}</Button>
+      </Group>
 
       <Tabs defaultValue="utilisateurs" keepMounted={false}>
         <Tabs.List>
           <Tabs.Tab value="utilisateurs">{voc("Utilisateurs")}</Tabs.Tab>
           <Tabs.Tab value="roles">{voc("Rôles")}</Tabs.Tab>
+          {!plateforme?.multi_organisations && <Tabs.Tab value="inscriptions">{voc("Demandes d'inscription")}</Tabs.Tab>}
         </Tabs.List>
 
         <Tabs.Panel value="roles" pt="md">
           <RolesTab />
         </Tabs.Panel>
 
+        <Tabs.Panel value="inscriptions" pt="md">
+          <DemandesInscription />
+        </Tabs.Panel>
+
         <Tabs.Panel value="utilisateurs" pt="md">
           <Stack gap="md">
-            <Stack gap="xs">
-              <Group align="flex-end">
-                <TextInput label={voc("Identifiant")} value={username} onChange={(e) => setUsername(e.currentTarget.value)} />
-                <TextInput label={voc("Prénom")} value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} />
-                <TextInput label={voc("Nom")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
-                <TextInput label={voc("Email")} value={email} onChange={(e) => setEmail(e.currentTarget.value)} />
-              </Group>
-              <Group align="flex-end">
-                <RoleSelect value={role} onChange={setRole} />
-                <Select
-                  label={voc("Niveau d'accès")}
-                  data={NIVEAUX_ACCES}
-                  value={estAdmin ? "LECTURE_ECRITURE" : niveauAcces}
-                  onChange={setNiveauAcces}
-                  disabled={estAdmin}
-                  description={estAdmin ? voc("Toujours complet pour un Administrateur") : undefined}
-                />
-                <PasswordInput label={voc("Mot de passe")} value={password} onChange={(e) => setPassword(e.currentTarget.value)} />
-                <Button onClick={handleCreate} loading={createUtilisateur.isPending}>{voc("Créer")}</Button>
-              </Group>
-            </Stack>
+            <SimpleGrid cols={{ base: 2, sm: 5 }} spacing="sm">
+              {(Object.keys(FILTRES) as (keyof typeof FILTRES)[]).map((cle) => {
+                const actif = filtre === cle;
+                const { libelle, couleur, garde } = FILTRES[cle];
+                return (
+                  <UnstyledButton key={cle} onClick={() => setFiltre(cle)} aria-pressed={actif}>
+                    <Card withBorder radius="md" padding="sm" bg={actif ? `${couleur}.0` : undefined}
+                      style={{ borderColor: actif ? `var(--mantine-color-${couleur}-5)` : undefined }}>
+                      <Text size="xs" c="dimmed" tt="uppercase" fw={600}>{libelle}</Text>
+                      <Text fw={700} fz={26} c={`${couleur}.8`}>{(utilisateurs ?? []).filter(garde).length}</Text>
+                    </Card>
+                  </UnstyledButton>
+                );
+              })}
+            </SimpleGrid>
+            <TextInput placeholder={voc("Rechercher un utilisateur (nom, identifiant, email, rôle)…")} leftSection={<Search size={15} />}
+              value={recherche} onChange={(e) => setRecherche(e.currentTarget.value)} w={420} maw="100%" />
 
             {isLoading ? (
               <div>{voc("Chargement…")}</div>
             ) : (
-              <Table striped highlightOnHover>
+              <Card withBorder radius="md" padding="md">
+              <Table.ScrollContainer minWidth={900}>
+              <Table highlightOnHover verticalSpacing="sm">
                 <Table.Thead>
                   <Table.Tr>
-                    <Table.Th>{voc("Identifiant")}</Table.Th>
-                    <Table.Th>{voc("Nom")}</Table.Th>
-                    <Table.Th>{voc("Email")}</Table.Th>
-                    <Table.Th>{voc("Rôle")}</Table.Th>
-                    <Table.Th>{voc("Structure")}</Table.Th>
-                    <Table.Th>{voc("Accès")}</Table.Th>
-                    <Table.Th>{voc("Actif")}</Table.Th>
-                    <Table.Th w={40} />
+                    <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Utilisateur")}</Table.Th>
+                    <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Email")}</Table.Th>
+                    <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Rôle")}</Table.Th>
+                    <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Structure")}</Table.Th>
+                    <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Accès")}</Table.Th>
+                    <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("État")}</Table.Th>
+                    <Table.Th w={70} />
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
-                  {utilisateurs?.map((u) => (
-                    <Table.Tr key={u.id}>
-                      <Table.Td>{u.username}</Table.Td>
-                      <Table.Td>{u.first_name} {u.last_name}</Table.Td>
-                      <Table.Td>{u.email}</Table.Td>
-                      <Table.Td><Badge variant="light">{u.role_libelle ? libelleRole(u.role_libelle) : u.role}</Badge></Table.Td>
-                      <Table.Td><Text size="sm">{u.structure_libelle || "—"}</Text></Table.Td>
+                  {utilisateursFiltres.length === 0 && (
+                    <Table.Tr><Table.Td colSpan={7}><Text size="sm" c="dimmed" ta="center" py="md">{voc("Aucun utilisateur ne correspond.")}</Text></Table.Td></Table.Tr>
+                  )}
+                  {utilisateursFiltres.map((u) => {
+                    const nomComplet = `${u.first_name} ${u.last_name}`.trim();
+                    return (
+                    <Table.Tr key={u.id} opacity={u.is_active ? 1 : 0.6}>
                       <Table.Td>
-                        <Badge variant="light" color={u.role === "ADMIN" || u.niveau_acces === "LECTURE_ECRITURE" ? "teal" : "gray"}>
-                          {u.role === "ADMIN" ? voc("Complet") : LIBELLES_NIVEAU_ACCES[u.niveau_acces] ?? u.niveau_acces}
-                        </Badge>
-                        {u.role !== "ADMIN" && Object.keys(u.acces_modules ?? {}).length > 0 && (
-                          <Badge variant="light" color="orange" ml={4}>{voc("Droits par module")}</Badge>
-                        )}
+                        <Group gap="sm" wrap="nowrap">
+                          <Avatar size={34} radius="xl" variant="light" color={u.role === "ADMIN" ? "blue" : "teal"}>{initiales(nomComplet || u.username)}</Avatar>
+                          <div>
+                            <Text size="sm" fw={600} style={{ whiteSpace: "nowrap" }}>{nomComplet || u.username}</Text>
+                            <Text size="xs" c="dimmed" ff="monospace">{u.username}{u.id === utilisateurConnecte?.id ? ` · ${voc("vous")}` : ""}</Text>
+                          </div>
+                        </Group>
                       </Table.Td>
-                      <Table.Td>{u.is_active ? voc("Oui") : voc("Non")}</Table.Td>
+                      <Table.Td>
+                        {u.email ? (
+                          <Group gap={6} wrap="nowrap">
+                            <Mail size={13} color="var(--mantine-color-gray-6)" />
+                            <Text size="sm" style={{ whiteSpace: "nowrap" }}>{u.email}</Text>
+                          </Group>
+                        ) : <Text size="sm" c="orange.8">{voc("Aucune adresse : connexion impossible")}</Text>}
+                      </Table.Td>
+                      <Table.Td>
+                        <Badge variant="light" color={u.role === "ADMIN" ? "blue" : "teal"} tt="none" fw={600}>
+                          {u.role_libelle ? libelleRole(u.role_libelle) : u.role}
+                        </Badge>
+                      </Table.Td>
+                      <Table.Td><Text size="sm" c={u.structure_libelle ? undefined : "dimmed"}>{u.structure_libelle || "—"}</Text></Table.Td>
+                      <Table.Td>
+                        <Group gap={4} wrap="nowrap">
+                          <Badge variant="dot" color={u.role === "ADMIN" || u.niveau_acces === "LECTURE_ECRITURE" ? "teal" : "gray"} tt="none" fw={500}>
+                            {u.role === "ADMIN" ? voc("Complet") : LIBELLES_NIVEAU_ACCES[u.niveau_acces] ?? u.niveau_acces}
+                          </Badge>
+                          {droitsParModule(u) && (
+                            <Badge variant="light" color="orange" tt="none" fw={500}>{voc("Droits par module")}</Badge>
+                          )}
+                        </Group>
+                      </Table.Td>
+                      <Table.Td>
+                        <Badge variant="light" color={u.is_active ? "green" : "gray"} tt="none" fw={500}>{u.is_active ? voc("Actif") : voc("Désactivé")}</Badge>
+                      </Table.Td>
                       <Table.Td>
                         <Group gap={4} wrap="nowrap">
                           <Tooltip label={voc("Modifier")}>
@@ -500,13 +562,44 @@ export function UtilisateursPage() {
                         </Group>
                       </Table.Td>
                     </Table.Tr>
-                  ))}
+                    );
+                  })}
                 </Table.Tbody>
               </Table>
+              </Table.ScrollContainer>
+              </Card>
             )}
           </Stack>
         </Tabs.Panel>
       </Tabs>
+
+      <Modal opened={creationOuverte} onClose={() => setCreationOuverte(false)} title={voc("Nouvel utilisateur")} size="lg">
+        <Stack gap="sm">
+          <TextInput label={voc("Identifiant")} required value={username} onChange={(e) => setUsername(e.currentTarget.value)} data-autofocus />
+          <Group grow align="flex-start">
+            <TextInput label={voc("Prénom")} value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} />
+            <TextInput label={voc("Nom")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
+          </Group>
+          <TextInput label={voc("Email")} description={voc("Le code de connexion est envoyé à cette adresse.")} value={email}
+            onChange={(e) => setEmail(e.currentTarget.value)} />
+          <Group grow align="flex-start">
+            <RoleSelect value={role} onChange={setRole} />
+            <Select
+              label={voc("Niveau d'accès")}
+              data={NIVEAUX_ACCES}
+              value={estAdmin ? "LECTURE_ECRITURE" : niveauAcces}
+              onChange={setNiveauAcces}
+              disabled={estAdmin}
+              description={estAdmin ? voc("Toujours complet pour un Administrateur") : undefined}
+            />
+          </Group>
+          <PasswordInput label={voc("Mot de passe")} required value={password} onChange={(e) => setPassword(e.currentTarget.value)} />
+          <Group justify="flex-end" mt="xs">
+            <Button variant="default" onClick={() => setCreationOuverte(false)}>{voc("Annuler")}</Button>
+            <Button leftSection={<UserPlus size={16} />} onClick={handleCreate} loading={createUtilisateur.isPending}>{voc("Créer")}</Button>
+          </Group>
+        </Stack>
+      </Modal>
 
       <ModifierUtilisateurModal utilisateur={utilisateurEnEdition} onClose={() => setUtilisateurEnEdition(null)} />
     </Stack>

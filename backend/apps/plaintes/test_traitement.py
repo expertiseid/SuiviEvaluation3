@@ -212,3 +212,13 @@ def test_correction_du_plaignant_tracee(actif, admin, gestionnaire):
     anonyme = _dossier(anonyme=True, telephone="", mode_reponse="AUCUN")
     r = _agir(admin, anonyme, "plaignant", {"nom": "Quelqu'un", "consentement": False})
     assert r.status_code == 200 and r.data["nom"] == "" and r.data["consentement"] is False
+
+
+@pytest.mark.django_db
+def test_compteurs_des_vues(actif, admin):
+    """Colonne des vues : un nombre par vue prête, calculé sur les seuls dossiers visibles."""
+    reponse = APIClient()
+    reponse.force_authenticate(admin)
+    compteurs = reponse.get(URL + "dossiers/compteurs/").data
+    assert set(compteurs) >= {"tous", "mes_dossiers", "urgents", "en_retard", "confidentiels", "a_anonymiser"}
+    assert compteurs["tous"] == Dossier.objects.count()

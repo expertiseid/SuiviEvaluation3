@@ -4,6 +4,7 @@ import { CircleCheck, Copy, MessagesSquare, Search } from "lucide-react";
 import { Alert, Anchor, Box, Button, Card, Checkbox, Container, CopyButton, Group, Loader, Stack, Text, TextInput, Title } from "@mantine/core";
 import { type RecuDossier, type SaisieRetour, useDeposerRetour, useFormulairePublic } from "../../../api/plaintes";
 import { ChoixLangue } from "../../../components/common/ChoixLangue";
+import { PiedDePage } from "../../../components/common/Logos";
 import { messageErreurApi } from "../../../utils/erreurs";
 import { langue } from "../../../utils/i18n";
 import { voc } from "../../../utils/vocabulaire";
@@ -27,6 +28,7 @@ export function CadrePublic({ titre, children }: { titre: string; children: Reac
             </div>
           </Group>
           {children}
+          <PiedDePage />
         </Stack>
       </Container>
     </Box>

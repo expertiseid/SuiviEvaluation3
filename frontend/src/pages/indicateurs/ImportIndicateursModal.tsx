@@ -39,7 +39,7 @@ export function ImportIndicateursModal({ opened, onClose }: { opened: boolean; o
     <Modal opened={opened} onClose={fermer} title={voc("Importer des indicateurs depuis Excel")} size="lg">
       <Stack gap="md">
         <Alert color="blue" variant="light">
-          {voc("Une ligne = un indicateur. Le rattachement (Projet, ou nom d'un niveau de la planification : Objectif, Résultat, Pilier, Activité…) se fait par le code exact du projet et le libellé exact de l'élément — laisse « Aucun » pour un indicateur stratégique sans projet.")}</Alert>
+          {voc("Une ligne = un indicateur. Le rattachement (Projet, ou nom d'un niveau de la planification : Objectif, Résultat, Composante, Activité…) se fait par le code exact du projet et le libellé exact de l'élément — laisse « Aucun » pour un indicateur stratégique sans projet.")}</Alert>
 
         <Button
           variant="light"

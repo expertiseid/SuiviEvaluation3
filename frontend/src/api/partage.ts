@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "./client";
+import { apiClient, avecOrganisation } from "./client";
 import type { Paginated } from "../types";
 
 export interface LienPartage {
@@ -46,4 +46,4 @@ export function useSupprimerLienPartage() {
 }
 
 /** Adresse publique d'un lien (à copier et envoyer). */
-export const adresseLien = (jeton: string) => `${window.location.origin}/partage/${jeton}`;
+export const adresseLien = (jeton: string) => avecOrganisation(`${window.location.origin}/partage/${jeton}`);

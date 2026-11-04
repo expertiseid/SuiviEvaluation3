@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Download, IdCard, ListChecks, Map as MapIcon, Pencil, Trash2, Upload } from "lucide-react";
-import { Accordion, ActionIcon, Badge, Button, Group, Modal, Pagination, Stack, Table, Text, TextInput, Tooltip } from "@mantine/core";
+import { Download, IdCard, ListChecks, Map as MapIcon, MapPin, Pencil, Phone, Search, Trash2, Upload } from "lucide-react";
+import { Accordion, ActionIcon, Avatar, Badge, Button, Group, Modal, Pagination, Stack, Table, Text, TextInput, Tooltip } from "@mantine/core";
+import { initiales } from "../../utils/texte";
 import { useDebouncedValue } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import { telechargerCartesBeneficiaires, useBeneficiaires, useDeleteBeneficiaire } from "../../api/beneficiaries";
@@ -20,6 +21,10 @@ import { voc } from "../../utils/vocabulaire";
 
 const TAILLE_PAGE = 25;
 const CLE_SANS_PROJET = "sans-projet";
+const SEXES: Record<string, { libelle: string; couleur: string }> = {
+  F: { libelle: voc("Femme"), couleur: "grape" },
+  M: { libelle: voc("Homme"), couleur: "blue" },
+};
 
 interface ActionsLigne {
   statuts: StatutParticulier[] | undefined;
@@ -69,10 +74,15 @@ function GroupeBeneficiaires({
   }
 
   return (
-    <Accordion.Item value={valeur}>
+    <Accordion.Item value={valeur} bg="white">
       <Accordion.Control>
-        <Group gap="sm" wrap="nowrap">
-          <Text fw={600} size="sm">{titre}</Text>
+        <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
+          {titre.includes(" — ") ? (
+            <>
+              <Badge size="sm" variant="outline" color="gray" radius="sm" style={{ flexShrink: 0 }}>{titre.split(" — ")[0]}</Badge>
+              <Text fw={600} size="sm" truncate>{titre.split(" — ").slice(1).join(" — ")}</Text>
+            </>
+          ) : <Text fw={600} size="sm">{titre}</Text>}
           {data && (
             <Badge variant="light" color={projetId ? "teal" : "gray"} size="sm">
               {data.count > 1 ? voc`${data.count} bénéficiaires` : voc`${data.count} bénéficiaire`}
@@ -106,19 +116,17 @@ function GroupeBeneficiaires({
         ) : data?.count === 0 ? (
           <Text size="sm" c="dimmed">{voc("Aucun bénéficiaire associé à ce projet pour l'instant.")}</Text>
         ) : (
-          <Table.ScrollContainer minWidth={760}>
-          <Table striped highlightOnHover>
+          <Table.ScrollContainer minWidth={860}>
+          <Table highlightOnHover verticalSpacing="xs">
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>{voc("Identifiant")}</Table.Th>
-                <Table.Th>{voc("Nom")}</Table.Th>
-                <Table.Th>{voc("Sexe")}</Table.Th>
-                <Table.Th>{voc("Tranche d'âge")}</Table.Th>
-                <Table.Th>{voc("Téléphone")}</Table.Th>
-                <Table.Th>{voc("Zone")}</Table.Th>
-                <Table.Th>{voc("Statut particulier")}</Table.Th>
-                {projetId && <Table.Th>{voc("Autres projets")}</Table.Th>}
-                <Table.Th w={40} />
+                <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Bénéficiaire")}</Table.Th>
+                <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Sexe et âge")}</Table.Th>
+                <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Téléphone")}</Table.Th>
+                <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Zone")}</Table.Th>
+                <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Statut particulier")}</Table.Th>
+                {projetId && <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Autres projets")}</Table.Th>}
+                <Table.Th w={70} />
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -129,29 +137,54 @@ function GroupeBeneficiaires({
                 return (
                   <Table.Tr key={b.id}>
                     <Table.Td>
-                      <Text size="xs" ff="monospace" c="dimmed" style={{ whiteSpace: "nowrap" }}>{b.identifiant}</Text>
+                      <Group gap="sm" wrap="nowrap">
+                        <Avatar size={34} radius="xl" variant="light" color={SEXES[b.sexe]?.couleur ?? "gray"}>{initiales(`${b.nom} ${b.prenom}`)}</Avatar>
+                        <div style={{ minWidth: 0 }}>
+                          <Text component={Link} to={`/beneficiaires/${b.id}`} size="sm" fw={600} c="dark.7" style={{ whiteSpace: "nowrap" }}>
+                            {b.nom} {b.prenom}
+                          </Text>
+                          <Text size="xs" ff="monospace" c="dimmed">{b.identifiant}</Text>
+                        </div>
+                      </Group>
                     </Table.Td>
                     <Table.Td>
-                      <Text component={Link} to={`/beneficiaires/${b.id}`} size="sm" fw={500} c="teal.8">
-                        {b.nom} {b.prenom}
-                      </Text>
+                      <Text size="sm" style={{ whiteSpace: "nowrap" }}>{SEXES[b.sexe]?.libelle ?? (b.sexe || "—")}</Text>
+                      <Text size="xs" c="dimmed" style={{ whiteSpace: "nowrap" }}>{b.tranche_age ?? "—"}</Text>
                     </Table.Td>
-                    <Table.Td>{b.sexe}</Table.Td>
-                    <Table.Td>{b.tranche_age ?? "—"}</Table.Td>
-                    <Table.Td>{b.telephone}</Table.Td>
-                    <Table.Td>{b.zone_nom ?? "—"}</Table.Td>
+                    <Table.Td>
+                      {b.telephone ? (
+                        <Group gap={6} wrap="nowrap">
+                          <Phone size={13} color="var(--mantine-color-gray-6)" />
+                          <Text size="sm" style={{ whiteSpace: "nowrap" }}>{b.telephone}</Text>
+                        </Group>
+                      ) : <Text size="sm" c="dimmed">—</Text>}
+                    </Table.Td>
+                    <Table.Td>
+                      {b.zone_nom ? (
+                        <Group gap={6} wrap="nowrap">
+                          <MapPin size={13} color="var(--mantine-color-teal-6)" />
+                          <Text size="sm" style={{ whiteSpace: "nowrap" }}>{b.zone_nom}</Text>
+                        </Group>
+                      ) : <Text size="sm" c="dimmed">—</Text>}
+                    </Table.Td>
                     <Table.Td>
                       {libellesStatuts(b).length > 0 ? (
                         <Group gap={4} wrap="wrap">
                           {libellesStatuts(b).map((l) => (
-                            <Badge key={l} variant="light" color="grape" size="sm">{l}</Badge>
+                            <Badge key={l} variant="light" color="grape" size="sm" tt="none" fw={500}>{l}</Badge>
                           ))}
                         </Group>
-                      ) : (
-                        "—"
-                      )}
+                      ) : <Text size="sm" c="dimmed">—</Text>}
                     </Table.Td>
-                    {projetId && <Table.Td>{autresProjets.join(", ") || "—"}</Table.Td>}
+                    {projetId && (
+                      <Table.Td>
+                        {autresProjets.length ? (
+                          <Group gap={4} wrap="wrap">
+                            {autresProjets.map((code) => <Badge key={code} size="xs" variant="outline" color="gray" radius="sm">{code}</Badge>)}
+                          </Group>
+                        ) : <Text size="sm" c="dimmed">—</Text>}
+                      </Table.Td>
+                    )}
                     <Table.Td>
                       <Group gap={4} wrap="nowrap">
                         <Tooltip label={voc("Modifier")}>
@@ -205,8 +238,9 @@ export function BeneficiairesListPage() {
 
   const projetsTries = [...(projets ?? [])].sort((a, b) => a.code.localeCompare(b.code));
   const toutesLesCles = [...projetsTries.map((p) => String(p.id)), CLE_SANS_PROJET];
-  // Groupes tous dépliés par défaut : on mémorise ceux que l'utilisateur replie.
-  const [replies, setReplies] = useState<string[]>([]);
+  // Premier groupe ouvert par défaut (tous pendant une recherche) ; ensuite, le choix de l'utilisateur.
+  const [ouverts, setOuverts] = useState<string[] | null>(null);
+  const valeurOuverte = ouverts ?? (searchDebounce ? toutesLesCles : toutesLesCles.slice(0, 1));
 
   function handleSupprimer(b: Beneficiaire) {
     confirmerSuppression({
@@ -260,18 +294,28 @@ export function BeneficiairesListPage() {
       <Group justify="space-between" align="flex-end">
         <TextInput
           placeholder={voc("Rechercher par nom, téléphone, pièce d'identité…")}
+          leftSection={<Search size={15} />}
           value={search}
-          onChange={(e) => setSearch(e.currentTarget.value)}
+          onChange={(e) => {
+            setSearch(e.currentTarget.value);
+            setOuverts(null);
+          }}
           w={400}
+          maw="100%"
         />
-        {total && <Text size="sm" c="dimmed">{total.count > 1 ? voc`${total.count} bénéficiaires au total` : voc`${total.count} bénéficiaire au total`}</Text>}
+        <Group gap="xs">
+          {total && <Text size="sm" c="dimmed">{total.count > 1 ? voc`${total.count} bénéficiaires au total` : voc`${total.count} bénéficiaire au total`}</Text>}
+          <Button size="xs" variant="subtle" color="gray" onClick={() => setOuverts(toutesLesCles)}>{voc("Tout déplier")}</Button>
+          <Button size="xs" variant="subtle" color="gray" onClick={() => setOuverts([])}>{voc("Tout replier")}</Button>
+        </Group>
       </Group>
 
       <Accordion
         multiple
         variant="separated"
-        value={toutesLesCles.filter((c) => !replies.includes(c))}
-        onChange={(ouverts) => setReplies(toutesLesCles.filter((c) => !ouverts.includes(c)))}
+        radius="md"
+        value={valeurOuverte}
+        onChange={setOuverts}
       >
         {projetsTries.map((p) => (
           <GroupeBeneficiaires

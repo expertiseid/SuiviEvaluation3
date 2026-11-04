@@ -1,0 +1,13 @@
+from django.apps import AppConfig
+
+
+class OrganisationsConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.organisations"
+    label = "organisations"
+    verbose_name = "Organisations (plateforme multi-organisations)"
+
+    def ready(self):
+        from . import comptes
+
+        comptes.brancher()

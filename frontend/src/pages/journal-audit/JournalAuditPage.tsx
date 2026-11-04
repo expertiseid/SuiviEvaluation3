@@ -19,7 +19,7 @@ import { voc } from "../../utils/vocabulaire";
 const PAR_PAGE = 25;
 const COULEUR: Partial<Record<ActionAudit, string>> = {
   CONNEXION_ECHOUEE: "red", CONSULTATION_SENSIBLE: "grape", HABILITATION: "grape", PERMISSION: "orange",
-  CONFIGURATION: "blue", EXPORT: "cyan", TELECHARGEMENT: "cyan", DROITS_PERSONNES: "teal",
+  CONFIGURATION: "blue", EXPORT: "cyan", TELECHARGEMENT: "cyan", DROITS_PERSONNES: "teal", DOUBLE_AUTHENTIFICATION: "indigo",
 };
 
 const libelleOperation = (o: string): string =>
@@ -42,6 +42,8 @@ const libelleOperation = (o: string): string =>
     habilitation_d_office: voc("habilitation d'office"),
     enregistrement: voc("enregistrement"),
     traitement: voc("traitement"),
+    sans_adresse: voc("aucune adresse courriel valide"),
+    envoi_impossible: voc("code non envoyé (serveur de courriel)"),
   })[o] ?? o;
 
 /** Détails lisibles, sans jargon : opération, champs modifiés, type d'action sur un dossier… */
@@ -52,6 +54,8 @@ function Details({ e }: { e: EvenementAudit }) {
   if (Array.isArray(d.champs)) morceaux.push(voc`champs : ${(d.champs as string[]).join(", ")}`);
   if (d.type && e.action !== "DROITS_PERSONNES") morceaux.push(String(d.type));
   if (d.identifiant && e.action === "CONNEXION_ECHOUEE") morceaux.push(voc`identifiant tenté : ${String(d.identifiant)}`);
+  if (d.etape === "second_facteur") morceaux.push(voc("code du second facteur refusé"));
+  if (d.second_facteur) morceaux.push(voc("avec second facteur"));
   if (d.sensible) morceaux.push(voc("confidentiel"));
   if (d.nombre !== undefined) morceaux.push(voc`${Number(d.nombre)} ligne(s)`);
   for (const champ of ["role", "niveau_acces", "is_active", "acces_modules"]) {

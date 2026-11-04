@@ -460,7 +460,7 @@ CADRES = {
     "C": {
         "nom": "Programme national eau potable, hygiène et assainissement 2026-2030",
         "description": "Programme national d'accès universel à l'eau potable et à l'assainissement et de gestion des ressources en eau.",
-        "niveaux": [("Pilier", "Ex : PIL1"), ("Objectif", "Ex : OBJ1.1"), ("Résultat attendu", "Ex : RA1.1.1")],
+        "niveaux": [("Composante", "Ex : COMP1"), ("Objectif", "Ex : OBJ1.1"), ("Résultat attendu", "Ex : RA1.1.1")],
         "codes": ("{axe}", "OBJ{a}.{o}", "RA{a}.{o}.{r}"),
     },
     "D": {

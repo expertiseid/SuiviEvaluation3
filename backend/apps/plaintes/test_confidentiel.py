@@ -5,7 +5,6 @@ import datetime
 import pytest
 from django.db import connection
 from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.accounts.constants import NIVEAU_ACCES_LECTURE_ECRITURE, ROLE_ADMIN, ROLE_CHARGE_SE, ROLE_CHEF_PROJET
 from apps.accounts.models import User
@@ -114,7 +113,9 @@ def test_marquage_manuel_et_levee_motivee(actif, admin, point_focal):
                                        acces_modules={"/plaintes": "LECTURE"})
     d = _dossier()
     c = APIClient()  # vrai jeton : le contrôle des modules passe avant l'authentification DRF
-    c.credentials(HTTP_AUTHORIZATION=f"Bearer {RefreshToken.for_user(lecteur).access_token}")
+    from apps.accounts.double_auth import jetons
+
+    c.credentials(HTTP_AUTHORIZATION=f"Bearer {jetons(lecteur)['access']}")  # jeton réel, code par courriel franchi
     assert c.post(f"/api/v1/plaintes-signaler/{d.id}/", {"motif": "Intimidation"}, format="json").data == {
         "numero": d.numero, "visible": False}
     d.refresh_from_db()

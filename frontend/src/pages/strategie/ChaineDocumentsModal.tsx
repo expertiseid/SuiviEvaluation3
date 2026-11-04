@@ -143,7 +143,7 @@ function Maillons() {
         </Table.Tbody>
       </Table>
       <Group gap="xs">
-        <TextInput placeholder={voc("Ex : Pilier 3")} value={nouveau} onChange={(e) => setNouveau(e.currentTarget.value)} onKeyDown={(e) => e.key === "Enter" && ajouter()} />
+        <TextInput placeholder={voc("Ex : Programme")} value={nouveau} onChange={(e) => setNouveau(e.currentTarget.value)} onKeyDown={(e) => e.key === "Enter" && ajouter()} />
         <Button leftSection={<Plus size={14} />} variant="light" onClick={ajouter} loading={enregistrer.isPending}>
           {voc("Ajouter un maillon en bas")}
         </Button>

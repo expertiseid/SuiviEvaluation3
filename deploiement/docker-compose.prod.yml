@@ -1,0 +1,79 @@
+# Plateforme en production (multi-organisations), sur un seul serveur.
+#
+#   cd deploiement && docker compose -f docker-compose.prod.yml up -d --build
+#
+# - web : Nginx sert le site vitrine (site-vitrine/, adresse principale) et l'interface déjà
+#   assemblée (frontend/dist, « vite build »), et relaie /api et /admin vers le serveur
+#   d'application ; un serveur web en amont (Caddy) gère le HTTPS.
+# - backend : Django sous Gunicorn ; scheduler : tâches planifiées de chaque espace, chaque heure.
+# - Réglages et secrets dans .env.prod (jamais versionné), voir .env.prod.example.
+name: suivi-evaluation-plateforme
+
+x-application: &application
+  build:
+    context: ../backend
+    args:
+      EXIGENCES: prod
+  image: suivi-evaluation-plateforme-backend
+  restart: unless-stopped
+  env_file: .env.prod
+  environment:
+    DJANGO_SETTINGS_MODULE: config.settings.prod
+  volumes:
+    - media:/app/media
+    - prive:/app/prive
+    - static:/app/staticfiles
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_started
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    env_file: .env.prod
+    command: postgres -c shared_buffers=256MB -c max_connections=200
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru --save ""
+
+  backend:
+    <<: *application
+    command: sh /app/demarrer_production.sh
+
+  scheduler:
+    <<: *application
+    command: sh -c "sleep 60; while true; do python manage.py pour_chaque_organisation check_deadlines; sleep 3600; done"
+
+  web:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    environment:
+      DOMAINE_PLATEFORME: ${DOMAINE_PLATEFORME:?DOMAINE_PLATEFORME manquant dans .env.prod}
+    volumes:
+      - ../frontend/dist:/usr/share/nginx/html:ro
+      - ../site-vitrine:/usr/share/nginx/site:ro
+      - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./commun.inc:/etc/nginx/conf.d/commun.inc:ro
+      - static:/static:ro
+    depends_on:
+      - backend
+    ports:
+      - "${PORT_WEB:-127.0.0.1:8097}:80"
+
+volumes:
+  pgdata:
+  media:
+  prive:
+  static:

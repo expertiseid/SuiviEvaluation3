@@ -33,11 +33,27 @@ class PieceJustificativeSerializer(serializers.ModelSerializer):
 
 class DossierSerializer(serializers.ModelSerializer):
     cree_par_nom = serializers.StringRelatedField(source="cree_par", read_only=True)
+    nombre_documents = serializers.IntegerField(read_only=True, default=0)
+    nombre_sous_dossiers = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
         model = Dossier
-        fields = ("id", "nom", "projet", "parent", "cree_par", "cree_par_nom")
+        fields = ("id", "nom", "projet", "parent", "cree_par", "cree_par_nom", "nombre_documents", "nombre_sous_dossiers")
         read_only_fields = ("cree_par",)
+
+    def validate(self, attrs):
+        """Un sous-dossier appartient au même projet que son parent ; un dossier ne se range pas en lui-même."""
+        parent = attrs.get("parent", getattr(self.instance, "parent", None))
+        projet = attrs.get("projet", getattr(self.instance, "projet", None))
+        if parent is not None:
+            if parent.projet_id != (projet.pk if projet else None):
+                raise serializers.ValidationError({"parent": "Le dossier parent appartient à un autre projet."})
+            courant = parent
+            while courant is not None:
+                if self.instance and courant.pk == self.instance.pk:
+                    raise serializers.ValidationError({"parent": "Un dossier ne peut pas être rangé dans lui-même."})
+                courant = courant.parent
+        return attrs
 
     def create(self, validated_data):
         validated_data["cree_par"] = self.context["request"].user
@@ -46,6 +62,16 @@ class DossierSerializer(serializers.ModelSerializer):
 
 class DocumentVersionSerializer(serializers.ModelSerializer):
     uploaded_by_nom = serializers.StringRelatedField(source="uploaded_by", read_only=True)
+
+    def to_representation(self, instance):
+        """« fichier » : adresse signée valable une heure (liens.py), jamais l'adresse /media/ publique."""
+        donnees = super().to_representation(instance)
+        requete = self.context.get("request")
+        if requete is not None and instance.fichier:
+            from .liens import adresse
+
+            donnees["fichier"] = adresse(requete, instance)
+        return donnees
 
     class Meta:
         model = DocumentVersion
@@ -80,3 +106,11 @@ class DocumentSerializer(serializers.ModelSerializer):
             "created_at",
         )
         read_only_fields = ("cree_par", "created_at")
+
+    def validate(self, attrs):
+        """Un document ne se range que dans un dossier du même projet (ou de la bibliothèque libre)."""
+        dossier = attrs.get("dossier", getattr(self.instance, "dossier", None))
+        projet = attrs.get("projet", getattr(self.instance, "projet", None))
+        if dossier is not None and dossier.projet_id != (projet.pk if projet else None):
+            raise serializers.ValidationError({"dossier": "Ce dossier appartient à un autre projet."})
+        return attrs

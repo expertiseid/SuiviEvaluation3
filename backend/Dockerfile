@@ -10,8 +10,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcairo2 shared-mime-info \
     && rm -rf /var/lib/apt/lists/*
 
+# EXIGENCES=prod pour la production (gunicorn, redis), dev par défaut (outils de test).
+ARG EXIGENCES=dev
 COPY requirements/ requirements/
-RUN pip install --no-cache-dir -r requirements/dev.txt
+RUN pip install --no-cache-dir -r requirements/${EXIGENCES}.txt
 
 COPY . .
 

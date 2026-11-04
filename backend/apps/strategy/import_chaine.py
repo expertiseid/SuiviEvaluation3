@@ -2,7 +2,7 @@
 Chaîne des documents stratégiques en un seul fichier Excel (modèle, export, import) :
 
 - « Maillons » : les rubriques de la chaîne, de haut en bas (Cadre stratégique, Programme,
-  Pilier 1…), chacune devenant une rubrique du menu ;
+  …), chacune devenant une rubrique du menu ;
 - « Documents » : un document par ligne, son maillon et son rattachement (document parent et,
   facultativement, code de l'élément du parent) ;
 - « Éléments » : la structuration de chaque document (niveau, code, nom, code du parent dans le
@@ -30,21 +30,17 @@ COLONNES_ELEMENTS = ["Document", "Niveau", "Code", "Nom", "Code parent", "Contri
 COLONNE_CONTRIBUTION = "Contribue à (code)"
 
 EXEMPLE_MAILLONS = [
-    ["Cadre stratégique", "Cadres stratégiques"], ["Programme", "Programmes"],
-    ["Pilier 1", "Piliers 1"], ["Pilier 2", "Piliers 2"], ["Pilier 3", "Piliers 3"],
+    ["Stratégie", "Stratégies"], ["Programme", "Programmes"],
 ]
 EXEMPLE_DOCUMENTS = [
-    ["Plan national de développement", "Cadre stratégique", "", "", "", "PND", "En cours", "2026-01-01", "2030-12-31", "", "", ""],
+    ["Plan national de développement", "Stratégie", "", "", "", "PND", "En cours", "2026-01-01", "2030-12-31", "", "", ""],
     ["Programme capital humain", "Programme", "Plan national de développement", "AXE1", "", "PCH", "En cours",
      "2026-01-01", "2030-12-31", 50000000000, 5000000000, "Direction de la planification"],
-    ["Pilier Éducation", "Pilier 1", "Programme capital humain", "", "", "PE", "En préparation",
-     "2026-07-01", "2029-12-31", 12000000000, 1000000000, ""],
 ]
 EXEMPLE_ELEMENTS = [
     ["Plan national de développement", "Axe", "AXE1", "Développer le capital humain", "", ""],
     ["Programme capital humain", "Objectif", "OBJ1", "Améliorer l'accès à l'éducation", "", "AXE1"],
     ["Programme capital humain", "Résultat", "R1.1", "Les écoles sont construites", "OBJ1", ""],
-    ["Pilier Éducation", "Axe", "PE1", "Infrastructures scolaires", "", "R1.1"],
 ]
 INSTRUCTIONS = [
     "Chaîne des documents stratégiques",
@@ -53,7 +49,7 @@ INSTRUCTIONS = [
     "- Feuille « Documents » : un document par ligne, avec son maillon et le document au-dessus auquel il est",
     "  rattaché ; « Élément parent (code) » précise l'élément de ce document (vide = le document lui-même) ;",
     "  plusieurs codes séparés par « ; » : le premier compte, les suivants sont pour information.",
-    "  Sauter un maillon est permis (ex : un pilier 3 rattaché au programme) : un avertissement le signale.",
+    "  Sauter un maillon est permis (ex : un projet rattaché directement à la stratégie) : un avertissement le signale.",
     "  Colonnes facultatives de la fiche : Code, Statut (En préparation / En cours / Clôturé), dates",
     "  (AAAA-MM-JJ ou JJ/MM/AAAA), Budget total, Fonds propres (FCFA) et Responsable.",
     "- Feuille « Éléments » : la structuration de chaque document. « Niveau » est le nom du niveau (créé à",
@@ -125,7 +121,7 @@ def _traduire_structure(wb) -> None:
 
 
 def generer_modele_chaine() -> bytes:
-    """Modèle à remplir, avec un exemple de chaîne (cadre → programme → pilier)."""
+    """Modèle à remplir, avec un exemple de chaîne (stratégie → programme)."""
     return _classeur(EXEMPLE_MAILLONS, EXEMPLE_DOCUMENTS, EXEMPLE_ELEMENTS)
 
 

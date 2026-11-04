@@ -1,10 +1,9 @@
 """
-Démonstration de la chaîne des documents : PNDES-II (cadre stratégique) → Programme → Pilier 1 →
-Pilier 2 → Pilier 3, avec contributions élément par élément ; un Pilier 3 saute le Pilier 2
-(avertissement). Chaque programme et pilier a sa fiche renseignée comme un projet (code, budget
-et bailleurs, dates, statut, responsable, partenaires, zones, cibles). Les projets éducation et
-santé sont rattachés aux Piliers 3, et un projet complet (PEQR-KOU-2025) est créé au dernier
-maillon. Rejouable.
+Démonstration de la chaîne des documents : Stratégie (PNDES-II) → Programme → Projets, avec
+contributions élément par élément. Le programme a sa fiche renseignée comme un projet (code,
+budget et bailleurs, dates, statut, responsable, zones, cibles). Les projets éducation et santé
+sont rattachés au programme, et un projet complet (PEQR-KOU-2025) y est créé. Rejouable : retire
+aussi les anciens maillons de démonstration (« Pilier 1 » à « Pilier 3 »).
 
 À lancer après seed_50_projets (il s'appuie sur le PNDES-II et ses projets) :
     docker compose exec backend python manage.py seed_chaine_documents
@@ -24,8 +23,9 @@ from apps.projects.models import Activite, Projet
 from apps.strategy.models import CadreStrategique, ElementStrategique, TypeDocument, TypeNiveau
 from apps.strategy.services import supprimer_cadre_strategique_cascade
 
-MAILLONS = [("Programme", "Programmes", "Briefcase"), ("Pilier 1", "Piliers 1", "Layers"),
-            ("Pilier 2", "Piliers 2", "Layers"), ("Pilier 3", "Piliers 3", "Layers")]
+MAILLONS = [("Programme", "Programmes", "Briefcase")]
+# Anciens maillons de la démonstration, retirés à chaque exécution.
+ANCIENS_MAILLONS = ["Pilier 1", "Pilier 2", "Pilier 3"]
 
 
 def maillon(nom):
@@ -66,48 +66,6 @@ FICHES = {
         "capitalisation": "Revue à mi-parcours prévue en 2028 : pilotage conjoint éducation-santé, "
                           "mutualisation des infrastructures sociales en zone rurale.",
     },
-    "P1-ASSB": {
-        "statut": "EN_COURS", "date_debut": date(2026, 1, 1), "date_fin": date(2030, 6, 30),
-        "fonds_propres": 18_000_000_000, "responsable_nom": "Direction des programmes",
-        "bailleurs": [("Banque mondiale", 30_000_000_000), ("Agence française de développement", 9_500_000_000)],
-        "partenaire": "Centre d'études et de formation pour le développement", "consortium": [],
-        "tout_le_pays": True, "zones": [], "cibles": (1_300_000, 620_000, 680_000, 480_000, 110_000),
-        "services": ["Service éducation, santé et emploi"],
-        "parties": ["Ministère de l'Éducation nationale", "Ministère de la Santé", "Conseils régionaux"],
-        "capitalisation": "",
-    },
-    "P2-INFRA": {
-        "statut": "EN_COURS", "date_debut": date(2026, 4, 1), "date_fin": date(2029, 12, 31),
-        "fonds_propres": 6_500_000_000, "responsable_nom": "Service éducation, santé et emploi",
-        "bailleurs": [("Banque africaine de développement", 14_000_000_000), ("Enabel, Agence belge de développement", 3_200_000_000)],
-        "partenaire": "Bureau d'études Sahel Ingénierie", "type": "CONSORTIUM",
-        "consortium": ["Association Zood Nooma pour le développement", "Réseau des ONG locales du Sahel"],
-        "tout_le_pays": False, "zones": ["Koulse", "Sirba", "Goulmou", "Tapoa"],
-        "cibles": (420_000, 200_000, 220_000, 150_000, 45_000),
-        "services": ["Service éducation, santé et emploi", "Direction administrative et financière"],
-        "parties": ["Conseils régionaux", "Districts sanitaires", "Association des municipalités"],
-        "capitalisation": "",
-    },
-    "P3-KOU": {
-        "statut": "EN_COURS", "date_debut": date(2026, 7, 1), "date_fin": date(2028, 12, 31),
-        "fonds_propres": 850_000_000, "responsable_nom": "Direction régionale de Koulsé",
-        "bailleurs": [("UNICEF", 2_400_000_000), ("Coopération suisse", 1_100_000_000)],
-        "partenaire": "ONG Wend Panga", "consortium": [], "tout_le_pays": False, "zones": ["Koulse", "Sirba"],
-        "cibles": (95_000, 44_000, 51_000, 38_000, 16_000),
-        "services": ["Service éducation, santé et emploi"],
-        "parties": ["Conseils régionaux", "Districts sanitaires"],
-        "capitalisation": "",
-    },
-    "P3-EST": {
-        "statut": "EN_PREPARATION", "date_debut": date(2027, 1, 1), "date_fin": date(2029, 12, 31),
-        "fonds_propres": 600_000_000, "responsable_nom": "Direction régionale de l'Est",
-        "bailleurs": [("Programme alimentaire mondial", 1_800_000_000), ("Union européenne", 2_200_000_000)],
-        "partenaire": "Réseau des ONG locales du Sahel", "consortium": [], "tout_le_pays": False,
-        "zones": ["Goulmou", "Tapoa"], "cibles": (120_000, 55_000, 65_000, 47_000, 38_000),
-        "services": ["Service éducation, santé et emploi", "Service gouvernance, climat et inclusion"],
-        "parties": ["Ministère de l'Action humanitaire et de la Solidarité nationale", "Districts sanitaires"],
-        "capitalisation": "",
-    },
 }
 
 
@@ -135,8 +93,8 @@ def remplir_fiche(doc, code):
 def creer_projet_dernier_maillon(sortie):
     """
     Projet complet (tous les onglets, comme ceux de seed_50_projets) rattaché au dernier maillon :
-    Pilier 3 Koulsé-Sirba, axe « Écoles de la région », toutes ses activités sur cet axe — pour
-    voir sa remontée jusqu'au cadre stratégique. Rejouable (le projet précédent est remplacé).
+    le programme, résultat « Les capacités d'accueil scolaires sont étendues », toutes ses activités
+    sur ce résultat — pour voir sa remontée jusqu'à la stratégie. Rejouable (le projet précédent est remplacé).
     """
     import random
 
@@ -183,11 +141,11 @@ def creer_projet_dernier_maillon(sortie):
         provinces = list(Zone.objects.filter(parent=region, niveau_administratif__ordre=2))[:3]
         projet = creer_projet(5, "EDU", ref, {"A": pndes}, elements, region, provinces, set())  # 5 : projet en cours
 
-        pilier3 = CadreStrategique.objects.get(nom__startswith="Pilier 3 — Plan régional d'investissement Koulsé")
-        ecoles = ElementStrategique.objects.get(type_niveau__cadre_strategique=pilier3, code="P3-K1")
+        programme = CadreStrategique.objects.get(type_document__nom="Programme", nom__startswith="Programme national de développement du capital")
+        ecoles = ElementStrategique.objects.get(type_niveau__cadre_strategique=programme, code="RP1.1")
         Projet.objects.filter(id=projet.id).update(
             nom="Projet d'écoles de qualité dans la région Koulsé", code="PEQR-KOU-2025",
-            cadre_strategique=pilier3, element_strategique=ecoles, elements_capitalisation="",
+            cadre_strategique=programme, element_strategique=ecoles, elements_capitalisation="",
         )
         projet.elements_strategiques_secondaires.clear()
         Equipe.objects.filter(activites__projet=projet).distinct().update(nom="Équipe projet PEQR-KOU-2025")
@@ -196,7 +154,7 @@ def creer_projet_dernier_maillon(sortie):
 
 
 class Command(BaseCommand):
-    help = "Crée la démonstration de la chaîne des documents (programme, piliers 1 à 3) et y rattache des projets."
+    help = "Crée la démonstration de la chaîne des documents (stratégie → programme) et y rattache des projets."
 
     def handle(self, *args, **options):
         self.creer_chaine()
@@ -205,18 +163,20 @@ class Command(BaseCommand):
     def creer_chaine(self):
         with transaction.atomic():
             premier = TypeDocument.objects.order_by("ordre").first()
-            premier.nom, premier.nom_pluriel, premier.icone = "Cadre stratégique", "Cadres stratégiques", "Target"
+            premier.nom, premier.nom_pluriel, premier.icone = "Stratégie", "Stratégies", "Target"
             premier.save()
             for i, (nom, pluriel, icone) in enumerate(MAILLONS, start=2):
                 TypeDocument.objects.update_or_create(nom=nom, defaults={"nom_pluriel": pluriel, "ordre": i, "icone": icone})
             # Rejouable : on retire la démonstration précédente (projets remis sur le PNDES-II).
             pndes = CadreStrategique.objects.get(nom__startswith="Plan national de développement économique")
-            anciens = list(CadreStrategique.objects.filter(type_document__nom__in=[m[0] for m in MAILLONS]).order_by("-type_document__ordre"))
+            noms = [m[0] for m in MAILLONS] + ANCIENS_MAILLONS
+            anciens = list(CadreStrategique.objects.filter(type_document__nom__in=noms).order_by("-type_document__ordre"))
             Projet.objects.filter(cadre_strategique__in=anciens).update(cadre_strategique=pndes, element_strategique=None)
             for d in anciens:
                 CadreStrategique.objects.filter(document_parent=d).update(document_parent=None, element_parent=None)
                 ElementStrategique.objects.filter(contribue_a__type_niveau__cadre_strategique=d).update(contribue_a=None)
                 supprimer_cadre_strategique_cascade(d)
+            TypeDocument.objects.filter(nom__in=ANCIENS_MAILLONS).delete()
 
             os = {e.nom: e for e in ElementStrategique.objects.filter(type_niveau__cadre_strategique=pndes)}
             axe1 = ElementStrategique.objects.get(type_niveau__cadre_strategique=pndes, code="AXE1")
@@ -233,55 +193,20 @@ class Command(BaseCommand):
                  ("Objectif du programme", "OP2", "Rapprocher les soins de santé primaires des populations", None, os_sante),
                  ("Résultat du programme", "RP2.1", "Les formations sanitaires de proximité sont fonctionnelles", "OP2", None)],
             )
-            pilier1, a = document(
-                "Pilier 1 — Accès aux services sociaux de base", "Pilier 1",
-                "Premier pilier du PNDCH : accès physique aux écoles et aux centres de santé.",
-                programme, None, ["Axe du pilier"],
-                [("Axe du pilier", "P1-A1", "Accès à l'école", None, p["RP1.1"]),
-                 ("Axe du pilier", "P1-A2", "Scolarisation des enfants hors école", None, p["RP1.2"]),
-                 ("Axe du pilier", "P1-A3", "Accès aux soins de proximité", None, p["RP2.1"])],
-            )
-            pilier2, b = document(
-                "Pilier 2 — Infrastructures scolaires et sanitaires", "Pilier 2",
-                "Construction, réhabilitation et équipement des infrastructures sociales.",
-                pilier1, None, ["Domaine", "Sous-domaine"],
-                [("Domaine", "P2-D1", "Infrastructures scolaires", None, a["P1-A1"]),
-                 ("Sous-domaine", "P2-D1.1", "Salles de classe et équipements", "P2-D1", None),
-                 ("Domaine", "P2-D2", "Infrastructures sanitaires", None, a["P1-A3"]),
-                 ("Sous-domaine", "P2-D2.1", "Centres de santé et maternités", "P2-D2", None)],
-            )
-            centre_nord, c = document(
-                "Pilier 3 — Plan régional d'investissement Koulsé-Sirba", "Pilier 3",
-                "Déclinaison régionale du pilier 2.",
-                pilier2, None, ["Action régionale"],
-                [("Action régionale", "P3-K1", "Écoles de la région", None, b["P2-D1.1"]),
-                 ("Action régionale", "P3-K2", "Santé de la région", None, b["P2-D2.1"])],
-            )
-            # Saut de maillon : rattaché directement au Pilier 1 (le Pilier 2 est sauté).
-            est, e = document(
-                "Pilier 3 — Plan régional d'investissement Est", "Pilier 3",
-                "Déclinaison régionale rattachée directement au pilier 1.",
-                pilier1, None, ["Action régionale"],
-                [("Action régionale", "P3-E1", "Retour à l'école des enfants déplacés", None, a["P1-A2"]),
-                 ("Action régionale", "P3-E2", "Soins de proximité", None, a["P1-A3"])],
-            )
-
-            # Projets éducation et santé : rattachés aux Piliers 3 (leurs activités suivent le rattachement du projet).
+            # Projets éducation et santé : rattachés au programme (leurs activités suivent le rattachement du projet).
             edu = list(Projet.objects.filter(cadre_strategique=pndes, nom__iregex=r"(éducation|école|scolaris|cantines)").order_by("code"))
             sante = list(Projet.objects.filter(cadre_strategique=pndes, nom__iregex=r"(santé|paludisme|mère)").order_by("code"))
             for i, projet in enumerate(edu):
-                pilier, element = (centre_nord, c["P3-K1"]) if i % 2 == 0 else (est, e["P3-E1"])
-                Projet.objects.filter(id=projet.id).update(cadre_strategique=pilier, element_strategique=element)
+                element = p["RP1.1"] if i % 2 == 0 else p["RP1.2"]
+                Projet.objects.filter(id=projet.id).update(cadre_strategique=programme, element_strategique=element)
                 Activite.objects.filter(projet=projet).update(axe_strategique=None)
-            for i, projet in enumerate(sante):
-                pilier, element = (centre_nord, c["P3-K2"]) if i % 2 == 0 else (est, e["P3-E2"])
-                Projet.objects.filter(id=projet.id).update(cadre_strategique=pilier, element_strategique=element)
+            for projet in sante:
+                Projet.objects.filter(id=projet.id).update(cadre_strategique=programme, element_strategique=p["RP2.1"])
                 Activite.objects.filter(projet=projet).update(axe_strategique=None)
 
-            for doc, code in ((programme, "PNDCH"), (pilier1, "P1-ASSB"), (pilier2, "P2-INFRA"), (centre_nord, "P3-KOU"), (est, "P3-EST")):
-                remplir_fiche(doc, code)
+            remplir_fiche(programme, "PNDCH")
 
         self.stdout.write(f"Maillons : {', '.join(TypeDocument.objects.order_by('ordre').values_list('nom', flat=True))}")
-        self.stdout.write(f"Documents créés : {programme}, {pilier1}, {pilier2}, {centre_nord}, {est}")
-        self.stdout.write(f"Projets rattachés aux piliers 3 : {', '.join(p.code for p in edu + sante)}")
+        self.stdout.write(f"Document créé : {programme}")
+        self.stdout.write(f"Projets rattachés au programme : {', '.join(p.code for p in edu + sante)}")
 

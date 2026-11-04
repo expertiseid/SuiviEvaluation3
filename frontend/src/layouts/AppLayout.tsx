@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink as RouterNavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink as RouterNavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Activity,
   Building2,
@@ -15,6 +15,8 @@ import {
   Map as MapIcon,
   MapPin,
   MessagesSquare,
+  ImagePlus,
+  Trash2,
   PenLine,
   RotateCcw,
   Languages,
@@ -24,10 +26,15 @@ import {
   Users,
   type LucideIcon,
   ScrollText,
+  Info,
+  MonitorPlay,
+  GraduationCap,
 } from "lucide-react";
 import {
   ActionIcon,
   AppShell,
+  Image,
+  Box,
   Checkbox,
   Loader,
   Table,
@@ -50,7 +57,9 @@ import {
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useDisclosure } from "@mantine/hooks";
-import { useAuth } from "../auth/useAuth";
+import { useAuth, useEstDemo } from "../auth/useAuth";
+import { useIdentiteOrganisation } from "../api/identite";
+import { PiedDePage } from "../components/common/Logos";
 import { useConfigurationMenu, useEcheances, useUpdateConfigurationMenu } from "../api/dashboard";
 import { NotificationBell } from "../components/notifications/NotificationBell";
 import { ChoixLangue } from "../components/common/ChoixLangue";
@@ -58,6 +67,7 @@ import { ICONES_MENU } from "../utils/iconesMenu";
 import { TERMES, definirVocabulaire, voc, type Vocabulaire } from "../utils/vocabulaire";
 import { langue } from "../utils/i18n";
 import { EcheancesBanner } from "../components/notifications/EcheancesBanner";
+import { BoutonRetour } from "../components/common/BoutonRetour";
 import { useAccesModules } from "../utils/modules";
 import { libelleRole } from "../utils/roles";
 import { useTypesDocuments } from "../api/strategy";
@@ -80,6 +90,10 @@ const ITEMS_PRINCIPAUX: NavItem[] = [
   { to: "/zones-administratives", label: voc("Zones administratives"), icon: MapPin },
   { to: "/documents", label: voc("Documents"), icon: FileText },
   { to: "/plaintes", label: voc("Plaintes et retours"), icon: MessagesSquare },
+  // Cours en ligne (réservé aux organisations abonnées ; la page le dit dans la démonstration).
+  { to: "/formation", label: voc("Formation"), icon: GraduationCap },
+  // Sous les modules : dossiers et documents supprimés (droits du module Documents).
+  { to: "/corbeille", label: voc("Corbeille"), icon: Trash2 },
 ];
 
 const ITEMS_ADMIN: NavItem[] = [
@@ -323,6 +337,8 @@ function initiales(nom: string) {
 export function AppLayout() {
   const [opened, { toggle }] = useDisclosure();
   const { user, logout } = useAuth();
+  const { data: identite } = useIdentiteOrganisation();
+  const demo = useEstDemo();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   // Modules cachés à cet utilisateur (rôle ou compte, voir utils/modules.ts).
@@ -343,14 +359,17 @@ export function AppLayout() {
   });
 
   // Chaîne des documents stratégiques : chaque maillon après le premier est une rubrique à part,
-  // placée juste sous « Cadre stratégique » (mêmes droits que celle-ci).
+  // placée juste sous la rubrique du premier maillon (mêmes droits que celle-ci).
   const { data: maillons } = useTypesDocuments();
   const itemsMaillons: NavItem[] = (maillons ?? []).slice(1).map((m) => ({
     to: routeMaillon(m.id),
     label: m.nom_pluriel,
     icon: ICONES_MENU[m.icone] ?? Layers,
   }));
-  const itemsPrincipaux = ITEMS_PRINCIPAUX.flatMap((item) => (item.to === "/strategie" ? [item, ...itemsMaillons] : [item]));
+  // Premier maillon (ex : « Stratégies ») : son nom donne celui de la rubrique « /strategie ».
+  const premierMaillon = maillons?.[0]?.nom_pluriel;
+  const itemsPrincipaux = ITEMS_PRINCIPAUX.flatMap((item) =>
+    item.to === "/strategie" ? [premierMaillon ? { ...item, label: premierMaillon } : item, ...itemsMaillons] : [item]);
 
   const surTableauDeBord = pathname === "/";
   const afficherBandeau = surTableauDeBord && !!echeances && echeances.length > 0;
@@ -365,10 +384,37 @@ export function AppLayout() {
         <Group h={56} px={{ base: "xs", sm: "md" }} justify="space-between" wrap="nowrap">
           <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" color="white" />
-            <Text fw={700} size="sm" truncate>
-              <Text span inherit visibleFrom="xs">{voc("Plateforme de")} </Text>{voc("Suivi-Évaluation")}
+            <Image src="/logo-plateforme.svg" w={30} h={30} alt="" />
+            <Text fw={700} size="sm" truncate lh={1.2}>
+              Expertise-ID Monitora
             </Text>
+            {/* Logo de l'organisation (Organisation › Identité et logo), sur fond blanc pour rester lisible, sur
+                toutes les pages ; l'Administrateur y accède d'un clic, et est invité à l'ajouter s'il manque. */}
+            {identite?.logo ? (
+              <Tooltip label={voc("Changer le logo")} disabled={user?.role !== "ADMIN"}>
+                <Box component={user?.role === "ADMIN" ? Link : "div"} to="/organisation?onglet=identite"
+                  bg="white" px={8} py={3} ms={{ base: 0, sm: "sm" }}
+                  style={{ borderRadius: 8, display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                  <Image src={identite.logo} h={{ base: 28, sm: 38 }} w="auto" maw={160} fit="contain" alt={identite.nom || voc("Logo de l'organisation")} />
+                  {identite.nom && <Text size="sm" fw={700} c="teal.9" truncate visibleFrom="md" maw={220}>{identite.nom}</Text>}
+                </Box>
+              </Tooltip>
+            ) : user?.role === "ADMIN" && !demo && (
+              <Button component={Link} to="/organisation?onglet=identite" size="compact-sm" variant="white" color="teal"
+                leftSection={<ImagePlus size={14} />} ms="sm" visibleFrom="sm"
+                styles={{ root: { borderStyle: "dashed", borderWidth: 1, borderColor: "var(--mantine-color-teal-3)" } }}>
+                {voc("Ajouter le logo de votre organisation")}
+              </Button>
+            )}
           </Group>
+          {/* Signature Expertise-ID avec son logo, au milieu de l'en-tête (écrans larges). */}
+          <Box component="a" href="https://www.expertise-id.com" target="_blank" rel="noopener" visibleFrom="lg" bg="white" px={10} py={4}
+            style={{ borderRadius: 8, display: "flex", alignItems: "center", gap: 8, textDecoration: "none", flexShrink: 0 }}>
+            <Image src="/logo-expertise-id.png" w={30} h={30} fit="contain" alt="" />
+            <Text size="sm" c="teal.9" style={{ whiteSpace: "nowrap" }}>
+              {voc("Développé par")} <Text span inherit fw={700}>Expertise-ID</Text>
+            </Text>
+          </Box>
           {/* Sur téléphone : cloche, initiales et icône de déconnexion seulement. */}
           <Group gap="sm" wrap="nowrap">
             <ChoixLangue connecte />
@@ -417,7 +463,7 @@ export function AppLayout() {
           {renderNavLink(avecLibelle(ITEM_ACCUEIL), pathname)}
           <Divider my={4} />
           {itemsPrincipaux
-            .filter((item) => !estMasque(item.to.startsWith("/strategie") ? "/strategie" : item.to))
+            .filter((item) => !estMasque(item.to.startsWith("/strategie") ? "/strategie" : item.to === "/corbeille" ? "/documents" : item.to))
             .map((item) => renderNavLink(item.to.startsWith("/strategie/type/") ? item : avecLibelle(item), pathname))}
           {user?.role === "ADMIN" && (
             <>
@@ -431,10 +477,21 @@ export function AppLayout() {
               />
             </>
           )}
+          <Divider my={4} />
+          <NavLink component={RouterNavLink} to="/a-propos" label={voc("À propos")} leftSection={<Info size={17} strokeWidth={2} />} c="dimmed" />
         </ScrollArea>
       </AppShell.Navbar>
 
-      <AppShell.Main bg="gray.0">
+      <AppShell.Main bg="gray.0" style={{ display: "flex", flexDirection: "column" }}>
+        {user?.est_demo && (
+          <Alert color="orange" variant="light" mb="md" icon={<MonitorPlay size={18} />} title={voc("Mode démonstration")}>
+            <Group justify="space-between" gap="sm">
+              <Text size="sm">{voc("Vous pouvez tout consulter et essayer chaque formulaire : l'enregistrement est simulé, rien n'est conservé.")}</Text>
+              <Button size="xs" component={RouterNavLink} to="/inscription" onClick={() => logout()}>{voc("Créer le profil de mon organisation")}</Button>
+            </Group>
+          </Alert>
+        )}
+        <Box style={{ flex: 1 }}>
         {chargementMenu ? (
           <Loader size="sm" />
         ) : moduleMasque ? (
@@ -442,8 +499,13 @@ export function AppLayout() {
             {voc("Ce module n'est pas accessible avec votre compte. Adressez-vous à l'administrateur si vous en avez besoin.")}
           </Alert>
         ) : (
-          <Outlet />
+          <>
+            <BoutonRetour />
+            <Outlet />
+          </>
         )}
+        </Box>
+        <PiedDePage />
       </AppShell.Main>
 
       <Modal

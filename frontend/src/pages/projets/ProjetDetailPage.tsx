@@ -122,7 +122,7 @@ function AjoutInline({
         <TextInput
           size="xs"
           label={voc("Nom de ce niveau")}
-          placeholder={voc("Ex : Résultat, Objectif, Pilier…")}
+          placeholder={voc("Ex : Résultat, Objectif, Composante…")}
           value={nomNiveau}
           onChange={(e) => setNomNiveau(e.currentTarget.value)}
           w={220}
@@ -196,7 +196,7 @@ function BadgeNiveau({
           <Group gap={6} wrap="nowrap">
             <TextInput
               size="xs"
-              placeholder={voc("Ex : Résultat, Pilier…")}
+              placeholder={voc("Ex : Résultat, Composante…")}
               value={valeur}
               onChange={(e) => setValeur(e.currentTarget.value)}
               w={200}

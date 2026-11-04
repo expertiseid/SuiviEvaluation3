@@ -159,18 +159,90 @@ class TraductionCorrigeeViewSet(viewsets.ModelViewSet):
 # --- Journal d'audit ---------------------------------------------------------------------------------
 
 class ConnexionAuditee(TokenObtainPairView):
-    """Connexion (jeton JWT), inscrite au journal d'audit, réussie ou refusée (identifiant tenté seulement)."""
+    """
+    Connexion, inscrite au journal d'audit, réussie ou refusée (identifiant tenté seulement). Le mot de
+    passe vérifié, un code est envoyé par courriel et seul un jeton d'étape est remis (apps.accounts.double_auth).
+
+    Plateforme multi-organisations (adresse unique) : {courriel, password}. L'index des comptes dit dans
+    quelle organisation chercher le compte ; {console: true} : opérateur Expertise-ID (base centrale,
+    page de connexion à part).
+    """
 
     def post(self, request, *args, **kwargs):
-        from apps.accounts.models import User
+        from apps.organisations import contexte
 
+        if contexte.actif():
+            return self._connexion_par_courriel(request)
+        return self._connexion_installation_unique(request)
+
+    def _connexion_installation_unique(self, request):
+        from apps.accounts import double_auth
+
+        serializer = self.get_serializer(data=request.data)
         try:
-            reponse = super().post(request, *args, **kwargs)
+            serializer.is_valid(raise_exception=True)
         except Exception:
             auditer(None, A.CONNEXION_ECHOUEE, module="comptes", identifiant=str(request.data.get("username", ""))[:150])
+            # Profil d'organisation créé mais pas encore abonné : page « Vous devez vous abonner ».
+            reponse = self._renvoi_profil(request.data.get("username"), request.data.get("password"))
+            if reponse is not None:
+                return reponse
             raise
-        auditer(User.objects.filter(username=request.data.get("username")).first(), A.CONNEXION, module="comptes")
-        return reponse
+        return self._etape_code(serializer.user)
+
+    @staticmethod
+    def _etape_code(utilisateur):
+        from apps.accounts import double_auth
+
+        etape = double_auth.demarrer(utilisateur)
+        if etape:
+            return Response(etape)
+        auditer(utilisateur, A.CONNEXION, module="comptes")
+        # Code non exigé (poste de développement) : jetons marqués comme ayant franchi l'étape.
+        return Response(double_auth.jetons(utilisateur))
+
+    def _connexion_par_courriel(self, request):
+        from django.db.models import Q
+
+        from apps.accounts.models import User
+        from apps.organisations import comptes, contexte
+        from apps.organisations.models import Organisation
+
+        courriel = str(request.data.get("courriel") or request.data.get("username") or "").strip()
+        mot_de_passe = request.data.get("password") or ""
+        refus = Response({"detail": "Adresse courriel ou mot de passe incorrect.", "code": "identifiants_invalides"}, status=401)
+        if request.data.get("console"):
+            # Opérateurs Expertise-ID : comptes « superutilisateur » de la base centrale.
+            operateur = User.objects.filter(Q(email__iexact=courriel) | Q(username__iexact=courriel),
+                                            is_superuser=True, is_active=True).first() if courriel else None
+            if operateur is None or not operateur.check_password(mot_de_passe):
+                auditer(None, A.CONNEXION_ECHOUEE, module="comptes", identifiant=courriel[:150], espace="console")
+                return refus
+            return self._etape_code(operateur)
+        org = comptes.organisation_du_courriel(courriel) if courriel else None
+        if org is None or org.statut == Organisation.Statut.EN_ATTENTE:
+            auditer(None, A.CONNEXION_ECHOUEE, module="comptes", identifiant=courriel[:150])
+            return self._renvoi_profil(courriel, mot_de_passe) or refus
+        if org.statut == Organisation.Statut.SUSPENDUE:
+            return Response({"detail": "L'abonnement de votre organisation est suspendu. Contactez Expertise-ID.",
+                             "code": "organisation_suspendue"}, status=403)
+        with contexte.dans_organisation(org):
+            utilisateur = User.objects.filter(email__iexact=courriel, is_active=True).first()
+            if utilisateur is None or not utilisateur.check_password(mot_de_passe):
+                auditer(None, A.CONNEXION_ECHOUEE, module="comptes", identifiant=courriel[:150])
+                return refus
+            return self._etape_code(utilisateur)
+
+    @staticmethod
+    def _renvoi_profil(identifiant, mot_de_passe):
+        """Identifiants d'un profil créé depuis l'accueil mais pas encore activé : page d'abonnement."""
+        from apps.accounts import inscriptions
+        from apps.accounts.models import DemandeInscription
+
+        demande = inscriptions.demande_pour(identifiant, mot_de_passe)
+        if demande is None or demande.statut == DemandeInscription.Statut.ACTIVEE:
+            return None
+        return Response({"code": "abonnement_requis", **inscriptions.resume(demande)}, status=403)
 
 
 class EvenementAuditSerializer(serializers.ModelSerializer):
@@ -220,3 +292,133 @@ class JournalAuditViewSet(viewsets.ReadOnlyModelViewSet):
         reponse = HttpResponse(contenu, content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         reponse["Content-Disposition"] = "attachment; filename=journal_audit.xlsx"
         return reponse
+
+
+# --- Identité de l'organisation et informations publiques de la plateforme -------------------------
+
+FORMATS_LOGO = {"PNG": "image/png", "JPEG": "image/jpeg", "WEBP": "image/webp"}
+TAILLE_MAX_LOGO = 2 * 1024 * 1024
+
+
+def _plateforme(request):
+    from django.conf import settings
+
+    from .models import IdentiteOrganisation
+
+    identite = IdentiteOrganisation.courante()
+    logo = None
+    if identite.logo:
+        from apps.organisations.contexte import parametre_org
+
+        org = parametre_org()
+        logo = request.build_absolute_uri(f"/api/v1/identite/logo/?v={int(identite.modifie_le.timestamp())}" + (f"&{org}" if org else ""))
+    return {
+        "nom": identite.nom,
+        "logo": logo,
+        # Démonstration (apps.accounts.demo) : visiteur connecté à la démo (mode_demo), ou démo proposée.
+        "mode_demo": demo_actif(),
+        "demo_disponible": _demo_disponible(),
+        "url_demo": getattr(settings, "URL_DEMO", ""),
+        "inscriptions": getattr(settings, "INSCRIPTIONS_OUVERTES", True),
+        "contact": getattr(settings, "COURRIEL_ABONNEMENTS", ""),
+        # Plateforme multi-organisations : organisation du compte connecté (sinon None).
+        "multi_organisations": getattr(settings, "MULTI_ORGANISATIONS", False),
+        "espace": _espace_courant(),
+    }
+
+
+def demo_actif():
+    from apps.accounts.demo import actif
+
+    return actif()
+
+
+def _demo_disponible():
+    """Une démonstration est proposée : installation de démo, espace de démo, ou adresse URL_DEMO."""
+    from django.conf import settings
+
+    from apps.accounts.demo import espace_demo
+    from apps.organisations import contexte
+
+    if demo_actif() or getattr(settings, "URL_DEMO", ""):
+        return True
+    return bool(contexte.actif() and espace_demo())
+
+
+def _espace_courant():
+    from apps.organisations import contexte
+
+    org = contexte.courante()
+    return {"sous_domaine": org.sous_domaine, "nom": org.nom} if org else None
+
+
+@api_view(["GET", "PATCH"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def identite(request):
+    """
+    GET (sans compte : écran d'accueil et de connexion) : nom, logo, démo, inscriptions.
+    PATCH (Administrateur, multipart) : nom, logo (PNG, JPEG ou WebP, 2 Mo au plus), supprimer_logo.
+    """
+    from .models import IdentiteOrganisation
+
+    if request.method == "PATCH":
+        from apps.accounts.double_auth import JWTAvecDoubleFacteur
+
+        authentification = JWTAvecDoubleFacteur().authenticate(request)
+        if not authentification or authentification[0].role != ROLE_ADMIN:
+            raise PermissionDenied("Réservé à l'Administrateur.")
+        utilisateur = authentification[0]
+        objet = IdentiteOrganisation.courante()
+        changements = []
+        if "nom" in request.data:
+            objet.nom = (request.data.get("nom") or "").strip()[:200]
+            changements.append("nom")
+        if request.data.get("supprimer_logo") in ("true", True, "1"):
+            if objet.logo:
+                objet.logo.delete(save=False)
+            objet.logo = ""
+            changements.append("logo")
+        fichier = request.FILES.get("logo")
+        if fichier:
+            from PIL import Image
+            from rest_framework.exceptions import ValidationError
+
+            if fichier.size > TAILLE_MAX_LOGO:
+                raise ValidationError({"logo": "Le logo dépasse 2 Mo."})
+            try:
+                with Image.open(fichier) as image:
+                    format_ = image.format
+                    image.verify()
+            except Exception:
+                raise ValidationError({"logo": "Image illisible : choisissez un fichier PNG, JPEG ou WebP."})
+            if format_ not in FORMATS_LOGO:
+                raise ValidationError({"logo": "Format non accepté : choisissez un fichier PNG, JPEG ou WebP."})
+            fichier.seek(0)
+            if objet.logo:
+                objet.logo.delete(save=False)
+            objet.logo.save(f"logo.{format_.lower()}", fichier, save=False)
+            changements.append("logo")
+        objet.save()
+        if changements:
+            auditer(utilisateur, A.CONFIGURATION, "Identité de l'organisation", module="comptes",
+                    operation="modification", champs=changements)
+    return Response(_plateforme(request))
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def logo_organisation(request):
+    from django.http import FileResponse, Http404
+
+    from .models import IdentiteOrganisation
+
+    identite = IdentiteOrganisation.courante()
+    if not identite.logo or not identite.logo.storage.exists(identite.logo.name):
+        raise Http404
+    extension = identite.logo.name.rsplit(".", 1)[-1].upper()
+    reponse = FileResponse(identite.logo.open("rb"), content_type=FORMATS_LOGO.get("JPEG" if extension == "JPG" else extension, "image/png"))
+    reponse["Cache-Control"] = "public, max-age=86400"
+    reponse["X-Content-Type-Options"] = "nosniff"
+    return reponse

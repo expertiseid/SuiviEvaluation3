@@ -28,6 +28,12 @@ let catalogue: Record<string, string> = {};
 const estLangue = (l: unknown): l is Langue => LANGUES.some((x) => x.code === l);
 
 function lireChoix(): Langue | null {
+  // ?lang=en dans l'adresse (ex : « Essayer la démo » depuis le site vitrine en anglais) : retenu comme choix.
+  const dansAdresse = new URLSearchParams(window.location.search).get("lang");
+  if (estLangue(dansAdresse)) {
+    try { localStorage.setItem(CLE_STOCKAGE, dansAdresse); } catch { /* navigation privée */ }
+    return dansAdresse;
+  }
   try {
     const l = localStorage.getItem(CLE_STOCKAGE);
     return estLangue(l) ? l : null;

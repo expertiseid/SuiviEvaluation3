@@ -1053,9 +1053,143 @@ modèles `Prestataire` et `Referencement` :
   mécanisme), `plaintes/test_droits.py`, `core/test_audit.py` (ajout uniquement jusque dans la base,
   connexions, droits des comptes, consultation réservée et export), `audit/test_historique.py`.
 
-Lots suivants possibles : double authentification (administrateurs et personnes habilitées),
-accès de support temporaire, réponses du plaignant par SMS (réception), indicateurs de redevabilité
+**Double authentification par courriel (lot 10)** — `apps/accounts/double_auth.py`, modèle
+`accounts.CodeConnexion` :
+
+- À chaque connexion, pour tous les comptes (`DOUBLE_AUTH_OBLIGATOIRE`, vrai par défaut ; à ne
+  désactiver que sur un poste de développement), un code à 6 chiffres est envoyé par courriel à
+  l'adresse du compte, dans sa langue. Un compte sans adresse réelle (vide, ou domaine d'exemple des
+  comptes de démonstration) ne peut pas se connecter : renseigner son adresse dans Utilisateurs.
+- `auth/token/` vérifie le mot de passe, envoie le code et renvoie `{double_authentification: "code",
+  jeton, destination, validite_minutes}` (adresse masquée) au lieu des jetons. Le code est valable
+  10 minutes, pour 5 essais, une seule fois ; seule son empreinte est gardée. `…/code/` le vérifie et
+  remet les jetons ; `…/renvoyer/` envoie un nouveau code (3 fois au plus, une minute d'intervalle),
+  qui annule le précédent.
+- Les jetons remis après le code portent la marque `df`, conservée au renouvellement ;
+  `JWTAvecDoubleFacteur` refuse (401, `code: double_authentification_requise`) un jeton sans cette
+  marque, y compris les sessions ouvertes avant la mise en place. L'interface renvoie alors à l'écran
+  de connexion.
+- Codes refusés, comptes sans adresse et envois impossibles vont au journal d'audit (jamais le code).
+- Dépend du serveur de courriel : s'il est en panne, personne ne peut se connecter. Secours sur le
+  serveur : `DOUBLE_AUTH_OBLIGATOIRE=False` dans le `.env`, le temps de rétablir l'envoi.
+- Corrigé au passage : l'interface garde le jeton de rafraîchissement renouvelé par le serveur (l'ancien
+  est invalidé à chaque renouvellement), ce qui déconnectait au bout d'environ une heure et demie.
+- Tests : `accounts/test_double_auth.py` (code à chaque connexion, usage unique, essais limités,
+  expiration, nouveau code, compte sans adresse réelle, jeton sans code refusé et renouvellement,
+  mot de passe faux sans envoi, courriel dans la langue du compte).
+
+Lots suivants possibles : accès de support temporaire, réponses du plaignant par SMS (réception), indicateurs de redevabilité
 dans les cadres de résultats, analyse antivirus des pièces jointes, multi-organisations.
+
+## 5 ter. Plateforme multi-organisations (`apps/organisations`)
+
+Un seul serveur, une base PostgreSQL par organisation, un sous-domaine par organisation
+(`ong-a.DOMAINE_PLATEFORME`) ; l'adresse principale porte la vitrine. Activé par
+`MULTI_ORGANISATIONS=True` ; désactivé, la plateforme fonctionne en organisation unique comme avant.
+
+- **Registre central** (`Organisation` : nom, sous-domaine, base, statut en attente / active /
+  suspendue, offre, démonstration) dans la base centrale, alias `central` (même base que `default`
+  hors organisation ; `RouteurOrganisations`).
+- **Aiguillage** (`OrganisationMiddleware`, `contexte.dans_organisation`) : le sous-domaine de la
+  requête (ou l'en-tête `X-Hote-Origine` envoyé par l'interface) désigne l'organisation ; pour ce fil
+  d'exécution, la connexion `default` pointe vers sa base — ORM, transactions, `select_for_update` et
+  requêtes brutes y vont sans changement des modules. Adresse principale : seules les routes
+  publiques de la vitrine répondent (`espace_requis` sinon) ; espace inconnu ou en attente :
+  `espace_inconnu` (404) ; suspendu : `organisation_suspendue` (403).
+- **Séparé par organisation** : fichiers (`StockageOrganisation` : `MEDIA_ROOT/organisations/<sd>/`,
+  pièces jointes des plaintes de même), clé de chiffrement des données protégées (dérivée de la clé
+  de la plateforme et du sous-domaine), clés du cache (compteurs anti-abus), sels des jetons signés
+  (`contexte.sel` : liens de fichiers, étapes de connexion), jetons de connexion (marque `org`,
+  refusés dans un autre espace), lien de suivi des plaintes (`contexte.adresse`), mode démonstration
+  (`Organisation.mode_demo`).
+- **Commandes** : `creer_organisation <sd> "<nom>" --admin … --courriel … --mot-de-passe … [--activer]
+  [--zones] [--demo]` ; `migrer_organisations` (nouvelle version : centrale puis chaque base) ;
+  `pour_chaque_organisation <commande> […]` (tâche planifiée : `check_deadlines` dans chaque espace
+  actif) ; `lister_organisations`. Service : `gestion.py` (créer, installer, administrateur, activer,
+  supprimer).
+- **Développement** : `DOMAINE_PLATEFORME=localhost`, `VITE_API_BASE_URL=/api/v1` (proxy Vite vers
+  l'API, l'hôte d'origine est conservé), puis `http://<sd>.localhost:5192`.
+- Tests : `organisations/tests.py` (deux bases réelles : données, jetons, fichiers et liens signés,
+  clés de chiffrement, adresse principale, espace inconnu ou suspendu, sous-domaines refusés).
+- **Inscription et activation** (étape 2) : le formulaire d'inscription demande l'adresse de l'espace
+  (sous-domaine proposé d'après le nom, vérifié : forme, mots réservés, déjà pris ou demandé). Les
+  demandes (`accounts.DemandeInscription`) sont dans la base centrale (`CENTRALES_MODELES`) ; dans un
+  espace, leur liste est refusée. **Console Expertise-ID** (`/console`, `apps/organisations/console.py`,
+  `console/…`) : opérateurs = comptes superutilisateurs de la base centrale, connectés sur l'adresse
+  principale (seuls à pouvoir s'y connecter). « Activer » (`activation.py`, en arrière-plan) crée la
+  base, ses tables, le référentiel des zones et l'administrateur de l'espace avec l'identifiant et le
+  mot de passe (empreinte) de l'inscription, ouvre l'espace et envoie « Votre espace est prêt » ; en
+  cas d'échec, rien n'est laissé à moitié et l'erreur s'affiche. Suspendre / réactiver : effet
+  immédiat. Sur l'adresse principale, les identifiants d'un profil renvoient vers la page
+  d'abonnement, puis, une fois l'espace ouvert, vers son adresse (`code: espace`).
+- **Adresses** (étape 3) : adresse principale = vitrine (accueil, inscription, abonnement, à propos),
+  accès aux espaces (« Accéder à l'espace de mon organisation », « Retrouver mon espace » :
+  `public/retrouver-espace/` envoie par courriel les adresses des espaces où l'adresse a un compte,
+  réponse identique sinon) et connexion des opérateurs, qui mène à la console ; toute autre page y
+  renvoie à l'accueil. Espace d'une organisation : connexion directe (nom de l'organisation affiché),
+  inscription renvoyée vers l'adresse principale. Démonstration : espace créé avec
+  `creer_organisation demo "Démonstration" … --demo --zones --activer`, rempli par
+  `preparer_demo --organisation demo` ; « Essayer la démo » de la vitrine y mène (`url_demo`) et
+  l'ouvre directement.
+- **Reprise d'une installation à organisation unique** (étape 4) :
+  `scripts/reprendre_installation.sh <sd> "<nom>" [courriel]`. Le script sauvegarde la base
+  (`pg_dump -Fc`) et les fichiers (`media`, `prive`) dans `sauvegardes/` (hors Git), copie la base
+  dans `org_<sd>` (`createdb` + `pg_restore` : la base d'origine n'est pas modifiée), puis lance
+  `manage.py reprendre_installation` (`reprise.py`) :
+  - vide dans la copie les tables de la base centrale ;
+  - inscrit l'espace au registre, actif ;
+  - rechiffre les champs `TexteChiffre` (clé de l'installation → clé de l'espace, SQL direct, une
+    seule transaction, arrêt sur la première valeur illisible) ;
+  - recopie `MEDIA_ROOT` et les pièces jointes des plaintes (rechiffrées) dans le dossier de l'espace.
+
+  Le sous-domaine réservé est permis (espace d'Expertise-ID). Les données métier restent dans la base
+  centrale et les fichiers d'origine restent en place : à effacer une fois l'espace vérifié. En cas
+  d'échec, supprimer `org_<sd>` (`dropdb`) et relancer.
+- **Sauvegardes** : une sauvegarde par base (`pg_dump -Fc` de la centrale et de chaque
+  `org_<sd>`, liste par `lister_organisations`), plus `media/organisations/<sd>` et
+  `prive/plaintes/organisations/<sd>`. La clé de la plateforme (`PLAINTES_CLE_CHIFFREMENT`) se garde à
+  part : sans elle, les données protégées d'une sauvegarde sont illisibles.
+
+## 5 bis. Page d'accueil, inscription, démonstration, identité
+
+- **Vitrine publique** (`pages/accueil/`) : `/accueil` (présentation, « Créer le profil de mon
+  organisation », « Essayer la démo », connexion), `/inscription`, `/abonnement`, `/a-propos`.
+  L'adresse `/` mène à l'accueil quand on n'est pas connecté. Logo de la plateforme :
+  `public/logo-plateforme.svg` (aussi icône d'onglet) ; logo d'Expertise-ID : `public/logo-expertise-id.png`.
+  Toutes les pages portent « Développé par Expertise-ID » (`components/common/Logos.tsx`).
+- **Inscription d'une organisation** (`apps/accounts/inscriptions.py`, modèle `DemandeInscription`) :
+  profil (organisation, contact, identifiant, mot de passe gardé en empreinte) sans aucun accès ;
+  page « Vous devez vous abonner avant de continuer » avec le choix d'une offre ; la connexion avec
+  ces identifiants renvoie `403 {code: "abonnement_requis"}` vers cette page tant que le statut
+  n'est pas « activée ». Chaque profil et chaque offre partent par courriel à
+  `COURRIEL_ABONNEMENTS` ; liste dans Utilisateurs › Demandes d'inscription. Envois limités par
+  connexion (`public/inscription/`, `public/inscription/offre/`), champ piège.
+- **Démonstration** (`apps/accounts/demo.py`) : la plateforme héberge une organisation par
+  installation ; la démo est donc une **installation séparée** (`MODE_DEMO=True`), remplie par
+  `python manage.py preparer_demo` (5 projets aux 11 onglets remplis, plaintes et retours ; refuse
+  de tourner sans `MODE_DEMO`). « Essayer la démo » y connecte `visiteur_demo` (rôle Administrateur,
+  jetons marqués `demo`) ; `ModeDemoMiddleware` refuse toute écriture (403 `code: mode_demo`),
+  l'interface l'annonce comme un enregistrement simulé et affiche un bandeau. Sur une installation
+  d'organisation, le bouton renvoie vers `URL_DEMO` (`/accueil?demo=1` ouvre la démo d'elle-même).
+- **Identité de l'organisation** (`core.IdentiteOrganisation`, `identite/`) : nom et logo (PNG,
+  JPEG ou WebP vérifiés, 2 Mo), réglés dans Organisation › Identité et logo (Administrateur),
+  affichés dans l'en-tête et sur la page de connexion ; logo servi par `identite/logo/`.
+- **Fichiers des documents** (`apps/documents/liens.py`) : jamais par `/media/` (non servi) ; l'API
+  remet pour chaque version une adresse signée valable une heure, l'accès étant revérifié au
+  téléchargement (`fichiers-documents/<jeton>/`, aperçu dans le navigateur pour PDF, images, vidéos).
+  Explorateur (`components/documents/ExplorateurDocuments.tsx`) : dossiers et sous-dossiers,
+  documents à la racine (`sans_dossier`), bibliothèque libre (`libres`), déplacement et renommage.
+  Sélection multiple (cases à cocher, « Tout sélectionner ») : `documents/supprimer-selection/`
+  (POST) et `documents/telecharger-selection/?dossiers=…&documents=…` (zip, dernière version de
+  chaque document, arborescence des dossiers, 500 Mo au plus).
+- **Corbeille** (`apps/documents/corbeille.py`, page `/corbeille`, dernière rubrique du menu, droits du
+  module Documents) : supprimer un document ou un dossier le met à la corbeille (`supprime_le`,
+  `supprime_par` ; `objects` les cache, `tous` les garde). Un dossier part avec son contenu
+  (`supprime_avec`), qui revient ou disparaît avec lui. Restaurer : à sa place, ou à la racine si le
+  dossier d'origine est lui-même à la corbeille. Vider (sélection ou `tout`) : suppression définitive,
+  fichiers compris. API : `documents/corbeille/`, `…/corbeille/restaurer/`, `…/corbeille/vider/`.
+  Vidage automatique après 30 jours (`purger()`, lancé chaque heure par `check_deadlines` dans chaque
+  espace) ; la date de suppression définitive est affichée.
 
 ## 6. Utilisateurs, rôles et permissions
 
@@ -1129,7 +1263,8 @@ de `visible_projets_ids()` (`apps/projects/queryset_filters.py`).
 
 | Méthode | Route | Rôle |
 |---|---|---|
-| POST | `auth/token/` | Obtenir les jetons d'accès et de rafraîchissement (`username`, `password`) ; connexion réussie ou refusée inscrite au journal d'audit |
+| POST | `auth/token/` | Obtenir les jetons d'accès et de rafraîchissement (`username`, `password`) ; envoie un code par courriel et renvoie l'étape et son jeton ; connexion inscrite au journal d'audit |
+| POST | `auth/double-authentification/code/`, `…/renvoyer/` | Sans jeton de connexion (jeton d'étape) : code reçu par courriel → jetons ; envoi d'un nouveau code |
 | POST | `auth/token/refresh/` | Renouveler le jeton d'accès (rotation du jeton de rafraîchissement) |
 | POST | `auth/token/verify/` | Vérifier un jeton |
 | GET | `utilisateurs/me/` | Utilisateur connecté |

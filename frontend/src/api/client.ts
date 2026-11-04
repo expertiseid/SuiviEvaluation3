@@ -24,11 +24,50 @@ export const tokenStorage = {
 
 export const apiClient = axios.create({ baseURL: API_BASE_URL });
 
-const estPagePublique = () => /^\/(plainte|partage)(\/|$)/.test(window.location.pathname);
+const estPagePublique = () => /^\/(plainte|partage|document)(\/|$)/.test(window.location.pathname);
+
+const CLE_ORG_PUBLIQUE = "se_org_publique";
+
+/**
+ * Plateforme multi-organisations (adresse unique) : organisation du compte connecté, lue dans son
+ * jeton (marque « org » posée par le serveur), ou « » (opérateur Expertise-ID, pas de session).
+ */
+export function organisationConnectee(): string {
+  const jeton = tokenStorage.getAccess();
+  if (!jeton) return "";
+  try {
+    const charge = JSON.parse(atob(jeton.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof charge.org === "string" ? charge.org : "";
+  } catch {
+    return "";
+  }
+}
+
+/** Pages publiques d'une organisation (plainte, partage) : son identifiant, venu du lien (?org=). */
+export function organisationPublique(): string {
+  const dansLien = new URLSearchParams(window.location.search).get("org");
+  try {
+    if (dansLien) sessionStorage.setItem(CLE_ORG_PUBLIQUE, dansLien);
+    return dansLien || sessionStorage.getItem(CLE_ORG_PUBLIQUE) || "";
+  } catch {
+    return dansLien || "";
+  }
+}
+
+/** Ajoute ?org= de l'organisation connectée à un lien public (formulaire de plainte, partage). */
+export function avecOrganisation(lien: string): string {
+  const org = organisationConnectee();
+  return org ? `${lien}${lien.includes("?") ? "&" : "?"}org=${encodeURIComponent(org)}` : lien;
+}
 
 apiClient.interceptors.request.use((config) => {
   const token = tokenStorage.getAccess();
-  if (token) {
+  if (estPagePublique()) {
+    // Page publique d'une organisation : l'organisation du lien, jamais celle d'une session ouverte
+    // dans ce navigateur (le jeton l'emporterait côté serveur).
+    const org = organisationPublique();
+    if (org) config.headers["X-Organisation"] = org;
+  } else if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   // Langue des fichiers produits par le serveur (rapports, exports, modèles d'import).
@@ -43,7 +82,9 @@ async function refreshAccessToken(): Promise<string | null> {
   if (!refresh) return null;
   try {
     const { data } = await axios.post(`${API_BASE_URL}/auth/token/refresh/`, { refresh });
-    tokenStorage.setAccess(data.access);
+    // Le serveur remplace aussi le jeton de rafraîchissement (l'ancien devient inutilisable) : on le garde.
+    if (data.refresh) tokenStorage.set(data.access, data.refresh);
+    else tokenStorage.setAccess(data.access);
     return data.access as string;
   } catch {
     tokenStorage.clear();
@@ -76,6 +117,22 @@ apiClient.interceptors.response.use(
   },
   async (error) => {
     const original = error.config;
+    // Installation de démonstration : l'enregistrement n'est que simulé.
+    if (error.response?.status === 403 && error.response.data?.code === "mode_demo") {
+      notifications.show({
+        title: voc("Mode démonstration"),
+        message: voc("Enregistrement simulé : en démonstration, rien n'est conservé. Abonnez-vous pour utiliser la plateforme."),
+        color: "orange",
+        autoClose: 6000,
+      });
+      return Promise.reject(error);
+    }
+    // Jeton obtenu sans le second facteur alors que le compte l'exige : nouvelle connexion obligatoire.
+    if (error.response?.status === 401 && error.response.data?.code === "double_authentification_requise") {
+      tokenStorage.clear();
+      if (!estPagePublique()) window.location.href = "/login";
+      return Promise.reject(error);
+    }
     if (error.response?.status === 401 && !original._retry) {
       original._retry = true;
       if (!refreshingPromise) {

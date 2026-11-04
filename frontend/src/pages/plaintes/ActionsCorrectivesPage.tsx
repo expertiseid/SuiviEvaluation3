@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
-import { ActionIcon, Anchor, Badge, Button, Group, Modal, MultiSelect, Select, SimpleGrid, Stack, Table, Text, TextInput, Textarea, Title } from "@mantine/core";
+import { Pencil, Plus, Trash2 } from "lucide-react";
+import { ActionIcon, Anchor, Badge, Button, Group, Modal, MultiSelect, Select, SimpleGrid, Stack, Table, Text, TextInput, Textarea } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import {
@@ -22,6 +22,7 @@ import { messageErreurApi } from "../../utils/erreurs";
 import { useAccesModules } from "../../utils/modules";
 import { voc } from "../../utils/vocabulaire";
 import { erreursParChamp } from "./saisieRetour";
+import { EnTetePlaintes } from "./EnTetePlaintes";
 
 const COULEUR: Record<StatutActionCorrective, string> = { A_FAIRE: "blue", EN_COURS: "orange", REALISEE: "teal", ABANDONNEE: "gray" };
 
@@ -99,13 +100,9 @@ export function ActionsCorrectivesPage() {
   const aujourdhui = new Date().toISOString().slice(0, 10);
   return (
     <Stack>
-      <Stack gap={2}>
-        <Anchor component={Link} to="/plaintes" size="sm"><Group gap={4}><ArrowLeft size={14} />{voc("Plaintes et retours")}</Group></Anchor>
-        <Group justify="space-between">
-          <Title order={2}>{voc("Actions correctives")}</Title>
-          {modifiable && <Button leftSection={<Plus size={14} />} onClick={() => setOuverte("nouvelle")}>{voc("Nouvelle action corrective")}</Button>}
-        </Group>
-      </Stack>
+      <EnTetePlaintes
+        actions={modifiable && <Button leftSection={<Plus size={14} />} onClick={() => setOuverte("nouvelle")}>{voc("Nouvelle action corrective")}</Button>}
+      />
       <Group gap="sm">
         <Select placeholder={voc("Tous les statuts")} clearable w={200} data={STATUTS_ACTION.map((s) => ({ value: s, label: libelleStatutAction(s) }))} value={statut} onChange={setStatut} />
         <Select placeholder={voc("Tous les projets")} clearable searchable w={240} data={projets.map((p) => ({ value: String(p.id), label: p.code || p.nom }))} value={projet} onChange={setProjet} />

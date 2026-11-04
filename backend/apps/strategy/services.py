@@ -54,7 +54,7 @@ DEBUT_LEGENDE = "En jaune :"
 # Texte entier (pas de f-string) : il se traduit d'un bloc dans les modèles en d'autres langues.
 LEGENDE_STRUCTURATION = (
     "En jaune : les niveaux de votre structuration, de gauche à droite. Leurs noms et leur nombre sont "
-    "libres (ex : Plan → Programme → Résultat → Pilier) — renommez, ajoutez ou supprimez des colonnes."
+    "libres (ex : Plan → Programme → Résultat → Composante) — renommez, ajoutez ou supprimez des colonnes."
 )
 COMMENTAIRE_NIVEAU = (
     "Nom libre : renommez cette colonne, ou ajoutez des colonnes de niveau (à droite, ou entre deux "
@@ -290,7 +290,7 @@ def importer_structuration(fichier, cadre_strategique) -> dict:
     """
     Import de la structuration d'un document. Feuille lue : « Structuration », sinon la première
     feuille qui n'est pas « Instructions » (jamais le mode d'emploi). Une feuille « Fiche » (modèle
-    d'un programme, d'un pilier…) renseigne aussi la fiche et les bailleurs du document, avant la
+    d'un programme, d'une composante…) renseigne aussi la fiche et les bailleurs du document, avant la
     structuration. Un fichier de la chaîne des documents (feuilles « Documents » et « Éléments »)
     importé ici est importé comme tel.
     """

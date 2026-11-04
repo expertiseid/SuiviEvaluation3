@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Créer l'espace de mon organisation — Expertise-ID Monitora</title>
+  <meta name="description" content="Inscrivez votre organisation sur la plateforme Expertise-ID Monitora : profil, offre, activation par Expertise-ID.">
+  <link rel="icon" href="vitrine/logo-plateforme.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="vitrine/site.css">
+  <script src="vitrine/config.js"></script>
+</head>
+<body>
+
+<header class="entete">
+  <div class="conteneur">
+    <a class="marque" href="index.html">
+      <img src="vitrine/logo-plateforme.svg" alt="">
+      <span><strong>Expertise-ID Monitora</strong><span>Plateforme de suivi-évaluation</span></span>
+    </a>
+    <nav class="menu" aria-label="Navigation principale">
+      <a href="index.html#fonctionnalites">Fonctionnalités</a>
+      <a href="actualites.html">Actualités</a>
+      <a href="partenaires.html">Partenaires</a>
+      <a href="documentation.html">Documentation</a>
+      <a href="index.html#offres">Offres</a>
+      <a href="#" data-lien="CONNEXION">Se connecter</a>
+    </nav>
+    <button class="bascule" aria-label="Ouvrir le menu" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="inscription">
+  <div class="conteneur">
+    <div>
+      <div class="etiquette">Inscription</div>
+      <h1 style="font-size:clamp(2rem,3.6vw,3rem)">Créer l'espace de votre organisation</h1>
+      <div class="parcours" aria-label="Étapes de l'inscription">
+        <span id="pas-1" class="actif"><i>1</i>Votre organisation</span>
+        <span id="pas-2"><i>2</i>Votre offre</span>
+        <span id="pas-3"><i>3</i>Demande envoyée</span>
+      </div>
+
+      <!-- Étape 1 : profil -->
+      <form id="etape-1" class="formulaire" novalidate>
+        <div class="message-global erreur" id="erreur-1" role="alert"></div>
+        <input class="piege" type="text" name="site_web" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+        <fieldset>
+          <legend>L'organisation</legend>
+          <div class="champs">
+            <div class="champ large"><label for="organisation">Nom de l'organisation <span class="req">*</span></label><input id="organisation" name="organisation" required autocomplete="organization"></div>
+            <div class="champ"><label for="type_organisation">Type d'organisation <span class="req">*</span></label>
+              <select id="type_organisation" name="type_organisation" required>
+                <option value="">Choisir…</option>
+                <option>ONG</option><option>Association</option><option>Entreprise</option><option>Administration publique</option>
+                <option>Collectivité territoriale</option><option>Agence des Nations unies</option><option>Bailleur de fonds</option>
+                <option>Bureau d'études</option><option>Autre</option>
+              </select>
+            </div>
+            <div class="champ"><label for="pays">Pays <span class="req">*</span></label><input id="pays" name="pays" required autocomplete="country-name" placeholder="Burkina Faso"></div>
+            <div class="champ"><label for="secteur">Secteur d'intervention</label><input id="secteur" name="secteur" placeholder="Santé, éducation, eau et assainissement…"></div>
+            <div class="champ"><label for="taille">Nombre de projets</label>
+              <select id="taille" name="taille">
+                <option value="">Choisir…</option><option>1 à 5 projets</option><option>6 à 20 projets</option><option>21 à 50 projets</option><option>Plus de 50 projets</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>La personne de contact</legend>
+          <div class="champs">
+            <div class="champ"><label for="contact_nom">Nom et prénom <span class="req">*</span></label><input id="contact_nom" name="contact_nom" required autocomplete="name"></div>
+            <div class="champ"><label for="contact_fonction">Fonction</label><input id="contact_fonction" name="contact_fonction" autocomplete="organization-title"></div>
+            <div class="champ"><label for="courriel">Adresse courriel <span class="req">*</span></label><input id="courriel" name="courriel" type="email" required autocomplete="email"><span class="aide">Vous vous connecterez avec cette adresse ; le code de connexion y sera envoyé.</span></div>
+            <div class="champ"><label for="telephone">Téléphone <span class="req">*</span></label><input id="telephone" name="telephone" type="tel" required autocomplete="tel" placeholder="+226 …"></div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Votre accès administrateur</legend>
+          <div class="champs">
+            <div class="champ"><label for="mot_de_passe">Mot de passe <span class="req">*</span></label><input id="mot_de_passe" name="mot_de_passe" type="password" required autocomplete="new-password"><span class="aide">8 caractères au moins, pas trop simple.</span></div>
+            <div class="champ"><label for="confirmation">Confirmer le mot de passe <span class="req">*</span></label><input id="confirmation" type="password" required autocomplete="new-password"></div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <div class="champ large"><label for="message">Un mot pour l'équipe (facultatif)</label><textarea id="message" name="message" rows="3" placeholder="Vos besoins, le nombre d'utilisateurs prévu, une date de démarrage…"></textarea></div>
+          <div class="champ large" style="margin-top:16px">
+            <label class="case"><input type="checkbox" id="conditions" name="conditions"> <span>J'accepte que ces informations soient utilisées par Expertise-ID pour créer et gérer l'espace de mon organisation. <span class="req">*</span></span></label>
+          </div>
+        </fieldset>
+
+        <button class="bouton bouton-plein" type="submit" id="bouton-1">Continuer vers le choix de l'offre</button>
+      </form>
+
+      <!-- Étape 2 : offre -->
+      <form id="etape-2" class="formulaire cache" novalidate>
+        <div class="message-global erreur" id="erreur-2" role="alert"></div>
+        <p>Le profil de <b id="nom-organisation"></b> est créé. Choisissez votre offre : l'équipe d'Expertise-ID vous contacte pour activer votre espace.</p>
+        <div class="choix-offres">
+          <label><input type="radio" name="offre" value="ESSENTIEL"><strong>Essentiel</strong><small>Petites organisations</small>
+            <ul><li>Jusqu'à 5 projets</li><li>Planification, indicateurs, suivi, documents</li><li>Jusqu'à 10 utilisateurs</li></ul></label>
+          <label><input type="radio" name="offre" value="STANDARD"><strong>Standard</strong><small>Plusieurs projets</small>
+            <ul><li>Jusqu'à 25 projets</li><li>+ bénéficiaires, carte, plaintes</li><li>Jusqu'à 50 utilisateurs</li></ul></label>
+          <label><input type="radio" name="offre" value="INSTITUTION"><strong>Institution</strong><small>Grands programmes</small>
+            <ul><li>Sans limite</li><li>Tous les modules</li><li>Formation et accompagnement</li></ul></label>
+        </div>
+        <div class="champ large"><label for="message-offre">Précisions (facultatif)</label><textarea id="message-offre" rows="3" placeholder="Nombre d'utilisateurs, besoins particuliers…"></textarea></div>
+        <p style="margin-top:22px"><button class="bouton bouton-plein" type="submit" id="bouton-2">Envoyer ma demande</button></p>
+      </form>
+
+      <!-- Étape 3 : confirmation -->
+      <div id="etape-3" class="formulaire cache">
+        <div class="succes">
+          <div class="rond"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></div>
+          <h2>Demande envoyée</h2>
+          <p>Merci. L'équipe d'Expertise-ID étudie votre demande et active votre espace.<br>Vous recevrez un courriel dès qu'il sera prêt.</p>
+          <p><a class="bouton" href="#" data-lien="CONNEXION">Page de connexion</a></p>
+          <p class="aide" style="color:var(--gris)">Vous pourrez alors vous connecter avec votre adresse courriel et le mot de passe choisi.<br>En attendant, découvrez la plateforme : <a href="#" data-lien="DEMO">essayer la démo</a> · <a href="documentation.html">lire la documentation</a>.</p>
+        </div>
+      </div>
+    </div>
+
+    <aside class="aparte">
+      <h3>Comment ça se passe ?</h3>
+      <ol>
+        <li><b>Vous remplissez ce formulaire</b> : cinq minutes suffisent.</li>
+        <li><b>Vous choisissez une offre.</b> Expertise-ID reçoit votre demande.</li>
+        <li><b>Votre espace est activé</b> : sa base de données et votre compte administrateur sont créés, et vous êtes prévenu par courriel.</li>
+        <li><b>Vous vous connectez</b> avec votre adresse courriel, votre mot de passe et le code reçu par courriel.</li>
+      </ol>
+      <p>Une question ? Consultez la <a href="documentation.html">documentation</a>.</p>
+    </aside>
+  </div>
+</main>
+
+<footer class="pied">
+  <div class="conteneur">
+    <div>
+      <a class="marque" href="index.html"><img src="vitrine/logo-plateforme.svg" alt=""><span><strong>Expertise-ID Monitora</strong></span></a>
+      <a class="signature" href="https://www.expertise-id.com" target="_blank" rel="noopener"><img src="vitrine/logo-expertise-id.png" alt="Expertise-ID"><span>Développé par <b>Expertise-ID</b></span></a>
+    </div>
+    <div><h4>La plateforme</h4><a href="index.html#fonctionnalites">Fonctionnalités</a><a href="index.html#video">Vidéo</a><a href="#" data-lien="DEMO">Démonstration</a></div>
+    <div><h4>Aide</h4><a href="documentation.html">Documentation</a><a href="#" data-lien="CONNEXION">Se connecter</a></div>
+    <div class="bas"><span>© 2026 Expertise-ID</span></div>
+  </div>
+</footer>
+<script src="vitrine/traductions.js"></script>
+<script src="vitrine/langues.js"></script>
+<script src="vitrine/site.js"></script>
+<script src="vitrine/inscription.js"></script>
+</body>
+</html>

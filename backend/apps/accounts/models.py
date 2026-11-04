@@ -101,3 +101,67 @@ class Role(models.Model):
 
     def __str__(self):
         return self.libelle
+
+
+class CodeConnexion(models.Model):
+    """
+    Code à usage unique envoyé par courriel à chaque connexion (apps.accounts.double_auth). Seule son
+    empreinte est gardée ; il expire après quelques minutes et après un nombre limité d'essais.
+    """
+
+    utilisateur = models.ForeignKey(User, on_delete=models.CASCADE, related_name="codes_connexion")
+    empreinte = models.CharField(max_length=64)
+    cree_le = models.DateTimeField(auto_now_add=True)
+    expire_le = models.DateTimeField()
+    essais = models.PositiveSmallIntegerField(default=0)
+    utilise = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ("-cree_le",)
+        verbose_name = "Code de connexion"
+
+
+class DemandeInscription(models.Model):
+    """
+    Profil créé par une organisation depuis la page d'accueil (apps.accounts.inscriptions). Il ne donne
+    aucun accès : l'organisation doit d'abord s'abonner ; Expertise-ID active ensuite son espace.
+    Le mot de passe choisi n'est gardé que sous forme d'empreinte.
+    """
+
+    class Offre(models.TextChoices):
+        ESSENTIEL = "ESSENTIEL", "Essentiel"
+        STANDARD = "STANDARD", "Standard"
+        INSTITUTION = "INSTITUTION", "Institution"
+
+    class Statut(models.TextChoices):
+        ABONNEMENT_REQUIS = "ABONNEMENT_REQUIS", "Abonnement requis"
+        OFFRE_CHOISIE = "OFFRE_CHOISIE", "Offre choisie, à contacter"
+        EN_ACTIVATION = "EN_ACTIVATION", "Espace en cours de création"
+        ACTIVEE = "ACTIVEE", "Abonnement activé"
+        REFUSEE = "REFUSEE", "Refusée"
+
+    organisation = models.CharField(max_length=200)
+    type_organisation = models.CharField(max_length=60)
+    pays = models.CharField(max_length=80)
+    secteur = models.CharField(max_length=120, blank=True)
+    taille = models.CharField(max_length=40, blank=True, help_text="Nombre de personnes ou de projets suivis.")
+    contact_nom = models.CharField(max_length=200)
+    contact_fonction = models.CharField(max_length=120, blank=True)
+    courriel = models.EmailField()
+    telephone = models.CharField(max_length=40)
+    identifiant = models.CharField(max_length=150, unique=True)
+    # Plateforme multi-organisations : adresse souhaitée de l'espace (ong-a.DOMAINE_PLATEFORME).
+    sous_domaine = models.CharField(max_length=40, blank=True)
+    erreur_activation = models.TextField(blank=True)
+    mot_de_passe = models.CharField(max_length=200, help_text="Empreinte du mot de passe choisi.")
+    offre = models.CharField(max_length=20, choices=Offre.choices, blank=True)
+    message = models.TextField(blank=True)
+    statut = models.CharField(max_length=20, choices=Statut.choices, default=Statut.ABONNEMENT_REQUIS)
+    cree_le = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-cree_le",)
+        verbose_name = "Demande d'inscription"
+
+    def __str__(self):
+        return self.organisation

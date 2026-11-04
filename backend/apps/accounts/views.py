@@ -1,16 +1,18 @@
 from django.db.models import ProtectedError
 from rest_framework import viewsets
-from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action, api_view, authentication_classes, permission_classes, throttle_classes
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 
 from apps.core.audit import A, auditer
 from apps.core.permissions import IsAdmin, IsAdminOrReadOnly
 from apps.core.vocabulaire import v
 
+from . import double_auth
 from .models import Role, User
-from .serializers import RoleSerializer, UserSerializer, UserWriteSerializer
+from .serializers import DemandeInscriptionSerializer, RoleSerializer, UserSerializer, UserWriteSerializer
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -89,3 +91,87 @@ class RoleViewSet(viewsets.ModelViewSet):
                 {"detail": v("Impossible de supprimer ce rôle : des utilisateurs l'ont encore. Change d'abord leur rôle.")}
             )
         instance.delete()
+
+
+# --- Connexion en deux temps (sans jeton de connexion : le jeton d'étape suffit) -------------------
+
+class LimiteSecondFacteur(AnonRateThrottle):
+    rate = "30/hour"
+
+
+def _etape(vue):
+    return api_view(["POST"])(authentication_classes([])(permission_classes([AllowAny])(throttle_classes([LimiteSecondFacteur])(vue))))
+
+
+@_etape
+def connexion_code(request):
+    """{jeton, code} : code reçu par courriel ; renvoie les jetons de connexion."""
+    with double_auth.espace_du_jeton(request.data.get("jeton", "")) as jeton:
+        return Response(double_auth.verifier(jeton, request.data.get("code", "")))
+
+
+@_etape
+def connexion_renvoyer(request):
+    """{jeton} : envoie un nouveau code ; renvoie le nouveau jeton d'étape."""
+    with double_auth.espace_du_jeton(request.data.get("jeton", "")) as jeton:
+        return Response(double_auth.renvoyer(jeton))
+
+
+# --- Inscription d'une organisation (page d'accueil) -----------------------------------------------
+
+class LimiteInscription(AnonRateThrottle):
+    rate = "10/hour"
+
+
+def _public(vue):
+    return api_view(["POST"])(authentication_classes([])(permission_classes([AllowAny])(throttle_classes([LimiteInscription])(vue))))
+
+
+@_public
+def inscription(request):
+    """Création du profil d'une organisation ; renvoie la référence pour la page d'abonnement."""
+    from . import inscriptions
+
+    if request.data.get("site_web"):  # champ piège, invisible pour une personne
+        raise ValidationError({"detail": "Envoi refusé."})
+    return Response(inscriptions.resume(inscriptions.creer(request.data)), status=201)
+
+
+@_public
+def inscription_offre(request):
+    """{reference, offre, message} : offre d'abonnement choisie, transmise à Expertise-ID."""
+    from . import inscriptions
+
+    demande = inscriptions.demande_du_jeton(request.data.get("reference"))
+    return Response(inscriptions.resume(inscriptions.choisir_offre(demande, request.data.get("offre"), request.data.get("message") or "")))
+
+
+class DemandeInscriptionViewSet(viewsets.ReadOnlyModelViewSet):
+    """Profils d'organisations créés depuis la page d'accueil (Administrateur) ; …/statut/ pour les suivre."""
+
+    permission_classes = (IsAdmin,)
+    pagination_class = None
+
+    def get_queryset(self):
+        from apps.organisations import contexte
+
+        from .models import DemandeInscription
+
+        # Plateforme multi-organisations : les demandes de toutes les organisations sont dans la base
+        # centrale ; elles ne se consultent que dans la console Expertise-ID, jamais depuis un espace.
+        if contexte.actif():
+            raise PermissionDenied("Les demandes d'inscription se consultent dans la console Expertise-ID.")
+        return DemandeInscription.objects.all()
+
+    serializer_class = DemandeInscriptionSerializer
+
+    @action(detail=True, methods=["post"])
+    def statut(self, request, pk=None):
+        from .models import DemandeInscription
+
+        demande = self.get_object()
+        if request.data.get("statut") not in DemandeInscription.Statut.values:
+            raise ValidationError({"statut": "Statut inconnu."})
+        demande.statut = request.data["statut"]
+        demande.save(update_fields=["statut"])
+        return Response(self.get_serializer(demande).data)

@@ -1,5 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
+import { useEstDemo } from "../auth/useAuth";
 import { cheminApi, usePartage } from "../utils/partage";
 import type { Langue } from "../utils/i18n";
 import type { Vocabulaire } from "../utils/vocabulaire";
@@ -54,11 +55,16 @@ export function useConfigurationTableauDeBord() {
 
 export function useEnregistrerConfigurationTableauDeBord() {
   const queryClient = useQueryClient();
+  const demo = useEstDemo();
+  const cle = ["dashboard", "configuration", usePartage()?.jeton];
   return useMutation({
-    mutationFn: async (payload: Partial<Pick<ConfigurationTableauDeBord, "blocs_masques" | "types_graphiques">>) =>
-      (await apiClient.put<ConfigurationTableauDeBord>("/dashboard/configuration/", payload)).data,
+    mutationFn: async (payload: Partial<Pick<ConfigurationTableauDeBord, "blocs_masques" | "types_graphiques">>) => {
+      // Démonstration : le visiteur essaie la personnalisation dans son navigateur, rien n'est enregistré.
+      if (demo) return { ...queryClient.getQueryData<ConfigurationTableauDeBord>(cle)!, ...payload };
+      return (await apiClient.put<ConfigurationTableauDeBord>("/dashboard/configuration/", payload)).data;
+    },
     // Mise à jour immédiate de l'écran, sans attendre un rechargement.
-    onSuccess: (configuration) => queryClient.setQueryData(["dashboard", "configuration"], configuration),
+    onSuccess: (configuration) => queryClient.setQueryData(cle, configuration),
   });
 }
 
@@ -84,13 +90,18 @@ export function useConfigurationMenu() {
 
 export function useUpdateConfigurationMenu() {
   const queryClient = useQueryClient();
+  const demo = useEstDemo();
+  const cle = ["configuration-menu", usePartage()?.jeton];
   return useMutation({
     mutationFn: async (payload: {
       libelles: Record<string, string>;
       icones: Record<string, string>;
       vocabulaire: Vocabulaire;
-    }) =>
-      (await apiClient.put<ConfigurationMenu>("/interface/menu/", payload)).data,
-    onSuccess: (data) => queryClient.setQueryData(["configuration-menu"], data),
+    }) => {
+      // Démonstration : essai dans le navigateur du visiteur seulement.
+      if (demo) return { ...queryClient.getQueryData<ConfigurationMenu>(cle)!, ...payload };
+      return (await apiClient.put<ConfigurationMenu>("/interface/menu/", payload)).data;
+    },
+    onSuccess: (data) => queryClient.setQueryData(cle, data),
   });
 }

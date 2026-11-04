@@ -83,7 +83,7 @@ export function CadresStrategiquesListPage() {
     <Stack gap="md">
       <Group justify="space-between">
         {rang === 0 ? (
-          <TitreRubrique route="/strategie" defaut={voc("Cadres stratégiques")} />
+          <TitreRubrique route="/strategie" defaut={maillon?.nom_pluriel || voc("Cadres stratégiques")} />
         ) : (
           <Title order={2}>{maillon?.nom_pluriel}</Title>
         )}
@@ -95,7 +95,7 @@ export function CadresStrategiquesListPage() {
             </Button>
           )}
           <Button onClick={() => setModalOuvert((n) => Math.abs(n) + 1)}>
-            {rang === 0 ? voc("Nouveau cadre stratégique") : voc`Nouveau document — ${maillon?.nom ?? ""}`}
+            {maillon ? voc`Nouveau document — ${maillon.nom}` : voc("Nouveau cadre stratégique")}
           </Button>
         </Group>
       </Group>

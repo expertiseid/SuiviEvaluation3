@@ -121,7 +121,7 @@ def generer_modele_import_complet() -> bytes:
     instructions.append([
         "- Feuille « Planification » : même principe — toutes les colonnes avant « Sous-activité » (sauf "
         "« Code », en jaune dans le modèle) sont les niveaux de la planification du projet, avec les noms et le nombre que tu veux "
-        "(ex : Objectif général > Objectif spécifique > Activité, ou Résultat > Pilier > Activité)."
+        "(ex : Objectif général > Objectif spécifique > Activité, ou Résultat > Composante > Activité)."
     ])
     instructions.append([
         "- Sauf les colonnes « Attribut : … » (en bleu, ex : « Attribut : Responsable ») : ce ne sont jamais des "

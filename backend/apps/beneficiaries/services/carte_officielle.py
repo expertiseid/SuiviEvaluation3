@@ -592,7 +592,7 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
     titre = titre.upper() if titre else titre_auto
     sous = sous_titre or sous
     ov.add_patch(Rectangle((marge, haut - hh), W - 2 * marge, hh, fc=BLEU, ec="none"))
-    ov.text(marge + 10, haut - 11, (organisation or traduire("Plateforme de suivi-évaluation")).upper(), color="#ccfbf1", fontsize=F(17), va="center", ha="left")
+    ov.text(marge + 10, haut - 11, (organisation or traduire("Expertise-ID Monitora")).upper(), color="#ccfbf1", fontsize=F(17), va="center", ha="left")
     fs_titre = 40 if len(titre) <= 62 else 40 * 62 / len(titre)
     ov.text(marge + 10, haut - 29, titre, color="white", fontsize=F(fs_titre), fontweight="bold", va="center", ha="left")
     ov.text(marge + 10, haut - 49, sous, color="#e2e8f0", fontsize=F(22), va="center", ha="left")
@@ -714,9 +714,9 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
     sources_limites = {l.source for l in limites.values()} or {"—"}
     fond_txt = f"\nFond : {source_fond}" if source_fond else ""
     cases = [
-        ("SOURCE DES DONNÉES", f"Plateforme de suivi-évaluation (bénéficiaires)\nLimites : {', '.join(sorted(sources_limites))}{fond_txt}\nÉdition du {date}"),
+        ("SOURCE DES DONNÉES", f"Expertise-ID Monitora (bénéficiaires)\nLimites : {', '.join(sorted(sources_limites))}{fond_txt}\nÉdition du {date}"),
         ("PROJECTION", f"WGS 84 / UTM zone {zone_utm}{'N' if crs < 32700 else 'S'} (EPSG:{crs})\nGrille : degrés-minutes (WGS 84)\nÉchelle : 1 : {fr(ech)} (format {papier})"),
-        ("RÉALISATION", f"{organisation or traduire('Plateforme de suivi-évaluation')}\nCarte générée le {date}"),
+        ("RÉALISATION", f"{organisation or traduire('Expertise-ID Monitora')}\nCarte générée le {date}"),
         ("NOTE", "Bénéficiaires sans GPS placés au centre de leur localité ;\nlimites administratives à titre indicatif."),
     ]
     ov.add_patch(Rectangle((marge, marge), W - 2 * marge, fth, fc="#f1f5f9", ec="black", lw=LW(1.5)))

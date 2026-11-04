@@ -1,0 +1,36 @@
+# Blocs à mettre dans le Caddyfile du serveur (/opt/ariste/Caddyfile, partagé avec les autres
+# applications) pour la plateforme Expertise-ID Monitora en production (Nginx écoute sur 172.18.0.1:8097).
+# Faire une copie du Caddyfile avant, puis :
+#   docker exec ariste-web-1 caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+#   docker exec ariste-web-1 caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+# Retour arrière : remettre la copie et recharger.
+
+# 1. Tout en haut du fichier (option globale) : certificats « à la demande », autorisés un par un
+#    par la plateforme (seulement l'adresse principale et les espaces inscrits).
+{
+	on_demand_tls {
+		ask http://172.18.0.1:8097/api/v1/tls/certificat/
+	}
+}
+
+# 2. Remplace l'ancien bloc « 204-168-227-18.sslip.io » (ports 8090 / 5190).
+204-168-227-18.sslip.io {
+	encode gzip
+	reverse_proxy 172.18.0.1:8097
+}
+
+# 3. Remplace l'ancien bloc « demo.204-168-227-18.sslip.io » (ports 8092 / 5191).
+demo.204-168-227-18.sslip.io {
+	encode gzip
+	reverse_proxy 172.18.0.1:8097
+}
+
+# 4. Nouveau : les espaces des organisations (formation.…, ong-a.…). Les blocs plus précis
+#    (education., commerce., demo.) restent prioritaires.
+*.204-168-227-18.sslip.io {
+	tls {
+		on_demand
+	}
+	encode gzip
+	reverse_proxy 172.18.0.1:8097
+}

@@ -201,7 +201,9 @@ def modele_pour(objet, langue):
 
 
 def lien_suivi():
-    return getattr(settings, "PLAINTES_URL_PUBLIQUE", "").rstrip("/") + "/plainte/suivi"
+    from apps.organisations.contexte import lien_public
+
+    return lien_public("/plainte/suivi")
 
 
 def rediger(dossier, objet, canal):

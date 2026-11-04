@@ -34,12 +34,16 @@ import type { GedDocument } from "../../types";
 import { voc } from "../../utils/vocabulaire";
 
 import { locale } from "../../utils/i18n";
-function NouveauDossierModal({
+import { ExplorateurDocuments } from "./ExplorateurDocuments";
+export function NouveauDossierModal({
   projetId,
+  parentId = null,
   opened,
   onClose,
   onCree,
 }: {
+  /** Dossier dans lequel créer le nouveau (explorateur) ; null = à la racine. */
+  parentId?: number | null;
   /** Absent = dossier libre, sans rattachement à un projet (bibliothèque "Documents"). */
   projetId?: number;
   opened: boolean;
@@ -53,7 +57,7 @@ function NouveauDossierModal({
   async function handleCreate() {
     if (!nom.trim()) return;
     try {
-      const dossier = await createDossier.mutateAsync({ nom: nom.trim(), projet: projetId ?? null });
+      const dossier = await createDossier.mutateAsync({ nom: nom.trim(), projet: projetId ?? null, parent: parentId });
       notifications.show({ message: voc("Dossier créé"), color: "green" });
       setNom("");
       onCree?.(dossier.id);
@@ -66,7 +70,8 @@ function NouveauDossierModal({
   return (
     <Modal opened={opened} onClose={onClose} title={voc("Nouveau dossier")}>
       <Stack gap="sm">
-        <TextInput label={voc("Nom du dossier")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
+        <TextInput label={voc("Nom du dossier")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} data-autofocus
+          onKeyDown={(e) => e.key === "Enter" && handleCreate()} />
         <Group justify="flex-end">
           <Button onClick={handleCreate} loading={createDossier.isPending}>{voc("Créer")}</Button>
         </Group>
@@ -75,7 +80,7 @@ function NouveauDossierModal({
   );
 }
 
-function NouveauDocumentModal({
+export function NouveauDocumentModal({
   projetId,
   activiteId,
   sousActiviteId,
@@ -124,9 +129,10 @@ function NouveauDocumentModal({
   return (
     <Modal opened={opened} onClose={onClose} title={voc("Nouveau document")}>
       <Stack gap="sm">
+        <FileInput label={voc("Fichier")} value={fichier} required
+          onChange={(f) => { setFichier(f); if (f && !nom.trim()) setNom(f.name.replace(/\.[^.]+$/, "")); }} />
         <TextInput label={voc("Nom du document")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
         <TextInput label={voc("Type")} placeholder={voc("Ex : Note, Contrat, Rapport bailleur…")} value={typeDocument} onChange={(e) => setTypeDocument(e.currentTarget.value)} />
-        <FileInput label={voc("Fichier")} value={fichier} onChange={setFichier} required />
         <Group justify="flex-end">
           <Button onClick={handleCreate} loading={createDocument.isPending}>{voc("Ajouter")}</Button>
         </Group>
@@ -135,7 +141,7 @@ function NouveauDocumentModal({
   );
 }
 
-function VersionsModal({ documentId, opened, onClose }: { documentId: number | null; opened: boolean; onClose: () => void }) {
+export function VersionsModal({ documentId, opened, onClose }: { documentId: number | null; opened: boolean; onClose: () => void }) {
   const { data: versions, isLoading } = useDocumentVersions(documentId ?? undefined);
   const nouvelleVersion = useNouvelleVersion();
   const [fichier, setFichier] = useState<File | null>(null);
@@ -205,6 +211,20 @@ export function DocumentsTab({
   activiteId?: number;
   sousActiviteId?: number;
 }) {
+  // Projet ou bibliothèque libre : explorateur par dossiers ; activité ou sous-activité : simple liste.
+  if (activiteId === undefined && sousActiviteId === undefined) return <ExplorateurDocuments projetId={projetId} />;
+  return <ListeDocuments projetId={projetId} activiteId={activiteId} sousActiviteId={sousActiviteId} />;
+}
+
+function ListeDocuments({
+  projetId,
+  activiteId,
+  sousActiviteId,
+}: {
+  projetId?: number;
+  activiteId?: number;
+  sousActiviteId?: number;
+}) {
   const { data: dossiers } = useDossiers(projetId);
   const [dossierActif, setDossierActif] = useState<string | null>(null);
   const { data: documents, isLoading } = useDocuments({
@@ -239,11 +259,11 @@ export function DocumentsTab({
 
   function handleSupprimer(doc: { id: number; nom: string }) {
     confirmerSuppression({
-      message: voc`Supprimer le document "${doc.nom}" ainsi que toutes ses versions ? Cette action est irréversible.`,
+      message: voc`Mettre le document "${doc.nom}" à la corbeille ? Vous pourrez le restaurer depuis la Corbeille.`,
       onConfirm: async () => {
         try {
           await deleteDocument.mutateAsync(doc.id);
-          notifications.show({ message: voc("Document supprimé"), color: "green" });
+          notifications.show({ message: voc("Document mis à la corbeille"), color: "green" });
         } catch (error) {
           notifications.show({
             message: messageErreurApi(error, voc("Erreur lors de la suppression du document")),
@@ -258,12 +278,12 @@ export function DocumentsTab({
     if (!dossierActif) return;
     const dossier = dossiers?.find((d) => String(d.id) === dossierActif);
     confirmerSuppression({
-      message: voc`Supprimer le dossier "${dossier?.nom ?? ""}" ainsi que tous les documents qu'il contient ? Cette action est irréversible.`,
+      message: voc`Mettre le dossier "${dossier?.nom ?? ""}" et son contenu à la corbeille ? Vous pourrez le restaurer depuis la Corbeille.`,
       onConfirm: async () => {
         try {
           await deleteDossier.mutateAsync(Number(dossierActif));
           setDossierActif(null);
-          notifications.show({ message: voc("Dossier supprimé"), color: "green" });
+          notifications.show({ message: voc("Dossier mis à la corbeille"), color: "green" });
         } catch (error) {
           notifications.show({
             message: messageErreurApi(error, voc("Erreur lors de la suppression du dossier")),

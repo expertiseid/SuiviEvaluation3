@@ -796,7 +796,7 @@ export function ProjetForm({ projet, onDone }: { projet?: ProjetResume; onDone: 
                 <Select
                   label={voc("Rattachement dans le cadre stratégique")}
                   placeholder={cadreChoisi ? voc("Choisir l'élément dont relève le projet…") : voc("Choisis d'abord un cadre stratégique")}
-                  description={voc("Facultatif — l'élément du cadre dont relève ce projet, à n'importe quel niveau (programme, axe, pilier…). Permet de regrouper les projets par élément.")}
+                  description={voc("Facultatif — l'élément du cadre dont relève ce projet, à n'importe quel niveau (programme, axe, composante…). Permet de regrouper les projets par élément.")}
                   data={optionsRattachement}
                   value={field.value || null}
                   onChange={(v) => field.onChange(v ?? "")}

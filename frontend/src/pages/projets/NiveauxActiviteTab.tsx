@@ -106,7 +106,7 @@ export function NiveauxActiviteTab({ projetId }: { projetId: number }) {
     <Card withBorder padding="lg" radius="md">
       <Text fw={600} mb="xs">{voc("Configuration des niveaux")}</Text>
       <Text size="sm" c="dimmed" mb="sm">
-        {voc("Les niveaux de la planification de ce projet, du plus haut au plus bas. Leur nom et leur nombre sont libres : par exemple « Objectif général » → « Objectif spécifique » → « Activité », ou « Résultat » → « Pilier » → « Activité ». Renommer un niveau change seulement son nom affiché, jamais les éléments déjà saisis.")}</Text>
+        {voc("Les niveaux de la planification de ce projet, du plus haut au plus bas. Leur nom et leur nombre sont libres : par exemple « Objectif général » → « Objectif spécifique » → « Activité », ou « Résultat » → « Composante » → « Activité ». Renommer un niveau change seulement son nom affiché, jamais les éléments déjà saisis.")}</Text>
 
       {isLoading ? (
         <Text c="dimmed">{voc("Chargement…")}</Text>

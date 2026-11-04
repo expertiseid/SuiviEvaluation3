@@ -26,7 +26,7 @@ def notifier(destinataires, type_, titre, message="", lien="", courriel=True):
     if emails:
         try:
             send_mail(
-                subject=f"[Suivi-Évaluation] {titre}",
+                subject=f"[Expertise-ID Monitora] {titre}",
                 message=message or titre,
                 from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
                 recipient_list=emails,

@@ -29,3 +29,7 @@ Thumbs.db
 
 # Docker
 *.log
+
+# Sauvegardes locales (bases et fichiers : données réelles, jamais versionnées)
+sauvegardes/
+!.env.prod.example

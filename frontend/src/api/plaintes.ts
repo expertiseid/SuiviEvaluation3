@@ -10,7 +10,7 @@
  * et, sans compte, /api/v1/public/plaintes/.
  */
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "./client";
+import { apiClient, avecOrganisation } from "./client";
 import type { Paginated } from "../types";
 import { locale } from "../utils/i18n";
 import { voc } from "../utils/vocabulaire";
@@ -556,6 +556,14 @@ export function useDossiersPlainte(filtres: FiltresDossiers) {
   });
 }
 
+/** Nombre de dossiers de chaque vue prête (colonne des vues de la liste). */
+export function useCompteursVues() {
+  return useQuery({
+    queryKey: [CLE, "dossiers", "compteurs"],
+    queryFn: async () => (await apiClient.get<Record<string, number>>("/plaintes/dossiers/compteurs/")).data,
+  });
+}
+
 export function useEnregistrerDossier() {
   const rafraichir = useRafraichir();
   return useMutation({
@@ -583,7 +591,7 @@ export async function telechargerQrFormulaire(projet: number | null) {
 
 /** Adresse du formulaire public (à afficher, imprimer, partager). */
 export const adresseFormulairePublic = (projet: number | null) =>
-  `${window.location.origin}/plainte${projet ? `?projet=${projet}` : ""}`;
+  avecOrganisation(`${window.location.origin}/plainte${projet ? `?projet=${projet}` : ""}`);
 
 // Pages publiques (sans compte).
 

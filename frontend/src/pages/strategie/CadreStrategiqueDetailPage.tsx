@@ -135,7 +135,7 @@ function NiveauModal({
       <Stack gap="sm">
         <TextInput
           label={voc("Nom du niveau")}
-          description={voc("Ex : « Orientation stratégique », « Priorité », « Pilier »...")}
+          description={voc("Ex : « Orientation stratégique », « Priorité », « Composante »...")}
           value={nomNiveau}
           onChange={(e) => setNomNiveau(e.currentTarget.value)}
           required

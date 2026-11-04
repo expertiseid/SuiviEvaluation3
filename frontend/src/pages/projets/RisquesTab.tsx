@@ -14,6 +14,7 @@ import {
   Select,
   SimpleGrid,
   Stack,
+  Table,
   Text,
   Textarea,
   TextInput,
@@ -249,88 +250,108 @@ function Matrice({ risques, filtre, onFiltre }: { risques: Risque[]; filtre: [nu
   );
 }
 
-function CarteRisque({ risque, modifiable, onModifier, onReevaluer }: { risque: Risque; modifiable: boolean; onModifier: () => void; onReevaluer: () => void }) {
+/** Une ligne du registre ; l'historique des réévaluations se déplie sous la ligne. */
+function LigneRisque({ risque, modifiable, onModifier, onReevaluer }: { risque: Risque; modifiable: boolean; onModifier: () => void; onReevaluer: () => void }) {
   const [historique, setHistorique] = useState(false);
   const supprimer = useSupprimerRisque();
   const supprimerEvaluation = useSupprimerEvaluationRisque();
   const statut = STATUTS.find((s) => s.value === risque.statut)!;
   const revueDepassee = risque.date_prochaine_revue && ouvert(risque) && risque.date_prochaine_revue < aujourdhui();
+  const texte = (t: string | null | undefined) => <Text size="xs" c={t ? undefined : "dimmed"} style={{ whiteSpace: "pre-wrap" }}>{t || "—"}</Text>;
 
   return (
-    <Card withBorder padding="sm" radius="md" style={{ borderLeft: `4px solid var(--mantine-color-${NIVEAUX_RISQUE[risque.niveau].couleur}-6)`, opacity: ouvert(risque) ? 1 : 0.75 }}>
-      <Group justify="space-between" align="flex-start" wrap="nowrap">
-        <Stack gap={4} style={{ minWidth: 0 }}>
-          <Group gap={6}>
-            <Badge variant="outline" color="dark">{risque.code}</Badge>
-            <Text fw={600}>{risque.libelle}</Text>
-          </Group>
-          <Group gap={6}>
+    <>
+      <Table.Tr style={{ verticalAlign: "top", opacity: ouvert(risque) ? 1 : 0.7 }}>
+        <Table.Td style={{ borderLeft: `4px solid var(--mantine-color-${NIVEAUX_RISQUE[risque.niveau].couleur}-6)` }}>
+          <Badge variant="outline" color="dark">{risque.code}</Badge>
+        </Table.Td>
+        <Table.Td>
+          <Text size="sm" fw={600}>{risque.libelle}</Text>
+          {risque.description && <Text size="xs" c="dimmed" mt={2}>{risque.description}</Text>}
+        </Table.Td>
+        <Table.Td>
+          <Stack gap={4} align="flex-start">
             <BadgeNiveau niveau={risque.niveau} criticite={risque.criticite} />
-            <Badge variant="dot" color={statut.couleur}>{statut.label}</Badge>
-            <Badge variant="light" color="gray">{risque.nature === "INTERNE" ? voc("Interne") : voc("Externe")}</Badge>
-            {risque.categorie && <Badge variant="light" color="gray">{risque.categorie}</Badge>}
             <Text size="xs" c="dimmed">P{risque.probabilite} × I{risque.impact}</Text>
-          </Group>
-          {risque.description && <Text size="sm" c="dimmed">{risque.description}</Text>}
-          {risque.mesures_attenuation && <Text size="sm"><b>{voc("Atténuation :")}</b> {risque.mesures_attenuation}</Text>}
-          {risque.plan_contingence && <Text size="sm"><b>{voc("Si survenu :")}</b> {risque.plan_contingence}</Text>}
-          <Group gap="md">
-            {risque.element_libelle && <Text size="xs" c="dimmed">{voc("Élément :")} {risque.element_libelle}</Text>}
-            {risque.responsable_nom && <Text size="xs" c="dimmed">{voc("Responsable :")} {risque.responsable_nom}</Text>}
-            <Text size="xs" c={revueDepassee ? "red" : "dimmed"} fw={revueDepassee ? 600 : undefined}>
-              {voc("Prochaine revue :")} {dateFr(risque.date_prochaine_revue)}{revueDepassee ? voc(" (dépassée)") : ""}
-            </Text>
-          </Group>
-        </Stack>
-        <Group gap={4} wrap="nowrap">
-          {modifiable && (
-            <Button size="compact-xs" variant="light" leftSection={<RefreshCw size={12} />} onClick={onReevaluer}>{voc("Réévaluer")}</Button>
-          )}
-          {risque.evaluations.length > 0 && (
-            <Tooltip label={voc("Historique des réévaluations")}>
-              <ActionIcon variant="subtle" aria-label={voc("Historique des réévaluations")} onClick={() => setHistorique((x) => !x)}>
-                {historique ? <ChevronUp size={15} /> : <History size={15} />}
-              </ActionIcon>
-            </Tooltip>
-          )}
-          {modifiable && (
-            <>
-              <ActionIcon variant="subtle" onClick={onModifier} aria-label={voc("Modifier")}><Pencil size={14} /></ActionIcon>
-              <ActionIcon
-                variant="subtle"
-                color="red"
-                aria-label={voc("Supprimer")}
-                onClick={() => confirmerSuppression({ message: voc`Supprimer le risque ${risque.code} et son historique ?`, onConfirm: () => supprimer.mutate(risque.id) })}
-              >
-                <Trash2 size={14} />
-              </ActionIcon>
-            </>
-          )}
-        </Group>
-      </Group>
-      {historique && (
-        <Timeline mt="sm" bulletSize={14} lineWidth={2}>
-          {risque.evaluations.map((e) => (
-            <Timeline.Item key={e.id} color={NIVEAUX_RISQUE[e.niveau].couleur} title={
-              <Group gap={6}>
-                <Text size="sm" fw={500}>{dateFr(e.date)}</Text>
-                <BadgeNiveau niveau={e.niveau} criticite={e.probabilite * e.impact} />
-                <Text size="xs" c="dimmed">{STATUTS.find((s) => s.value === e.statut)?.label} · {e.saisi_par_nom}</Text>
-                {modifiable && (
-                  <ActionIcon size="xs" variant="subtle" color="red" aria-label={voc("Supprimer la réévaluation")}
-                    onClick={() => confirmerSuppression({ message: voc`Supprimer la réévaluation du ${dateFr(e.date)} ?`, onConfirm: () => supprimerEvaluation.mutate(e.id) })}>
-                    <Trash2 size={11} />
+          </Stack>
+        </Table.Td>
+        <Table.Td><Badge variant="dot" color={statut.couleur}>{statut.label}</Badge></Table.Td>
+        <Table.Td>
+          <Text size="xs">{risque.nature === "INTERNE" ? voc("Interne") : voc("Externe")}</Text>
+          {risque.categorie && <Text size="xs" c="dimmed">{risque.categorie}</Text>}
+        </Table.Td>
+        <Table.Td>{texte(risque.mesures_attenuation)}</Table.Td>
+        <Table.Td>{texte(risque.plan_contingence)}</Table.Td>
+        <Table.Td>{texte(risque.element_libelle)}</Table.Td>
+        <Table.Td>{texte(risque.responsable_nom)}</Table.Td>
+        <Table.Td>
+          <Text size="xs" c={revueDepassee ? "red" : undefined} fw={revueDepassee ? 600 : undefined} style={{ whiteSpace: "nowrap" }}>
+            {dateFr(risque.date_prochaine_revue)}
+          </Text>
+          {revueDepassee && <Text size="xs" c="red">{voc("dépassée")}</Text>}
+        </Table.Td>
+        <Table.Td>
+          <Group gap={2} wrap="nowrap">
+            {modifiable && (
+              <Tooltip label={voc("Réévaluer")}>
+                <ActionIcon variant="light" aria-label={voc("Réévaluer")} onClick={onReevaluer}><RefreshCw size={14} /></ActionIcon>
+              </Tooltip>
+            )}
+            {risque.evaluations.length > 0 && (
+              <Tooltip label={voc("Historique des réévaluations")}>
+                <ActionIcon variant="subtle" aria-label={voc("Historique des réévaluations")} onClick={() => setHistorique((x) => !x)}>
+                  {historique ? <ChevronUp size={15} /> : <History size={15} />}
+                </ActionIcon>
+              </Tooltip>
+            )}
+            {modifiable && (
+              <>
+                <Tooltip label={voc("Modifier")}>
+                  <ActionIcon variant="subtle" onClick={onModifier} aria-label={voc("Modifier")}><Pencil size={14} /></ActionIcon>
+                </Tooltip>
+                <Tooltip label={voc("Supprimer")}>
+                  <ActionIcon
+                    variant="subtle"
+                    color="red"
+                    aria-label={voc("Supprimer")}
+                    onClick={() => confirmerSuppression({ message: voc`Supprimer le risque ${risque.code} et son historique ?`, onConfirm: () => supprimer.mutate(risque.id) })}
+                  >
+                    <Trash2 size={14} />
                   </ActionIcon>
-                )}
-              </Group>
-            }>
-              {e.actions_menees && <Text size="xs">{voc("Actions :")} {e.actions_menees}</Text>}
-              {e.commentaire && <Text size="xs" c="dimmed">{e.commentaire}</Text>}
-            </Timeline.Item>
-          ))}
-        </Timeline>
+                </Tooltip>
+              </>
+            )}
+          </Group>
+        </Table.Td>
+      </Table.Tr>
+      {historique && (
+        <Table.Tr>
+          <Table.Td colSpan={11} bg="gray.0">
+            <Text size="xs" fw={600} mb={6}>{voc("Historique des réévaluations")}</Text>
+            <Timeline bulletSize={14} lineWidth={2}>
+              {risque.evaluations.map((e) => (
+                <Timeline.Item key={e.id} color={NIVEAUX_RISQUE[e.niveau].couleur} title={
+                  <Group gap={6}>
+                    <Text size="sm" fw={500}>{dateFr(e.date)}</Text>
+                    <BadgeNiveau niveau={e.niveau} criticite={e.probabilite * e.impact} />
+                    <Text size="xs" c="dimmed">{STATUTS.find((s) => s.value === e.statut)?.label} · {e.saisi_par_nom}</Text>
+                    {modifiable && (
+                      <ActionIcon size="xs" variant="subtle" color="red" aria-label={voc("Supprimer la réévaluation")}
+                        onClick={() => confirmerSuppression({ message: voc`Supprimer la réévaluation du ${dateFr(e.date)} ?`, onConfirm: () => supprimerEvaluation.mutate(e.id) })}>
+                        <Trash2 size={11} />
+                      </ActionIcon>
+                    )}
+                  </Group>
+                }>
+                  {e.actions_menees && <Text size="xs">{voc("Actions :")} {e.actions_menees}</Text>}
+                  {e.commentaire && <Text size="xs" c="dimmed">{e.commentaire}</Text>}
+                </Timeline.Item>
+              ))}
+            </Timeline>
+          </Table.Td>
+        </Table.Tr>
       )}
-    </Card>
+    </>
   );
 }
 
@@ -378,32 +399,47 @@ export function RisquesTab({ projetId, codeProjet, modifiable }: { projetId: num
         </Group>
       </Group>
 
-      <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md">
-        <Card withBorder padding="md" radius="md">
-          <Text size="sm" fw={600} mb="xs">{voc("Matrice des risques ouverts")}</Text>
-          <Matrice risques={risques} filtre={filtre} onFiltre={setFiltre} />
-          {filtre && (
-            <Button size="compact-xs" variant="subtle" mt="xs" onClick={() => setFiltre(null)}>{voc("Afficher tous les risques")}</Button>
-          )}
+      <Card withBorder padding="md" radius="md" maw={420}>
+        <Text size="sm" fw={600} mb="xs">{voc("Matrice des risques ouverts")}</Text>
+        <Matrice risques={risques} filtre={filtre} onFiltre={setFiltre} />
+        {filtre && (
+          <Button size="compact-xs" variant="subtle" mt="xs" onClick={() => setFiltre(null)}>{voc("Afficher tous les risques")}</Button>
+        )}
+      </Card>
+
+      {risques.length === 0 ? (
+        <Card withBorder padding="lg" radius="md">
+          <Text c="dimmed" ta="center">
+            {voc("Aucun risque identifié. Ajoutez les risques internes (organisation, finances…) et externes (sécurité, climat, prix…) qui pourraient compromettre le projet.")}
+          </Text>
         </Card>
-        <Stack gap="sm" style={{ gridColumn: "span 2" }}>
-          {risques.length === 0 && (
-            <Card withBorder padding="lg" radius="md">
-              <Text c="dimmed" ta="center">
-                {voc("Aucun risque identifié. Ajoutez les risques internes (organisation, finances…) et externes (sécurité, climat, prix…) qui pourraient compromettre le projet.")}
-              </Text>
-            </Card>
-          )}
-          {visibles.map((r) => (
-            <CarteRisque key={r.id} risque={r} modifiable={modifiable} onModifier={() => setEdition(r)} onReevaluer={() => setReevaluation(r)} />
-          ))}
-          {!filtre && fermes > 0 && (
-            <Button variant="subtle" size="xs" leftSection={voirFermes ? <ChevronUp size={14} /> : <ChevronDown size={14} />} onClick={() => setVoirFermes((x) => !x)} style={{ alignSelf: "flex-start" }}>
-              {voirFermes ? voc("Masquer") : voc("Afficher")} {voc("les risques maîtrisés ou clos (")}{fermes})
-            </Button>
-          )}
-        </Stack>
-      </SimpleGrid>
+      ) : (
+        <Table.ScrollContainer minWidth={1350}>
+          <Table withTableBorder withColumnBorders verticalSpacing="sm" horizontalSpacing="xs" highlightOnHover>
+            <Table.Thead>
+              <Table.Tr style={{ background: "var(--mantine-color-teal-9)" }}>
+                {[
+                  [voc("Code"), 70], [voc("Risque"), 240], [voc("Criticité"), 110], [voc("Statut"), 100], [voc("Nature"), 110],
+                  [voc("Atténuation"), 200], [voc("Si survenu"), 200], [voc("Élément concerné"), 170], [voc("Responsable"), 130],
+                  [voc("Prochaine revue"), 100], ["", 130],
+                ].map(([t, w], i) => (
+                  <Table.Th key={i} w={w} c="white" fz="xs" tt="uppercase">{t}</Table.Th>
+                ))}
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {visibles.map((r) => (
+                <LigneRisque key={r.id} risque={r} modifiable={modifiable} onModifier={() => setEdition(r)} onReevaluer={() => setReevaluation(r)} />
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      )}
+      {!filtre && fermes > 0 && (
+        <Button variant="subtle" size="xs" leftSection={voirFermes ? <ChevronUp size={14} /> : <ChevronDown size={14} />} onClick={() => setVoirFermes((x) => !x)} style={{ alignSelf: "flex-start" }}>
+          {voirFermes ? voc("Masquer") : voc("Afficher")} {voc("les risques maîtrisés ou clos (")}{fermes})
+        </Button>
+      )}
 
       {edition && <RisqueForm projetId={projetId} risque={edition} onClose={() => setEdition(null)} />}
       {reevaluation && <ReevaluationModal risque={reevaluation} onClose={() => setReevaluation(null)} />}

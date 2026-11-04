@@ -14,3 +14,6 @@ export function codeDepuisLibelle(libelle: string): string {
     .replace(/[^A-Z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "");
 }
+
+/** Initiales d'un nom (deux lettres au plus), pour les avatars. */
+export const initiales = (nom: string) => nom.split(/\s+/).filter(Boolean).slice(0, 2).map((m) => m[0]).join("").toUpperCase();

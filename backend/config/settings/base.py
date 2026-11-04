@@ -14,7 +14,7 @@ environ.Env.read_env(BASE_DIR.parent / ".env")
 
 SECRET_KEY = env("DJANGO_SECRET_KEY", default="insecure-dev-key-change-me")
 DEBUG = env.bool("DJANGO_DEBUG", default=False)
-ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
+ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", ".localhost", "127.0.0.1"])
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -47,11 +47,15 @@ INSTALLED_APPS = [
     "apps.suivi",
     "apps.planification",
     "apps.plaintes",
+    "apps.organisations",
+    "apps.formation",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    # Plateforme multi-organisations : la requête travaille dans la base de son organisation.
+    "apps.organisations.middleware.OrganisationMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -60,6 +64,8 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
     "apps.core.modules.ModulesMasquesMiddleware",
+    # Installation de démonstration : le visiteur ne peut rien enregistrer (apps.accounts.demo).
+    "apps.accounts.demo.ModeDemoMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -89,6 +95,16 @@ DATABASES = {
         default="postgres://se_platform:changeme@localhost:5432/se_platform",
     )
 }
+# Base centrale (registre des organisations). Hors organisation, « default » est cette même base ; dans
+# une organisation, « default » est la base de l'organisation (apps.organisations.contexte).
+DATABASES["central"] = {**DATABASES["default"], "TEST": {"MIRROR": "default"}}
+DATABASE_ROUTERS = ["apps.organisations.contexte.RouteurOrganisations"]
+
+# --- Plateforme multi-organisations (apps/organisations) ---
+# Faux : une organisation par installation (comportement historique). Vrai : chaque organisation a son
+# sous-domaine (ong-a.DOMAINE_PLATEFORME) et sa propre base sur le même serveur.
+MULTI_ORGANISATIONS = env.bool("MULTI_ORGANISATIONS", default=False)
+DOMAINE_PLATEFORME = env("DOMAINE_PLATEFORME", default="localhost")
 
 AUTH_USER_MODEL = "accounts.User"
 
@@ -107,14 +123,30 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = env("MEDIA_ROOT", default="") or str(BASE_DIR / "media")
+# Fichiers téléversés rangés par organisation (MEDIA_ROOT/organisations/<sous-domaine>/).
+STORAGES = {
+    "default": {"BACKEND": "apps.organisations.stockage.StockageOrganisation"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+# Clés du cache (compteurs anti-abus…) séparées par organisation.
+# Production (plusieurs processus, voire plusieurs serveurs) : REDIS_URL, cache partagé. Sinon, en mémoire.
+REDIS_URL = env("REDIS_URL", default="")
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache" if REDIS_URL else "django.core.cache.backends.locmem.LocMemCache",
+        "KEY_FUNCTION": "apps.organisations.contexte.cle_cache",
+        **({"LOCATION": REDIS_URL} if REDIS_URL else {}),
+    }
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- DRF ---
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        # Jeton JWT, refusé pour un compte soumis au second facteur s'il a été obtenu sans lui.
+        "apps.accounts.double_auth.JWTAvecDoubleFacteur",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_PAGINATION_CLASS": "apps.core.pagination.StandardPagination",
@@ -128,13 +160,27 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Plateforme de Suivi-Évaluation — API",
-    "DESCRIPTION": "API de la plateforme de suivi-évaluation multi-projets.",
+    "TITLE": "Expertise-ID Monitora — API",
+    "DESCRIPTION": "API de la plateforme Expertise-ID Monitora (suivi-évaluation multi-projets).",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
 
 # --- JWT ---
+# Démonstration : MODE_DEMO=True sur l'installation de démonstration uniquement (données fictives) ;
+# « Essayer la démo » y connecte un visiteur qui peut tout voir mais rien enregistrer (apps.accounts.demo).
+# Sur une installation d'organisation : URL_DEMO = adresse de l'installation de démonstration.
+MODE_DEMO = env.bool("MODE_DEMO", default=False)
+URL_DEMO = env("URL_DEMO", default="")
+# Page d'accueil : une organisation peut demander à créer son profil (puis s'abonner).
+INSCRIPTIONS_OUVERTES = env.bool("INSCRIPTIONS_OUVERTES", default=True)
+# Adresse d'Expertise-ID qui reçoit les profils créés et les offres d'abonnement choisies.
+COURRIEL_ABONNEMENTS = env("COURRIEL_ABONNEMENTS", default="")
+
+# Code de connexion envoyé par courriel à chaque connexion, pour tous les comptes
+# (apps/accounts/double_auth.py). À ne désactiver que sur un poste de développement.
+DOUBLE_AUTH_OBLIGATOIRE = env.bool("DOUBLE_AUTH_OBLIGATOIRE", default=True)
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=env.int("JWT_ACCESS_LIFETIME_MIN", default=45)),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=env.int("JWT_REFRESH_LIFETIME_DAYS", default=7)),
@@ -149,6 +195,11 @@ CORS_ALLOWED_ORIGINS = env.list(
 )
 # Nom des fichiers téléchargés (cartes, rapports) lisible par le navigateur.
 CORS_EXPOSE_HEADERS = ["Content-Disposition"]
+# Espaces des organisations : https://<sous-domaine>.DOMAINE_PLATEFORME (et *.localhost en développement).
+CORS_ALLOWED_ORIGIN_REGEXES = env.list("CORS_ALLOWED_ORIGIN_REGEXES", default=[r"^http://([a-z0-9-]+\.)?localhost(:\d+)?$"])
+from corsheaders.defaults import default_headers  # noqa: E402
+
+CORS_ALLOW_HEADERS = (*default_headers, "x-organisation")
 
 # --- Email (notifications) ---
 # Backend "console" par défaut : les emails sont écrits dans les logs du

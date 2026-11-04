@@ -103,6 +103,8 @@ class EvenementAudit(models.Model):
         PERMISSION = "PERMISSION", "Modification des droits d'un compte"
         HABILITATION = "HABILITATION", "Habilitation confidentielle"
         DROITS_PERSONNES = "DROITS_PERSONNES", "Demande d'une personne sur ses données"
+        DOUBLE_AUTHENTIFICATION = "DOUBLE_AUTHENTIFICATION", "Double authentification"
+        PARTAGE = "PARTAGE", "Partage d'un document par lien"
 
     date = models.DateTimeField(auto_now_add=True, db_index=True)
     utilisateur_id = models.IntegerField(null=True, blank=True, db_index=True)
@@ -125,3 +127,22 @@ class EvenementAudit(models.Model):
 
     def delete(self, *args, **kwargs):
         raise PermissionError("Le journal d'audit ne se supprime pas.")
+
+
+class IdentiteOrganisation(models.Model):
+    """
+    Identité de l'organisation qui utilise la plateforme (une seule ligne : IdentiteOrganisation.courante()) :
+    nom et logo affichés dans l'en-tête et sur la page de connexion. Réglée par l'Administrateur.
+    """
+
+    nom = models.CharField(max_length=200, blank=True, help_text="Nom affiché (ex : ONG Exemple).")
+    logo = models.ImageField(upload_to="identite/", blank=True)
+    modifie_le = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Identité de l'organisation"
+
+    @classmethod
+    def courante(cls):
+        identite, _ = cls.objects.get_or_create(pk=1)
+        return identite

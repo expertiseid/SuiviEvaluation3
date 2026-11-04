@@ -1,0 +1,112 @@
+/* Organigramme : boîtes reliées par des traits, de haut en bas (arbre en listes imbriquées). */
+.arbre {
+  display: flex;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  min-width: max-content;
+}
+
+.arbre ul {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin: 0;
+  padding: 20px 0 0;
+}
+
+.arbre li {
+  position: relative;
+  list-style: none;
+  padding: 20px 8px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Traits horizontaux vers les voisins, trait vertical vers la boîte. */
+.arbre li::before,
+.arbre li::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 50%;
+  width: 50%;
+  height: 20px;
+  border-top: 1px solid var(--trait);
+}
+
+.arbre li::after {
+  right: auto;
+  left: 50%;
+  border-left: 1px solid var(--trait);
+}
+
+.arbre li:only-child::before,
+.arbre li:only-child::after {
+  display: none;
+}
+
+.arbre li:only-child {
+  padding-top: 0;
+}
+
+.arbre li:first-child::before,
+.arbre li:last-child::after {
+  border: 0 none;
+}
+
+.arbre li:last-child::before {
+  border-right: 1px solid var(--trait);
+  border-radius: 0 6px 0 0;
+}
+
+.arbre li:first-child::after {
+  border-radius: 6px 0 0 0;
+}
+
+/* Trait vertical sous un parent, vers ses enfants. */
+.arbre ul ul::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  height: 20px;
+  border-left: 1px solid var(--trait);
+}
+
+/* La racine n'a pas de trait au-dessus d'elle. */
+.arbre > li {
+  padding-top: 0;
+}
+
+.arbre > li::before,
+.arbre > li::after {
+  display: none;
+}
+
+.boite {
+  width: 230px;
+  text-align: start;
+  cursor: pointer;
+  transition: box-shadow 120ms ease, transform 120ms ease;
+}
+
+.boite:hover {
+  box-shadow: var(--mantine-shadow-md);
+  transform: translateY(-1px);
+}
+
+.conteneur {
+  --trait: var(--mantine-color-gray-5);
+  padding: 8px 4px 16px;
+}
+
+/* Ligne d'un projet dans le volet : toute la largeur, survol marqué. */
+.ligne {
+  display: block;
+}
+
+.ligne:hover {
+  background: var(--mantine-color-gray-0);
+}

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { ArrowDown, ArrowLeft, ArrowUp, FileDown, FileSpreadsheet, Info, Lock, Plus, RotateCcw, Settings2, Trash2 } from "lucide-react";
-import { ActionIcon, Alert, Anchor, Badge, Button, Group, Loader, Modal, Select, Stack, Table, Tabs, Text, Title } from "@mantine/core";
+import { ArrowDown, ArrowUp, FileDown, FileSpreadsheet, Info, Lock, Plus, RotateCcw, Settings2, Trash2 } from "lucide-react";
+import { ActionIcon, Alert, Badge, Button, Group, Loader, Modal, Select, Stack, Table, Tabs, Text } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import {
@@ -18,6 +17,7 @@ import { useProjets } from "../../api/projects";
 import { messageErreurApi } from "../../utils/erreurs";
 import { voc } from "../../utils/vocabulaire";
 import { ElementsTableau } from "./ElementsTableau";
+import { EnTetePlaintes } from "./EnTetePlaintes";
 
 /** Composer une vue : ajouter, retirer, ordonner ; pour soi, ou pour toute l'organisation (Administrateur). */
 function PersonnaliserVue({ vue, onClose }: { vue: string; onClose: () => void }) {
@@ -117,17 +117,15 @@ export function TableauPlaintesPage() {
 
   return (
     <Stack>
-      <Stack gap={2}>
-        <Anchor component={Link} to="/plaintes" size="sm"><Group gap={4}><ArrowLeft size={14} />{voc("Plaintes et retours")}</Group></Anchor>
-        <Group justify="space-between">
-          <Title order={2}>{voc("Tableau de bord des plaintes et retours")}</Title>
-          <Group gap="xs">
+      <EnTetePlaintes
+        actions={
+          <>
             <Button variant="default" leftSection={<Settings2 size={14} />} onClick={() => setPersonnaliser(true)}>{voc("Personnaliser")}</Button>
             <Button variant="light" leftSection={<FileSpreadsheet size={14} />} onClick={() => exporter("excel")}>{voc("Excel")}</Button>
             <Button variant="light" leftSection={<FileDown size={14} />} onClick={() => exporter("pdf")}>{voc("PDF")}</Button>
-          </Group>
-        </Group>
-      </Stack>
+          </>
+        }
+      />
       <Tabs value={vue} onChange={(v) => v && setVue(v)}>
         <Tabs.List>
           {(catalogue?.vues ?? []).map((v) => (

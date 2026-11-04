@@ -87,7 +87,7 @@ def generer_modele_import_indicateurs(avec_colonne_projet: bool = True) -> bytes
     instructions.append([
         "- Niveau de rattachement « Projet » : laisse « Nom de l'élément rattaché » vide. Pour un élément de "
         "la planification, indique le nom de son niveau tel qu'il est nommé dans le projet (ex : Objectif "
-        "spécifique, Résultat, Pilier, Activité) et le libellé exact de l'élément."
+        "spécifique, Résultat, Composante, Activité) et le libellé exact de l'élément."
     ])
     instructions.append(["- Niveau « Aucun » (ou vide) : indicateur stratégique, sans rattachement projet."])
     instructions.append([

@@ -39,7 +39,7 @@ export function ImportProjetModal({ opened, onClose }: { opened: boolean; onClos
     <Modal opened={opened} onClose={fermer} title={voc("Importer un projet depuis Excel")} size="lg">
       <Stack gap="md">
         <Alert color="blue" variant="light">
-          {voc("La feuille « Projet » du modèle porte sa fiche (nom, code, dates, modalités, bailleur…) en une ligne par champ. La feuille « Planification » porte sa planification : une colonne par niveau (en jaune dans le modèle, avec les noms et le nombre que tu veux, ex : Résultat → Pilier → Activité), puis Sous-activité — une seule colonne de niveau remplie par ligne.")}</Alert>
+          {voc("La feuille « Projet » du modèle porte sa fiche (nom, code, dates, modalités, bailleur…) en une ligne par champ. La feuille « Planification » porte sa planification : une colonne par niveau (en jaune dans le modèle, avec les noms et le nombre que tu veux, ex : Résultat → Composante → Activité), puis Sous-activité — une seule colonne de niveau remplie par ligne.")}</Alert>
 
         <Button variant="light" leftSection={<Download size={16} />} onClick={() => telechargerModeleImportProjet()}>
           {voc("Télécharger le modèle Excel")}

@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Documentation — Expertise-ID Monitora</title>
+  <meta name="description" content="Guide complet de la plateforme Expertise-ID Monitora : démarrer, projets, indicateurs, suivi, bénéficiaires, documents, plaintes, utilisateurs.">
+  <link rel="icon" href="vitrine/logo-plateforme.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="vitrine/site.css">
+  <script src="vitrine/config.js"></script>
+</head>
+<body>
+
+<header class="entete">
+  <div class="conteneur">
+    <a class="marque" href="index.html">
+      <img src="vitrine/logo-plateforme.svg" alt="">
+      <span><strong>Expertise-ID Monitora</strong><span>Documentation</span></span>
+    </a>
+    <nav class="menu" aria-label="Navigation principale">
+      <a href="index.html#fonctionnalites">Fonctionnalités</a>
+      <a href="actualites.html">Actualités</a>
+      <a href="partenaires.html">Partenaires</a>
+      <a href="index.html#video">Vidéo</a>
+      <a href="index.html#offres">Offres</a>
+      <a href="#" data-lien="CONNEXION">Se connecter</a>
+      <a class="bouton bouton-plein" href="inscription.html">Créer mon espace</a>
+    </nav>
+    <button class="bascule" aria-label="Ouvrir le menu" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+</header>
+
+<div class="bandeau-doc">
+  <div class="conteneur">
+    <div class="etiquette">Guide d'utilisation</div>
+    <h1>Documentation de la plateforme</h1>
+    <p class="intro">Tout ce qu'il faut savoir pour utiliser la plateforme, écran par écran. Les captures viennent de l'espace de démonstration : <a href="#" data-lien="DEMO" style="color:var(--safran)">ouvrez-le</a> pour essayer en même temps.</p>
+  </div>
+</div>
+
+<div class="conteneur doc">
+  <nav class="sommaire" aria-label="Sommaire">
+    <input type="search" placeholder="Rechercher dans le guide…" aria-label="Rechercher dans le guide">
+    <p>Démarrer</p>
+    <a href="#creer-espace">Créer l'espace</a>
+    <a href="#connexion">Se connecter</a>
+    <a href="#ecran">Se repérer</a>
+    <p>Piloter</p>
+    <a href="#tableau-de-bord">Tableau de bord</a>
+    <a href="#strategie">Stratégie et programmes</a>
+    <a href="#import">Importer depuis Excel</a>
+    <p>Projets</p>
+    <a href="#projets">Liste des projets</a>
+    <a href="#planification">Planification</a>
+    <a href="#cadre-logique">Cadre logique et risques</a>
+    <a href="#equipe-financement">Équipe et financement</a>
+    <p>Mesurer</p>
+    <a href="#indicateurs">Indicateurs</a>
+    <a href="#suivi">Suivi et approbations</a>
+    <a href="#beneficiaires">Bénéficiaires</a>
+    <a href="#carte">Carte</a>
+    <p>Gérer</p>
+    <a href="#documents">Documents et corbeille</a>
+    <a href="#plaintes">Plaintes et retours</a>
+    <a href="#plaintes-traitement">Traiter un dossier</a>
+    <a href="#plaintes-parametrage">Paramétrer le mécanisme</a>
+    <p>Administrer</p>
+    <a href="#utilisateurs">Utilisateurs et droits</a>
+    <a href="#personnaliser">Personnaliser</a>
+    <a href="#securite">Sécurité et données</a>
+    <a href="#faq">Questions fréquentes</a>
+  </nav>
+
+  <article class="contenu-doc">
+
+    <section id="creer-espace">
+      <div class="etiquette">Démarrer</div>
+      <h2>Créer l'espace de votre organisation</h2>
+      <p>Chaque organisation travaille dans <b>son propre espace</b>, avec sa propre base de données. Tout le monde se connecte à la même adresse : c'est votre compte qui ouvre l'espace de votre organisation.</p>
+      <ol>
+        <li>Ouvrez la page <a href="inscription.html">Créer mon espace</a>.</li>
+        <li>Renseignez l'organisation, la personne de contact, son <b>adresse courriel</b> et un <b>mot de passe</b> : ce seront les accès de l'administrateur.</li>
+        <li>Choisissez votre <b>offre</b> (Essentiel, Standard ou Institution).</li>
+        <li>Expertise-ID active l'espace : sa base et votre compte administrateur sont créés, et vous êtes prévenu par courriel.</li>
+      </ol>
+      <div class="astuce"><b>Bon à savoir :</b> tant que l'espace n'est pas activé, l'adresse courriel choisie ne donne accès à rien ; la page de connexion vous indique où en est la demande.</div>
+    </section>
+
+    <section id="connexion">
+      <h2>Se connecter</h2>
+      <p>Ouvrez la page de connexion de la plateforme, puis :</p>
+      <ol>
+        <li>saisissez votre <b>adresse courriel</b> et votre <b>mot de passe</b> ;</li>
+        <li>un <b>code à 6 chiffres</b> vous est envoyé par courriel : saisissez-le. Il est valable 10 minutes, pour une seule connexion.</li>
+      </ol>
+      <figure><div class="ecran"><img src="images/connexion.webp" alt="Page de connexion" loading="lazy"></div><figcaption>La page de connexion : adresse courriel et mot de passe. La plateforme ouvre directement l'espace de votre organisation.</figcaption></figure>
+      <div class="astuce attention"><b>Important :</b> chaque compte doit avoir une adresse courriel valide, sinon le code ne peut pas être envoyé. Pas de courriel ? Regardez dans les indésirables, ou cliquez sur « Renvoyer le code ».</div>
+    </section>
+
+    <section id="ecran">
+      <h2>Se repérer dans l'écran</h2>
+      <ul>
+        <li><b>À gauche, le menu</b> : les modules (tableau de bord, projets, indicateurs, suivi, bénéficiaires, carte, documents, plaintes…). La <b>Corbeille</b> est en bas des modules ; les pages d'administration suivent pour l'administrateur.</li>
+        <li><b>En haut</b> : le logo de votre organisation, la langue, les notifications et votre compte.</li>
+        <li><b>« ← Retour »</b> en haut de chaque page ramène à la page précédente.</li>
+        <li>Le bouton <span class="chip">Éditer</span> des listes fait apparaître les actions de modification et de suppression.</li>
+      </ul>
+    </section>
+
+    <section id="tableau-de-bord">
+      <div class="etiquette">Piloter</div>
+      <h2>Le tableau de bord</h2>
+      <p>La première page après la connexion. Tous les chiffres suivent les filtres du haut : <b>période</b> (toutes, une année, une plage de dates) et <b>statut des projets</b>.</p>
+      <figure><div class="ecran"><img src="images/tableau-de-bord.webp" alt="Tableau de bord" loading="lazy"></div><figcaption>Chiffres clés : projets, budget total, bénéficiaires, indicateurs suivis, couverture géographique.</figcaption></figure>
+      <figure><div class="ecran"><img src="images/tableau-de-bord-zones.webp" alt="Répartition des projets par zone" loading="lazy"></div><figcaption>Répartition des projets et des montants par pays, région, province et commune.</figcaption></figure>
+      <h3>Personnaliser et partager</h3>
+      <ul>
+        <li><span class="chip">Personnaliser</span> : choisir les blocs affichés et leur ordre.</li>
+        <li><span class="chip">Partager</span> : créer un lien en lecture seule, par exemple pour un bailleur, sans lui créer de compte.</li>
+      </ul>
+    </section>
+
+    <section id="strategie">
+      <h2>Stratégie, programmes et projets</h2>
+      <p>Le plan stratégique de l'organisation et les politiques nationales auxquelles vos projets contribuent, organisés en chaîne : <b>Stratégie → Programme → Projet</b>. Chaque document a ses axes, objectifs et résultats, à autant de niveaux que nécessaire.</p>
+      <figure><div class="ecran"><img src="images/cadre-strategique.webp" alt="Liste des stratégies" loading="lazy"></div><figcaption>Les stratégies et les programmes qui s'y rattachent.</figcaption></figure>
+      <figure><div class="ecran"><img src="images/cadre-strategique-detail.webp" alt="Détail d'un élément stratégique" loading="lazy"></div><figcaption>Un programme : sa fiche, son financement, ses cibles et les projets rattachés.</figcaption></figure>
+      <p>Chaque projet se rattache à un élément d'un programme ou d'une stratégie : ses résultats remontent alors jusqu'aux objectifs stratégiques.</p>
+    </section>
+
+    <section id="import">
+      <h2>Importer depuis Excel</h2>
+      <p>Menu <b>Planification complète</b> : téléchargez le modèle Excel, remplissez-le, importez-le. Un seul classeur peut contenir le cadre stratégique, la structure, le projet, sa planification, ses indicateurs et ses bénéficiaires ; seule la feuille « Projet » est obligatoire.</p>
+      <figure><div class="ecran"><img src="images/import-excel.webp" alt="Import combiné depuis Excel" loading="lazy"></div><figcaption>Import combiné en un seul fichier, ou import séparé de chaque partie.</figcaption></figure>
+      <div class="astuce"><b>Astuce :</b> les projets, les indicateurs et les bénéficiaires ont aussi leur propre bouton <span class="chip">Importer depuis Excel</span> dans leur page.</div>
+    </section>
+
+    <section id="projets">
+      <div class="etiquette">Projets</div>
+      <h2>La liste des projets</h2>
+      <p>En haut, des <b>compteurs par statut</b> (en cours, en préparation, clôturés) qui servent aussi de filtres. Chaque ligne montre la période et la part de temps écoulée, le budget et le chef de projet ; un clic ouvre le projet.</p>
+      <figure><div class="ecran"><img src="images/projets.webp" alt="Liste des projets" loading="lazy"></div><figcaption>La liste des projets, avec recherche par nom ou code.</figcaption></figure>
+      <p>Créer un projet : <span class="chip">Nouveau projet</span> (nom, code, dates, pays et zones, bailleur, partenaires, rattachement stratégique, budget).</p>
+    </section>
+
+    <section id="planification">
+      <h2>La planification d'un projet</h2>
+      <p>La fiche du projet s'ouvre sur l'onglet <b>Planification</b>. Les niveaux sont libres : nommez-les comme dans votre document de projet (effets, extrants, activités, sous-activités…).</p>
+      <figure><div class="ecran"><img src="images/projet-planification.webp" alt="Planification d'un projet" loading="lazy"></div><figcaption>Chaque ligne : lieu de mise en œuvre, priorité, service responsable, trimestres programmés, budget et taux de réalisation.</figcaption></figure>
+      <ul>
+        <li><b>Configuration des niveaux</b> : nommer et ordonner les niveaux du projet.</li>
+        <li><b>Planification par période</b> : programmer les quantités et les budgets année par année, trimestre par trimestre.</li>
+        <li>Vue <span class="chip">Arbre</span> ou <span class="chip">Tableau</span>, export, import depuis Excel.</li>
+      </ul>
+    </section>
+
+    <section id="cadre-logique">
+      <h2>Le cadre logique et les risques</h2>
+      <p>Onglet <b>Cadre logique</b> : il se construit tout seul à partir de la planification et des indicateurs. Pour chaque niveau : la logique d'intervention, les indicateurs (référence, cible, réalisé), les sources de vérification et les hypothèses.</p>
+      <figure><div class="ecran"><img src="images/projet-cadre-logique.webp" alt="Cadre logique d'un projet" loading="lazy"></div><figcaption>Le cadre logique, mis à jour à chaque valeur saisie, exportable.</figcaption></figure>
+      <p>Le sous-onglet <b>Risques</b> liste les risques du projet, leur probabilité, leur impact et les mesures prévues.</p>
+    </section>
+
+    <section id="equipe-financement">
+      <h2>Équipe, partenaires et financement</h2>
+      <p>Onglet <b>Équipe</b> : les personnes affectées au projet, et à quelle partie de la planification ; sous-onglet <b>Partenaires</b> : bailleurs, partenaires de mise en œuvre et de consortium.</p>
+      <figure><div class="ecran"><img src="images/projet-equipe.webp" alt="Équipe d'un projet" loading="lazy"></div><figcaption>Les membres de l'équipe et leur rattachement.</figcaption></figure>
+      <p>Onglet <b>Financement</b> : coût total, fonds propres et financement de chaque bailleur, avec les rallonges.</p>
+      <figure><div class="ecran"><img src="images/projet-financement.webp" alt="Financement d'un projet" loading="lazy"></div><figcaption>Le plan de financement du projet.</figcaption></figure>
+    </section>
+
+    <section id="indicateurs">
+      <div class="etiquette">Mesurer</div>
+      <h2>Les indicateurs</h2>
+      <p>Menu <b>Indicateurs</b> : tous les indicateurs, regroupés par projet. Les compteurs du haut donnent le nombre d'indicateurs par état (<b>conforme</b>, <b>à risque</b>, <b>critique</b>) et servent de filtres.</p>
+      <figure><div class="ecran"><img src="images/indicateurs.webp" alt="Liste des indicateurs" loading="lazy"></div><figcaption>Pour chaque indicateur : unité, valeur de base, cible et barre de réalisation.</figcaption></figure>
+      <p>La fiche d'un indicateur donne ses <b>cibles par période</b> et l'historique des valeurs saisies, avec leurs pièces justificatives.</p>
+      <figure><div class="ecran"><img src="images/indicateur-detail.webp" alt="Fiche d'un indicateur" loading="lazy"></div><figcaption>Cibles par période et valeurs réalisées.</figcaption></figure>
+      <div class="astuce"><b>Les seuils</b> (à partir de quel taux un indicateur est « à risque » ou « critique ») se règlent dans <b>Paramètres d'alerte</b>.</div>
+    </section>
+
+    <section id="suivi">
+      <h2>Le suivi et les approbations</h2>
+      <p>Menu <b>Suivi</b> : choisissez un projet pour saisir le <b>réalisé</b> (quantités, dépenses) et suivre son évolution dans le temps.</p>
+      <figure><div class="ecran"><img src="images/suivi-projet.webp" alt="Suivi d'un projet" loading="lazy"></div><figcaption>Exécution physique et financière, activité par activité.</figcaption></figure>
+      <ul>
+        <li><b>Périodes de saisie</b> : l'administrateur ouvre ou ferme la saisie par période de rapportage.</li>
+        <li><b>Approbations</b> : si le projet le prévoit, les réalisations et les changements de planification attendent d'être approuvés (menu <b>Approbations</b>).</li>
+        <li>Les <b>retards</b> et les échéances proches déclenchent des notifications.</li>
+      </ul>
+    </section>
+
+    <section id="beneficiaires">
+      <h2>Les bénéficiaires</h2>
+      <p>Menu <b>Bénéficiaires</b> : le registre, projet par projet. Chaque personne a un identifiant unique ; un clic ouvre sa fiche.</p>
+      <figure><div class="ecran"><img src="images/beneficiaires.webp" alt="Registre des bénéficiaires" loading="lazy"></div><figcaption>Le registre : sexe et âge, téléphone, zone, statuts particuliers, autres projets.</figcaption></figure>
+      <figure><div class="ecran"><img src="images/beneficiaire-fiche.webp" alt="Fiche d'un bénéficiaire" loading="lazy"></div><figcaption>La fiche d'un bénéficiaire, avec son QR code et ses participations.</figcaption></figure>
+      <ul>
+        <li><span class="chip">Variables à collecter</span> : l'administrateur choisit les informations demandées.</li>
+        <li><span class="chip">Importer depuis Excel</span>, <span class="chip">Exporter</span>, impression des <b>cartes de bénéficiaire</b>.</li>
+        <li>Menu <b>Doublons d'enregistrement</b> : les personnes enregistrées deux fois sont signalées.</li>
+      </ul>
+    </section>
+
+    <section id="carte">
+      <h2>La carte</h2>
+      <p>Menu <b>Carte</b> : bénéficiaires et projets placés sur les zones administratives (régions, provinces, communes). Les cercles montrent où se trouvent les bénéficiaires ; un clic affiche le détail.</p>
+      <ol>
+        <li><b>Filtrer</b> : période (toutes, une année, une plage de dates), statut des projets, un projet ou une zone précise. Les compteurs au-dessus de la carte (bénéficiaires, positionnés par GPS, placés selon leur localité, sans localisation) suivent les filtres.</li>
+        <li><b>Couches</b> : bénéficiaires, régions, provinces, routes, villes et villages, noms… à afficher ou masquer. <span class="chip">Importer une couche</span> ajoute vos propres données (Shapefile en archive .zip, GeoPackage, GeoJSON ou KML).</li>
+        <li><b>Par zone</b> : colore les régions, provinces ou communes selon un ou plusieurs indicateurs (nombre de projets, bénéficiaires, budget, dépenses, taux d'exécution physique ou financière…).</li>
+        <li><b>Fond</b> : neutre, OpenStreetMap, satellite ou aucun.</li>
+        <li><span class="chip">Télécharger la carte</span> : en PDF ou en image PNG, avec titre, format de papier et orientation, prête à insérer dans un rapport.</li>
+      </ol>
+      <figure><div class="ecran"><img src="images/carte.webp" alt="Carte des projets et bénéficiaires" loading="lazy"></div><figcaption>La carte des bénéficiaires, avec ses filtres et ses couches.</figcaption></figure>
+      <figure><div class="ecran"><img src="images/carte-zones.webp" alt="Carte colorée par zone" loading="lazy"></div><figcaption>La carte de près : bénéficiaires, limites administratives, routes et localités sur fond OpenStreetMap.</figcaption></figure>
+      <div class="astuce"><b>Bon à savoir :</b> le tableau de bord a aussi sa carte, par zone d'intervention ; la fiche d'un bénéficiaire montre sa position.</div>
+    </section>
+
+    <section id="documents">
+      <div class="etiquette">Gérer</div>
+      <h2>Les documents et la corbeille</h2>
+      <p>Chaque projet a ses documents (onglet <b>Documents</b>) ; le menu <b>Documents</b> donne la bibliothèque libre, sans projet. Ils se rangent en <b>dossiers</b>, comme sur un ordinateur, en grille ou en liste.</p>
+      <figure><div class="ecran"><img src="images/projet-documents.webp" alt="Documents d'un projet" loading="lazy"></div><figcaption>Dossiers, ajout de documents, sélection multiple.</figcaption></figure>
+      <ul>
+        <li><b>Versions</b> : un document garde toutes ses versions.</li>
+        <li><b>Sélection multiple</b> : cochez des éléments (ou « Tout sélectionner ») pour les <b>télécharger en zip</b> ou les <b>supprimer</b>.</li>
+        <li><b>Corbeille</b> (en bas du menu) : ce qui est supprimé y reste <b>30 jours</b> ; on peut le <b>restaurer</b> ou le supprimer définitivement. Après 30 jours, il est effacé automatiquement.</li>
+      </ul>
+      <figure><div class="ecran"><img src="images/corbeille.webp" alt="Corbeille" loading="lazy"></div><figcaption>La corbeille : restaurer, supprimer définitivement, vider.</figcaption></figure>
+    </section>
+
+    <section id="plaintes">
+      <h2>Les plaintes et retours</h2>
+      <p>Le mécanisme de gestion des plaintes recueille les plaintes, avis et suggestions des communautés, et les suit jusqu'à la réponse au plaignant.</p>
+      <h3>Recevoir</h3>
+      <ul>
+        <li><b>Formulaire public</b> en ligne, accessible sans compte, aussi par <b>QR code</b> (un par projet).</li>
+        <li><b>Saisie par l'équipe</b> : <span class="chip">Enregistrer un retour</span> (téléphone, visite, réunion…).</li>
+        <li>Le plaignant reçoit un <b>numéro de suivi</b> pour connaître l'avancement de sa demande.</li>
+      </ul>
+      <figure><div class="ecran"><img src="images/plainte-formulaire-public.webp" alt="Formulaire public de plainte" loading="lazy"></div><figcaption>Le formulaire public, sans compte.</figcaption></figure>
+      <h3>Suivre</h3>
+      <figure><div class="ecran"><img src="images/plaintes-dossiers.webp" alt="Liste des dossiers de plaintes" loading="lazy"></div><figcaption>Les files de travail : à traiter, urgents, en retard, sans responsable, confidentiels…</figcaption></figure>
+      <figure><div class="ecran"><img src="images/plaintes-tableau-de-bord.webp" alt="Tableau de bord des plaintes" loading="lazy"></div><figcaption>Le tableau de bord du mécanisme : échéances, retards, répartition par étape ; export Excel et PDF.</figcaption></figure>
+      <p>Dans chaque projet, l'onglet <b>Retours des communautés</b> donne les chiffres du projet (volume reçu, dossiers ouverts, traitement dans les délais…).</p>
+    </section>
+
+    <section id="plaintes-traitement">
+      <h2>Traiter un dossier</h2>
+      <p>La fiche d'un dossier réunit le récit, le plaignant, l'étape en cours, l'échéance et le journal de toutes les actions.</p>
+      <figure><div class="ecran"><img src="images/plainte-dossier.webp" alt="Fiche d'un dossier de plainte" loading="lazy"></div><figcaption>Les actions du haut : classer, affecter, changer d'étape, noter, écrire au plaignant, décider, clôturer.</figcaption></figure>
+      <ol>
+        <li><b>Classer</b> : catégorie et priorité.</li>
+        <li><b>Affecter</b> à un gestionnaire, qui reçoit une notification.</li>
+        <li>Le gestionnaire fait <b>avancer les étapes</b> du circuit ; chaque étape a son délai.</li>
+        <li><b>Décider</b> et <b>clôturer</b> : motif, décision et retour au plaignant sont obligatoires.</li>
+      </ol>
+      <div class="astuce"><b>Délais :</b> un rappel part quand l'échéance approche ; en retard, le dossier est signalé et l'alerte remonte aux superviseurs.</div>
+    </section>
+
+    <section id="plaintes-parametrage">
+      <h2>Paramétrer le mécanisme</h2>
+      <p><b>Plaintes et retours › Paramétrage</b> (administrateur) :</p>
+      <ul>
+        <li><b>Mécanisme</b> : activation, numérotation, délais par défaut, langues de réception.</li>
+        <li><b>Types de retours</b>, <b>catégories</b>, <b>priorités</b>.</li>
+        <li><b>Circuits de traitement</b> : les étapes, leurs délais et leurs responsables ; un circuit <b>confidentiel</b> pour les cas sensibles (exploitation et abus, fraude…), réservé à des personnes nommées et habilitées.</li>
+        <li><b>Messages</b> au plaignant, <b>calendrier</b> (jours fériés), <b>habilitations</b>, <b>données personnelles</b>, <b>canevas Excel</b> de paramétrage.</li>
+      </ul>
+      <figure><div class="ecran"><img src="images/plaintes-parametrage.webp" alt="Paramétrage du mécanisme de plaintes" loading="lazy"></div><figcaption>Le paramétrage, onglet par onglet.</figcaption></figure>
+    </section>
+
+    <section id="utilisateurs">
+      <div class="etiquette">Administrer</div>
+      <h2>Utilisateurs et droits</h2>
+      <p>Menu <b>Utilisateurs</b> (administrateur). <span class="chip">Nouvel utilisateur</span> : nom, <b>adresse courriel</b> (elle sert à se connecter et à recevoir le code ; une adresse ne peut appartenir qu'à un seul compte), rôle, niveau d'accès, mot de passe.</p>
+      <figure><div class="ecran"><img src="images/utilisateurs.webp" alt="Gestion des utilisateurs" loading="lazy"></div><figcaption>Les comptes : rôle, structure, accès, état.</figcaption></figure>
+      <ul>
+        <li><b>Rôle</b> : ce que la personne <b>voit</b> (tous les projets, ou ceux auxquels elle est affectée). Les rôles se créent et se renomment dans l'onglet <b>Rôles</b>.</li>
+        <li><b>Niveau d'accès</b> : consulter seulement, ou créer et modifier.</li>
+        <li><b>Droits par module</b> : masquer un module, ou le mettre en consultation seule, utilisateur par utilisateur.</li>
+        <li>L'<b>Administrateur</b> a toujours accès à tout.</li>
+      </ul>
+    </section>
+
+    <section id="personnaliser">
+      <h2>Personnaliser la plateforme</h2>
+      <ul>
+        <li><b>Logo et nom</b> : <b>Organisation › Identité et logo</b>. Le logo s'affiche en haut de toutes les pages et sur la page de connexion. Tant qu'il n'y en a pas, l'administrateur voit un bouton « Ajouter le logo de votre organisation » en haut.</li>
+        <li><b>Menu</b> : <span class="chip">Personnaliser le menu</span> (en bas du menu) pour renommer les rubriques, changer leurs icônes et adapter le vocabulaire (projet, activité…).</li>
+        <li><b>Langues</b> : chaque utilisateur choisit la sienne (français, anglais, arabe, espagnol, allemand).</li>
+        <li><b>Organisation</b> : structure interne, parties prenantes, partenaires.</li>
+      </ul>
+      <figure><div class="ecran"><img src="images/organisation-logo.webp" alt="Identité et logo de l'organisation" loading="lazy"></div><figcaption>Le nom et le logo de votre organisation.</figcaption></figure>
+    </section>
+
+    <section id="securite">
+      <h2>Sécurité et données</h2>
+      <ul>
+        <li><b>Une base de données par organisation</b> : vos données ne sont jamais mélangées avec celles d'une autre.</li>
+        <li><b>Code par courriel</b> à chaque connexion, en plus du mot de passe.</li>
+        <li><b>Chiffrement</b> des récits et coordonnées des plaignants.</li>
+        <li><b>Fichiers protégés</b> : les documents ne sont accessibles que par des liens temporaires, après contrôle des droits.</li>
+        <li><b>Journal d'audit</b> (administrateur) : connexions, consultations sensibles, exports et changements de droits, sans modification possible.</li>
+      </ul>
+    </section>
+
+    <section id="faq">
+      <h2>Questions fréquentes</h2>
+      <div class="faq" style="max-width:none">
+        <details><summary>Je ne reçois pas le code de connexion</summary><p>Vérifiez les courriers indésirables, puis « Renvoyer le code » (une minute d'attente entre deux envois). Si votre compte n'a pas d'adresse courriel valide, demandez à votre administrateur de la renseigner dans Utilisateurs.</p></details>
+        <details><summary>J'ai supprimé un document par erreur</summary><p>Ouvrez la Corbeille (en bas du menu) et cliquez sur « Restaurer » : il revient à sa place. Passé 30 jours, il est effacé définitivement.</p></details>
+        <details><summary>Un collègue ne voit pas un projet</summary><p>Son rôle ne lui donne peut-être accès qu'aux projets auxquels il est affecté : ajoutez-le à l'équipe du projet, ou changez son rôle dans Utilisateurs.</p></details>
+        <details><summary>Comment montrer nos résultats à un bailleur ?</summary><p>Depuis le tableau de bord, « Partager » crée un lien en lecture seule ; vous pouvez aussi exporter le cadre logique, les indicateurs ou le tableau de bord des plaintes.</p></details>
+        <details><summary>Peut-on changer l'adresse courriel d'un compte ?</summary><p>Oui : l'administrateur de votre organisation la modifie dans Utilisateurs. Une adresse ne peut appartenir qu'à un seul compte de la plateforme.</p></details>
+      </div>
+    </section>
+
+    <div class="appel" style="margin-top:20px">
+      <h2>Prêt à commencer ?</h2>
+      <div class="actions"><a class="bouton bouton-plein" href="inscription.html">Créer mon espace</a><a class="bouton bouton-contour" href="#" data-lien="DEMO">Essayer la démo</a></div>
+    </div>
+  </article>
+</div>
+
+<div class="zoom" role="dialog" aria-label="Capture agrandie"><img alt=""></div>
+
+<footer class="pied">
+  <div class="conteneur">
+    <div>
+      <a class="marque" href="index.html"><img src="vitrine/logo-plateforme.svg" alt=""><span><strong>Expertise-ID Monitora</strong></span></a>
+      <a class="signature" href="https://www.expertise-id.com" target="_blank" rel="noopener"><img src="vitrine/logo-expertise-id.png" alt="Expertise-ID"><span>Développé par <b>Expertise-ID</b></span></a>
+    </div>
+    <div><h4>La plateforme</h4><a href="index.html#fonctionnalites">Fonctionnalités</a><a href="index.html#video">Vidéo</a><a href="#" data-lien="DEMO">Démonstration</a></div>
+    <div><h4>Commencer</h4><a href="inscription.html">Créer mon espace</a><a href="#" data-lien="CONNEXION">Se connecter</a></div>
+    <div class="bas"><span>© 2026 Expertise-ID</span></div>
+  </div>
+</footer>
+<script src="vitrine/traductions.js"></script>
+<script src="vitrine/langues.js"></script>
+<script src="vitrine/site.js"></script>
+</body>
+</html>

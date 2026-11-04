@@ -25,7 +25,8 @@ def _point(client, activite, mois):
 
 
 @pytest.mark.django_db
-def test_droits_par_module_et_par_utilisateur():
+def test_droits_par_module_et_par_utilisateur(settings):
+    settings.DOUBLE_AUTH_OBLIGATOIRE = False  # connexion par mot de passe seul (second facteur : test_double_auth.py)
     User.objects.create_user(username="adm_mod", password="x", role=ROLE_ADMIN)
     charge = User.objects.create_user(
         username="se_mod", password="x", role=ROLE_CHARGE_SE, niveau_acces=NIVEAU_ACCES_LECTURE_ECRITURE,

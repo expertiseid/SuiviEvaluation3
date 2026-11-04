@@ -505,7 +505,11 @@ class DossierViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
         from . import pieces
 
         piece = get_object_or_404(self.get_object().pieces, pk=piece_id)
-        return Response({"url": request.build_absolute_uri(f"/api/v1/plaintes-piece/{pieces.lien(piece, request.user)}/"),
+        from apps.organisations.contexte import parametre_org
+
+        org = parametre_org()
+        return Response({"url": request.build_absolute_uri(f"/api/v1/plaintes-piece/{pieces.lien(piece, request.user)}/"
+                                                           + (f"?{org}" if org else "")),
                          "duree_minutes": pieces.duree_lien_minutes()})
 
     @action(detail=True, methods=["post"])
@@ -515,6 +519,12 @@ class DossierViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
         if autre is None:
             raise ValidationError({"numero": v("Aucun dossier accessible ne porte ce numéro.")})
         return self._agir(traitement.lier, autre, bool(request.data.get("delier")))
+
+    @action(detail=False, methods=["get"])
+    def compteurs(self, request):
+        """Nombre de dossiers de chaque vue prête (colonne des vues de la liste), sans les autres filtres."""
+        visibles = dossiers_visibles(request.user)
+        return Response({"tous": visibles.count(), **{cle: vue(visibles, request.user).count() for cle, vue in VUES.items()}})
 
     @action(detail=True, methods=["get"], url_path="possiblement-lies")
     def possiblement_lies(self, request, pk=None):
@@ -680,10 +690,14 @@ def qr_formulaire(request):
     origine = request.query_params.get("origine", "")
     if not origine.startswith(("http://", "https://")):
         origine = request.headers.get("Origin") or request.build_absolute_uri("/")
-    lien = origine.rstrip("/") + "/plainte"
+    from apps.organisations.contexte import parametre_org
+
+    # Adresse unique de la plateforme : le lien dit de quelle organisation est le formulaire (?org=).
+    parametres = [parametre_org()] if parametre_org() else []
     projet = request.query_params.get("projet", "")
     if projet.isdigit():
-        lien += f"?projet={projet}"
+        parametres.append(f"projet={projet}")
+    lien = origine.rstrip("/") + "/plainte" + ("?" + "&".join(parametres) if parametres else "")
     sortie = io.BytesIO()
     segno.make(lien, error="m").save(sortie, kind="png", scale=10, border=2)
     response = HttpResponse(sortie.getvalue(), content_type="image/png")

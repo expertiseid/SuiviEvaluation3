@@ -55,6 +55,7 @@ MODULES = [
     "plaintes/pilotage.py",
     "plaintes/droits.py",
     "core/audit.py",
+    "accounts/double_auth.py",
 ]
 
 # Textes absents du code tels quels : valeurs que l'utilisateur tape dans un modèle (à reconnaître

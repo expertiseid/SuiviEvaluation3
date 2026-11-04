@@ -104,11 +104,11 @@ COMMENTAIRE_ATTRIBUT = (
 COULEUR_NIVEAU = "FFF2CC"
 COLONNES_NIVEAUX_MODELE = ("Objectif général", "Objectif spécifique", "Activité")
 LEGENDE_NIVEAUX = (
-    "En jaune : les niveaux de votre planification. Leurs noms sont libres (ex : Résultat, Pilier, Activité) — "
+    "En jaune : les niveaux de votre planification. Leurs noms sont libres (ex : Résultat, Composante, Activité) — "
     "renommez ces en-têtes, ajoutez ou supprimez des colonnes de niveau, toujours avant « Sous-activité »."
 )
 COMMENTAIRE_NIVEAU = (
-    "Nom libre : renommez cette colonne (ex : Résultat, Pilier). Vous pouvez aussi ajouter ou supprimer "
+    "Nom libre : renommez cette colonne (ex : Résultat, Composante). Vous pouvez aussi ajouter ou supprimer "
     "des colonnes de niveau, toujours avant « Sous-activité »."
 )
 
@@ -318,12 +318,12 @@ def generer_modele_import_projet() -> bytes:
     ])
     instructions.append([
         "- « Rattachement dans le cadre stratégique » (facultatif) : nom exact de l'élément du cadre dont relève "
-        "le projet (un programme, un axe, un pilier... n'importe quel niveau du cadre)."
+        "le projet (un programme, un axe, une composante... n'importe quel niveau du cadre)."
     ])
     instructions.append([
         "- Feuille « Planification » : toutes les colonnes placées AVANT « Sous-activité » (sauf « Code ») sont "
         "les niveaux de la planification du projet, du plus haut au plus bas (en jaune dans le modèle). Leurs "
-        "noms et leur nombre sont LIBRES : renomme, ajoute ou retire des colonnes de niveau comme tu veux (ex : « Résultat », « Pilier », "
+        "noms et leur nombre sont LIBRES : renomme, ajoute ou retire des colonnes de niveau comme tu veux (ex : « Résultat », « Composante », "
         "« Activité »). Le nom de chaque colonne devient le nom affiché de ce niveau."
     ])
     instructions.append([

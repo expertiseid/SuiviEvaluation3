@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, CircleAlert, CircleCheck, Download, Power, PowerOff, Upload } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { CircleAlert, CircleCheck, Download, Power, PowerOff, Upload } from "lucide-react";
 import {
   Alert,
-  Anchor,
   Badge,
   Button,
   Card,
@@ -20,8 +19,7 @@ import {
   Text,
   TextInput,
   Textarea,
-  Title,
-} from "@mantine/core";
+  } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 import {
@@ -49,6 +47,7 @@ import { CircuitsPlaintes } from "./CircuitsPlaintes";
 import { MessagesPlaintes } from "./MessagesPlaintes";
 import { PrestatairesPlaintes } from "./PrestatairesPlaintes";
 import { CategoriesPlainte, PrioritesPlainte, TypesRetour } from "./ListesPlaintes";
+import { EnTetePlaintes } from "./EnTetePlaintes";
 
 const LANGUES = [
   { value: "fr", label: "Français" },
@@ -437,19 +436,13 @@ export function ParametragePlaintesPage() {
 
   return (
     <Stack>
-      <Group justify="space-between">
-        <Stack gap={2}>
-          <Anchor component={Link} to="/plaintes" size="sm">
-            <Group gap={4}><ArrowLeft size={14} />{voc("Plaintes et retours")}</Group>
-          </Anchor>
-          <Title order={2}>{voc("Paramétrage du mécanisme")}</Title>
-        </Stack>
-        {mecanisme.actif ? (
-          <Badge color="teal" size="lg" leftSection={<Power size={13} />}>{voc("Actif")}</Badge>
+      <EnTetePlaintes
+        actions={mecanisme.actif ? (
+          <Badge color="teal" size="lg" leftSection={<Power size={13} />}>{voc("Mécanisme actif")}</Badge>
         ) : (
-          <Badge color="gray" size="lg" leftSection={<PowerOff size={13} />}>{voc("Inactif")}</Badge>
+          <Badge color="gray" size="lg" leftSection={<PowerOff size={13} />}>{voc("Mécanisme inactif")}</Badge>
         )}
-      </Group>
+      />
       <Tabs defaultValue={params.get("onglet") ?? "mecanisme"} keepMounted={false}>
         <Tabs.List>
           <Tabs.Tab value="mecanisme">{voc("Mécanisme")}</Tabs.Tab>

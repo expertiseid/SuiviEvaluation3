@@ -2,6 +2,11 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AppLayout } from "./layouts/AppLayout";
 import { RequireAuth } from "./auth/RequireAuth";
 import { LoginPage } from "./auth/LoginPage";
+import { AbonnementPage } from "./pages/accueil/AbonnementPage";
+import { AccueilPage } from "./pages/accueil/AccueilPage";
+import { AProposPage } from "./pages/accueil/AProposPage";
+import { InscriptionPage } from "./pages/accueil/InscriptionPage";
+import { ConsolePage } from "./pages/console/ConsolePage";
 import { DashboardConsolidePage } from "./pages/DashboardConsolidePage";
 import { ProjetsListPage } from "./pages/projets/ProjetsListPage";
 import { ProjetDetailPage } from "./pages/projets/ProjetDetailPage";
@@ -22,10 +27,13 @@ import { CadreStrategiqueDetailPage } from "./pages/strategie/CadreStrategiqueDe
 import { ZonesAdministrativesPage } from "./pages/geo/ZonesAdministrativesPage";
 import { PlanificationImportPage } from "./pages/planification/PlanificationImportPage";
 import { DocumentsGlobauxPage } from "./pages/documents/DocumentsGlobauxPage";
+import { CorbeillePage } from "./pages/documents/CorbeillePage";
 import { LanguesPage } from "./pages/langues/LanguesPage";
 import { JournalAuditPage } from "./pages/journal-audit/JournalAuditPage";
 import { ParametresAlertePage } from "./pages/parametres/ParametresAlertePage";
 import { PagePartagee } from "./pages/partage/PagePartagee";
+import { DocumentPartagePage } from "./pages/documents/DocumentPartagePage";
+import { FormationPage, LeconPage, QuizPage } from "./pages/formation/FormationPage";
 import { ActionsCorrectivesPage } from "./pages/plaintes/ActionsCorrectivesPage";
 import { DossierPlaintePage } from "./pages/plaintes/DossierPlaintePage";
 import { DossiersPlaintesPage } from "./pages/plaintes/DossiersPlaintesPage";
@@ -38,8 +46,19 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      {/* Connexion à part des opérateurs Expertise-ID (console de la plateforme multi-organisations). */}
+      <Route path="/expertise-id" element={<LoginPage operateur />} />
+      {/* Vitrine publique : accueil, création du profil d'une organisation, abonnement, à propos. */}
+      <Route path="/accueil" element={<AccueilPage />} />
+      <Route path="/inscription" element={<InscriptionPage />} />
+      <Route path="/abonnement" element={<AbonnementPage />} />
+      <Route path="/a-propos" element={<AProposPage />} />
+      {/* Console Expertise-ID (plateforme multi-organisations). */}
+      <Route path="/console" element={<RequireAuth><ConsolePage /></RequireAuth>} />
       {/* Lien de partage public : hors connexion, en lecture seule. */}
       <Route path="/partage/:jeton" element={<PagePartagee />} />
+      {/* Document partagé par lien : sans compte, jusqu'à l'expiration du lien. */}
+      <Route path="/document/:jeton" element={<DocumentPartagePage />} />
       {/* Formulaire public des plaintes et suivi par code : sans compte. */}
       <Route path="/plainte" element={<FormulairePublicPage />} />
       <Route path="/plainte/suivi" element={<SuiviPublicPage />} />
@@ -71,6 +90,10 @@ export default function App() {
         <Route path="/zones-administratives" element={<ZonesAdministrativesPage />} />
         <Route path="/planification" element={<PlanificationImportPage />} />
         <Route path="/documents" element={<DocumentsGlobauxPage />} />
+        <Route path="/formation" element={<FormationPage />} />
+        <Route path="/formation/:module/quiz" element={<QuizPage />} />
+        <Route path="/formation/:module/:lecon" element={<LeconPage />} />
+        <Route path="/corbeille" element={<CorbeillePage />} />
         <Route path="/plaintes" element={<DossiersPlaintesPage />} />
         <Route path="/plaintes/parametrage" element={<ParametragePlaintesPage />} />
         <Route path="/plaintes/dossiers/:id" element={<DossierPlaintePage />} />

@@ -1,10 +1,13 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { FileSpreadsheet, Pencil, Search, Trash2 } from "lucide-react";
-import { ActionIcon, Button, Card, Group, Modal, Stack, Table, Text, TextInput, Title, Tooltip } from "@mantine/core";
+import { Link, useNavigate } from "react-router-dom";
+import { FileSpreadsheet, Gauge, Pencil, Search, Trash2 } from "lucide-react";
+import {
+  Accordion, ActionIcon, Badge, Button, Card, Group, Modal, Progress, SimpleGrid, Stack, Table, Text, TextInput, Tooltip, UnstyledButton,
+} from "@mantine/core";
+import { EmptyState } from "../../components/common/EmptyState";
+import { locale } from "../../utils/i18n";
 import { notifications } from "@mantine/notifications";
 import { useDeleteIndicateur, useIndicateurs } from "../../api/indicators";
-import { AlerteBadge } from "../../components/indicators/AlerteBadge";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
 import { correspond } from "../../utils/recherche";
 import { BoutonModeEdition } from "../../components/common/BoutonModeEdition";
@@ -33,6 +36,14 @@ function grouperParProjet(indicateurs: Indicateur[]): [string, Indicateur[]][] {
   });
 }
 
+const nombre = (v: string | null | undefined) =>
+  v === null || v === undefined || v === "" ? "—" : Number(v).toLocaleString(locale(), { maximumFractionDigits: 2 });
+/** Fond léger d'une couleur de palier (« #rrggbb », réglée dans les paramètres d'alerte). */
+const teinte = (couleur: string) => (/^#[0-9a-f]{6}$/i.test(couleur) ? `${couleur}1A` : undefined);
+const FREQUENCES: Record<Indicateur["frequence_collecte"], string> = {
+  MENSUELLE: voc("Mensuelle"), TRIMESTRIELLE: voc("Trimestrielle"), SEMESTRIELLE: voc("Semestrielle"), ANNUELLE: voc("Annuelle"),
+};
+
 export function IndicateursListPage() {
   const { data: indicateurs, isLoading } = useIndicateurs();
   const deleteIndicateur = useDeleteIndicateur();
@@ -42,11 +53,27 @@ export function IndicateursListPage() {
   const [recherche, setRecherche] = useState("");
   const [editionActive, setEditionActive] = useState(false);
 
+  const navigate = useNavigate();
+  // Filtre par état (palier d'alerte) : les compteurs du haut servent de boutons.
+  const [palier, setPalier] = useState<string | null>(null);
+  const paliers = useMemo(() => {
+    const parLibelle = new Map<string, { libelle: string; couleur: string; borne: number; nombre: number }>();
+    for (const i of indicateurs ?? []) {
+      if (!i.palier_actuel) continue;
+      const p = parLibelle.get(i.palier_actuel.libelle) ?? { libelle: i.palier_actuel.libelle, couleur: i.palier_actuel.couleur, borne: i.palier_actuel.borne_min, nombre: 0 };
+      p.nombre += 1;
+      parLibelle.set(p.libelle, p);
+    }
+    return [...parLibelle.values()].sort((a, b) => b.borne - a.borne);
+  }, [indicateurs]);
   const indicateursFiltres = useMemo(
-    () => (indicateurs ?? []).filter((i) => correspond(i.libelle, recherche) || correspond(i.projet_rattache_nom ?? "", recherche)),
-    [indicateurs, recherche],
+    () => (indicateurs ?? []).filter((i) => (!palier || i.palier_actuel?.libelle === palier)
+      && (correspond(i.libelle, recherche) || correspond(i.projet_rattache_nom ?? "", recherche))),
+    [indicateurs, recherche, palier],
   );
   const groupes = useMemo(() => grouperParProjet(indicateursFiltres), [indicateursFiltres]);
+  // Groupes dépliés par défaut ; on mémorise ceux que l'utilisateur replie.
+  const [replies, setReplies] = useState<string[]>([]);
 
   function handleSupprimer(id: number, libelle: string) {
     confirmerSuppression({
@@ -75,78 +102,125 @@ export function IndicateursListPage() {
         </Group>
       </Group>
 
-      <TextInput
-        placeholder={voc("Rechercher un indicateur ou un projet…")}
-        leftSection={<Search size={15} />}
-        value={recherche}
-        onChange={(e) => setRecherche(e.currentTarget.value)}
-        maw={400}
-      />
+      <SimpleGrid cols={{ base: 2, sm: Math.min(paliers.length + 1, 5) }} spacing="sm">
+        {[{ libelle: null as string | null, couleur: "#0ca678", nombre: indicateurs?.length ?? 0 }, ...paliers].map((p) => {
+          const actif = palier === p.libelle;
+          return (
+            <UnstyledButton key={p.libelle ?? "tous"} onClick={() => setPalier(p.libelle)} aria-pressed={actif}>
+              <Card withBorder radius="md" padding="sm" bg={actif ? teinte(p.couleur) : undefined}
+                style={{ borderColor: actif ? p.couleur : undefined }}>
+                <Group gap={6} wrap="nowrap">
+                  {p.libelle && <span style={{ width: 9, height: 9, borderRadius: 9, flexShrink: 0, background: p.couleur }} />}
+                  <Text size="xs" c="dimmed" tt="uppercase" fw={600} truncate>{p.libelle ?? voc("Tous les indicateurs")}</Text>
+                </Group>
+                <Text fw={700} fz={26} c={p.couleur}>{p.nombre}</Text>
+              </Card>
+            </UnstyledButton>
+          );
+        })}
+      </SimpleGrid>
+
+      <Group justify="space-between" gap="sm">
+        <TextInput placeholder={voc("Rechercher un indicateur ou un projet…")} leftSection={<Search size={15} />} value={recherche}
+          onChange={(e) => setRecherche(e.currentTarget.value)} w={400} maw="100%" />
+        {groupes.length > 1 && (
+          <Group gap="xs">
+            <Button size="xs" variant="subtle" color="gray" onClick={() => setReplies([])}>{voc("Tout déplier")}</Button>
+            <Button size="xs" variant="subtle" color="gray" onClick={() => setReplies(groupes.map(([nom]) => nom))}>{voc("Tout replier")}</Button>
+          </Group>
+        )}
+      </Group>
 
       {isLoading ? (
-        <div>{voc("Chargement…")}</div>
+        <Text c="dimmed">{voc("Chargement…")}</Text>
       ) : groupes.length === 0 ? (
-        <Text c="dimmed" size="sm">
-          {recherche ? voc("Aucun indicateur ne correspond à la recherche.") : voc("Aucun indicateur pour le moment.")}
-        </Text>
+        <Card withBorder radius="md">
+          <EmptyState icon={<Gauge size={32} strokeWidth={1.5} />}
+            message={recherche || palier ? voc("Aucun indicateur ne correspond à la recherche.") : voc("Aucun indicateur pour le moment.")} />
+        </Card>
       ) : (
-        <Stack gap="lg">
+        <Accordion multiple variant="separated" radius="md"
+          value={groupes.map(([nom]) => nom).filter((nom) => !replies.includes(nom))}
+          onChange={(ouverts) => setReplies(groupes.map(([nom]) => nom).filter((nom) => !ouverts.includes(nom)))}>
           {groupes.map(([nomProjet, liste]) => (
-            <Card key={nomProjet} withBorder padding="md" radius="md">
-              <Title order={4} mb="xs">
-                {nomProjet}
-              </Title>
-              <Table striped highlightOnHover>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>{voc("Libellé")}</Table.Th>
-                    <Table.Th>{voc("Unité")}</Table.Th>
-                    <Table.Th>{voc("Valeur de base")}</Table.Th>
-                    <Table.Th>{voc("Cible")}</Table.Th>
-                    <Table.Th>{voc("Statut")}</Table.Th>
-                    <Table.Th />
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {liste.map((i) => (
-                    <Table.Tr key={i.id}>
-                      <Table.Td>
-                        <Link to={`/indicateurs/${i.id}`}>{i.libelle}</Link>
-                      </Table.Td>
-                      <Table.Td>{i.unite}</Table.Td>
-                      <Table.Td>{i.valeur_reference ?? "—"}</Table.Td>
-                      <Table.Td>{i.valeur_cible}</Table.Td>
-                      <Table.Td>
-                        <AlerteBadge palier={i.palier_actuel} taux={i.taux_realisation_actuel} />
-                      </Table.Td>
-                      <Table.Td>
-                        {editionActive && (
-                        <Group gap={4} wrap="nowrap">
-                          <Tooltip label={voc("Modifier l'indicateur")}>
-                            <ActionIcon variant="subtle" onClick={() => setIndicateurEnEdition(i)}>
-                              <Pencil size={15} />
-                            </ActionIcon>
-                          </Tooltip>
-                          <Tooltip label={voc("Supprimer l'indicateur")}>
-                            <ActionIcon
-                              variant="subtle"
-                              color="red"
-                              loading={deleteIndicateur.isPending}
-                              onClick={() => handleSupprimer(i.id, i.libelle)}
-                            >
-                              <Trash2 size={15} />
-                            </ActionIcon>
-                          </Tooltip>
-                        </Group>
-                        )}
-                      </Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </Card>
+            <Accordion.Item key={nomProjet} value={nomProjet} bg="white">
+              <Accordion.Control>
+                <Group justify="space-between" wrap="nowrap" pe="sm">
+                  <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
+                    <Text fw={600} size="sm" truncate>{nomProjet}</Text>
+                    <Badge variant="light" color="teal" size="sm" style={{ flexShrink: 0 }}>{voc`${liste.length} indicateur(s)`}</Badge>
+                  </Group>
+                  {/* Répartition des indicateurs du projet par état, en pastilles. */}
+                  <Group gap={4} wrap="nowrap" visibleFrom="sm">
+                    {paliers.map((p) => {
+                      const n = liste.filter((i) => i.palier_actuel?.libelle === p.libelle).length;
+                      return n ? <Tooltip key={p.libelle} label={`${p.libelle} : ${n}`}><Badge size="sm" variant="filled" color={p.couleur} radius="xl">{n}</Badge></Tooltip> : null;
+                    })}
+                  </Group>
+                </Group>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Table.ScrollContainer minWidth={760}>
+                  <Table highlightOnHover verticalSpacing="sm">
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Indicateur")}</Table.Th>
+                        <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Unité")}</Table.Th>
+                        <Table.Th tt="uppercase" fz="xs" c="dimmed" ta="right">{voc("Valeur de base")}</Table.Th>
+                        <Table.Th tt="uppercase" fz="xs" c="dimmed" ta="right">{voc("Cible")}</Table.Th>
+                        <Table.Th tt="uppercase" fz="xs" c="dimmed" w={240}>{voc("Réalisation")}</Table.Th>
+                        {editionActive && <Table.Th />}
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {liste.map((i) => (
+                        <Table.Tr key={i.id} style={{ cursor: "pointer" }} onClick={() => navigate(`/indicateurs/${i.id}`)}>
+                          <Table.Td maw={460}>
+                            <Text component={Link} to={`/indicateurs/${i.id}`} size="sm" fw={600} c="dark.7" lineClamp={2} onClick={(e) => e.stopPropagation()}>
+                              {i.libelle}
+                            </Text>
+                            <Text size="xs" c="dimmed">{FREQUENCES[i.frequence_collecte] ?? i.frequence_collecte}</Text>
+                          </Table.Td>
+                          <Table.Td><Text size="sm">{i.unite || "—"}</Text></Table.Td>
+                          <Table.Td ta="right"><Text size="sm" c="dimmed">{nombre(i.valeur_reference)}</Text></Table.Td>
+                          <Table.Td ta="right"><Text size="sm" fw={600}>{nombre(i.valeur_cible)}</Text></Table.Td>
+                          <Table.Td>
+                            {i.palier_actuel ? (
+                              <Stack gap={4}>
+                                <Group justify="space-between" gap={6} wrap="nowrap">
+                                  <Text size="xs" fw={600} c={i.palier_actuel.couleur}>{i.palier_actuel.libelle}</Text>
+                                  <Text size="xs" fw={700}>{i.taux_realisation_actuel.toLocaleString(locale())} %</Text>
+                                </Group>
+                                <Progress value={Math.min(100, i.taux_realisation_actuel)} color={i.palier_actuel.couleur} size="sm" radius="xl"
+                                  aria-label={voc("Taux de réalisation")} />
+                              </Stack>
+                            ) : <Text size="xs" c="dimmed">{voc("Pas encore de valeur")}</Text>}
+                          </Table.Td>
+                          {editionActive && (
+                            <Table.Td onClick={(e) => e.stopPropagation()}>
+                              <Group gap={4} wrap="nowrap">
+                                <Tooltip label={voc("Modifier l'indicateur")}>
+                                  <ActionIcon variant="subtle" onClick={() => setIndicateurEnEdition(i)}>
+                                    <Pencil size={15} />
+                                  </ActionIcon>
+                                </Tooltip>
+                                <Tooltip label={voc("Supprimer l'indicateur")}>
+                                  <ActionIcon variant="subtle" color="red" loading={deleteIndicateur.isPending} onClick={() => handleSupprimer(i.id, i.libelle)}>
+                                    <Trash2 size={15} />
+                                  </ActionIcon>
+                                </Tooltip>
+                              </Group>
+                            </Table.Td>
+                          )}
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </Table.ScrollContainer>
+              </Accordion.Panel>
+            </Accordion.Item>
           ))}
-        </Stack>
+        </Accordion>
       )}
 
       <Modal opened={modalOpen} onClose={() => setModalOpen(false)} title={voc("Nouvel indicateur")} size="lg">

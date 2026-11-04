@@ -1,0 +1,35 @@
+# Nginx de la plateforme (image officielle : ce modèle devient /etc/nginx/conf.d/default.conf, avec
+# ${DOMAINE_PLATEFORME} remplacé au démarrage). Le HTTPS est géré en amont (Caddy) ; on garde l'hôte
+# d'origine (chaque organisation a son sous-domaine) et le protocole (X-Forwarded-Proto).
+
+# Adresse principale : le site vitrine (accueil, documentation, inscription), puis l'application
+# (connexion, console Expertise-ID, abonnement) pour toutes les autres adresses.
+server {
+    listen 80;
+    server_name ${DOMAINE_PLATEFORME};
+    include /etc/nginx/conf.d/commun.inc;
+
+    location = /accueil { return 302 /; }
+    location / {
+        root /usr/share/nginx/site;
+        try_files $uri $uri.html $uri/ @application;
+    }
+    location @application {
+        root /usr/share/nginx/html;
+        try_files /index.html =404;
+        add_header Cache-Control "no-cache";
+    }
+}
+
+# Espaces des organisations (et toute autre adresse) : l'application seule.
+server {
+    listen 80 default_server;
+    server_name _;
+    include /etc/nginx/conf.d/commun.inc;
+
+    location / {
+        root /usr/share/nginx/html;
+        try_files $uri /index.html;
+        add_header Cache-Control "no-cache";
+    }
+}

@@ -44,7 +44,7 @@ export function PagePartagee() {
     <Box bg="gray.0" mih="100vh">
       <Box bg="teal.9" c="white" px="md" py="sm">
         <Group justify="space-between" wrap="nowrap">
-          <Text fw={700} size="sm">{voc("Plateforme de Suivi-Évaluation")}</Text>
+          <Text fw={700} size="sm">Expertise-ID Monitora</Text>
           <Group gap={6} wrap="nowrap">
             <Eye size={15} />
             <Text size="xs" c="teal.1">{voc("Lecture seule")}{data?.partage_par ? voc` · partagé par ${data.partage_par}` : ""}</Text>

@@ -35,7 +35,8 @@ def test_ajout_uniquement(admin):
 
 
 @pytest.mark.django_db
-def test_connexions_et_droits(admin):
+def test_connexions_et_droits(admin, settings):
+    settings.DOUBLE_AUTH_OBLIGATOIRE = False  # second facteur : apps/accounts/test_double_auth.py
     client = APIClient()
     assert client.post("/api/v1/auth/token/", {"username": "adm_audit", "password": "secret-1"}).status_code == 200
     assert client.post("/api/v1/auth/token/", {"username": "adm_audit", "password": "faux"}).status_code == 401

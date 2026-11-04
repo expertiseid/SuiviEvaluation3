@@ -146,7 +146,7 @@ export function ActiviteForm({
       return;
     }
     if (demanderNomNiveau && !nouveauNomNiveau.trim()) {
-      notifications.show({ message: voc("Donne un nom à ce niveau (ex : Résultat, Pilier, Activité)."), color: "orange" });
+      notifications.show({ message: voc("Donne un nom à ce niveau (ex : Résultat, Composante, Activité)."), color: "orange" });
       return;
     }
     const payload = {
@@ -197,7 +197,7 @@ export function ActiviteForm({
         <TextInput
           label={voc("Nom de ce niveau")}
           description={voc("Ce niveau n'a pas encore de nom : il s'appliquera à tous les éléments de ce niveau dans le projet.")}
-          placeholder={voc("Ex : Résultat, Pilier, Activité…")}
+          placeholder={voc("Ex : Résultat, Composante, Activité…")}
           value={nouveauNomNiveau}
           onChange={(e) => setNouveauNomNiveau(e.currentTarget.value)}
           required

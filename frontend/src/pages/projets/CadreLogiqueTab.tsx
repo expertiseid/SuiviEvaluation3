@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Pencil } from "lucide-react";
-import { ActionIcon, Badge, Box, Button, Group, Menu, Paper, Progress, Stack, Text, Textarea, Tooltip } from "@mantine/core";
+import { ActionIcon, Badge, Button, Group, Menu, Progress, Stack, Table, Text, Textarea, Tooltip } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { apiClient } from "../../api/client";
 import { useUpdateActivite } from "../../api/projects";
@@ -111,8 +111,6 @@ function Indicateurs({ indicateurs }: { indicateurs: IndicateurCadre[] }) {
   );
 }
 
-const GRILLE = { display: "grid", gridTemplateColumns: "minmax(220px, 30%) minmax(240px, 34%) 1fr 1fr", gap: 12 } as const;
-
 /** Cadre logique : logique d'intervention, indicateurs, sources de vérification, hypothèses. */
 export function CadreLogiqueTab({ projetId, codeProjet, modifiable }: { projetId: number; codeProjet: string; modifiable: boolean }) {
   const { data, isLoading, refetch } = useCadreLogique(projetId);
@@ -135,42 +133,44 @@ export function CadreLogiqueTab({ projetId, codeProjet, modifiable }: { projetId
         </Menu>
       </Group>
 
-      <Box style={{ overflowX: "auto" }}>
-        <Box miw={900}>
-          <Box style={{ ...GRILLE, padding: "8px 12px", background: "var(--mantine-color-teal-9)", color: "white", borderRadius: "8px 8px 0 0" }}>
-            {["Logique d'intervention", voc("Indicateurs (référence, cible, réalisé)"), voc("Sources de vérification"), voc("Hypothèses / risques")].map((t) => (
-              <Text key={t} size="xs" fw={700} tt="uppercase">{t}</Text>
-            ))}
-          </Box>
-          {data.lignes.length === 0 && <Text p="md" c="dimmed">{voc("Aucune activité planifiée pour ce projet.")}</Text>}
-          {data.lignes.map((l) => {
-            const couleur = l.id === null ? "dark" : COULEURS[Math.min(l.profondeur, COULEURS.length - 1)];
-            return (
-              <Paper
-                key={l.id ?? "projet"}
-                withBorder
-                radius={0}
-                p="sm"
-                style={{ ...GRILLE, borderTop: 0, borderLeft: `4px solid var(--mantine-color-${couleur}-6)`, background: l.profondeur === 0 ? "var(--mantine-color-gray-0)" : undefined }}
-              >
-                <div style={{ paddingLeft: l.profondeur * 14 }}>
-                  <Badge size="xs" variant="light" color={couleur} mb={4}>{traduireDonnee(l.niveau)}</Badge>
-                  <Text size="sm" fw={l.profondeur === 0 ? 700 : 500}>
-                    {l.code && <Text span c="dimmed" size="xs" mr={4}>{l.code}</Text>}
-                    {l.libelle}
-                  </Text>
-                  {l.avancement !== null && (
-                    <Text size="xs" c="dimmed" mt={2}>{voc("Avancement :")} {l.avancement.toLocaleString(locale())} %</Text>
-                  )}
-                </div>
-                <Indicateurs indicateurs={l.indicateurs} />
-                <CelluleTexte ligne={l} champ="sources_verification" modifiable={modifiable} onSaved={() => refetch()} />
-                <CelluleTexte ligne={l} champ="hypotheses" modifiable={modifiable} onSaved={() => refetch()} />
-              </Paper>
-            );
-          })}
-        </Box>
-      </Box>
+      <Table.ScrollContainer minWidth={960}>
+        <Table withTableBorder withColumnBorders verticalSpacing="sm" horizontalSpacing="sm" style={{ tableLayout: "fixed" }}>
+          <Table.Thead>
+            <Table.Tr style={{ background: "var(--mantine-color-teal-9)" }}>
+              {[[voc("Logique d'intervention"), "30%"], [voc("Indicateurs (référence, cible, réalisé)"), "32%"], [voc("Sources de vérification"), "19%"], [voc("Hypothèses / risques"), "19%"]].map(([t, w]) => (
+                <Table.Th key={t} w={w} c="white" fz="xs" tt="uppercase">{t}</Table.Th>
+              ))}
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {data.lignes.length === 0 && (
+              <Table.Tr><Table.Td colSpan={4}><Text c="dimmed" size="sm">{voc("Aucune activité planifiée pour ce projet.")}</Text></Table.Td></Table.Tr>
+            )}
+            {data.lignes.map((l) => {
+              const couleur = l.id === null ? "dark" : COULEURS[Math.min(l.profondeur, COULEURS.length - 1)];
+              return (
+                <Table.Tr key={l.id ?? "projet"} style={{ verticalAlign: "top", background: l.profondeur === 0 ? "var(--mantine-color-gray-0)" : undefined }}>
+                  <Table.Td style={{ borderLeft: `4px solid var(--mantine-color-${couleur}-6)` }}>
+                    <div style={{ paddingLeft: l.profondeur * 14 }}>
+                      <Badge size="xs" variant="light" color={couleur} mb={4}>{traduireDonnee(l.niveau)}</Badge>
+                      <Text size="sm" fw={l.profondeur === 0 ? 700 : 500}>
+                        {l.code && <Text span c="dimmed" size="xs" mr={4}>{l.code}</Text>}
+                        {l.libelle}
+                      </Text>
+                      {l.avancement !== null && (
+                        <Text size="xs" c="dimmed" mt={2}>{voc("Avancement :")} {l.avancement.toLocaleString(locale())} %</Text>
+                      )}
+                    </div>
+                  </Table.Td>
+                  <Table.Td><Indicateurs indicateurs={l.indicateurs} /></Table.Td>
+                  <Table.Td><CelluleTexte ligne={l} champ="sources_verification" modifiable={modifiable} onSaved={() => refetch()} /></Table.Td>
+                  <Table.Td><CelluleTexte ligne={l} champ="hypotheses" modifiable={modifiable} onSaved={() => refetch()} /></Table.Td>
+                </Table.Tr>
+              );
+            })}
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
     </Stack>
   );
 }

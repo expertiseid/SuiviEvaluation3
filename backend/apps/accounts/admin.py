@@ -3,8 +3,8 @@ from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
 from .models import Role, User
 
-admin.site.site_header = "Administration — Plateforme de Suivi-Évaluation"
-admin.site.site_title = "Suivi-Évaluation"
+admin.site.site_header = "Administration — Expertise-ID Monitora"
+admin.site.site_title = "Expertise-ID Monitora"
 admin.site.index_title = "Administration"
 
 

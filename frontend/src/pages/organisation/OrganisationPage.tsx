@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Building2, FolderKanban, Link2, Network, Pencil, Plus, Search, Trash2, Users } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { Building2, Link2, Network, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import {
   ActionIcon,
   Autocomplete,
-  Avatar,
   Badge,
   Button,
   Card,
@@ -50,6 +49,8 @@ import { messageErreurApi } from "../../utils/erreurs";
 import { voc } from "../../utils/vocabulaire";
 import { libelleStructure, structuresEnArbre } from "../../utils/organisation";
 import type { Partenaire, PartiePrenante, StructureOrganisation } from "../../types";
+import { IdentiteOrganisation } from "./IdentiteOrganisation";
+import { Organigramme } from "./Organigramme";
 
 const TYPES_STRUCTURE_SUGGERES = ["Organisation", "Direction", "Service", "Secteur", "Division", "Cellule", voc("Antenne régionale")];
 const TYPES_PARTENAIRE = [
@@ -231,120 +232,6 @@ function AffectationsModal({ structure, onClose }: { structure: StructureOrganis
 }
 
 /** Bloc d'une structure dans l'organigramme : ses projets, ses membres, puis ses services. */
-function BlocStructure({
-  structure,
-  structures,
-  profondeur,
-  onEditer,
-  onAffecter,
-  onSupprimer,
-}: {
-  structure: StructureOrganisation;
-  structures: StructureOrganisation[];
-  profondeur: number;
-  onEditer: (s: Partial<StructureOrganisation>) => void;
-  onAffecter: (s: StructureOrganisation) => void;
-  onSupprimer: (s: StructureOrganisation) => void;
-}) {
-  const enfants = structures.filter((x) => x.parent === structure.id);
-  const racine = profondeur === 0;
-  const contenu = (
-    <>
-      <Group justify="space-between" align="flex-start" wrap="nowrap">
-        <div>
-          <Group gap={8}>
-            {racine ? <Building2 size={20} /> : <Network size={16} />}
-            <Text fw={racine ? 700 : 600} size={racine ? "lg" : "md"}>{libelleStructure(structure)}</Text>
-            {structure.type && <Badge variant="light" size="sm">{structure.type}</Badge>}
-          </Group>
-          {structure.responsable && (
-            <Text size="xs" c="dimmed" mt={2}>{voc("Responsable :")} {structure.responsable}</Text>
-          )}
-        </div>
-        <Group gap={4} wrap="nowrap">
-          <Button size="compact-xs" variant="light" leftSection={<Plus size={12} />} onClick={() => onEditer({ parent: structure.id, type: "Service" })}>
-            {racine ? voc("Ajouter un service") : voc("Sous-service")}
-          </Button>
-          <Button size="compact-xs" variant="light" color="indigo" leftSection={<Link2 size={12} />} onClick={() => onAffecter(structure)}>
-            {voc("Projets et membres")}
-          </Button>
-          <Tooltip label={voc("Modifier")}>
-            <ActionIcon size="sm" variant="subtle" onClick={() => onEditer(structure)}>
-              <Pencil size={13} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={voc("Supprimer")}>
-            <ActionIcon size="sm" variant="subtle" color="red" onClick={() => onSupprimer(structure)}>
-              <Trash2 size={13} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
-      </Group>
-
-      {(structure.projets_resume.length > 0 || structure.utilisateurs_resume.length > 0) && (
-        <SimpleGrid cols={{ base: 1, md: 2 }} mt="xs" spacing="xs">
-          <div>
-            <Text size="xs" fw={600} c="dimmed" mb={2}>
-              <FolderKanban size={12} style={{ verticalAlign: -2 }} /> {voc("Projets")} ({structure.projets_resume.length})
-            </Text>
-            <Group gap={4}>
-              {structure.projets_resume.map((p) => (
-                <Tooltip key={p.id} label={p.nom}>
-                  <Badge component={Link} to={`/projets/${p.id}`} variant="outline" color="teal" style={{ cursor: "pointer" }}>
-                    {p.code}
-                  </Badge>
-                </Tooltip>
-              ))}
-              {structure.projets_resume.length === 0 && <Text size="xs" c="dimmed">—</Text>}
-            </Group>
-          </div>
-          <div>
-            <Text size="xs" fw={600} c="dimmed" mb={2}>
-              <Users size={12} style={{ verticalAlign: -2 }} /> {voc("Membres")} ({structure.utilisateurs_resume.length})
-            </Text>
-            <Group gap={4}>
-              {structure.utilisateurs_resume.map((u) => (
-                <Badge key={u.id} variant="light" color="gray" leftSection={<Avatar size={14} radius="xl">{u.nom[0]}</Avatar>}>
-                  {u.nom}
-                </Badge>
-              ))}
-              {structure.utilisateurs_resume.length === 0 && <Text size="xs" c="dimmed">—</Text>}
-            </Group>
-          </div>
-        </SimpleGrid>
-      )}
-      {structure.projets_resume.length === 0 && structure.utilisateurs_resume.length === 0 && (
-        <Text size="xs" c="dimmed" mt={4}>{voc("Aucun projet ni membre pour l'instant — bouton « Projets et membres ».")}</Text>
-      )}
-
-      {enfants.length > 0 && (
-        <Stack gap="xs" mt="sm">
-          {enfants.map((e) => (
-            <BlocStructure
-              key={e.id}
-              structure={e}
-              structures={structures}
-              profondeur={profondeur + 1}
-              onEditer={onEditer}
-              onAffecter={onAffecter}
-              onSupprimer={onSupprimer}
-            />
-          ))}
-        </Stack>
-      )}
-    </>
-  );
-  return racine ? (
-    <Card withBorder padding="md" radius="md" shadow="xs" style={{ borderTop: "4px solid var(--mantine-color-teal-6)" }}>
-      {contenu}
-    </Card>
-  ) : (
-    <Card withBorder padding="sm" radius="sm" bg="gray.0" style={{ borderLeft: "4px solid var(--mantine-color-indigo-4)" }}>
-      {contenu}
-    </Card>
-  );
-}
-
 // Bandeaux par niveau, du plus haut au plus bas, comme les tableaux de la planification et du cadre.
 const FONDS_NIVEAUX = ["var(--mantine-color-blue-3)", "var(--mantine-color-blue-2)", "var(--mantine-color-blue-1)", "var(--mantine-color-blue-0)"];
 const ENTETE = { bg: "var(--mantine-color-green-1)", fz: "xs", style: { verticalAlign: "middle" as const } };
@@ -540,21 +427,7 @@ function StructureTab() {
       {structures.length === 0 ? (
         <Card withBorder><Text c="dimmed" size="sm">{voc("Aucune organisation pour l'instant : commencez par « Nouvelle organisation ».")}</Text></Card>
       ) : vue === "organigramme" ? (
-        <Stack gap="md">
-          {structures
-            .filter((s) => s.parent === null)
-            .map((s) => (
-              <BlocStructure
-                key={s.id}
-                structure={s}
-                structures={structures}
-                profondeur={0}
-                onEditer={setEdition}
-                onAffecter={setAffectation}
-                onSupprimer={handleSupprimer}
-              />
-            ))}
-        </Stack>
+        <Organigramme structures={structures} onEditer={setEdition} onAffecter={setAffectation} onSupprimer={handleSupprimer} />
       ) : vue === "tableau" ? (
         <VueTableau structures={structures} onEditer={setEdition} onAffecter={setAffectation} onSupprimer={handleSupprimer} />
       ) : (
@@ -908,14 +781,18 @@ function PartenairesTab() {
 
 /** Écran « Organisation » (Administrateur) : structure interne, parties prenantes, partenaires. */
 export function OrganisationPage() {
+  // ?onglet=identite : lien « Ajouter votre logo » de l'en-tête.
+  const [parametres, setParametres] = useSearchParams();
+  const onglet = parametres.get("onglet") ?? "structure";
   return (
     <Stack gap="md">
       <TitreRubrique route="/organisation" defaut={voc("Organisation")} />
-      <Tabs defaultValue="structure" keepMounted={false}>
+      <Tabs value={onglet} onChange={(v) => setParametres(v && v !== "structure" ? { onglet: v } : {}, { replace: true })} keepMounted={false}>
         <Tabs.List>
           <Tabs.Tab value="structure">{voc("Structure de l'organisation")}</Tabs.Tab>
           <Tabs.Tab value="parties">{voc("Parties prenantes")}</Tabs.Tab>
           <Tabs.Tab value="partenaires">{voc("Partenaires")}</Tabs.Tab>
+          <Tabs.Tab value="identite">{voc("Identité et logo")}</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel value="structure" pt="md">
           <StructureTab />
@@ -925,6 +802,9 @@ export function OrganisationPage() {
         </Tabs.Panel>
         <Tabs.Panel value="partenaires" pt="md">
           <PartenairesTab />
+        </Tabs.Panel>
+        <Tabs.Panel value="identite" pt="md">
+          <IdentiteOrganisation />
         </Tabs.Panel>
       </Tabs>
     </Stack>

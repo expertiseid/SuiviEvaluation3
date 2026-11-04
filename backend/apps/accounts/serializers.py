@@ -2,7 +2,7 @@ from django.utils.text import slugify
 from rest_framework import serializers
 
 from .constants import ROLE_ADMIN
-from .models import Role, User
+from .models import DemandeInscription, Role, User
 
 
 def _libelle_role(code):
@@ -52,7 +52,20 @@ class UserSerializer(serializers.ModelSerializer):
     peut_approuver = serializers.SerializerMethodField()
 
     structure_libelle = serializers.SerializerMethodField()
+    est_demo = serializers.SerializerMethodField()
+    est_operateur = serializers.SerializerMethodField()
 
+    def get_est_operateur(self, obj):
+        """Opérateur Expertise-ID (console de la plateforme multi-organisations, adresse principale)."""
+        from apps.organisations import contexte
+
+        return bool(obj.is_superuser and contexte.actif() and contexte.courante() is None)
+
+    def get_est_demo(self, obj):
+        """Visiteur de l'installation de démonstration : bandeau « Mode démonstration »."""
+        from .demo import IDENTIFIANT, actif
+
+        return actif() and obj.username == IDENTIFIANT
     def get_structure_libelle(self, obj):
         """Structure de l'utilisateur en clair : « Partenaire de consortium — ONG X », « Organisation — Service S&E »…"""
         if not obj.type_structure:
@@ -97,6 +110,8 @@ class UserSerializer(serializers.ModelSerializer):
             "telephone",
             "zones_affectees",
             "is_active",
+            "est_demo",
+            "est_operateur",
         )
         read_only_fields = ("id",)
 
@@ -143,6 +158,15 @@ class UserWriteSerializer(serializers.ModelSerializer):
                     attrs[champ] = None
         return attrs
 
+    def validate_email(self, value):
+        """Plateforme multi-organisations : l'adresse sert à se connecter, elle n'appartient qu'à un compte."""
+        from apps.organisations import comptes, contexte
+
+        org = contexte.courante()
+        if contexte.actif() and org is not None and comptes.courriel_pris(value, org, getattr(self.instance, "pk", None)):
+            raise serializers.ValidationError("Cette adresse courriel est déjà utilisée par un autre compte de la plateforme.")
+        return value
+
     def validate_acces_modules(self, value):
         from apps.core.modules import NIVEAUX
 
@@ -177,3 +201,13 @@ class UserWriteSerializer(serializers.ModelSerializer):
         if zones_affectees is not None:
             instance.zones_affectees.set(zones_affectees)
         return instance
+
+
+class DemandeInscriptionSerializer(serializers.ModelSerializer):
+    offre_libelle = serializers.CharField(source="get_offre_display", read_only=True)
+    statut_libelle = serializers.CharField(source="get_statut_display", read_only=True)
+
+    class Meta:
+        model = DemandeInscription
+        exclude = ("mot_de_passe",)
+        read_only_fields = ("cree_le",)

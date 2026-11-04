@@ -1,4 +1,5 @@
-import { Button, Checkbox, Group, Modal, SimpleGrid, Stack, Text } from "@mantine/core";
+import { Alert, Button, Checkbox, Group, Modal, SimpleGrid, Stack, Text } from "@mantine/core";
+import { useEstDemo } from "../../auth/useAuth";
 import { voc } from "../../utils/vocabulaire";
 
 export interface DefinitionBloc {
@@ -24,6 +25,7 @@ export function PersonnalisationModal({
   /** Remet chaque graphique sur son type par défaut. */
   onReinitialiserTypes: () => void;
 }) {
+  const demo = useEstDemo();
   const groupes = [...new Set(blocs.map((b) => b.groupe))];
 
   function basculer(cle: string) {
@@ -33,6 +35,9 @@ export function PersonnalisationModal({
   return (
     <Modal opened={opened} onClose={onClose} title={voc("Personnaliser le tableau de bord")} size="xl">
       <Stack gap="md">
+        {demo && (
+          <Alert color="orange" p="xs">{voc("Démonstration : vos choix s'appliquent pendant votre visite, sans être enregistrés.")}</Alert>
+        )}
         <Text size="sm" c="dimmed">
           {voc("Coche les blocs à afficher. Le type de chaque graphique se change avec le petit bouton en haut à droite du bloc. Ces choix s'appliquent au tableau de bord de tous les utilisateurs.")}</Text>
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">

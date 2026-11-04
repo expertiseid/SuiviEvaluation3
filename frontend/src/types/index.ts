@@ -50,6 +50,10 @@ export interface User {
   telephone: string;
   zones_affectees: number[];
   is_active: boolean;
+  /** Visiteur de l'installation de démonstration : bandeau, rien ne s'enregistre. */
+  est_demo?: boolean;
+  /** Opérateur Expertise-ID (console de la plateforme multi-organisations). */
+  est_operateur?: boolean;
 }
 
 export interface NiveauAdministratif {
@@ -947,6 +951,8 @@ export interface Dossier {
   parent: number | null;
   cree_par: number;
   cree_par_nom: string;
+  nombre_documents: number;
+  nombre_sous_dossiers: number;
 }
 
 export interface DocumentVersion {

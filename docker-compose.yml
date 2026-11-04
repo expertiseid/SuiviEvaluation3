@@ -34,7 +34,8 @@ services:
   scheduler:
     container_name: suivi-evaluation-3-scheduler
     build: ./backend
-    command: sh -c "while true; do python manage.py check_deadlines; sleep 3600; done"
+    # Chaque organisation (plateforme multi-organisations), ou l'installation unique.
+    command: sh -c "while true; do python manage.py pour_chaque_organisation check_deadlines; sleep 3600; done"
     volumes:
       - ./backend:/app
     env_file: .env
@@ -54,6 +55,17 @@ services:
       - backend
     ports:
       - "5192:5173"
+
+  # Site vitrine (site-vitrine/) : accueil, documentation, inscription. Modifications visibles au rechargement.
+  vitrine:
+    container_name: suivi-evaluation-3-vitrine
+    # Serveur de fichiers statiques de Python (image du backend, déjà construite) : rien à télécharger.
+    image: suivi-evaluation-3-backend
+    command: python -m http.server 80 --directory /site
+    volumes:
+      - ./site-vitrine:/site:ro
+    ports:
+      - "5193:80"
 
 volumes:
   pgdata:

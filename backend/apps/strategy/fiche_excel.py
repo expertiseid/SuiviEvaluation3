@@ -1,5 +1,5 @@
 """
-Fiche d'un document de la chaîne (Programme, Pilier…) en Excel, sur le modèle de l'import d'un
+Fiche d'un document de la chaîne (Programme, Composante…) en Excel, sur le modèle de l'import d'un
 projet (apps.projects.import_excel) :
 
 - « Fiche » : une ligne par champ (colonne A = champ, colonne B = valeur), comme la feuille
@@ -55,7 +55,7 @@ ALIAS_CHAMPS = {"Élément de rattachement (code, facultatif)": "element_parent"
 CIBLES = ("cible_totale", "cible_hommes", "cible_femmes", "cible_jeunes", "cible_pdi")
 
 INSTRUCTIONS_FICHE = [
-    "Fiche d'un document de la chaîne (programme, pilier…) — même principe que le modèle d'import d'un projet",
+    "Fiche d'un document de la chaîne (stratégie, programme…) — même principe que le modèle d'import d'un projet",
     "",
     "- Feuille « Fiche » : une ligne = un champ (colonne A = nom du champ, colonne B = valeur). Le modèle",
     "  est prérempli avec les valeurs actuelles du document : complétez ou corrigez. Cellule vide = inchangé.",
@@ -114,7 +114,7 @@ def traduire_classeur_document(wb) -> None:
 
 
 def avec_fiche(document) -> bool:
-    """Les documents des maillons après le premier (Programme, Pilier…) ont une fiche."""
+    """Les documents des maillons après le premier (Programme, Composante…) ont une fiche."""
     from .chaine import ordre_du_type
 
     return ordre_du_type(document.type_document) > 1

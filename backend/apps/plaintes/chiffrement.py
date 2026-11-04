@@ -25,13 +25,32 @@ def cles_configurees() -> list[str]:
     return [c.strip() for c in (getattr(settings, "PLAINTES_CLE_CHIFFREMENT", "") or "").split(",") if c.strip()]
 
 
-@lru_cache(maxsize=1)
-def _fernet():
+def _cles_de_base() -> list[str]:
     cles = cles_configurees()
     if not cles:
         derivee = base64.urlsafe_b64encode(hashlib.sha256(("plaintes:" + settings.SECRET_KEY).encode()).digest())
         cles = [derivee.decode()]
+    return cles
+
+
+@lru_cache(maxsize=256)
+def _fernet_pour(organisation: str):
+    """
+    Plateforme multi-organisations : chaque organisation a sa propre clé, dérivée de la clé de la
+    plateforme et de son sous-domaine (une base copiée ailleurs reste illisible sans les deux).
+    Hors organisation : la clé configurée telle quelle (installation à organisation unique).
+    """
+    cles = _cles_de_base()
+    if organisation:
+        cles = [base64.urlsafe_b64encode(hashlib.sha256(base64.urlsafe_b64decode(c) + b":" + organisation.encode()).digest()).decode()
+                for c in cles]
     return MultiFernet([Fernet(c.encode()) for c in cles])
+
+
+def _fernet():
+    from apps.organisations.contexte import identifiant
+
+    return _fernet_pour(identifiant())
 
 
 def chiffrer(texte: str) -> str:

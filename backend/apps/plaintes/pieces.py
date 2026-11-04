@@ -259,7 +259,10 @@ def preparer(fichiers, mecanisme=None, maximum=PIECES_PAR_ENVOI):
 
 
 def repertoire() -> Path:
-    return Path(getattr(settings, "PLAINTES_STOCKAGE_PRIVE"))
+    """Répertoire privé de l'organisation courante (plateforme multi-organisations : un dossier chacune)."""
+    from apps.organisations.stockage import racine_fichiers
+
+    return Path(racine_fichiers(getattr(settings, "PLAINTES_STOCKAGE_PRIVE")))
 
 
 def chemin(piece) -> Path:
@@ -382,7 +385,9 @@ def duree_lien_minutes() -> int:
 
 
 def lien(piece, utilisateur) -> str:
-    return signing.dumps({"p": piece.pk, "u": utilisateur.pk}, salt=SEL_LIEN)
+    from apps.organisations.contexte import sel
+
+    return signing.dumps({"p": piece.pk, "u": utilisateur.pk}, salt=sel(SEL_LIEN))
 
 
 def piece_du_lien(jeton):
@@ -395,7 +400,9 @@ def piece_du_lien(jeton):
     from .reception import dossiers_visibles
 
     try:
-        contenu = signing.loads(jeton, salt=SEL_LIEN, max_age=duree_lien_minutes() * 60)
+        from apps.organisations.contexte import sel
+
+        contenu = signing.loads(jeton, salt=sel(SEL_LIEN), max_age=duree_lien_minutes() * 60)
     except signing.BadSignature:  # comprend le lien expiré
         return None, None
     utilisateur = User.objects.filter(pk=contenu.get("u"), is_active=True).first()

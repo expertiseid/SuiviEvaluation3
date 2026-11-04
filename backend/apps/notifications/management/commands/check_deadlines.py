@@ -58,6 +58,12 @@ class Command(BaseCommand):
         from django.core.management import call_command
 
         call_command("verifier_echeances_plaintes", stdout=self.stdout)
+        # Corbeille des documents : vidée de ce qui y est depuis plus de 30 jours.
+        from apps.documents.corbeille import purger
+
+        purges = purger()
+        if purges:
+            self.stdout.write(f"{purges} élément(s) de la corbeille supprimé(s) définitivement (plus de 30 jours).")
 
     def notifier_echeance(self, *, destinataires, titre, projet_nom, echeance, lien):
         deja_notifie = Notification.objects.filter(

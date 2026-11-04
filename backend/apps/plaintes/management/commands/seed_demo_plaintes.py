@@ -371,7 +371,8 @@ class Command(BaseCommand):
                             ("Clinique juridique de l'Association des femmes juristes", "JURIDIQUE", "+226 25 31 00 00", "National"),
                             ("Maison d'accueil temporaire", "SECURITE", "+226 70 00 00 00", "Centre"),
                         )]
-        admin = User.objects.filter(username="admin").first() or referent
+        admin = (User.objects.filter(username="admin").first()
+                 or User.objects.filter(role="ADMIN", is_active=True).exclude(username="visiteur_demo").first() or referent)
         for dossier, prestataire in zip(Dossier.objects.filter(sensible=True, referencements__isnull=True).order_by("numero")[:3], prestataires):
             confidentiel.orienter_assistance(dossier, admin, {"prestataire": prestataire.pk, "consentement": True,
                                                               "date": dossier.date_reception.isoformat()})
