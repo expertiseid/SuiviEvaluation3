@@ -20,6 +20,9 @@ export interface OrganisationPlateforme {
   /** Espace fixé par Expertise-ID (Go) ; null : celui de l'offre. */
   stockage_go: number | null;
   stockage: EspaceStockage;
+  /** Fin de la période payée (AAAA-MM-JJ) ; null : sans échéance. */
+  abonnement_fin: string | null;
+  abonnement: StatutAbonnement;
 }
 
 /** Espace de stockage d'une organisation : occupé et limite en octets (limite null : sans limite). */
@@ -141,5 +144,74 @@ export function useVueEnsemble(actif = true) {
     enabled: actif,
     queryFn: async () => (await apiClient.get<VueEnsemble>("/console/vue-ensemble/")).data,
     refetchInterval: 60_000,
+  });
+}
+
+/** Abonnement de l'organisation (apps/organisations/abonnement.py). */
+export type StatutAbonnement = "ACTIF" | "BIENTOT" | "GRACE" | "BLOQUE" | "SANS_ECHEANCE";
+export interface OffreAbonnement { offre: string; libelle: string; prix_mois: number; prix_mois_usd: number; go: number | null }
+export interface PageAbonnement {
+  statut: StatutAbonnement;
+  fin: string | null;
+  fin_grace: string | null;
+  jours_restants: number | null;
+  offre?: string;
+  offre_libelle?: string;
+  prix_mois?: number | null;
+  /** Valeur des jours payés qui restent (déduite lors d'un changement d'offre). */
+  reste?: number;
+  grace?: number;
+  peut_payer?: boolean;
+  paiement?: boolean;
+  devise?: string;
+  renouvelable?: boolean;
+  offres?: OffreAbonnement[];
+  durees?: number[];
+  paiements?: { date: string; offre: string; offre_libelle: string; mois: number; montant: number; deduction: number; devise: string; nature: string }[];
+}
+export interface DevisAbonnement {
+  offre: string; mois: number; changement: boolean; prix: number; jours_restants: number; deduction: number; a_payer: number;
+  nouvelle_fin: string; possible: boolean;
+}
+
+export function useAbonnement() {
+  return useQuery({
+    queryKey: ["abonnement"],
+    queryFn: async () => (await apiClient.get<PageAbonnement>("/abonnement/")).data,
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useDevisAbonnement(offre: string | null, mois: number) {
+  return useQuery({
+    queryKey: ["abonnement", "devis", offre, mois],
+    enabled: !!offre,
+    queryFn: async () => (await apiClient.get<DevisAbonnement>("/abonnement/devis/", { params: { offre, mois } })).data,
+  });
+}
+
+export const payerAbonnement = async (corps: { offre: string; mois: number; moyen: "mobile" | "carte"; langue: string }) =>
+  (await apiClient.post<{ paiement?: string; lien?: string; carte?: boolean }>("/abonnement/payer/", corps)).data;
+
+export function useEtatPaiementAbonnement(reference: string | null) {
+  const queryClient = useQueryClient();
+  return useQuery({
+    queryKey: ["abonnement", "paiement", reference],
+    enabled: !!reference,
+    queryFn: async () => {
+      const etat = (await apiClient.get<{ statut: "EN_ATTENTE" | "PAYE" | "ECHOUE"; fin: string | null }>(`/abonnement/paiement/${reference}/`)).data;
+      if (etat.statut === "PAYE") await queryClient.invalidateQueries({ queryKey: ["abonnement"], exact: true });
+      return etat;
+    },
+    refetchInterval: (requete) => (requete.state.data?.statut === "EN_ATTENTE" ? 4000 : false),
+  });
+}
+
+export function useEcheanceOrganisation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, fin }: { id: number; fin: string | null }) =>
+      (await apiClient.post<OrganisationPlateforme>(`/console/organisations/${id}/abonnement/`, { fin })).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["console"] }),
   });
 }

@@ -14,6 +14,7 @@ class Notification(TimestampedModel):
         ACTIVITE_MODIFIEE = "ACTIVITE_MODIFIEE", "Activité planifiée modifiée"
         PLAINTE = "PLAINTE", "Plaintes et retours"
         STOCKAGE = "STOCKAGE", "Espace de stockage"
+        ABONNEMENT = "ABONNEMENT", "Abonnement"
 
     destinataire = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications"

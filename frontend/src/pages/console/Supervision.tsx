@@ -147,7 +147,7 @@ function CarteEspaceVendu({ vue }: { vue: VueEnsemble }) {
   const disqueGo = vue.disque ? vue.disque.total / GO : 0;
   return (
     <Carte icone={<ShieldCheck size={20} />} couleurIcone="grape" titre={voc("Espace vendu aux clients")} sousTitre={voc("Somme des espaces des organisations clientes")}>
-      <Ligne libelle={voc("Espace vendu")} valeur={voc`${vendu_go} Go`} />
+      <Ligne libelle={voc("Espace vendu")} valeur={volumeLisible(vendu_go * GO)} />
       <Ligne libelle={voc("Réellement occupé")} valeur={volumeLisible(utilise)} />
       {vendu_go > 0 && <Jauge utilise={utilise} total={vendu_go * GO} />}
       <Text size="xs" c="dimmed" mt={4}>

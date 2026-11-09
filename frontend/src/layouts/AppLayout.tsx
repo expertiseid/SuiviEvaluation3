@@ -30,6 +30,7 @@ import {
   MonitorPlay,
   GraduationCap,
   HardDrive,
+  CalendarClock,
 } from "lucide-react";
 import {
   ActionIcon,
@@ -73,6 +74,8 @@ import { useAccesModules } from "../utils/modules";
 import { libelleRole } from "../utils/roles";
 import { useTypesDocuments } from "../api/strategy";
 import { routeMaillon } from "../utils/chaineDocuments";
+import { FenetreStockagePlein } from "../components/common/FenetreStockagePlein";
+import { BandeauAbonnement } from "../components/common/BandeauAbonnement";
 
 type NavItem = { to: string; label: string; icon: LucideIcon };
 
@@ -101,6 +104,7 @@ const ITEMS_ADMIN: NavItem[] = [
   { to: "/utilisateurs", label: voc("Utilisateurs"), icon: UserCog },
   { to: "/organisation", label: voc("Organisation"), icon: Building2 },
   { to: "/stockage", label: voc("Stockage"), icon: HardDrive },
+  { to: "/mon-abonnement", label: voc("Abonnement"), icon: CalendarClock },
   { to: "/parametres-alerte", label: voc("Paramètres d'alerte"), icon: Sliders },
   { to: "/langues", label: voc("Langues"), icon: Languages },
   { to: "/journal-audit", label: voc("Journal d'audit"), icon: ScrollText },
@@ -486,6 +490,8 @@ export function AppLayout() {
       </AppShell.Navbar>
 
       <AppShell.Main bg="gray.0" style={{ display: "flex", flexDirection: "column" }}>
+        <FenetreStockagePlein />
+        <BandeauAbonnement />
         {user?.est_demo && (
           <Alert color="orange" variant="light" mb="md" icon={<MonitorPlay size={18} />} title={voc("Mode démonstration")}>
             <Group justify="space-between" gap="sm">

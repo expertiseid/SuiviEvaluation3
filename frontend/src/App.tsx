@@ -3,6 +3,7 @@ import { AppLayout } from "./layouts/AppLayout";
 import { RequireAuth } from "./auth/RequireAuth";
 import { LoginPage } from "./auth/LoginPage";
 import { AbonnementPage } from "./pages/accueil/AbonnementPage";
+import { MonAbonnementPage } from "./pages/abonnement/MonAbonnementPage";
 import { AccueilPage } from "./pages/accueil/AccueilPage";
 import { AProposPage } from "./pages/accueil/AProposPage";
 import { InscriptionPage } from "./pages/accueil/InscriptionPage";
@@ -53,6 +54,8 @@ export default function App() {
       <Route path="/accueil" element={<AccueilPage />} />
       <Route path="/inscription" element={<InscriptionPage />} />
       <Route path="/abonnement" element={<AbonnementPage />} />
+      {/* Abonnement de l'organisation : hors du menu, pour rester ouvert quand l'accès est bloqué. */}
+      <Route path="/mon-abonnement" element={<RequireAuth><MonAbonnementPage /></RequireAuth>} />
       <Route path="/a-propos" element={<AProposPage />} />
       {/* Console Expertise-ID (plateforme multi-organisations). */}
       <Route path="/console" element={<RequireAuth><ConsolePage /></RequireAuth>} />

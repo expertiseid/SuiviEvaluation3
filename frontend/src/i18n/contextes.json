@@ -160,6 +160,9 @@
  "« {0} » n'est pas dans la chaîne de rattachement de « {1} ».": [
   "serveur"
  ],
+ "({0} jours restants)": [
+  "pages/abonnement/MonAbonnementPage.tsx"
+ ],
  "(dont": [
   "pages/planification/PlanificationImportPage.tsx"
  ],
@@ -221,6 +224,9 @@
  "{0} : le responsable de ces étapes n'a pas (ou plus) d'habilitation confidentielle : {1}.": [
   "serveur"
  ],
+ "{0} (offre actuelle)": [
+  "pages/abonnement/MonAbonnementPage.tsx"
+ ],
  "{0} {1} réalisé(s) sur {2} prévu(s).": [
   "components/suivi/MethodeCalculLigne.tsx"
  ],
@@ -256,6 +262,7 @@
   "pages/console/Supervision.tsx"
  ],
  "{0} ans": [
+  "pages/abonnement/MonAbonnementPage.tsx",
   "pages/stockage/StockagePage.tsx"
  ],
  "{0} associé(s), {1} en échec.": [
@@ -314,6 +321,9 @@
  ],
  "{0} document(s) rattaché(s)": [
   "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "{0} documents ajoutés": [
+  "components/documents/DocumentsTab.tsx"
  ],
  "{0} dossier(s)": [
   "pages/plaintes/DossiersPlaintesPage.tsx"
@@ -381,9 +391,14 @@
  "{0} fichier(s) joint(s)": [
   "pages/plaintes/DossierPlaintePage.tsx"
  ],
+ "{0} fichiers": [
+  "components/documents/DocumentsTab.tsx"
+ ],
+ "{0} fichiers, {1} : chaque document prendra le nom de son fichier.": [
+  "components/documents/DocumentsTab.tsx"
+ ],
  "{0} Go": [
   "pages/console/Supervision.tsx",
-  "pages/stockage/StockagePage.tsx",
   "utils/stockage.ts"
  ],
  "{0} Go de stockage pour vos données": [
@@ -447,6 +462,7 @@
   "pages/plaintes/MessagesPlaintes.tsx"
  ],
  "{0} mois": [
+  "pages/abonnement/MonAbonnementPage.tsx",
   "pages/console/Supervision.tsx",
   "pages/stockage/StockagePage.tsx"
  ],
@@ -500,11 +516,9 @@
   "pages/beneficiaires/DoublonsPage.tsx"
  ],
  "{0} sur {1}": [
+  "components/common/EspaceStockage.tsx",
   "pages/console/Supervision.tsx",
   "pages/plaintes/ElementsTableau.tsx"
- ],
- "{0} sur {1} Go": [
-  "components/common/EspaceStockage.tsx"
  ],
  "{0} texte(s) · {1} correction(s) pour cette langue": [
   "pages/langues/LanguesPage.tsx"
@@ -514,6 +528,9 @@
  ],
  "{0} utilisateur(s)": [
   "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "{0} utilisés sur {1}": [
+  "components/common/FenetreStockagePlein.tsx"
  ],
  "{0}{1} » existe déjà — import annulé.": [
   "serveur"
@@ -576,6 +593,7 @@
   "pages/accueil/InscriptionPage.tsx"
  ],
  "1 an": [
+  "pages/abonnement/MonAbonnementPage.tsx",
   "pages/stockage/StockagePage.tsx"
  ],
  "1 an (12 mois)": [
@@ -684,6 +702,9 @@
  "À la date du": [
   "pages/projets/AvancementModal.tsx"
  ],
+ "À payer (HT)": [
+  "pages/abonnement/MonAbonnementPage.tsx"
+ ],
  "À propos": [
   "layouts/AppLayout.tsx",
   "pages/accueil/AProposPage.tsx",
@@ -712,6 +733,9 @@
   "api/plaintes.ts"
  ],
  "Abonnement": [
+  "layouts/AppLayout.tsx",
+  "pages/abonnement/MonAbonnementPage.tsx",
+  "pages/console/ConsolePage.tsx",
   "pages/console/Supervision.tsx"
  ],
  "Abonnement activé": [
@@ -1045,6 +1069,9 @@
  "Ajouter le logo de votre organisation": [
   "layouts/AppLayout.tsx"
  ],
+ "Ajouter les {0} documents": [
+  "components/documents/DocumentsTab.tsx"
+ ],
  "Ajouter les jours fériés fixes du Burkina Faso": [
   "pages/plaintes/CalendrierPlaintes.tsx"
  ],
@@ -1271,6 +1298,9 @@
  ],
  "Approuver": [
   "pages/approbations/ApprobationsPage.tsx"
+ ],
+ "après déduction de {0}": [
+  "pages/abonnement/MonAbonnementPage.tsx"
  ],
  "Arborescence": [
   "pages/geo/ZonesAdministrativesPage.tsx",
@@ -1718,6 +1748,9 @@
   "pages/console/ConsolePage.tsx",
   "pages/console/Supervision.tsx"
  ],
+ "Aucune organisation.": [
+  "serveur"
+ ],
  "Aucune passerelle SMS n'est configurée : l'envoi sera simulé et indiqué comme tel au journal.": [
   "pages/plaintes/OperationsDossier.tsx"
  ],
@@ -1770,6 +1803,7 @@
   "pages/geo/ZonesAdministrativesPage.tsx"
  ],
  "Augmenter mon stockage": [
+  "components/common/FenetreStockagePlein.tsx",
   "pages/stockage/StockagePage.tsx"
  ],
  "Aujourd'hui": [
@@ -2188,6 +2222,7 @@
   "pages/carte/FenetresCarte.tsx"
  ],
  "Carte bancaire (dollars)": [
+  "pages/abonnement/MonAbonnementPage.tsx",
   "pages/accueil/AbonnementPage.tsx",
   "pages/stockage/StockagePage.tsx"
  ],
@@ -2354,6 +2389,9 @@
  "Ce qu'il réalise": [
   "pages/projets/PartenairesProjetTab.tsx"
  ],
+ "Ce que vous envoyez fait {0}, mais il ne reste que {1} dans l'espace de votre organisation.": [
+  "components/common/FenetreStockagePlein.tsx"
+ ],
  "Ce que vous voulez ajouter à votre retour (facultatif si vous joignez un fichier).": [
   "pages/plaintes/public/SuiviPublicPage.tsx"
  ],
@@ -2371,6 +2409,10 @@
  ],
  "Ce qui est fait pour réduire la probabilité ou l'impact.": [
   "pages/projets/RisquesTab.tsx"
+ ],
+ "Ce qui reste de votre abonnement couvre déjà presque tout ce montant : choisissez une durée plus longue.": [
+  "pages/abonnement/MonAbonnementPage.tsx",
+  "serveur"
  ],
  "Ce qui reste plus de {0} jours dans la corbeille est supprimé définitivement, automatiquement.": [
   "pages/documents/CorbeillePage.tsx"
@@ -3267,6 +3309,7 @@
   "pages/projets/ProjetForm.tsx"
  ],
  "Continuer avec la carte bancaire": [
+  "pages/abonnement/MonAbonnementPage.tsx",
   "pages/accueil/AbonnementPage.tsx",
   "pages/stockage/StockagePage.tsx"
  ],
@@ -3496,6 +3539,7 @@
  ],
  "Date": [
   "components/documents/ExplorateurDocuments.tsx",
+  "pages/abonnement/MonAbonnementPage.tsx",
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
   "pages/console/SiteVitrine.tsx",
   "pages/console/Supervision.tsx",
@@ -3615,6 +3659,9 @@
   "components/indicators/SaisieValeurIndicateurForm.tsx",
   "components/suivi/SaisiePointSuiviForm.tsx"
  ],
+ "Décimales possibles : 0,01 Go = 10 Mo (essai).": [
+  "pages/console/ConsolePage.tsx"
+ ],
  "Décision": [
   "api/plaintes.ts",
   "pages/plaintes/DossierPlaintePage.tsx",
@@ -3630,6 +3677,7 @@
  ],
  "Déconnexion": [
   "layouts/AppLayout.tsx",
+  "pages/abonnement/MonAbonnementPage.tsx",
   "pages/console/ConsolePage.tsx"
  ],
  "Découvrez la plateforme sans compte, sur des données d'exemple :": [
@@ -3637,6 +3685,9 @@
  ],
  "Décrivez votre retour.": [
   "serveur"
+ ],
+ "Déduction : ce qui reste de votre abonnement ({0} jours)": [
+  "pages/abonnement/MonAbonnementPage.tsx"
  ],
  "Déjà abonné ?": [
   "pages/accueil/AccueilPage.tsx"
@@ -3678,6 +3729,9 @@
  ],
  "Demande enregistrée": [
   "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
+ ],
+ "Demande envoyée : notre équipe vous contacte au plus vite pour le paiement par carte bancaire. Votre abonnement sera prolongé dès le paiement reçu.": [
+  "pages/abonnement/MonAbonnementPage.tsx"
  ],
  "Demande envoyée : notre équipe vous contacte au plus vite pour le paiement par carte bancaire. Votre espace sera agrandi dès le paiement reçu.": [
   "pages/stockage/StockagePage.tsx"
@@ -4096,6 +4150,7 @@
   "pages/projets/ProjetDetailPage.tsx"
  ],
  "Durée": [
+  "pages/abonnement/MonAbonnementPage.tsx",
   "pages/stockage/StockagePage.tsx"
  ],
  "Durée : {0}": [
@@ -4104,6 +4159,9 @@
  ],
  "Durée de l'abonnement": [
   "pages/accueil/AbonnementPage.tsx"
+ ],
+ "Durée invalide.": [
+  "serveur"
  ],
  "Durée ou stockage invalide.": [
   "serveur"
@@ -4138,6 +4196,9 @@
  ],
  "Échéance du dossier": [
   "pages/plaintes/DossierPlaintePage.tsx"
+ ],
+ "Échéance enregistrée": [
+  "pages/console/ConsolePage.tsx"
  ],
  "Échéance prévue le {0} — approche": [
   "pages/suivi/SuiviProjetDashboard.tsx"
@@ -4454,6 +4515,9 @@
  ],
  "Entreprise": [
   "pages/accueil/InscriptionPage.tsx"
+ ],
+ "Envoi : {0} sur {1}": [
+  "components/documents/DocumentsTab.tsx"
  ],
  "Envoi par": [
   "pages/plaintes/OperationsDossier.tsx"
@@ -4794,7 +4858,7 @@
  "Espace de stockage enregistré": [
   "pages/console/ConsolePage.tsx"
  ],
- "Espace de stockage plein ({0} Go) : supprimez des fichiers ou demandez à Expertise-ID d'agrandir votre espace.": [
+ "Espace de stockage plein ({0}) : supprimez des fichiers ou augmentez votre stockage depuis la page Stockage.": [
   "serveur"
  ],
  "Espace disponible": [
@@ -5202,6 +5266,7 @@
   "pages/projets/ProjetForm.tsx"
  ],
  "Fermer": [
+  "components/common/FenetreStockagePlein.tsx",
   "components/dashboard/PersonnalisationModal.tsx",
   "pages/beneficiaires/ImportBeneficiairesModal.tsx",
   "pages/carte/FenetresCarte.tsx",
@@ -5226,7 +5291,6 @@
   "pages/planification/PlanificationImportPage.tsx"
  ],
  "Fichier": [
-  "components/documents/DocumentsTab.tsx",
   "pages/carte/FenetresCarte.tsx"
  ],
  "Fichier à importer": [
@@ -5247,6 +5311,7 @@
   "pages/strategie/ChaineDocumentsModal.tsx"
  ],
  "Fichiers": [
+  "components/documents/DocumentsTab.tsx",
   "pages/plaintes/PiecesJointesDossier.tsx"
  ],
  "Fichiers des clients (Volume Hetzner)": [
@@ -5577,6 +5642,9 @@
  "Il manque {0} : gardez-le tel quel, il sera remplacé par une valeur à l'affichage.": [
   "pages/langues/LanguesPage.tsx"
  ],
+ "Il ne reste que {0} dans l'espace de votre organisation.": [
+  "components/common/FenetreStockagePlein.tsx"
+ ],
  "Image": [
   "pages/console/SiteVitrine.tsx"
  ],
@@ -5844,7 +5912,7 @@
  "Indiquez si le plaignant se dit satisfait.": [
   "serveur"
  ],
- "Indiquez un nombre de Go entre 1 et 100 000.": [
+ "Indiquez un nombre de Go entre 0,001 et 100 000.": [
   "serveur"
  ],
  "Indiquez un nombre de jours entre 1 et 180.": [
@@ -5973,6 +6041,9 @@
  "Jusqu'à {0} fichiers de {1} Mo au plus. Formats : {2}.": [
   "pages/plaintes/ChoixFichiers.tsx"
  ],
+ "jusqu'au {0}": [
+  "pages/console/ConsolePage.tsx"
+ ],
  "Juste.": [
   "pages/formation/FormationPage.tsx"
  ],
@@ -5985,6 +6056,18 @@
  "L'abonnement de votre organisation est suspendu. Contactez Expertise-ID.": [
   "auth/LoginPage.tsx",
   "serveur"
+ ],
+ "L'abonnement de votre organisation est terminé : l'accès est bloqué jusqu'au renouvellement, depuis la page Abonnement.": [
+  "serveur"
+ ],
+ "L'abonnement de votre organisation est terminé : l'accès sera bloqué le {0}.": [
+  "components/common/BandeauAbonnement.tsx"
+ ],
+ "L'abonnement de votre organisation se termine le {0}.": [
+  "components/common/BandeauAbonnement.tsx"
+ ],
+ "L'accès à la plateforme est bloqué. Vos données sont conservées : l'accès est rétabli dès le paiement.": [
+  "pages/abonnement/MonAbonnementPage.tsx"
  ],
  "L'accès aux dossiers confidentiels est une habilitation distincte des rôles. Seules les personnes habilitées peuvent être responsables d'une étape d'un circuit confidentiel. Chaque habilitation est demandée par une personne et validée par une deuxième ; tout est inscrit au journal d'audit. L'Administrateur y accède d'office.": [
   "pages/plaintes/HabilitationsPlaintes.tsx"
@@ -6382,13 +6465,18 @@
   "pages/documents/DocumentPartagePage.tsx"
  ],
  "Le paiement en ligne n'est pas disponible : contactez Expertise-ID.": [
+  "pages/abonnement/MonAbonnementPage.tsx",
   "pages/stockage/StockagePage.tsx",
   "serveur"
+ ],
+ "Le paiement n'a pas abouti : votre abonnement n'a pas changé. Vous pouvez réessayer.": [
+  "pages/abonnement/MonAbonnementPage.tsx"
  ],
  "Le paiement n'a pas abouti : votre espace n'a pas changé. Vous pouvez réessayer.": [
   "pages/stockage/StockagePage.tsx"
  ],
  "Le paiement n'a pas pu être préparé. Réessayez dans un moment.": [
+  "pages/abonnement/MonAbonnementPage.tsx",
   "pages/accueil/AbonnementPage.tsx",
   "pages/stockage/StockagePage.tsx",
   "serveur"
@@ -6857,6 +6945,9 @@
  "Même moyenne, pondérée par le budget alloué de chaque élément.": [
   "utils/methodesCalcul.ts"
  ],
+ "Même offre : la nouvelle période s'ajoute à la fin de l'actuelle. Autre offre : elle commence aujourd'hui, et ce qui reste de votre abonnement actuel est déduit du prix.": [
+  "pages/abonnement/MonAbonnementPage.tsx"
+ ],
  "Même pièce d'identité": [
   "pages/beneficiaires/DoublonsPage.tsx",
   "serveur"
@@ -6990,6 +7081,7 @@
   "pages/carte/FenetresCarte.tsx"
  ],
  "Mobile money (FCFA)": [
+  "pages/abonnement/MonAbonnementPage.tsx",
   "pages/accueil/AbonnementPage.tsx",
   "pages/stockage/StockagePage.tsx"
  ],
@@ -7071,6 +7163,9 @@
  ],
  "Modifier l'appréciation": [
   "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Modifier l'échéance": [
+  "pages/console/ConsolePage.tsx"
  ],
  "Modifier l'élément": [
   "pages/projets/ProjetDetailPage.tsx",
@@ -7158,6 +7253,7 @@
  ],
  "Montant": [
   "pages/DashboardConsolidePage.tsx",
+  "pages/abonnement/MonAbonnementPage.tsx",
   "pages/console/Supervision.tsx",
   "pages/stockage/StockagePage.tsx",
   "pages/strategie/FicheDocument.tsx"
@@ -7676,6 +7772,9 @@
  "Nouvelle demande sur les données": [
   "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
  ],
+ "Nouvelle échéance : {0}": [
+  "pages/abonnement/MonAbonnementPage.tsx"
+ ],
  "Nouvelle équipe": [
   "pages/projets/ActiviteForm.tsx"
  ],
@@ -7784,6 +7883,7 @@
   "pages/plaintes/HabilitationsPlaintes.tsx"
  ],
  "Offre": [
+  "pages/abonnement/MonAbonnementPage.tsx",
   "pages/console/ConsolePage.tsx",
   "pages/utilisateurs/DemandesInscription.tsx"
  ],
@@ -7946,6 +8046,7 @@
   "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
  "Paiement en cours de confirmation… Cette page se met à jour toute seule.": [
+  "pages/abonnement/MonAbonnementPage.tsx",
   "pages/stockage/StockagePage.tsx"
  ],
  "Paiement par carte bancaire": [
@@ -7953,6 +8054,9 @@
  ],
  "Paiement par carte bancaire : notre équipe finalise le paiement avec vous et active votre espace.": [
   "pages/accueil/AbonnementPage.tsx"
+ ],
+ "Paiement reçu : votre abonnement court maintenant jusqu'au {0}.": [
+  "pages/abonnement/MonAbonnementPage.tsx"
  ],
  "Paiement reçu : votre espace a été agrandi de {0} Go.": [
   "pages/stockage/StockagePage.tsx"
@@ -7962,6 +8066,9 @@
  ],
  "Paiements": [
   "pages/console/Supervision.tsx"
+ ],
+ "Paiements de l'abonnement": [
+  "pages/abonnement/MonAbonnementPage.tsx"
  ],
  "par": [
   "components/partage/BoutonPartage.tsx",
@@ -7997,6 +8104,9 @@
  ],
  "Par livrables": [
   "utils/methodesCalcul.ts"
+ ],
+ "par mois": [
+  "pages/abonnement/MonAbonnementPage.tsx"
  ],
  "Par pays": [
   "pages/DashboardConsolidePage.tsx"
@@ -8131,6 +8241,9 @@
  "Partir d'un modèle": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
+ "Pas assez de place pour ce fichier": [
+  "components/common/FenetreStockagePlein.tsx"
+ ],
  "Pas de contact renseigné": [
   "pages/organisation/OrganisationPage.tsx"
  ],
@@ -8163,6 +8276,15 @@
  ],
  "Patientez une minute avant de demander un nouveau code.": [
   "serveur"
+ ],
+ "Payé jusqu'au": [
+  "pages/console/ConsolePage.tsx"
+ ],
+ "Payé jusqu'au {0}": [
+  "pages/abonnement/MonAbonnementPage.tsx"
+ ],
+ "Payer": [
+  "pages/abonnement/MonAbonnementPage.tsx"
  ],
  "Payer et agrandir mon espace": [
   "pages/stockage/StockagePage.tsx"
@@ -8620,6 +8742,9 @@
  "Prêt à être activé": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
+ "Prévenez l'administrateur de votre organisation.": [
+  "components/common/BandeauAbonnement.tsx"
+ ],
  "Prévu": [
   "pages/projets/PeriodeTableau.tsx"
  ],
@@ -8643,6 +8768,9 @@
  ],
  "Priorités : gardez au moins une priorité urgente active.": [
   "serveur"
+ ],
+ "Prix": [
+  "pages/abonnement/MonAbonnementPage.tsx"
  ],
  "Probabilité": [
   "pages/projets/RisquesTab.tsx"
@@ -9231,6 +9359,12 @@
  "Renommer le niveau": [
   "pages/projets/NiveauxActiviteTab.tsx"
  ],
+ "Renouveler": [
+  "components/common/BandeauAbonnement.tsx"
+ ],
+ "Renouveler ou changer d'offre": [
+  "pages/abonnement/MonAbonnementPage.tsx"
+ ],
  "Renseignez votre organisation et la personne de contact. Vous choisirez ensuite une offre d'abonnement ; votre espace sera activé par Expertise-ID.": [
   "pages/accueil/InscriptionPage.tsx"
  ],
@@ -9403,6 +9537,7 @@
   "pages/formation/FormationPage.tsx"
  ],
  "Retour à la plateforme": [
+  "pages/abonnement/MonAbonnementPage.tsx",
   "pages/accueil/AProposPage.tsx"
  ],
  "Retour anonyme (aucune information d'identité)": [
@@ -9652,6 +9787,9 @@
  "Sans dates, toutes les dépenses saisies sont prises en compte.": [
   "pages/projets/RapportFinancierModal.tsx"
  ],
+ "Sans échéance": [
+  "pages/console/ConsolePage.tsx"
+ ],
  "sans localisation": [
   "pages/carte/CartePage.tsx"
  ],
@@ -9827,6 +9965,9 @@
  ],
  "Seuils dupliqués pour « {0} » — grille ignorée.": [
   "serveur"
+ ],
+ "Seul l'administrateur de votre organisation peut renouveler l'abonnement. Compte connecté : {0}.": [
+  "pages/abonnement/MonAbonnementPage.tsx"
  ],
  "Seul l'Administrateur modifie la vue de l'organisation.": [
   "serveur"
@@ -10330,6 +10471,12 @@
   "pages/utilisateurs/RolesTab.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
+ "Supprimez des fichiers qui ne servent plus, ou augmentez votre stockage : il est agrandi dès le paiement.": [
+  "components/common/FenetreStockagePlein.tsx"
+ ],
+ "Supprimez des fichiers qui ne servent plus, ou demandez à l'administrateur de votre organisation d'augmenter le stockage.": [
+  "components/common/FenetreStockagePlein.tsx"
+ ],
  "Supprimez ou déplacez d'abord ses sous-catégories.": [
   "serveur"
  ],
@@ -10515,6 +10662,9 @@
  ],
  "Terme par défaut": [
   "layouts/AppLayout.tsx"
+ ],
+ "Terminé le {0}": [
+  "pages/abonnement/MonAbonnementPage.tsx"
  ],
  "Terminée": [
   "pages/suivi/SuiviProjetDashboard.tsx",
@@ -11288,6 +11438,15 @@
  "Vos saisies et demandes de changement en attente d'approbation, et celles qui ont été rejetées (avec le motif). Une saisie rejetée peut être corrigée depuis la page Suivi : elle repart alors en approbation.": [
   "pages/approbations/ApprobationsPage.tsx"
  ],
+ "Votre abonnement est terminé. Vous gardez l'accès jusqu'au {0} : après cette date, l'accès sera bloqué jusqu'au renouvellement.": [
+  "pages/abonnement/MonAbonnementPage.tsx"
+ ],
+ "Votre abonnement n'a pas de date de fin.": [
+  "pages/abonnement/MonAbonnementPage.tsx"
+ ],
+ "Votre abonnement se termine dans {0} jours. Renouvelez-le pour continuer sans interruption.": [
+  "pages/abonnement/MonAbonnementPage.tsx"
+ ],
  "Votre accord est nécessaire pour créer le profil.": [
   "serveur"
  ],
@@ -11306,6 +11465,9 @@
  "Votre compte permet de consulter ce module, pas d'y créer ou modifier.": [
   "serveur"
  ],
+ "Votre espace de stockage est plein": [
+  "components/common/FenetreStockagePlein.tsx"
+ ],
  "Votre espace est presque plein : supprimez des fichiers inutiles ou augmentez votre stockage.": [
   "pages/stockage/StockagePage.tsx"
  ],
@@ -11317,6 +11479,12 @@
  ],
  "Votre navigateur ne permet pas la géolocalisation.": [
   "pages/carte/OutilsCarte.tsx"
+ ],
+ "Votre offre": [
+  "pages/abonnement/MonAbonnementPage.tsx"
+ ],
+ "Votre offre ne se renouvelle pas en ligne : contactez Expertise-ID.": [
+  "serveur"
  ],
  "Votre organisation n'a pas de limite de stockage. Espace occupé : {0}.": [
   "pages/stockage/StockagePage.tsx"
@@ -11356,6 +11524,9 @@
  ],
  "Vous ne pouvez pas vous désigner vous-même.": [
   "serveur"
+ ],
+ "Vous pouvez en choisir plusieurs à la fois.": [
+  "components/documents/DocumentsTab.tsx"
  ],
  "vous pouvez ouvrir et remplir chaque formulaire : l'enregistrement est simulé, rien n'est conservé.": [
   "pages/accueil/AccueilPage.tsx"

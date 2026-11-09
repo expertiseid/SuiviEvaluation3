@@ -25,10 +25,18 @@ class Organisation(models.Model):
     base = models.CharField(max_length=63, unique=True, help_text="Nom de la base PostgreSQL de l'organisation.")
     statut = models.CharField(max_length=12, choices=Statut.choices, default=Statut.EN_ATTENTE)
     offre = models.CharField(max_length=20, blank=True)
-    stockage_go = models.PositiveIntegerField(
-        null=True, blank=True, help_text="Espace de stockage en Go fixé par Expertise-ID ; vide : celui de l'offre (apps.organisations.quota).")
+    stockage_go = models.DecimalField(
+        max_digits=9, decimal_places=3, null=True, blank=True,
+        help_text="Espace de stockage en Go fixé par Expertise-ID (0,01 = 10 Mo, pour un essai) ; vide : celui de l'offre (apps.organisations.quota).")
     stockage_alerte = models.PositiveSmallIntegerField(
         default=0, help_text="Dernier seuil d'alerte de stockage notifié (0, 90 ou 100 %), pour ne prévenir qu'une fois.")
+    abonnement_fin = models.DateField(
+        null=True, blank=True, help_text="Fin de la période payée ; ensuite 7 jours de grâce, puis accès bloqué jusqu'au paiement "
+                                         "(apps.organisations.abonnement). Vide : sans échéance (partenariat, démonstration).")
+    abonnement_prix_mois = models.PositiveIntegerField(
+        null=True, blank=True, help_text="Prix d'un mois payé : sert à déduire ce qui reste lors d'un changement d'offre.")
+    abonnement_alerte = models.PositiveSmallIntegerField(
+        default=0, help_text="Dernière alerte de fin d'abonnement envoyée (1 : 7 jours avant, 2 : terminé, 3 : bloqué).")
     mode_demo = models.BooleanField(default=False, help_text="Organisation de démonstration : visiteur en lecture seule.")
     courriel_contact = models.EmailField(blank=True)
     cree_le = models.DateTimeField(auto_now_add=True)
@@ -81,8 +89,9 @@ class PaiementAbonnement(models.Model):
     class Nature(models.TextChoices):
         ABONNEMENT = "ABONNEMENT", "Abonnement (inscription)"
         STOCKAGE = "STOCKAGE", "Stockage supplémentaire"
+        RENOUVELLEMENT = "RENOUVELLEMENT", "Renouvellement ou changement d'offre"
 
-    nature = models.CharField(max_length=12, choices=Nature.choices, default=Nature.ABONNEMENT)
+    nature = models.CharField(max_length=14, choices=Nature.choices, default=Nature.ABONNEMENT)
     # Abonnement : la demande d'inscription ; stockage supplémentaire : l'organisation déjà ouverte.
     demande = models.ForeignKey("accounts.DemandeInscription", on_delete=models.CASCADE, related_name="paiements",
                                 null=True, blank=True)
@@ -94,6 +103,7 @@ class PaiementAbonnement(models.Model):
     mois = models.PositiveSmallIntegerField(default=1)
     tranches = models.PositiveSmallIntegerField(default=0, help_text="Tranches de 10 Go de stockage ajoutées.")
     montant = models.PositiveIntegerField()
+    deduction = models.PositiveIntegerField(default=0, help_text="Changement d'offre : ce qui restait de l'abonnement, déduit du prix.")
     devise = models.CharField(max_length=3)
     jeton_paiement = models.CharField(max_length=100, blank=True)
     jeton_notification = models.CharField(max_length=64, blank=True, help_text="Comparé à celui de chaque notification de CinetPay.")

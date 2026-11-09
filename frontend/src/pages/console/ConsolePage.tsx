@@ -10,7 +10,7 @@ import {
   Building2, CirclePause, CirclePlay, CreditCard, Handshake, HardDrive, LayoutDashboard, LogOut, Newspaper, Pencil, Rocket, UserPlus,
 } from "lucide-react";
 import {
-  type OrganisationPlateforme, useActiverDemande, useDemandesConsole, useOrganisationsConsole, useStatutOrganisation, useStockageOrganisation, useVueEnsemble,
+  type OrganisationPlateforme, useActiverDemande, useDemandesConsole, useOrganisationsConsole, useStatutOrganisation, useStockageOrganisation, useVueEnsemble, useEcheanceOrganisation,
 } from "../../api/console";
 import { type DemandeInscription, useIdentiteOrganisation } from "../../api/identite";
 import { useAuth } from "../../auth/useAuth";
@@ -69,7 +69,7 @@ function Demandes() {
   if (isLoading) return <Loader size="sm" />;
   return (
     <>
-      <Table.ScrollContainer minWidth={980}>
+      <Table.ScrollContainer minWidth={1100}>
         <Table striped highlightOnHover verticalSpacing="sm">
           <Table.Thead>
             <Table.Tr>
@@ -77,8 +77,8 @@ function Demandes() {
               <Table.Th>{voc("Organisation")}</Table.Th>
               <Table.Th>{voc("Contact")}</Table.Th>
               <Table.Th>{voc("Identifiant interne")}</Table.Th>
-              <Table.Th>{voc("Offre")}</Table.Th>
-              <Table.Th>{voc("État")}</Table.Th>
+              <Table.Th miw={140}>{voc("Offre")}</Table.Th>
+              <Table.Th miw={190}>{voc("État")}</Table.Th>
               <Table.Th w={150} />
             </Table.Tr>
           </Table.Thead>
@@ -148,10 +148,53 @@ function ModifierStockage({ organisation }: { organisation: OrganisationPlatefor
       </Popover.Target>
       <Popover.Dropdown>
         <Stack gap="xs">
-          <NumberInput label={voc("Espace de stockage (Go)")} min={1} max={100000} allowDecimal={false} value={go} onChange={setGo} />
+          <NumberInput label={voc("Espace de stockage (Go)")} description={voc("Décimales possibles : 0,01 Go = 10 Mo (essai).")} min={0.001} max={100000}
+            decimalScale={3} decimalSeparator="," value={go} onChange={setGo} />
           <Button size="xs" loading={changer.isPending} disabled={!go} onClick={() => enregistrer(Number(go))}>{voc("Enregistrer")}</Button>
           {organisation.stockage_go != null && (
             <Button size="xs" variant="subtle" onClick={() => enregistrer(null)}>{voc("Revenir à l'espace de l'offre")}</Button>
+          )}
+        </Stack>
+      </Popover.Dropdown>
+    </Popover>
+  );
+}
+
+const COULEUR_ABONNEMENT: Record<string, string> = { ACTIF: "teal", BIENTOT: "yellow", GRACE: "orange", BLOQUE: "red", SANS_ECHEANCE: "gray" };
+const LIBELLE_ABONNEMENT: Record<string, string> = {
+  ACTIF: "Actif", BIENTOT: "Se termine bientôt", GRACE: "Grâce (7 jours)", BLOQUE: "Bloqué", SANS_ECHEANCE: "Sans échéance",
+};
+
+/** Échéance de l'abonnement fixée à la main (paiement par carte, geste commercial) ; vide : sans échéance. */
+function ModifierEcheance({ organisation }: { organisation: OrganisationPlateforme }) {
+  const [ouvert, setOuvert] = useState(false);
+  const [fin, setFin] = useState("");
+  const changer = useEcheanceOrganisation();
+  const enregistrer = async (valeur: string | null) => {
+    try {
+      await changer.mutateAsync({ id: organisation.id, fin: valeur });
+      setOuvert(false);
+      notifications.show({ color: "teal", message: voc("Échéance enregistrée") });
+    } catch (error) {
+      notifications.show({ color: "red", message: messageErreurApi(error, voc("Erreur lors de l'enregistrement")) });
+    }
+  };
+  return (
+    <Popover opened={ouvert} onChange={setOuvert} width={260} position="bottom-end" withArrow>
+      <Popover.Target>
+        <Tooltip label={voc("Modifier l'échéance")}>
+          <ActionIcon variant="subtle" size="sm" aria-label={voc("Modifier l'échéance")}
+            onClick={() => { setFin(organisation.abonnement_fin ?? ""); setOuvert((o) => !o); }}>
+            <Pencil size={14} />
+          </ActionIcon>
+        </Tooltip>
+      </Popover.Target>
+      <Popover.Dropdown>
+        <Stack gap="xs">
+          <TextInput type="date" label={voc("Payé jusqu'au")} value={fin} onChange={(e) => setFin(e.currentTarget.value)} />
+          <Button size="xs" loading={changer.isPending} disabled={!fin} onClick={() => enregistrer(fin)}>{voc("Enregistrer")}</Button>
+          {organisation.abonnement_fin && (
+            <Button size="xs" variant="subtle" onClick={() => enregistrer(null)}>{voc("Sans échéance")}</Button>
           )}
         </Stack>
       </Popover.Dropdown>
@@ -172,7 +215,7 @@ function Organisations() {
   };
   if (isLoading) return <Loader size="sm" />;
   return (
-    <Table.ScrollContainer minWidth={1040}>
+    <Table.ScrollContainer minWidth={1200}>
       <Table striped highlightOnHover verticalSpacing="sm">
         <Table.Thead>
           <Table.Tr>
@@ -181,6 +224,7 @@ function Organisations() {
             <Table.Th>{voc("Offre")}</Table.Th>
             <Table.Th w={190}>{voc("Stockage")}</Table.Th>
             <Table.Th>{voc("Ouvert le")}</Table.Th>
+            <Table.Th miw={170}>{voc("Abonnement")}</Table.Th>
             <Table.Th miw={120}>{voc("État")}</Table.Th>
             <Table.Th w={150} />
           </Table.Tr>
@@ -202,6 +246,15 @@ function Organisations() {
                 </Group>
               </Table.Td>
               <Table.Td><Text size="sm">{date(o.active_le)}</Text></Table.Td>
+              <Table.Td>
+                <Group gap={4} wrap="nowrap" align="flex-start">
+                  <Stack gap={2} style={{ flex: 1 }}>
+                    <Text size="sm">{o.abonnement_fin ? voc`jusqu'au ${new Date(`${o.abonnement_fin}T12:00:00`).toLocaleDateString(locale())}` : "—"}</Text>
+                    <Badge size="xs" variant="light" tt="none" color={COULEUR_ABONNEMENT[o.abonnement]}>{voc(LIBELLE_ABONNEMENT[o.abonnement])}</Badge>
+                  </Stack>
+                  <ModifierEcheance organisation={o} />
+                </Group>
+              </Table.Td>
               <Table.Td><Badge variant="light" tt="none" color={o.statut === "ACTIVE" ? "teal" : o.statut === "SUSPENDUE" ? "red" : "gray"}>{o.statut_libelle}</Badge></Table.Td>
               <Table.Td>
                 {o.statut === "ACTIVE" && (
@@ -214,7 +267,7 @@ function Organisations() {
             </Table.Tr>
           ))}
           {organisations.length === 0 && (
-            <Table.Tr><Table.Td colSpan={7}><Text size="sm" c="dimmed">{voc("Aucune organisation pour l'instant.")}</Text></Table.Td></Table.Tr>
+            <Table.Tr><Table.Td colSpan={8}><Text size="sm" c="dimmed">{voc("Aucune organisation pour l'instant.")}</Text></Table.Td></Table.Tr>
           )}
         </Table.Tbody>
       </Table>

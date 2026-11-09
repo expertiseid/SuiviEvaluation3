@@ -25,6 +25,15 @@ def creer_espace(demande, zones=True):
     org = gestion.creer(demande.organisation, demande.sous_domaine, courriel=demande.courriel, offre=demande.offre, zones=zones)
     gestion.creer_administrateur(org, demande.identifiant, demande.courriel, empreinte=demande.mot_de_passe, nom=demande.contact_nom)
     gestion.activer(org)
+    # Abonnement payé en ligne : son échéance commence le jour du paiement (abonnement.py).
+    from .models import PaiementAbonnement
+
+    paye = PaiementAbonnement.objects.using("central").filter(
+        demande=demande, nature=PaiementAbonnement.Nature.ABONNEMENT, statut=PaiementAbonnement.Statut.PAYE).order_by("-paye_le").first()
+    if paye:
+        from . import abonnement
+
+        abonnement.premiere_periode(org, paye)
     demande.statut = DemandeInscription.Statut.ACTIVEE
     demande.erreur_activation = ""
     demande.save(using="central", update_fields=["statut", "erreur_activation"])

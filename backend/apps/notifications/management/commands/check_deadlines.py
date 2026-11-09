@@ -68,6 +68,10 @@ class Command(BaseCommand):
         from apps.organisations import quota
 
         quota.alerter()
+        # Fin d'abonnement : 7 jours avant, à la fin (7 jours de grâce), puis accès bloqué.
+        from apps.organisations import abonnement
+
+        abonnement.alerter()
 
     def notifier_echeance(self, *, destinataires, titre, projet_nom, echeance, lien):
         deja_notifie = Notification.objects.filter(

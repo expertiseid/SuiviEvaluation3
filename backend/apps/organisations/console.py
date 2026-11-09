@@ -2,6 +2,8 @@
 Console Expertise-ID (adresse principale, opérateurs de la plateforme seulement) : demandes
 d'inscription, activation de l'espace, organisations actives et suspendues.
 """
+from decimal import Decimal, InvalidOperation
+
 from django.conf import settings
 from rest_framework import serializers
 from rest_framework.decorators import api_view, permission_classes
@@ -12,7 +14,7 @@ from rest_framework.response import Response
 from apps.accounts.constants import ROLE_ADMIN
 from apps.core.audit import A, auditer
 
-from . import activation, contexte, gestion, paiement, quota, supervision
+from . import abonnement, activation, contexte, gestion, paiement, quota, supervision
 from .models import Organisation
 
 
@@ -25,18 +27,24 @@ class EstOperateur(BasePermission):
 
 
 class OrganisationSerializer(serializers.ModelSerializer):
+    stockage_go = serializers.FloatField(read_only=True, allow_null=True)
     statut_libelle = serializers.CharField(source="get_statut_display", read_only=True)
     comptes = serializers.SerializerMethodField()
     stockage = serializers.SerializerMethodField()
+    abonnement = serializers.SerializerMethodField()
 
     class Meta:
         model = Organisation
         fields = ("id", "nom", "sous_domaine", "base", "statut", "statut_libelle", "offre", "mode_demo",
-                  "courriel_contact", "cree_le", "active_le", "comptes", "stockage_go", "stockage")
+                  "courriel_contact", "cree_le", "active_le", "comptes", "stockage_go", "stockage",
+                  "abonnement_fin", "abonnement")
 
     def get_stockage(self, obj):
         """Espace occupé et limite (quota.py) ; stockage_go vide : l'espace de l'offre."""
         return quota.etat(obj)
+
+    def get_abonnement(self, obj):
+        return abonnement.etat(obj)["statut"]
 
     def get_comptes(self, obj):
         """Nombre de comptes qui peuvent se connecter (adresse courriel réelle, indexée)."""
@@ -75,15 +83,38 @@ def changer_stockage(request, pk):
         org.stockage_go = None
     else:
         try:
-            org.stockage_go = int(valeur)
-        except (TypeError, ValueError):
-            org.stockage_go = 0
-        if not 1 <= org.stockage_go <= 100000:
-            raise ValidationError({"stockage_go": "Indiquez un nombre de Go entre 1 et 100 000."})
+            org.stockage_go = Decimal(str(valeur)).quantize(Decimal("0.001"))
+        except (InvalidOperation, TypeError, ValueError):
+            org.stockage_go = Decimal(0)
+        if not Decimal("0.001") <= org.stockage_go <= 100000:  # 0,01 Go = 10 Mo (essai)
+            raise ValidationError({"stockage_go": "Indiquez un nombre de Go entre 0,001 et 100 000."})
     org.stockage_alerte = 0  # espace changé : alertes à nouveau possibles
     org.save(using="central", update_fields=["stockage_go", "stockage_alerte"])
-    auditer(request.user, A.CONFIGURATION, f"Espace {org.sous_domaine} : stockage {quota.limite_go(org) or '∞'} Go",
+    auditer(request.user, A.CONFIGURATION, f"Espace {org.sous_domaine} : stockage {quota.lisible(quota.limite_go(org)) if quota.limite_go(org) else '∞'}",
             module="console", operation="stockage")
+    return Response(OrganisationSerializer(org).data)
+
+
+@api_view(["POST"])
+@permission_classes([EstOperateur])
+def changer_abonnement(request, pk):
+    """{fin: AAAA-MM-JJ | null} : échéance fixée à la main (paiement par carte, geste commercial) ; null : sans échéance."""
+    from datetime import date
+
+    org = Organisation.objects.using("central").filter(pk=pk).first()
+    if org is None:
+        raise ValidationError({"fin": "Organisation inconnue."})
+    valeur = request.data.get("fin")
+    try:
+        org.abonnement_fin = date.fromisoformat(str(valeur)) if valeur else None
+    except ValueError:
+        raise ValidationError({"fin": "Date invalide."})
+    org.abonnement_alerte = 0
+    if org.abonnement_fin and not org.abonnement_prix_mois and org.offre in paiement.OFFRES_PAYANTES:
+        org.abonnement_prix_mois = paiement.prix_mois(org.offre)
+    org.save(using="central", update_fields=["abonnement_fin", "abonnement_alerte", "abonnement_prix_mois"])
+    auditer(request.user, A.CONFIGURATION, f"Espace {org.sous_domaine} : échéance {org.abonnement_fin or 'aucune'}",
+            module="console", operation="abonnement")
     return Response(OrganisationSerializer(org).data)
 
 
@@ -173,3 +204,61 @@ def paiement_stockage(request, reference):
     if org is None:
         raise PermissionDenied()
     return Response(paiement.etat_stockage(org, reference))
+
+
+# --- Abonnement (page de l'organisation) ------------------------------------------------------------
+
+def _offres():
+    from apps.accounts.models import DemandeInscription
+
+    libelles = dict(DemandeInscription.Offre.choices)
+    return [{"offre": o, "libelle": libelles.get(o, o), "prix_mois": paiement.prix_mois(o), "prix_mois_usd": paiement.prix_mois(o, usd=True),
+             "go": quota.OFFRE_GO.get(o)} for o in abonnement.OFFRES_CHANGEMENT]
+
+
+@api_view(["GET"])
+def abonnement_organisation(request):
+    """Page Abonnement : échéance, offre, offres possibles, paiements ; payer : administrateurs seulement."""
+    from apps.accounts.models import DemandeInscription
+
+    org = _organisation_du_compte()
+    if org is None:
+        return Response({"statut": "SANS_ECHEANCE"})
+    jours, valeur = abonnement.reste(org)
+    return Response({
+        **abonnement.etat(org), "offre_libelle": dict(DemandeInscription.Offre.choices).get(org.offre, org.offre or "—"),
+        "prix_mois": org.abonnement_prix_mois, "reste": valeur, "grace": abonnement.GRACE,
+        "peut_payer": request.user.role == ROLE_ADMIN, "paiement": paiement.actif(), "devise": settings.ABONNEMENT_DEVISE,
+        "renouvelable": org.offre in paiement.OFFRES_PAYANTES, "offres": _offres(), "durees": list(paiement.DUREES),
+        "paiements": paiement.paiements_abonnement(org) if request.user.role == ROLE_ADMIN else [],
+    })
+
+
+@api_view(["GET"])
+def abonnement_devis(request):
+    org = _organisation_du_compte()
+    if org is None:
+        raise ValidationError({"detail": "Aucune organisation."})
+    return Response(abonnement.devis(org, request.query_params.get("offre") or org.offre, request.query_params.get("mois") or 12))
+
+
+@api_view(["POST"])
+def abonnement_payer(request):
+    """{offre, mois, moyen: mobile | carte, langue} : renouveler ou changer d'offre (administrateurs)."""
+    org = _organisation_du_compte()
+    if org is None or request.user.role != ROLE_ADMIN:
+        raise PermissionDenied("Réservé à l'administrateur de l'organisation.")
+    offre, mois = request.data.get("offre") or org.offre, request.data.get("mois")
+    if request.data.get("moyen") == "carte":
+        paiement.renouvellement_par_carte(org, request.user, offre, mois)
+        return Response({"carte": True})
+    p = paiement.creer_renouvellement(org, request.user, offre, mois, langue=request.data.get("langue") or "fr")
+    return Response({"paiement": p.reference, "lien": p.lien, "montant": p.montant, "devise": p.devise})
+
+
+@api_view(["GET"])
+def abonnement_paiement(request, reference):
+    org = _organisation_du_compte()
+    if org is None:
+        raise ValidationError({"detail": "Aucune organisation."})
+    return Response(paiement.etat_renouvellement(org, reference))

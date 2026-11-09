@@ -10,7 +10,7 @@ export function JaugeStockage({ espace, taille = "sm" }: { espace: EspaceStockag
   const part = Math.min(100, (espace.utilise / espace.limite) * 100);
   return (
     <Stack gap={4}>
-      <Text size={taille === "lg" ? "md" : "sm"}>{voc`${volumeLisible(espace.utilise)} sur ${espace.limite_go} Go`}</Text>
+      <Text size={taille === "lg" ? "md" : "sm"}>{voc`${volumeLisible(espace.utilise)} sur ${volumeLisible(espace.limite)}`}</Text>
       <Progress value={Math.max(part, 1)} color={part >= 90 ? "red" : part >= 75 ? "orange" : "teal"} size={taille === "lg" ? "xl" : "sm"} radius="xl" />
     </Stack>
   );

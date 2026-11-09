@@ -280,7 +280,6 @@ def test_espace_de_stockage(deux_organisations, monkeypatch):
     from django.core.cache import cache
     from django.core.files.base import ContentFile
     from django.core.files.storage import default_storage
-    from rest_framework.exceptions import ValidationError
 
     from apps.accounts.models import User
 
@@ -302,8 +301,9 @@ def test_espace_de_stockage(deux_organisations, monkeypatch):
         m.setattr(contexte, "courante", lambda: org)
         nom = default_storage.save("essai/a.bin", ContentFile(b"x" * 200_000))
         assert quota.utilise(org) == depart + 200_000
-        with pytest.raises(ValidationError):
+        with pytest.raises(quota.StockagePlein) as refus:  # l'interface en fait une fenêtre explicative
             default_storage.save("essai/b.bin", ContentFile(b"x" * 60_000))
+        assert refus.value.detail["code"] == "stockage_plein" and int(refus.value.detail["taille"]) == 60_000
         assert not default_storage.exists("essai/b.bin")
 
     # Console : Expertise-ID agrandit l'espace à 50 Go, puis revient à celui de l'offre.
@@ -313,6 +313,10 @@ def test_espace_de_stockage(deux_organisations, monkeypatch):
     assert reponse.status_code == 200 and reponse.data["stockage"]["limite_go"] == 50
     assert reponse.data["stockage"]["utilise"] == depart + 200_000
     assert operateur.post(f"/api/v1/console/organisations/{org.pk}/stockage/", {"stockage_go": 0}, format="json").status_code == 400
+    # Décimales (essai) : 0,01 Go = 10 Mo ; un fichier plus gros est refusé.
+    petit = operateur.post(f"/api/v1/console/organisations/{org.pk}/stockage/", {"stockage_go": 0.01}, format="json").data
+    assert petit["stockage_go"] == 0.01 and petit["stockage"]["limite"] == int(0.01 * quota.GO)
+    assert quota.lisible(0.01) == "10 Mo" and quota.lisible(1.5) == "1,5 Go" and quota.lisible(25) == "25 Go"
     assert operateur.post(f"/api/v1/console/organisations/{org.pk}/stockage/", {"stockage_go": None}, format="json").data["stockage_go"] is None
     assert admin.post(f"/api/v1/console/organisations/{org.pk}/stockage/", {"stockage_go": 500}, format="json").status_code == 403
     with contexte.cles_de(org):
@@ -357,7 +361,7 @@ def test_achat_de_stockage(deux_organisations, monkeypatch, settings):
     APIClient().post("/api/v1/public/inscription/paiement/notification/", {"merchant_transaction_id": ref, "notify_token": "nt-secret"}, format="json")
     assert Organisation.objects.using("central").get(pk=org_a.pk).stockage_go == 45
     assert PaiementAbonnement.objects.using("central").get(reference=ref).statut == "PAYE"
-    assert [m.subject for m in mail.outbox] == [f"Stockage ajouté : {org_a.nom}"] and "de 25 à 45 Go" in mail.outbox[0].body
+    assert [m.subject for m in mail.outbox] == [f"Stockage ajouté : {org_a.nom}"] and "de 25 Go à 45 Go" in mail.outbox[0].body
     page = admin.get("/api/v1/stockage/").data
     assert page["limite_go"] == 45 and len(page["achats"]) == 1
     # Le lien public d'un paiement d'abonnement ne donne rien sur un achat de stockage.
@@ -397,7 +401,7 @@ def test_alertes_de_stockage(deux_organisations, monkeypatch, settings):
         with contexte.dans_organisation(org_a):
             quota.alerter()
     assert notifications() == [("Espace de stockage presque plein", "/stockage")]
-    assert mail.outbox[-1].to == ["admin@essai-iso-a.org"] and "23,0 Go sur 25 Go (90 %)" in mail.outbox[-1].body
+    assert mail.outbox[-1].to == ["admin@essai-iso-a.org"] and "23 Go sur 25 Go (90 %)" in mail.outbox[-1].body
 
     # Un fichier refusé : « plein », administrateurs et Expertise-ID prévenus.
     with contexte.dans_organisation(org_a):
@@ -455,3 +459,78 @@ def test_alerte_disque_commun(monkeypatch, settings):
     assert mail.outbox[-1].subject == "Disque des données proche du plafond (950 Go sur 1000 Go)"
     with contexte.cles_de(None):
         cache.delete("alerte-disque")
+
+
+def test_echeance_et_changement_d_offre(deux_organisations, monkeypatch, settings):
+    """Fin d'abonnement : 7 jours de grâce, puis accès bloqué sauf la page Abonnement ; changer d'offre déduit ce qui reste."""
+    from datetime import timedelta
+
+    from django.core import mail
+    from django.core.cache import cache
+
+    from apps.accounts.models import User
+    from apps.notifications.models import Notification
+
+    from . import abonnement, paiement
+    from .test_paiement import CinetPaySimule
+
+    settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    settings.COURRIEL_ABONNEMENTS = "abonnements@expertise-id.com"
+    settings.CINETPAY_API_KEY, settings.CINETPAY_API_PASSWORD = "sk_test_cle", "mot-de-passe"
+    settings.ABONNEMENT_PRIX_25GO, settings.ABONNEMENT_PRIX_50GO = 20000, 30000
+    simule = CinetPaySimule()
+    monkeypatch.setattr(paiement, "_appel", simule)
+    cache.clear()
+    org_a, _ = deux_organisations
+    jour = abonnement.aujourd_hui()
+    Organisation.objects.using("central").filter(pk=org_a.pk).update(
+        offre="STANDARD_25", stockage_go=None, abonnement_fin=jour + timedelta(days=360), abonnement_prix_mois=20000, abonnement_alerte=0)
+    admin = _client(org_a, _admin(org_a))
+
+    page = admin.get("/api/v1/abonnement/").data
+    assert page["statut"] == "ACTIF" and page["peut_payer"] is True and page["reste"] == 20000 * 360 * 12 // 365
+    # Passer à 50 Go pour 1 an : 360 000 FCFA, moins 360 jours restants à 20 000 par mois (236 712).
+    devis = admin.get("/api/v1/abonnement/devis/", {"offre": "STANDARD_50", "mois": 12}).data
+    assert (devis["prix"], devis["deduction"], devis["a_payer"], devis["changement"]) == (360000, 236712, 123288, True)
+    assert devis["nouvelle_fin"] == abonnement.ajouter_mois(jour, 12)
+    reponse = admin.post("/api/v1/abonnement/payer/", {"offre": "STANDARD_50", "mois": 12}, format="json")
+    assert reponse.status_code == 200 and reponse.data["montant"] == 123288
+    assert simule.appels[-1][2]["success_url"].endswith(f"/mon-abonnement?paiement={reponse.data['paiement']}")
+    simule.statut = "SUCCESS"
+    for _ in range(2):  # appliqué une seule fois
+        assert admin.get(f"/api/v1/abonnement/paiement/{reponse.data['paiement']}/").data["statut"] == "PAYE"
+    org = Organisation.objects.using("central").get(pk=org_a.pk)
+    assert (org.offre, org.abonnement_fin, org.abonnement_prix_mois) == ("STANDARD_50", abonnement.ajouter_mois(jour, 12), 30000)
+    assert [m.subject for m in mail.outbox][-1] == f"Abonnement renouvelé : {org_a.nom}" and "STANDARD_25 → STANDARD_50" in mail.outbox[-1].body
+    # Même offre : la nouvelle période s'ajoute après la fin actuelle, sans déduction.
+    devis = admin.get("/api/v1/abonnement/devis/", {"offre": "STANDARD_50", "mois": 1}).data
+    assert devis["deduction"] == 0 and devis["nouvelle_fin"] == abonnement.ajouter_mois(org.abonnement_fin, 1)
+
+    # Fin passée depuis 3 jours : grâce, accès normal, rappel une seule fois.
+    Organisation.objects.using("central").filter(pk=org_a.pk).update(abonnement_fin=jour - timedelta(days=3), abonnement_alerte=0)
+    assert admin.get("/api/v1/projets/").status_code == 200
+    assert admin.get("/api/v1/abonnement/").data["statut"] == "GRACE"
+    for _ in range(2):
+        with contexte.dans_organisation(org_a):
+            abonnement.alerter()
+    with contexte.dans_organisation(org_a):
+        assert list(Notification.objects.filter(type="ABONNEMENT").values_list("titre", flat=True)) == ["Votre abonnement est terminé"]
+        Notification.objects.filter(type="ABONNEMENT").delete()
+    # Plus de 7 jours : bloqué, sauf la page Abonnement ; Expertise-ID prévenue.
+    Organisation.objects.using("central").filter(pk=org_a.pk).update(abonnement_fin=jour - timedelta(days=8))
+    refus = admin.get("/api/v1/projets/")
+    assert refus.status_code == 403 and refus.json()["code"] == "abonnement_expire"
+    assert admin.get("/api/v1/abonnement/").data["statut"] == "BLOQUE"
+    with contexte.dans_organisation(org_a):
+        abonnement.alerter()
+        Notification.objects.filter(type="ABONNEMENT").delete()
+    assert mail.outbox[-1].subject == f"Accès bloqué (abonnement non renouvelé) : {org_a.nom}"
+
+    # Console : Expertise-ID fixe l'échéance à la main (paiement par carte) : accès rétabli.
+    operateur = APIClient()
+    operateur.force_authenticate(User.objects.create_superuser(username="op_abonnement", password="x", email="op-ab@expertise-id.com", role="ADMIN"))
+    nouvelle = (jour + timedelta(days=30)).isoformat()
+    assert operateur.post(f"/api/v1/console/organisations/{org_a.pk}/abonnement/", {"fin": nouvelle}, format="json").data["abonnement"] == "ACTIF"
+    assert admin.get("/api/v1/projets/").status_code == 200
+    Organisation.objects.using("central").filter(pk=org_a.pk).update(
+        offre="", stockage_go=None, abonnement_fin=None, abonnement_prix_mois=None, abonnement_alerte=0)

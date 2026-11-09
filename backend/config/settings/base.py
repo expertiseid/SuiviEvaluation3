@@ -197,6 +197,8 @@ CINETPAY_API_PASSWORD = env("CINETPAY_API_PASSWORD", default="")
 ABONNEMENT_DEVISE = env("ABONNEMENT_DEVISE", default="XOF")
 ABONNEMENT_PRIX_MOIS = env.int("ABONNEMENT_PRIX_MOIS", default=50000)
 ABONNEMENT_PRIX_TRANCHE = env.int("ABONNEMENT_PRIX_TRANCHE", default=3000)
+# Montant le plus bas qu'on demande à CinetPay (FCFA) : en dessous, un changement d'offre doit être plus long.
+PAIEMENT_MINIMUM = env.int("PAIEMENT_MINIMUM", default=100)
 # Prix affichés en dollars (offres du site) et payés par carte bancaire : la carte n'est pas encore encaissée
 # en ligne, Expertise-ID finalise avec le client (inscriptions.choisir_offre, moyen « carte »).
 ABONNEMENT_PRIX_MOIS_USD = env.int("ABONNEMENT_PRIX_MOIS_USD", default=86)

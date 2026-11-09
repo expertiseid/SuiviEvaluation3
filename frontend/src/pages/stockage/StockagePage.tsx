@@ -100,7 +100,7 @@ export function StockagePage() {
   if (isLoading || !page) return <Loader />;
   const limite = page.limite ?? 0;
   const utilise = page.utilise ?? 0;
-  const ajoute = page.limite_go && page.offre_go ? page.limite_go - page.offre_go : 0;
+  const ajoute = page.limite_go && page.offre_go ? Math.round((page.limite_go - page.offre_go) * 10) / 10 : 0;
 
   return (
     <Stack gap="md">
@@ -112,7 +112,7 @@ export function StockagePage() {
       ) : (
         <>
           <SimpleGrid cols={{ base: 1, sm: 3 }}>
-            <StatCard label={voc("Espace alloué")} value={voc`${page.limite_go} Go`} icon={<HardDrive size={18} />} />
+            <StatCard label={voc("Espace alloué")} value={volumeLisible(limite)} icon={<HardDrive size={18} />} />
             <StatCard label={voc("Espace utilisé")} value={volumeLisible(utilise)} icon={<Database size={18} />} color="blue" />
             <StatCard label={voc("Espace disponible")} value={volumeLisible(Math.max(0, limite - utilise))} icon={<PackageOpen size={18} />}
               color={limite - utilise < 0.1 * limite ? "red" : "green"} />

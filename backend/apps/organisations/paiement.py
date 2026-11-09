@@ -10,9 +10,13 @@ peut suspendre l'espace depuis la console.
 
 L'offre Partenariat ne se paie pas en ligne : elle reste transmise à Expertise-ID (inscriptions.choisir_offre).
 
+Renouvellement et changement d'offre (page Abonnement de la plateforme, abonnement.py) : même parcours
+(creer_renouvellement) ; payé, la nouvelle échéance est enregistrée et l'accès rétabli aussitôt.
+
 Stockage supplémentaire (page Stockage de la plateforme) : même parcours (creer_stockage), par tranches de
 10 Go ; payé, l'espace de stockage de l'organisation est agrandi aussitôt (quota.py), sans action humaine.
 """
+from decimal import Decimal
 import hmac
 import logging
 import secrets
@@ -20,7 +24,7 @@ import secrets
 import requests
 from django.conf import settings
 from django.core.cache import cache
-from django.db import transaction
+from django.db import models, transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -203,6 +207,8 @@ def verifier(paiement) -> PaiementAbonnement:
 def _valider(paiement, transaction_cinetpay) -> PaiementAbonnement:
     if paiement.nature == PaiementAbonnement.Nature.STOCKAGE:
         return _valider_stockage(paiement, transaction_cinetpay)
+    if paiement.nature == PaiementAbonnement.Nature.RENOUVELLEMENT:
+        return _valider_renouvellement(paiement, transaction_cinetpay)
     from apps.accounts import inscriptions
     from apps.accounts.models import DemandeInscription
 
@@ -303,13 +309,13 @@ def _valider_stockage(paiement, transaction_cinetpay) -> PaiementAbonnement:
         paiement.save(using="central", update_fields=["statut", "paye_le", "transaction"])
         org = Organisation.objects.using("central").select_for_update().get(pk=paiement.organisation_id)
         avant = quota.limite_go(org) or 0
-        org.stockage_go = avant + paiement.tranches * 10
+        org.stockage_go = Decimal(str(avant)) + paiement.tranches * 10
         org.stockage_alerte = 0  # espace agrandi : alertes à nouveau possibles
         org.save(using="central", update_fields=["stockage_go", "stockage_alerte"])
     _envoyer(getattr(settings, "COURRIEL_ABONNEMENTS", ""), f"Stockage ajouté : {org.nom}", "\n".join([
         f"Organisation : {org.nom} ({org.sous_domaine})",
         f"Payé par : {paiement.payeur or '—'}",
-        f"Stockage : + {paiement.tranches * 10} Go pendant {paiement.mois} mois · espace passé de {avant} à {org.stockage_go} Go",
+        f"Stockage : + {paiement.tranches * 10} Go pendant {paiement.mois} mois · espace passé de {quota.lisible(avant)} à {quota.lisible(float(org.stockage_go))}",
         f"Paiement reçu : {paiement.montant:,} {paiement.devise}".replace(",", " ")
         + f" · référence {paiement.reference} · transaction {paiement.transaction}",
         "L'espace a été agrandi automatiquement.",
@@ -325,7 +331,7 @@ def stockage_par_carte(org, utilisateur, tranches, mois):
     _envoyer(getattr(settings, "COURRIEL_ABONNEMENTS", ""), f"Stockage par carte demandé : {org.nom}", "\n".join([
         f"Organisation : {org.nom} ({org.sous_domaine})",
         f"Demandé par : {utilisateur.get_full_name() or utilisateur.username} · {utilisateur.email or '—'}",
-        f"Stockage : + {tranches * 10} Go pendant {mois} mois · espace actuel {quota.limite_go(org) or '—'} Go",
+        f"Stockage : + {tranches * 10} Go pendant {mois} mois · espace actuel {quota.lisible(quota.limite_go(org)) if quota.limite_go(org) else '—'}",
         f"Montant : {montant_stockage(tranches, mois, usd=True)} $ HT (à régler par carte bancaire)",
         "Après le paiement : console Expertise-ID, Organisations, colonne Stockage.",
     ]))
@@ -347,3 +353,100 @@ def achats_stockage(org) -> list:
             for p in PaiementAbonnement.objects.using("central").filter(
                 organisation=org, nature=PaiementAbonnement.Nature.STOCKAGE, statut=PaiementAbonnement.Statut.PAYE
             ).order_by("-paye_le")[:50]]
+
+
+# --- Renouvellement et changement d'offre ----------------------------------------------------------
+
+def creer_renouvellement(org, utilisateur, offre, mois, langue="fr") -> PaiementAbonnement:
+    """Renouveler (même offre) ou changer d'offre (ce qui reste est déduit) ; renvoie le paiement et son lien."""
+    from apps.accounts.models import DemandeInscription
+
+    from . import abonnement
+
+    if not actif():
+        raise ValidationError({"detail": v("Le paiement en ligne n'est pas disponible : contactez Expertise-ID.")})
+    d = abonnement.devis(org, offre, mois)
+    if not d["possible"]:
+        raise ValidationError({"detail": v("Ce qui reste de votre abonnement couvre déjà presque tout ce montant : choisissez une durée plus longue.")})
+    paiement = PaiementAbonnement.objects.using("central").create(
+        nature=PaiementAbonnement.Nature.RENOUVELLEMENT, organisation=org, payeur=utilisateur.email or "",
+        reference=f"R{org.pk}{secrets.token_hex(8).upper()}"[:30], offre=d["offre"], mois=d["mois"],
+        montant=d["a_payer"], deduction=d["deduction"], devise=settings.ABONNEMENT_DEVISE,
+    )
+    retour = f"{settings.PLAINTES_URL_PUBLIQUE.rstrip('/')}/mon-abonnement?paiement={paiement.reference}"
+    libelle = dict(DemandeInscription.Offre.choices).get(d["offre"], d["offre"])
+    designation = f"{'Changement : ' if d['changement'] else 'Renouvellement : '}{libelle} - {d['mois']} mois"
+    return _demander_lien(paiement, designation, utilisateur.email or org.courriel_contact,
+                          utilisateur.first_name or utilisateur.username, utilisateur.last_name or org.nom, retour, langue)
+
+
+def _valider_renouvellement(paiement, transaction_cinetpay) -> PaiementAbonnement:
+    """Payé : nouvelle échéance (et nouvelle offre), alertes remises à zéro, accès rétabli (une seule fois)."""
+    from apps.accounts.inscriptions import _envoyer
+
+    from . import abonnement
+
+    with transaction.atomic(using="central"):
+        paiement = PaiementAbonnement.objects.using("central").select_for_update().get(pk=paiement.pk)
+        if paiement.statut == PaiementAbonnement.Statut.PAYE:
+            return paiement
+        paiement.statut = PaiementAbonnement.Statut.PAYE
+        paiement.paye_le = timezone.now()
+        paiement.transaction = transaction_cinetpay
+        paiement.save(using="central", update_fields=["statut", "paye_le", "transaction"])
+        org = Organisation.objects.using("central").select_for_update().get(pk=paiement.organisation_id)
+        offre_avant = org.offre
+        abonnement.appliquer(org, paiement)
+    _envoyer(getattr(settings, "COURRIEL_ABONNEMENTS", ""), f"Abonnement renouvelé : {org.nom}", "\n".join([
+        f"Organisation : {org.nom} ({org.sous_domaine})",
+        f"Payé par : {paiement.payeur or '—'}",
+        f"Offre : {offre_avant} → {org.offre}" if offre_avant != org.offre else f"Offre : {org.offre} (renouvellement)",
+        f"Durée : {paiement.mois} mois · nouvelle échéance : {org.abonnement_fin:%d/%m/%Y}",
+        f"Paiement reçu : {paiement.montant:,} {paiement.devise}".replace(",", " ")
+        + (f" (déduction de l'abonnement en cours : {paiement.deduction:,} {paiement.devise})".replace(",", " ") if paiement.deduction else "")
+        + f" · référence {paiement.reference} · transaction {paiement.transaction}",
+    ]))
+    return paiement
+
+
+def renouvellement_par_carte(org, utilisateur, offre, mois):
+    """Carte bancaire : Expertise-ID reçoit la demande (montant en dollars), puis change l'échéance dans la console."""
+    from apps.accounts.inscriptions import _envoyer
+
+    from . import abonnement
+
+    d = abonnement.devis(org, offre, mois)
+    prix_usd = montant(d["offre"], d["mois"], 0, usd=True)
+    deduction_usd = round(prix_usd * d["deduction"] / d["prix"]) if d["prix"] else 0
+    _envoyer(getattr(settings, "COURRIEL_ABONNEMENTS", ""), f"Abonnement par carte demandé : {org.nom}", "\n".join([
+        f"Organisation : {org.nom} ({org.sous_domaine})",
+        f"Demandé par : {utilisateur.get_full_name() or utilisateur.username} · {utilisateur.email or '—'}",
+        f"{'Changement d offre' if d['changement'] else 'Renouvellement'} : {org.offre} → {d['offre']}, {d['mois']} mois",
+        f"Montant : {prix_usd - deduction_usd} $ HT" + (f" (prix {prix_usd} $, moins {deduction_usd} $ restant de l'abonnement en cours)" if deduction_usd else ""),
+        f"Échéance actuelle : {org.abonnement_fin:%d/%m/%Y}" if org.abonnement_fin else "Échéance actuelle : aucune",
+        f"Après le paiement : console Expertise-ID, Organisations, colonne Abonnement (nouvelle échéance : {d['nouvelle_fin']:%d/%m/%Y}).",
+    ]))
+
+
+def etat_renouvellement(org, reference) -> dict:
+    paiement = PaiementAbonnement.objects.using("central").filter(
+        reference=str(reference or "")[:30], organisation=org, nature=PaiementAbonnement.Nature.RENOUVELLEMENT).first()
+    if paiement is None:
+        raise ValidationError({"detail": v("Paiement introuvable.")})
+    paiement = verifier(paiement)
+    org.refresh_from_db(using="central")
+    return {"statut": paiement.statut, "offre": paiement.offre, "mois": paiement.mois, "montant": paiement.montant,
+            "devise": paiement.devise, "fin": org.abonnement_fin}
+
+
+def paiements_abonnement(org) -> list:
+    """Abonnement payé à l'inscription, puis renouvellements et changements d'offre."""
+    from apps.accounts.models import DemandeInscription
+
+    demandes = DemandeInscription.objects.using("central").filter(sous_domaine=org.sous_domaine).values_list("pk", flat=True)
+    paiements = PaiementAbonnement.objects.using("central").filter(statut=PaiementAbonnement.Statut.PAYE).filter(
+        models.Q(organisation=org, nature=PaiementAbonnement.Nature.RENOUVELLEMENT)
+        | models.Q(demande__in=list(demandes), nature=PaiementAbonnement.Nature.ABONNEMENT))
+    libelles = dict(DemandeInscription.Offre.choices)
+    return [{"date": p.paye_le, "offre": p.offre, "offre_libelle": libelles.get(p.offre, p.offre), "mois": p.mois, "montant": p.montant, "deduction": p.deduction, "devise": p.devise,
+             "nature": p.nature} for p in paiements.order_by("-paye_le")[:50]]

@@ -933,7 +933,8 @@ export type TypeNotification =
   | "ECHEANCE_ACTIVITE"
   | "ACTIVITE_MODIFIEE"
   | "PLAINTE"
-  | "STOCKAGE";
+  | "STOCKAGE"
+  | "ABONNEMENT";
 
 export interface AppNotification {
   id: number;

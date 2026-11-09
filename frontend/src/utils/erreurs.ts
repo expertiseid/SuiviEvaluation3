@@ -18,3 +18,16 @@ export function messageErreurApi(error: unknown, message: string): string {
   }
   return voc(message);
 }
+
+/** Espace de stockage plein : la fenêtre FenetreStockagePlein s'ouvre (au lieu d'une erreur). */
+export const EVENEMENT_STOCKAGE_PLEIN = "stockage-plein";
+export interface DetailStockagePlein { taille: number; utilise: number; limite: number }
+
+export function signalerStockagePlein(detail: DetailStockagePlein) {
+  window.dispatchEvent(new CustomEvent(EVENEMENT_STOCKAGE_PLEIN, { detail }));
+}
+
+/** Refus du serveur faute de place : la fenêtre explicative est déjà ouverte, pas de message d'erreur en plus. */
+export function estStockagePlein(error: unknown): boolean {
+  return isAxiosError(error) && error.response?.data?.code === "stockage_plein";
+}

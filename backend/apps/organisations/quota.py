@@ -22,11 +22,17 @@ from contextlib import nullcontext
 from django.conf import settings
 from django.core.cache import cache
 from django.db import connections
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import APIException
 
 from . import contexte
 
 GO = 1024 ** 3
+
+
+class StockagePlein(APIException):
+    """Fichier refusé (espace plein) : l'interface affiche une fenêtre explicative (code « stockage_plein »)."""
+    status_code = 400
+    default_code = "stockage_plein"
 OFFRE_GO = {"STANDARD_25": 25, "STANDARD_50": 50, "STANDARD": 100, "STOCKAGE_PLUS": 100, "PARTENARIAT": 100}
 CLE = "stockage-utilise"
 DUREE = 600
@@ -34,7 +40,14 @@ DUREE = 600
 
 def limite_go(org):
     """Espace en Go : celui fixé par Expertise-ID, sinon celui de l'offre ; None = sans limite (offre inconnue)."""
-    return org.stockage_go or OFFRE_GO.get(org.offre)
+    return float(org.stockage_go) if org.stockage_go else OFFRE_GO.get(org.offre)
+
+
+def lisible(go) -> str:
+    """« 25 Go », « 1,5 Go », « 10 Mo » (espace en Go, décimales possibles)."""
+    if go < 1:
+        return f"{round(go * 1024)} Mo"
+    return f"{round(go, 1):g} Go".replace(".", ",")
 
 
 def _taille_dossier(chemin: str) -> int:
@@ -81,7 +94,7 @@ def utilise(org) -> int:
 
 def etat(org) -> dict:
     go = limite_go(org)
-    return {"utilise": utilise(org), "limite": go * GO if go else None, "limite_go": go}
+    return {"utilise": utilise(org), "limite": int(go * GO) if go else None, "limite_go": go}
 
 
 def verifier(taille: int):
@@ -95,8 +108,9 @@ def verifier(taille: int):
     go = limite_go(org)
     if go and utilise(org) + taille > go * GO:
         alerter(org, plein=True)
-        raise ValidationError({"detail": f"Espace de stockage plein ({go} Go) : supprimez des fichiers ou "
-                                         "demandez à Expertise-ID d'agrandir votre espace."})
+        raise StockagePlein({"detail": f"Espace de stockage plein ({lisible(go)}) : supprimez des fichiers ou "
+                                       "augmentez votre stockage depuis la page Stockage.",
+                             "code": "stockage_plein", "taille": taille, "utilise": utilise(org), "limite": int(go * GO)})
 
 
 def ajouter(taille: int):
@@ -146,17 +160,16 @@ def _prevenir(org, niveau, occupe, go):
     from apps.notifications.models import Notification
     from apps.notifications.services import notifier_par_role
 
-    utilise_go = f"{occupe / GO:.1f}".replace(".", ",")
     if niveau >= 100:
         titre = "Espace de stockage plein"
-        message = (f"Votre organisation utilise tout son espace de stockage ({go} Go) : les nouveaux fichiers sont refusés. "
+        message = (f"Votre organisation utilise tout son espace de stockage ({lisible(go)}) : les nouveaux fichiers sont refusés. "
                    "Supprimez des fichiers inutiles ou augmentez votre stockage depuis la page Stockage.")
         _envoyer(getattr(settings, "COURRIEL_ABONNEMENTS", ""), f"Espace de stockage plein : {org.nom}",
-                 f"Organisation : {org.nom} ({org.sous_domaine})\nEspace : {go} Go, plein.\n"
+                 f"Organisation : {org.nom} ({org.sous_domaine})\nEspace : {lisible(go)}, plein.\n"
                  "Ses administrateurs ont été prévenus et peuvent acheter du stockage depuis la page Stockage.")
     else:
         titre = "Espace de stockage presque plein"
-        message = (f"Votre organisation utilise {utilise_go} Go sur {go} Go ({niveau} %). "
+        message = (f"Votre organisation utilise {lisible(occupe / GO)} sur {lisible(go)} ({niveau} %). "
                    "Supprimez des fichiers inutiles ou augmentez votre stockage depuis la page Stockage.")
     notifier_par_role([ROLE_ADMIN], Notification.Type.STOCKAGE, titre, message, lien="/stockage")
 

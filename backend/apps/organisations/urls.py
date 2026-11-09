@@ -19,6 +19,11 @@ urlpatterns = router.urls + [
     path("console/organisations/<int:pk>/statut/", console.changer_statut, name="console-organisation-statut"),
     path("console/organisations/<int:pk>/stockage/", console.changer_stockage, name="console-organisation-stockage"),
     # Espace de stockage de l'organisation du compte connecté.
+    path("abonnement/", console.abonnement_organisation, name="abonnement"),
+    path("abonnement/devis/", console.abonnement_devis, name="abonnement-devis"),
+    path("abonnement/payer/", console.abonnement_payer, name="abonnement-payer"),
+    path("abonnement/paiement/<str:reference>/", console.abonnement_paiement, name="abonnement-paiement"),
+    path("console/organisations/<int:pk>/abonnement/", console.changer_abonnement, name="console-organisation-abonnement"),
     path("stockage/", console.stockage, name="stockage"),
     path("stockage/achat/", console.acheter_stockage, name="stockage-achat"),
     path("stockage/paiement/<str:reference>/", console.paiement_stockage, name="stockage-paiement"),

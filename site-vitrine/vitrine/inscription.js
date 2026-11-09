@@ -76,6 +76,40 @@
     return { detail: "La demande n'a pas pu être envoyée. Vérifiez votre connexion, puis réessayez." };
   }
 
+  // Pays : liste déroulante, noms dans la langue du site (Intl.DisplayNames) ; la valeur envoyée reste
+  // le nom en français. Pays d'Afrique de l'Ouest et du Centre les plus fréquents en tête.
+  var PAYS = ("AF ZA AL DZ DE AD AO AG SA AR AM AU AT AZ BS BH BD BB BE BZ BJ BT BY MM BO BA BW BR BN BG BF BI KH CM CA CV " +
+    "CF CL CN CY CO KM CG CD KR KP CR CI HR CU DK DJ DM EG AE EC ER ES EE SZ US ET FJ FI FR GA GM GE GH GR GD GT GN GQ GW GY " +
+    "HT HN HU IN ID IQ IR IE IS IL IT JM JP JO KZ KE KG KI XK KW LA LS LV LB LR LY LI LT LU MK MG MY MW MV ML MT MA MH MU MR " +
+    "MX FM MD MC MN ME MZ NA NR NP NI NE NG NO NZ OM UG UZ PK PW PS PA PG PY NL PE PH PL PT QA RO GB RU RW KN SM VC LC SB SV " +
+    "WS ST SN RS SC SL SG SK SI SO SD SS LK SE CH SR SY TJ TZ TD CZ TH TL TG TO TT TN TM TR TV UA UY VU VA VE VN YE ZM ZW").split(" ");
+  var EN_TETE = ["BF", "CI", "ML", "NE", "SN", "TG", "BJ", "GN", "CM", "TD"];
+  function remplirPays() {
+    var select = document.getElementById("pays");
+    if (!select || typeof Intl.DisplayNames !== "function") return;
+    var langue = document.documentElement.lang || "fr", choisi = select.value;
+    var noms = new Intl.DisplayNames([langue], { type: "region" }), fr = new Intl.DisplayNames(["fr"], { type: "region" });
+    var option = function (code) {
+      var o = document.createElement("option");
+      o.value = fr.of(code); o.textContent = noms.of(code);
+      return o;
+    };
+    select.innerHTML = "";
+    var vide = document.createElement("option");
+    vide.value = ""; vide.textContent = T("Choisir…");
+    select.appendChild(vide);
+    EN_TETE.forEach(function (code) { select.appendChild(option(code)); });
+    var tous = document.createElement("optgroup");
+    tous.label = T("Tous les pays");
+    PAYS.filter(function (c) { return EN_TETE.indexOf(c) === -1; })
+      .sort(function (a, b) { return noms.of(a).localeCompare(noms.of(b), langue); })
+      .forEach(function (code) { tous.appendChild(option(code)); });
+    select.appendChild(tous);
+    select.value = choisi;
+  }
+  remplirPays();
+  document.addEventListener("langue-site", remplirPays);
+
   // Étape 1 : profil.
   form1.addEventListener("submit", function (ev) {
     ev.preventDefault();

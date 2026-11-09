@@ -1,6 +1,7 @@
 import axios from "axios";
 import { notifications } from "@mantine/notifications";
 import { langue } from "../utils/i18n";
+import { signalerStockagePlein } from "../utils/erreurs";
 import { voc } from "../utils/vocabulaire";
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
@@ -123,6 +124,17 @@ apiClient.interceptors.response.use(
   },
   async (error) => {
     const original = error.config;
+    // Abonnement terminé depuis plus de 7 jours : seule la page Abonnement reste ouverte (pour payer).
+    if (error.response?.data?.code === "abonnement_expire" && window.location.pathname !== "/mon-abonnement") {
+      window.location.href = "/mon-abonnement";
+      return Promise.reject(error);
+    }
+    // Fichier refusé faute de place : fenêtre explicative (FenetreStockagePlein).
+    if (error.response?.data?.code === "stockage_plein") {
+      const { taille, utilise, limite } = error.response.data;
+      signalerStockagePlein({ taille: Number(taille) || 0, utilise: Number(utilise) || 0, limite: Number(limite) || 0 });
+      return Promise.reject(error);
+    }
     // Installation de démonstration : l'enregistrement n'est que simulé.
     if (error.response?.status === 403 && error.response.data?.code === "mode_demo") {
       notifications.show({

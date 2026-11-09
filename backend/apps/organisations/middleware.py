@@ -7,14 +7,15 @@ Organisation de la requête, sur une plateforme à adresse unique (voir contexte
    fichiers, logo) : en-tête X-Organisation ou paramètre ?org= (ses liens le portent).
 
 Les jetons sont vérifiés (signature, expiration) avant d'en lire la marque : on ne peut pas se faire
-passer pour une autre organisation. Sans organisation : base centrale, et seules les routes publiques
+passer pour une autre organisation. Abonnement terminé depuis plus de 7 jours (abonnement.py) : accès
+bloqué, sauf la page Abonnement pour payer. Sans organisation : base centrale, et seules les routes publiques
 de la plateforme répondent (connexion, inscription, démonstration, console Expertise-ID).
 """
 import json
 
 from django.http import JsonResponse
 
-from . import contexte
+from . import abonnement, contexte
 
 PUBLIQUES_PRINCIPALES = ("/api/v1/identite/", "/api/v1/traductions/", "/api/v1/public/inscription/",
                          "/api/v1/public/inscription/offre/", "/api/v1/public/demo/", "/admin/", "/api/schema/", "/api/docs/",
@@ -23,6 +24,9 @@ PUBLIQUES_PRINCIPALES = ("/api/v1/identite/", "/api/v1/traductions/", "/api/v1/p
                          # Site vitrine : actualités et partenaires (base centrale).
                          "/api/v1/public/site/")
 RENOUVELLEMENT = "/api/v1/auth/token/refresh/"
+# Abonnement terminé depuis plus de 7 jours : seules la page Abonnement (payer) et la session répondent.
+AUTORISEES_SI_BLOQUE = ("/api/v1/abonnement/", "/api/v1/identite/", "/api/v1/utilisateurs/me/", "/api/v1/auth/",
+                        "/api/v1/traductions/")
 INVALIDE = object()
 
 
@@ -80,6 +84,9 @@ class OrganisationMiddleware:
         if org.statut == Organisation.Statut.SUSPENDUE:
             return JsonResponse({"detail": "L'abonnement de cette organisation est suspendu. Contactez Expertise-ID.",
                                  "code": "organisation_suspendue"}, status=403)
+        if abonnement.bloque(org) and not request.path.startswith(AUTORISEES_SI_BLOQUE):
+            return JsonResponse({"detail": "L'abonnement de votre organisation est terminé : l'accès est bloqué jusqu'au "
+                                           "renouvellement, depuis la page Abonnement.", "code": "abonnement_expire"}, status=403)
         request.organisation = org
         with contexte.dans_organisation(org):
             return self.get_response(request)

@@ -8,6 +8,7 @@ import {
   FileInput,
   Group,
   Modal,
+  Progress,
   Select,
   Stack,
   Table,
@@ -17,6 +18,8 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
+import { useQueryClient } from "@tanstack/react-query";
+import { usePageStockage } from "../../api/console";
 import {
   useCreateDocument,
   useCreateDossier,
@@ -28,7 +31,8 @@ import {
   useNouvelleVersion,
 } from "../../api/documents";
 import { confirmerSuppression } from "../common/confirmerSuppression";
-import { messageErreurApi } from "../../utils/erreurs";
+import { estStockagePlein, messageErreurApi, signalerStockagePlein } from "../../utils/erreurs";
+import { volumeLisible } from "../../utils/stockage";
 import { EmptyState } from "../common/EmptyState";
 import type { GedDocument } from "../../types";
 import { voc } from "../../utils/vocabulaire";
@@ -96,45 +100,93 @@ export function NouveauDocumentModal({
   onClose: () => void;
 }) {
   const createDocument = useCreateDocument();
+  const queryClient = useQueryClient();
+  const { data: espace } = usePageStockage();
   const [nom, setNom] = useState("");
   const [typeDocument, setTypeDocument] = useState("");
-  const [fichier, setFichier] = useState<File | null>(null);
+  const [fichiers, setFichiers] = useState<File[]>([]);
+  const [envoi, setEnvoi] = useState<{ fait: number; total: number } | null>(null);
+  const plusieurs = fichiers.length > 1;
+
+  function choisir(liste: File[]) {
+    setFichiers(liste);
+    if (liste.length === 1 && !nom.trim()) setNom(liste[0].name.replace(/\.[^.]+$/, ""));
+  }
 
   async function handleCreate() {
-    if (!nom.trim() || !fichier) {
+    if (fichiers.length === 0 || (!plusieurs && !nom.trim())) {
       notifications.show({ message: voc("Nom et fichier requis."), color: "orange" });
       return;
     }
-    const formData = new FormData();
-    formData.append("nom", nom.trim());
-    formData.append("type_document", typeDocument);
-    if (projetId) formData.append("projet", String(projetId));
-    if (activiteId) formData.append("activite", String(activiteId));
-    if (sousActiviteId) formData.append("sous_activite", String(sousActiviteId));
-    if (dossierId) formData.append("dossier", String(dossierId));
-    formData.append("fichier", fichier);
-
-    try {
-      await createDocument.mutateAsync(formData);
-      notifications.show({ message: voc("Document ajouté"), color: "green" });
+    // Place restante vérifiée avant l'envoi : rien n'est envoyé pour rien.
+    const taille = fichiers.reduce((total, f) => total + f.size, 0);
+    if (espace?.limite && espace.utilise != null && taille > espace.limite - espace.utilise) {
+      signalerStockagePlein({ taille, utilise: espace.utilise, limite: espace.limite });
+      return;
+    }
+    let ajoutes = 0;
+    setEnvoi({ fait: 0, total: fichiers.length });
+    for (const fichier of fichiers) {
+      const formData = new FormData();
+      // Plusieurs fichiers : chaque document prend le nom de son fichier.
+      formData.append("nom", plusieurs ? fichier.name.replace(/\.[^.]+$/, "") : nom.trim());
+      formData.append("type_document", typeDocument);
+      if (projetId) formData.append("projet", String(projetId));
+      if (activiteId) formData.append("activite", String(activiteId));
+      if (sousActiviteId) formData.append("sous_activite", String(sousActiviteId));
+      if (dossierId) formData.append("dossier", String(dossierId));
+      formData.append("fichier", fichier);
+      try {
+        await createDocument.mutateAsync(formData);
+        ajoutes += 1;
+        setEnvoi({ fait: ajoutes, total: fichiers.length });
+      } catch (error) {
+        if (!estStockagePlein(error)) {
+          notifications.show({ message: `${fichier.name} : ${messageErreurApi(error, voc("Erreur lors de l'ajout du document"))}`, color: "red" });
+        }
+        break;
+      }
+    }
+    setEnvoi(null);
+    queryClient.invalidateQueries({ queryKey: ["stockage"] });
+    if (ajoutes > 0) {
+      notifications.show({ message: ajoutes > 1 ? voc`${ajoutes} documents ajoutés` : voc("Document ajouté"), color: "green" });
+    }
+    if (ajoutes === fichiers.length) {
       setNom("");
       setTypeDocument("");
-      setFichier(null);
+      setFichiers([]);
       onClose();
-    } catch {
-      notifications.show({ message: voc("Erreur lors de l'ajout du document"), color: "red" });
+    } else {
+      setFichiers(fichiers.slice(ajoutes));  // ceux qui restent, pour réessayer
     }
   }
 
   return (
     <Modal opened={opened} onClose={onClose} title={voc("Nouveau document")}>
       <Stack gap="sm">
-        <FileInput label={voc("Fichier")} value={fichier} required
-          onChange={(f) => { setFichier(f); if (f && !nom.trim()) setNom(f.name.replace(/\.[^.]+$/, "")); }} />
-        <TextInput label={voc("Nom du document")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
+        <FileInput label={voc("Fichiers")} description={voc("Vous pouvez en choisir plusieurs à la fois.")} value={fichiers} required multiple clearable
+          valueComponent={({ value }) => (
+            <Text size="sm" truncate>
+              {Array.isArray(value) && value.length > 1 ? voc`${value.length} fichiers` : Array.isArray(value) ? value[0]?.name : value?.name}
+            </Text>
+          )}
+          onChange={choisir} />
+        {plusieurs && (
+          <Text size="xs" c="dimmed">
+            {voc`${fichiers.length} fichiers, ${volumeLisible(fichiers.reduce((t, f) => t + f.size, 0))} : chaque document prendra le nom de son fichier.`}
+          </Text>
+        )}
+        {!plusieurs && <TextInput label={voc("Nom du document")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} />}
         <TextInput label={voc("Type")} placeholder={voc("Ex : Note, Contrat, Rapport bailleur…")} value={typeDocument} onChange={(e) => setTypeDocument(e.currentTarget.value)} />
+        {envoi && envoi.total > 1 && (
+          <Stack gap={4}>
+            <Progress value={(envoi.fait / envoi.total) * 100} animated />
+            <Text size="xs" c="dimmed">{voc`Envoi : ${envoi.fait} sur ${envoi.total}`}</Text>
+          </Stack>
+        )}
         <Group justify="flex-end">
-          <Button onClick={handleCreate} loading={createDocument.isPending}>{voc("Ajouter")}</Button>
+          <Button onClick={handleCreate} loading={!!envoi}>{plusieurs ? voc`Ajouter les ${fichiers.length} documents` : voc("Ajouter")}</Button>
         </Group>
       </Stack>
     </Modal>
@@ -157,8 +209,8 @@ export function VersionsModal({ documentId, opened, onClose }: { documentId: num
       notifications.show({ message: voc("Nouvelle version ajoutée"), color: "green" });
       setFichier(null);
       setCommentaire("");
-    } catch {
-      notifications.show({ message: voc("Erreur lors de l'ajout de la version"), color: "red" });
+    } catch (error) {
+      if (!estStockagePlein(error)) notifications.show({ message: voc("Erreur lors de l'ajout de la version"), color: "red" });
     }
   }
 
