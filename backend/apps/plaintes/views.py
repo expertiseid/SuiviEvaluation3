@@ -10,7 +10,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.db.models import ProtectedError, Q
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
+from rest_framework.generics import get_object_or_404  # répond 404 (pas 500) si l'identifiant n'est pas un nombre
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action, api_view, authentication_classes, parser_classes, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError

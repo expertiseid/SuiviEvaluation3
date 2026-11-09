@@ -25,6 +25,10 @@ class Organisation(models.Model):
     base = models.CharField(max_length=63, unique=True, help_text="Nom de la base PostgreSQL de l'organisation.")
     statut = models.CharField(max_length=12, choices=Statut.choices, default=Statut.EN_ATTENTE)
     offre = models.CharField(max_length=20, blank=True)
+    stockage_go = models.PositiveIntegerField(
+        null=True, blank=True, help_text="Espace de stockage en Go fixé par Expertise-ID ; vide : celui de l'offre (apps.organisations.quota).")
+    stockage_alerte = models.PositiveSmallIntegerField(
+        default=0, help_text="Dernier seuil d'alerte de stockage notifié (0, 90 ou 100 %), pour ne prévenir qu'une fois.")
     mode_demo = models.BooleanField(default=False, help_text="Organisation de démonstration : visiteur en lecture seule.")
     courriel_contact = models.EmailField(blank=True)
     cree_le = models.DateTimeField(auto_now_add=True)
@@ -60,6 +64,50 @@ class CompteOrganisation(models.Model):
 
     def __str__(self):
         return f"{self.courriel} → {self.organisation.sous_domaine}"
+
+
+class PaiementAbonnement(models.Model):
+    """
+    Paiement en ligne (CinetPay, apps.organisations.paiement) d'un abonnement (payé, il crée aussitôt l'espace
+    de l'organisation, sans validation d'Expertise-ID, qui peut ensuite le suspendre) ou de stockage
+    supplémentaire (payé, l'espace de stockage de l'organisation est agrandi aussitôt).
+    """
+
+    class Statut(models.TextChoices):
+        EN_ATTENTE = "EN_ATTENTE", "En attente"
+        PAYE = "PAYE", "Payé"
+        ECHOUE = "ECHOUE", "Échoué ou abandonné"
+
+    class Nature(models.TextChoices):
+        ABONNEMENT = "ABONNEMENT", "Abonnement (inscription)"
+        STOCKAGE = "STOCKAGE", "Stockage supplémentaire"
+
+    nature = models.CharField(max_length=12, choices=Nature.choices, default=Nature.ABONNEMENT)
+    # Abonnement : la demande d'inscription ; stockage supplémentaire : l'organisation déjà ouverte.
+    demande = models.ForeignKey("accounts.DemandeInscription", on_delete=models.CASCADE, related_name="paiements",
+                                null=True, blank=True)
+    organisation = models.ForeignKey(Organisation, on_delete=models.CASCADE, related_name="paiements_stockage",
+                                     null=True, blank=True)
+    payeur = models.EmailField(blank=True, help_text="Stockage : adresse du compte qui a payé.")
+    reference = models.CharField(max_length=30, unique=True, help_text="Référence envoyée à CinetPay (merchant_transaction_id).")
+    offre = models.CharField(max_length=20)
+    mois = models.PositiveSmallIntegerField(default=1)
+    tranches = models.PositiveSmallIntegerField(default=0, help_text="Tranches de 10 Go de stockage ajoutées.")
+    montant = models.PositiveIntegerField()
+    devise = models.CharField(max_length=3)
+    jeton_paiement = models.CharField(max_length=100, blank=True)
+    jeton_notification = models.CharField(max_length=64, blank=True, help_text="Comparé à celui de chaque notification de CinetPay.")
+    transaction = models.CharField(max_length=100, blank=True, help_text="Identifiant de la transaction chez CinetPay.")
+    statut = models.CharField(max_length=12, choices=Statut.choices, default=Statut.EN_ATTENTE)
+    cree_le = models.DateTimeField(auto_now_add=True)
+    paye_le = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ("-cree_le",)
+        verbose_name = "Paiement d'abonnement"
+
+    def __str__(self):
+        return f"{self.reference} : {self.montant} {self.devise} ({self.get_statut_display()})"
 
 
 # --- Site vitrine : actualités et partenaires (gérés dans la console Expertise-ID) -----------------

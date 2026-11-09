@@ -1,0 +1,21 @@
+# Serveur de données (37.27.193.28) : PostgreSQL de la plateforme (base centrale + une base par
+# organisation). Joignable seulement par le tunnel privé (10.77.0.2, voir installer-serveur-donnees.sh).
+# Les fichiers des organisations sont dans /srv/monitora/fichiers, partagés par NFS dans le même tunnel.
+#   cd /srv/monitora && docker compose up -d
+name: monitora-donnees
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    env_file: donnees.env
+    command: postgres -c shared_buffers=512MB -c max_connections=300
+    volumes:
+      - /srv/monitora/postgres:/var/lib/postgresql/data
+    ports:
+      - "10.77.0.2:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10

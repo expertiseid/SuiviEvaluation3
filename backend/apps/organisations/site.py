@@ -11,7 +11,7 @@ import mimetypes
 from django.core import signing
 
 from django.http import FileResponse, Http404
-from django.shortcuts import get_object_or_404
+from rest_framework.generics import get_object_or_404  # répond 404 (pas 500) si l'identifiant n'est pas un nombre
 from rest_framework import serializers, viewsets
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser

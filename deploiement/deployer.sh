@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Met à jour la plateforme sur le serveur, en une commande :
 #   deploiement/deployer.sh root@204.168.227.18
+#   deploiement/deployer.sh alex@128.140.123.104   (plateforme derrière le CloudPanel du site, voir relais.conf.template)
 #
 # 1. assemble l'interface ici (vite build) ; 2. envoie le code (rsync : seuls les fichiers changés) ;
 # 3. reconstruit et relance les conteneurs sur le serveur. Les données (bases, fichiers) sont dans
@@ -15,7 +16,7 @@ DOSSIER="${2:-/opt/suivi-evaluation-plateforme}"
 echo "1/3 Assemblage de l'interface…"
 docker compose exec -T -e VITE_API_BASE_URL=/api/v1 frontend npx vite build >/dev/null
 
-echo "2/3 Envoi du code vers $CIBLE:$DOSSIER…"
+echo "2/3 Envoi du code vers ${CIBLE}:${DOSSIER}…"
 ssh "$CIBLE" "mkdir -p $DOSSIER/frontend"
 rsync -az --delete \
   --exclude __pycache__ --exclude '.pytest_cache' --exclude media --exclude prive --exclude staticfiles \
@@ -25,5 +26,10 @@ rsync -az --delete site-vitrine "$CIBLE:$DOSSIER/"
 rsync -az --exclude .env.prod deploiement "$CIBLE:$DOSSIER/"
 
 echo "3/3 Reconstruction et redémarrage…"
-ssh "$CIBLE" "cd $DOSSIER/deploiement && test -f .env.prod && docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build --remove-orphans"
+# Relais chiffré (docker-compose.relais.yml) si le HTTPS public est géré par un autre serveur (RELAIS_IP rempli) ;
+# base et fichiers sur le serveur de données (docker-compose.donnees.yml) si SERVEUR_DONNEES est rempli.
+ssh "$CIBLE" "cd $DOSSIER/deploiement && test -f .env.prod && FICHIERS='-f docker-compose.prod.yml' && \
+  { ! grep -q '^RELAIS_IP=.' .env.prod || FICHIERS=\"\$FICHIERS -f docker-compose.relais.yml\"; } && \
+  { ! grep -q '^SERVEUR_DONNEES=.' .env.prod || FICHIERS=\"\$FICHIERS -f docker-compose.donnees.yml\"; } && \
+  docker compose --env-file .env.prod \$FICHIERS up -d --build --remove-orphans"
 echo "Terminé."

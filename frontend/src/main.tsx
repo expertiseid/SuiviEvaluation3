@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createTheme, DirectionProvider, MantineProvider, Table } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
+import { z } from "zod";
 import { ModalsProvider } from "@mantine/modals";
 import { DateInput, DatePickerInput, DatesProvider } from "@mantine/dates";
 import dayjs from "dayjs";
@@ -63,6 +64,16 @@ const theme = createTheme({
   },
 });
 
+// Politique de sécurité du contenu (CSP) : les styles que Mantine ajoute à la page portent le jeton
+// (nonce) donné par le serveur dans <meta property="csp-nonce"> (vite.config.ts, deploiement/).
+const jetonStyles = () => document.querySelector<HTMLMetaElement>('meta[property="csp-nonce"]')?.nonce ?? "";
+// Fenêtres (Modal) : le blocage du défilement ajoute aussi un style à la page (react-remove-scroll) ;
+// il prend son jeton dans __webpack_nonce__ (paquet get-nonce).
+(globalThis as { __webpack_nonce__?: string }).__webpack_nonce__ = jetonStyles();
+// Validation des formulaires (zod) : sans le mode « jitless », zod essaie de compiler du code
+// (new Function), ce que la politique de contenu interdit.
+z.config({ jitless: true });
+
 // La langue est connue avant l'affichage : l'application (et ses textes) est chargée ensuite.
 async function demarrer() {
   await demarrerLangue();
@@ -71,7 +82,7 @@ async function demarrer() {
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
       <DirectionProvider initialDirection={estRtl() ? "rtl" : "ltr"} detectDirection={false}>
-        <MantineProvider theme={theme} defaultColorScheme="light">
+        <MantineProvider theme={theme} defaultColorScheme="light" getStyleNonce={jetonStyles}>
           <DatesProvider settings={{ locale: LOCALES_DAYJS[langue()], firstDayOfWeek: 1 }}>
             <Notifications />
             <ModalsProvider>

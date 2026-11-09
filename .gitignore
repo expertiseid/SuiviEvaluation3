@@ -33,3 +33,7 @@ Thumbs.db
 # Sauvegardes locales (bases et fichiers : données réelles, jamais versionnées)
 sauvegardes/
 !.env.prod.example
+
+# Rapports d'analyse de sécurité (ZAP) : contiennent des adresses et détails sensibles.
+rapports/
+scripts/logos/polices/

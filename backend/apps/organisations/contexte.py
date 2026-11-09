@@ -63,6 +63,16 @@ def reglages_base(nom_base: str) -> dict:
 
 
 @contextmanager
+def cles_de(org):
+    """Clés du cache (cle_cache) de `org`, sans changer de base de données."""
+    jeton = _courante.set(org)
+    try:
+        yield org
+    finally:
+        _courante.reset(jeton)
+
+
+@contextmanager
 def dans_organisation(org):
     """Exécute le bloc dans la base de l'organisation (connexion « default » de ce fil uniquement)."""
     from django.db.backends.postgresql.base import DatabaseWrapper

@@ -112,9 +112,10 @@ export function InscriptionPage() {
                 </SimpleGrid>
               </Section>
               <Textarea label={voc("Message (facultatif)")} autosize minRows={2} placeholder={voc("Vos besoins, le nombre d'utilisateurs prévus…")} {...champ("message")} />
-              {/* Champ piège : invisible pour une personne, rempli par les robots. */}
+              {/* Champ piège : rempli par les robots ; masqué (display: none) pour que le remplissage
+                  automatique du navigateur ne l'atteigne pas. */}
               <TextInput aria-hidden tabIndex={-1} autoComplete="off" value={piege} onChange={(e) => setPiege(e.currentTarget.value)}
-                style={{ position: "absolute", insetInlineStart: -10000, height: 1, overflow: "hidden" }} />
+                style={{ display: "none" }} />
               <Checkbox checked={v.conditions} onChange={(e) => changer({ conditions: e.currentTarget.checked })} error={erreurs.conditions}
                 label={voc("J'accepte qu'Expertise-ID utilise ces informations pour me contacter et activer l'espace de mon organisation.")} />
               <Group justify="space-between">

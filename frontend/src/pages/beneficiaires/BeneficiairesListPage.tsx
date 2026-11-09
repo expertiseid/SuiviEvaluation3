@@ -279,7 +279,7 @@ export function BeneficiairesListPage() {
             </Button>
           )}
           <Button component={Link} to="/carte" variant="light" color="teal" leftSection={<MapIcon size={16} />}>
-            {voc("Carte")}
+            {voc("Cartographie")}
           </Button>
           <Button variant="light" leftSection={<Download size={16} />} onClick={() => setModalExportOpen(true)}>
             {voc("Exporter")}

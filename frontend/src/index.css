@@ -38,3 +38,29 @@ body {
   --mantine-font-size-lg: 1rem;
   --mantine-font-size-xl: 1.15rem;
 }
+
+/* Bandeau défilant des échéances (EcheancesBanner) : la durée vient de --duree-defilement. */
+@keyframes defilement-echeances {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.defilement-echeances-piste { animation: defilement-echeances var(--duree-defilement, 35s) linear infinite; }
+.defilement-echeances-piste:hover { animation-play-state: paused; }
+
+/* Carte (CartePage) : étiquettes des zones, des villages et des bénéficiaires, plein écran. */
+.etiquette-carte { background: none; border: none; white-space: nowrap; pointer-events: none;
+  font: 600 11px/1 system-ui, sans-serif; color: #374151; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 2px #fff; }
+.etiquette-carte span { display: inline-block; transform: translate(-50%, -50%); }
+.etiquette-carte.n1 { font-size: 13px; font-weight: 700; color: #111827; text-transform: uppercase; letter-spacing: .5px; }
+.etiquette-carte.n3 { font-weight: 500; color: #6b7280; font-size: 10px; }
+.etiquette-carte.village span { transform: translate(5px, -50%); font-weight: 500; font-size: 10px; color: #1f2937; }
+.encadre-carte:fullscreen { border-radius: 0; }
+.encadre-carte:fullscreen .leaflet-container { height: 100vh !important; }
+.etiquette-carte.valeur-zone { pointer-events: auto; cursor: pointer; }
+.etiquette-carte.valeur-zone span { font-size: 12px; font-weight: 800; color: #111827; background: rgba(255,255,255,.88); border: 1px solid #6b7280; border-radius: 8px; padding: 2px 6px; text-align: center; line-height: 1.15; }
+.etiquette-carte.valeur-zone small { display: block; font-size: 9px; font-weight: 600; color: #4b5563; text-transform: uppercase; letter-spacing: .3px; }
+.etiquette-carte.beneficiaire span { transform: translate(8px, -50%); font-weight: 600; font-size: 11px; color: #9a3412; }
+
+/* Bulle d'un élément d'une couche importée (CartePage). */
+.bulle-couche { font-size: 12px; }
+.bulle-couche-titre { font-weight: 600; margin-bottom: 4px; }

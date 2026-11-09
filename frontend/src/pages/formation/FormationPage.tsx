@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  Alert, Anchor, Badge, Button, Card, Group, Loader, Progress, Radio, RingProgress, SimpleGrid, Stack, Text, ThemeIcon, Title,
+  Alert, Anchor, Badge, Button, Card, Group, Loader, Progress, Radio, RingProgress, SimpleGrid, Stack, Table, Text, ThemeIcon, Title,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import {
-  ArrowLeft, ArrowRight, Award, CircleCheck, ClipboardList, Compass, FolderOpen, Gauge, GraduationCap, Lightbulb, ListTree, Lock,
+  ArrowLeft, ArrowRight, Award, CircleCheck, ClipboardList, Compass, FileSpreadsheet, FolderKanban, FolderOpen, Gauge, GraduationCap,
+  Lightbulb, ListTree, Lock,
   MapPinned, MessagesSquare, PlayCircle, Settings, Target, TriangleAlert, type LucideIcon,
 } from "lucide-react";
 import {
@@ -13,10 +14,12 @@ import {
   useSommaireFormation,
 } from "../../api/formation";
 import { messageErreurApi } from "../../utils/erreurs";
-import { locale } from "../../utils/i18n";
+import { langue, locale } from "../../utils/i18n";
 import { voc } from "../../utils/vocabulaire";
 
-const ICONES: Record<string, LucideIcon> = { Compass, Target, ListTree, Gauge, MapPinned, FolderOpen, MessagesSquare, Settings };
+const ICONES: Record<string, LucideIcon> = {
+  Compass, Target, FolderKanban, ListTree, FileSpreadsheet, Gauge, MapPinned, FolderOpen, MessagesSquare, Settings,
+};
 
 /** Texte avec **gras**. */
 function Riche({ texte }: { texte: string }) {
@@ -158,14 +161,44 @@ function BlocLecon({ bloc }: { bloc: Bloc }) {
           <Text component="figcaption" size="xs" c="dimmed" mt={4}>{voc(bloc.legende)}</Text>
         </figure>
       );
-    case "video":
+    case "capture":
+      return (
+        <Card withBorder radius="md" padding="sm">
+          <Stack gap="sm">
+            <a href={`/formation/${bloc.src}`} target="_blank" rel="noopener" title={voc("Agrandir")}>
+              <img src={`/formation/${bloc.src}`} alt={voc(bloc.legende)} loading="lazy"
+                style={{ width: "100%", borderRadius: 8, border: "1px solid var(--mantine-color-gray-3)", display: "block" }} />
+            </a>
+            <Text size="xs" c="dimmed">{voc(bloc.legende)}</Text>
+            {bloc.reperes.map((texte, i) => texte && (
+              <Group key={i} gap="sm" wrap="nowrap" align="flex-start">
+                <ThemeIcon size={24} radius="xl" color="red" style={{ flexShrink: 0 }}><Text size="xs" fw={700} c="white">{i + 1}</Text></ThemeIcon>
+                <Text size="sm" style={{ flex: 1 }}><Riche texte={voc(texte)} /></Text>
+              </Group>
+            ))}
+          </Stack>
+        </Card>
+      );
+    case "tableau":
       return (
         <Stack gap={4}>
-          <video src={`/formation/presentation.webm#t=${bloc.debut},${bloc.fin}`} controls preload="metadata"
-            style={{ width: "100%", borderRadius: 10, background: "#0c1622" }} />
-          <Text size="xs" c="dimmed">{voc("Extrait de la vidéo de présentation.")}</Text>
+          <Text fw={600} size="sm">{voc(bloc.titre)}</Text>
+          <Table.ScrollContainer minWidth={560}>
+            <Table withTableBorder withColumnBorders striped verticalSpacing={6} fz="sm">
+              <Table.Thead>
+                <Table.Tr>{bloc.colonnes.map((c, i) => <Table.Th key={i} bg="teal.0">{voc(c)}</Table.Th>)}</Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {bloc.lignes.map((ligne, i) => (
+                  <Table.Tr key={i}>{ligne.map((c, j) => <Table.Td key={j}><Riche texte={voc(c)} /></Table.Td>)}</Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
         </Stack>
       );
+    case "video":
+      return <ExtraitVideo chapitre={bloc.chapitre} debut={bloc.debut} fin={bloc.fin} />;
     case "astuce":
     case "attention":
       return (
@@ -183,6 +216,34 @@ function BlocLecon({ bloc }: { bloc: Bloc }) {
         </Card>
       );
   }
+}
+
+// Vidéo de présentation : une par langue (/videos/presentation-<langue>.webm) ; chapitres.json donne,
+// pour chaque langue, la seconde où commence chaque chapitre (écrit au tournage des vidéos).
+const ORDRE_CHAPITRES = ["tableau_de_bord", "strategie", "projets", "planification", "cadre_logique", "indicateurs", "carte", "plaintes"];
+let chapitresVideo: Promise<Record<string, Record<string, number>>> | null = null;
+const lireChapitres = () =>
+  (chapitresVideo ??= fetch("/videos/chapitres.json").then((r) => r.json()).catch(() => ({})));
+
+function ExtraitVideo({ chapitre, debut, fin }: { chapitre: string; debut: number; fin: number }) {
+  const code = langue();
+  const [plage, setPlage] = useState<[number, number]>([debut, fin]);
+  useEffect(() => {
+    lireChapitres().then((tous) => {
+      const temps = tous[code] ?? tous.fr;
+      if (!temps || temps[chapitre] == null) return;
+      const suivant = ORDRE_CHAPITRES.slice(ORDRE_CHAPITRES.indexOf(chapitre) + 1).map((c) => temps[c]).find((t) => t != null);
+      // 2 secondes après le début : la page et sa légende sont affichées.
+      setPlage([temps[chapitre] + 2, suivant ?? temps[chapitre] + 10]);
+    });
+  }, [chapitre, code]);
+  return (
+    <Stack gap={4}>
+      <video key={`${code}-${plage[0]}`} src={`/videos/presentation-${code}.webm#t=${plage[0]},${plage[1]}`} controls preload="metadata"
+        poster={`/videos/affiche-${code}.webp`} style={{ width: "100%", borderRadius: 10, background: "#0c1622" }} />
+      <Text size="xs" c="dimmed">{voc("Extrait de la vidéo de présentation.")}</Text>
+    </Stack>
+  );
 }
 
 export function LeconPage() {

@@ -32,6 +32,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.accounts.constants import ROLE_ADMIN
 from apps.core.vocabulaire import v
+from apps.organisations import quota
 
 from .chiffrement import _fernet
 from .models import ActionDossier, Mecanisme, PieceJointe, StatutDossier
@@ -281,6 +282,8 @@ def enregistrer(dossier, prets, source, auteur=None):
         cible.parent.mkdir(parents=True, exist_ok=True)
         cible.write_bytes(_fernet().encrypt(pret["contenu"]))
         os.chmod(cible, 0o600)
+        # Compte dans l'espace de stockage de l'organisation, sans jamais être refusée (quota.py).
+        quota.ajouter(cible.stat().st_size)
         pieces.append(piece)
     return pieces
 

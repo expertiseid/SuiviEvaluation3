@@ -60,9 +60,15 @@ export function avecOrganisation(lien: string): string {
   return org ? `${lien}${lien.includes("?") ? "&" : "?"}org=${encodeURIComponent(org)}` : lien;
 }
 
+// Connexion, inscription, paiement : jamais avec le jeton d'une session déjà ouverte dans ce navigateur
+// (ex. visiteur de la démo, en lecture seule, dont le jeton ferait refuser la connexion).
+const SANS_SESSION = /^\/(auth\/token|auth\/double-authentification|public)\//;
+
 apiClient.interceptors.request.use((config) => {
   const token = tokenStorage.getAccess();
-  if (estPagePublique()) {
+  if (SANS_SESSION.test(config.url ?? "")) {
+    // rien : requête anonyme
+  } else if (estPagePublique()) {
     // Page publique d'une organisation : l'organisation du lien, jamais celle d'une session ouverte
     // dans ce navigateur (le jeton l'emporterait côté serveur).
     const org = organisationPublique();

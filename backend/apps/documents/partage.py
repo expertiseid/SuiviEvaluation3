@@ -18,7 +18,7 @@ from django.contrib.auth.hashers import check_password, make_password
 from django.core import signing
 from django.db.models import F
 from django.http import FileResponse, Http404
-from django.shortcuts import get_object_or_404
+from rest_framework.generics import get_object_or_404  # répond 404 (pas 500) si l'identifiant n'est pas un nombre
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.decorators import api_view, authentication_classes, permission_classes, throttle_classes

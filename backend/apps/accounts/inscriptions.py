@@ -3,9 +3,13 @@ Inscription d'une organisation depuis la page d'accueil, puis abonnement.
 
 Le profil créé ne donne aucun accès : la page « Vous devez vous abonner avant de continuer » s'affiche
 juste après, et à chaque tentative de connexion avec l'identifiant choisi tant que l'abonnement n'est pas
-activé par Expertise-ID. Chaque demande et chaque offre choisie sont envoyées par courriel à Expertise-ID
-(COURRIEL_ABONNEMENTS) ; l'organisation reçoit un accusé. Envois limités par connexion, champ piège.
+actif. L'offre payée en ligne (apps.organisations.paiement) crée l'espace aussitôt ; Expertise-ID
+(COURRIEL_ABONNEMENTS) reçoit alors un seul courriel « Nouvelle inscription ». L'offre Partenariat, qui ne se
+paie pas en ligne, lui est transmise pour qu'il la traite. L'organisation reçoit un accusé. Envois limités
+par connexion, champ piège.
 """
+import logging
+
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.password_validation import validate_password
@@ -17,6 +21,8 @@ from rest_framework.exceptions import ValidationError
 from apps.core.vocabulaire import v
 
 from .models import DemandeInscription, User
+
+logger = logging.getLogger(__name__)
 
 SEL = "inscription"
 # L'adresse courriel sert d'identifiant de connexion (plateforme à adresse unique : courriel + mot de passe).
@@ -77,7 +83,6 @@ def creer(donnees):
         courriel=courriel, telephone=_texte(donnees, "telephone", 40), identifiant=identifiant,
         mot_de_passe=make_password(mot_de_passe), message=_texte(donnees, "message", 2000), sous_domaine=sous_domaine,
     )
-    _prevenir_expertise_id(demande, "Nouveau profil d'organisation")
     _envoyer_accuse(demande)
     return demande
 
@@ -105,20 +110,36 @@ def _envoyer_accuse(demande):
     _envoyer(demande.courriel, "Votre profil a bien été créé",
              f"Bonjour {demande.contact_nom},\n\nLe profil de {demande.organisation} a bien été créé sur la plateforme "
              "Expertise-ID Monitora (connexion avec votre adresse : " + demande.courriel + ").\n\nPour accéder à la plateforme, "
-             "choisissez une offre d'abonnement ; l'équipe d'Expertise-ID vous contactera pour l'activer.\n\n"
+             "choisissez une offre d'abonnement et réglez-la en ligne : votre espace est créé aussitôt.\n\n"
              "Expertise-ID")
 
 
-def choisir_offre(demande, offre, message=""):
+def choisir_offre(demande, offre, message="", moyen="", mois=1, tranches=0):
+    """Offre transmise à Expertise-ID : Partenariat, ou offre Standard à payer par carte bancaire (moyen « carte »)."""
     if offre not in DemandeInscription.Offre.values:
         raise ValidationError({"offre": v("Choisissez une offre.")})
+    complement = []
+    if moyen == "carte" and offre != DemandeInscription.Offre.PARTENARIAT:
+        from apps.organisations import paiement
+
+        try:
+            mois, tranches = int(mois), (int(tranches or 0) if offre == "STOCKAGE_PLUS" else 0)
+        except (TypeError, ValueError):
+            raise ValidationError({"detail": v("Durée ou stockage invalide.")})
+        if mois not in paiement.DUREES or not 0 <= tranches <= paiement.TRANCHES_MAX:
+            raise ValidationError({"detail": v("Durée ou stockage invalide.")})
+        stockage = f" + {tranches * 10} Go" if tranches else ""
+        complement = [f"Paiement par carte bancaire demandé : {paiement.montant(offre, mois, tranches, usd=True)} $ "
+                      f"({mois} mois{stockage}). À finaliser avec le client, puis activer l'espace depuis la console.",
+                      f"Formation gratuite : {'oui' if paiement.formation_offerte(offre, mois) else 'non'}."]
     demande.offre = offre
     if demande.statut == DemandeInscription.Statut.ABONNEMENT_REQUIS:
         demande.statut = DemandeInscription.Statut.OFFRE_CHOISIE
     if message.strip():
         demande.message = (demande.message + "\n" + message.strip()).strip()[:2000]
     demande.save()
-    _prevenir_expertise_id(demande, f"Offre {demande.get_offre_display()} choisie")
+    sujet = "Paiement par carte demandé" if complement else f"Offre {demande.get_offre_display()} choisie"
+    prevenir_expertise_id(demande, sujet, complement)
     return demande
 
 
@@ -135,9 +156,11 @@ def demande_pour(identifiant, mot_de_passe):
 
 
 def resume(demande):
+    from apps.organisations import paiement
+
     return {"reference": jeton(demande), "organisation": demande.organisation, "statut": demande.statut,
-            "offre": demande.offre, "contact": getattr(settings, "COURRIEL_ABONNEMENTS", ""),
-            "espace": adresse_connexion(demande)}
+            "offre": demande.offre, "contact": (_adresses(getattr(settings, "COURRIEL_ABONNEMENTS", "")) or [""])[0],
+            "espace": adresse_connexion(demande), "tarifs": paiement.tarifs()}
 
 
 def adresse_connexion(demande):
@@ -149,20 +172,30 @@ def adresse_connexion(demande):
     return contexte.adresse() + "/login"
 
 
+def _adresses(valeur):
+    """« a@x.com, b@x.com » → [a@x.com, b@x.com] (COURRIEL_ABONNEMENTS peut prévenir plusieurs personnes)."""
+    return [a.strip() for a in (valeur or "").split(",") if a.strip()]
+
+
 def _envoyer(adresse, sujet, texte):
-    if adresse:
-        send_mail(sujet, texte, getattr(settings, "DEFAULT_FROM_EMAIL", None), [adresse], fail_silently=True)
+    destinataires = _adresses(adresse)
+    if not destinataires:
+        return
+    try:
+        send_mail(sujet, texte, getattr(settings, "DEFAULT_FROM_EMAIL", None), destinataires)
+    except Exception:  # l'inscription ne doit pas échouer pour un courriel ; l'erreur reste dans le journal
+        logger.exception("Courriel « %s » non envoyé à %s.", sujet, ", ".join(destinataires))
 
 
-def _prevenir_expertise_id(demande, sujet):
+def prevenir_expertise_id(demande, sujet, complement=()):
     lignes = [
         f"Organisation : {demande.organisation} ({demande.type_organisation}, {demande.pays})",
         f"Secteur : {demande.secteur or '—'} · Taille : {demande.taille or '—'}",
         f"Contact : {demande.contact_nom} ({demande.contact_fonction or '—'})",
         f"Courriel : {demande.courriel} · Téléphone : {demande.telephone}",
         f"Identifiant choisi : {demande.identifiant}",
-        f"Sous-domaine souhaité : {demande.sous_domaine or '—'}",
         f"Offre : {demande.get_offre_display() or 'pas encore choisie'}",
         f"Message : {demande.message or '—'}",
+        *complement,
     ]
     _envoyer(getattr(settings, "COURRIEL_ABONNEMENTS", ""), f"{sujet} : {demande.organisation}", "\n".join(lignes))

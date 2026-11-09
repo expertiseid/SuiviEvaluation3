@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Alert, Anchor, Badge, Box, Button, Checkbox, Container, Group, Loader, Modal, Stack, Table, Tabs, Text, TextInput, Title, Tooltip,
+  ActionIcon, Alert, Anchor, Badge, Box, Button, Checkbox, Container, Group, Loader, Modal, NumberInput, Popover, Stack, Table, Tabs, Text, TextInput, Title, Tooltip,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { Building2, CirclePause, CirclePlay, Handshake, LogOut, Newspaper, Rocket, UserPlus } from "lucide-react";
-import { useActiverDemande, useDemandesConsole, useOrganisationsConsole, useStatutOrganisation } from "../../api/console";
+import { Building2, CirclePause, CirclePlay, Handshake, LogOut, Newspaper, Pencil, Rocket, UserPlus } from "lucide-react";
+import { type OrganisationPlateforme, useActiverDemande, useDemandesConsole, useOrganisationsConsole, useStatutOrganisation, useStockageOrganisation } from "../../api/console";
 import { type DemandeInscription, useIdentiteOrganisation } from "../../api/identite";
 import { useAuth } from "../../auth/useAuth";
+import { JaugeStockage } from "../../components/common/EspaceStockage";
 import { LogoPlateforme, PiedDePage } from "../../components/common/Logos";
 import { messageErreurApi } from "../../utils/erreurs";
 import { locale } from "../../utils/i18n";
@@ -114,6 +115,43 @@ function Demandes() {
   );
 }
 
+/** Agrandir l'espace de stockage d'une organisation (demande du client) ou revenir à celui de son offre. */
+function ModifierStockage({ organisation }: { organisation: OrganisationPlateforme }) {
+  const [ouvert, setOuvert] = useState(false);
+  const [go, setGo] = useState<number | string>("");
+  const changer = useStockageOrganisation();
+  const enregistrer = async (valeur: number | null) => {
+    try {
+      await changer.mutateAsync({ id: organisation.id, stockage_go: valeur });
+      setOuvert(false);
+      notifications.show({ color: "teal", message: voc("Espace de stockage enregistré") });
+    } catch (error) {
+      notifications.show({ color: "red", message: messageErreurApi(error, voc("Erreur lors de l'enregistrement")) });
+    }
+  };
+  return (
+    <Popover opened={ouvert} onChange={setOuvert} width={260} position="bottom-end" withArrow>
+      <Popover.Target>
+        <Tooltip label={voc("Modifier l'espace de stockage")}>
+          <ActionIcon variant="subtle" size="sm" aria-label={voc("Modifier l'espace de stockage")}
+            onClick={() => { setGo(organisation.stockage_go ?? organisation.stockage.limite_go ?? ""); setOuvert((o) => !o); }}>
+            <Pencil size={14} />
+          </ActionIcon>
+        </Tooltip>
+      </Popover.Target>
+      <Popover.Dropdown>
+        <Stack gap="xs">
+          <NumberInput label={voc("Espace de stockage (Go)")} min={1} max={100000} allowDecimal={false} value={go} onChange={setGo} />
+          <Button size="xs" loading={changer.isPending} disabled={!go} onClick={() => enregistrer(Number(go))}>{voc("Enregistrer")}</Button>
+          {organisation.stockage_go != null && (
+            <Button size="xs" variant="subtle" onClick={() => enregistrer(null)}>{voc("Revenir à l'espace de l'offre")}</Button>
+          )}
+        </Stack>
+      </Popover.Dropdown>
+    </Popover>
+  );
+}
+
 function Organisations() {
   const { data: organisations = [], isLoading } = useOrganisationsConsole();
   const changer = useStatutOrganisation();
@@ -127,13 +165,14 @@ function Organisations() {
   };
   if (isLoading) return <Loader size="sm" />;
   return (
-    <Table.ScrollContainer minWidth={900}>
+    <Table.ScrollContainer minWidth={1040}>
       <Table withTableBorder striped verticalSpacing="sm">
         <Table.Thead>
           <Table.Tr>
             <Table.Th>{voc("Organisation")}</Table.Th>
             <Table.Th>{voc("Comptes")}</Table.Th>
             <Table.Th>{voc("Offre")}</Table.Th>
+            <Table.Th w={190}>{voc("Stockage")}</Table.Th>
             <Table.Th>{voc("Ouvert le")}</Table.Th>
             <Table.Th>{voc("État")}</Table.Th>
             <Table.Th w={150} />
@@ -147,7 +186,14 @@ function Organisations() {
                 {o.mode_demo && <Badge size="xs" variant="light" color="orange">{voc("Démonstration")}</Badge>}
               </Table.Td>
               <Table.Td><Text size="sm">{o.comptes}</Text></Table.Td>
-              <Table.Td><Text size="sm">{o.offre || "—"}</Text></Table.Td>
+              <Table.Td><Text size="sm">{o.offre === "STOCKAGE_PLUS" ? voc("Standard + stockage") : o.offre === "PARTENARIAT" ? voc("Partenariat") : o.offre === "STANDARD" ? voc("Standard")
+                : o.offre === "STANDARD_25" ? voc`Standard ${25} Go` : o.offre === "STANDARD_50" ? voc`Standard ${50} Go` : o.offre || "—"}</Text></Table.Td>
+              <Table.Td>
+                <Group gap={4} wrap="nowrap" align="flex-start">
+                  <Box style={{ flex: 1 }}><JaugeStockage espace={o.stockage} /></Box>
+                  <ModifierStockage organisation={o} />
+                </Group>
+              </Table.Td>
               <Table.Td><Text size="sm">{date(o.active_le)}</Text></Table.Td>
               <Table.Td><Badge variant="light" tt="none" color={o.statut === "ACTIVE" ? "teal" : o.statut === "SUSPENDUE" ? "red" : "gray"}>{o.statut_libelle}</Badge></Table.Td>
               <Table.Td>
@@ -161,7 +207,7 @@ function Organisations() {
             </Table.Tr>
           ))}
           {organisations.length === 0 && (
-            <Table.Tr><Table.Td colSpan={6}><Text size="sm" c="dimmed">{voc("Aucune organisation pour l'instant.")}</Text></Table.Td></Table.Tr>
+            <Table.Tr><Table.Td colSpan={7}><Text size="sm" c="dimmed">{voc("Aucune organisation pour l'instant.")}</Text></Table.Td></Table.Tr>
           )}
         </Table.Tbody>
       </Table>

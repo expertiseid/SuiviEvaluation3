@@ -29,6 +29,7 @@ import {
   Info,
   MonitorPlay,
   GraduationCap,
+  HardDrive,
 } from "lucide-react";
 import {
   ActionIcon,
@@ -59,7 +60,7 @@ import { notifications } from "@mantine/notifications";
 import { useDisclosure } from "@mantine/hooks";
 import { useAuth, useEstDemo } from "../auth/useAuth";
 import { useIdentiteOrganisation } from "../api/identite";
-import { PiedDePage } from "../components/common/Logos";
+import { PiedDePage, SymbolePlateforme } from "../components/common/Logos";
 import { useConfigurationMenu, useEcheances, useUpdateConfigurationMenu } from "../api/dashboard";
 import { NotificationBell } from "../components/notifications/NotificationBell";
 import { ChoixLangue } from "../components/common/ChoixLangue";
@@ -85,7 +86,7 @@ const ITEMS_PRINCIPAUX: NavItem[] = [
   { to: "/suivi", label: voc("Suivi"), icon: Activity },
   { to: "/approbations", label: voc("Approbations"), icon: ClipboardCheck },
   { to: "/beneficiaires", label: voc("Bénéficiaires"), icon: Users },
-  { to: "/carte", label: voc("Carte"), icon: MapIcon },
+  { to: "/carte", label: voc("Cartographie"), icon: MapIcon },
   { to: "/doublons", label: voc("Doublons d'enregistrement"), icon: Copy },
   { to: "/zones-administratives", label: voc("Zones administratives"), icon: MapPin },
   { to: "/documents", label: voc("Documents"), icon: FileText },
@@ -99,6 +100,7 @@ const ITEMS_PRINCIPAUX: NavItem[] = [
 const ITEMS_ADMIN: NavItem[] = [
   { to: "/utilisateurs", label: voc("Utilisateurs"), icon: UserCog },
   { to: "/organisation", label: voc("Organisation"), icon: Building2 },
+  { to: "/stockage", label: voc("Stockage"), icon: HardDrive },
   { to: "/parametres-alerte", label: voc("Paramètres d'alerte"), icon: Sliders },
   { to: "/langues", label: voc("Langues"), icon: Languages },
   { to: "/journal-audit", label: voc("Journal d'audit"), icon: ScrollText },
@@ -363,7 +365,8 @@ export function AppLayout() {
   const { data: maillons } = useTypesDocuments();
   const itemsMaillons: NavItem[] = (maillons ?? []).slice(1).map((m) => ({
     to: routeMaillon(m.id),
-    label: m.nom_pluriel,
+    // Nom choisi par l'organisation : traduit s'il est dans le catalogue (ex. « Programmes »), sinon tel quel.
+    label: voc(m.nom_pluriel),
     icon: ICONES_MENU[m.icone] ?? Layers,
   }));
   // Premier maillon (ex : « Stratégies ») : son nom donne celui de la rubrique « /strategie ».
@@ -384,7 +387,7 @@ export function AppLayout() {
         <Group h={56} px={{ base: "xs", sm: "md" }} justify="space-between" wrap="nowrap">
           <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" color="white" />
-            <Image src="/logo-plateforme.svg" w={30} h={30} alt="" />
+            <SymbolePlateforme taille={30} pastille />
             <Text fw={700} size="sm" truncate lh={1.2}>
               Expertise-ID Monitora
             </Text>

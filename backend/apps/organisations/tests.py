@@ -174,6 +174,9 @@ def test_connexion_par_courriel(deux_organisations, settings):
     reponse = client.post("/api/v1/utilisateurs/", {"username": "copie", "email": "admin@essai-iso-a.org", "role": "ADMIN",
                                                     "password": "Autre-mot-de-passe-1"}, format="json")
     assert reponse.status_code == 400 and "email" in reponse.data
+    # Sans adresse courriel, un compte ne pourrait pas se connecter : elle est obligatoire.
+    sans = client.post("/api/v1/utilisateurs/", {"username": "sans_courriel", "role": "ADMIN", "password": "Autre-mot-de-passe-1"}, format="json")
+    assert sans.status_code == 400 and "email" in sans.data
 
     # Opérateurs Expertise-ID : page à part ({console: true}), comptes de la base centrale seulement.
     User.objects.create_superuser(username="operateur", password=mot_de_passe, email="op@expertise-id.com", role="ADMIN")
@@ -209,7 +212,10 @@ def test_inscription_puis_activation_par_la_console(deux_organisations, settings
               "conditions": True}
     # Adresse déjà utilisée par un compte d'une organisation : refusée.
     assert anonyme.post("/api/v1/public/inscription/", {**profil, "courriel": "admin@essai-iso-a.org"}, format="json").status_code == 400
-    assert anonyme.post("/api/v1/public/inscription/", profil, format="json").status_code == 201
+    creation = anonyme.post("/api/v1/public/inscription/", profil, format="json")
+    assert creation.status_code == 201
+    # Offre Partenariat : pas de paiement en ligne, Expertise-ID valide depuis la console.
+    anonyme.post("/api/v1/public/inscription/offre/", {"reference": creation.data["reference"], "offre": "PARTENARIAT"}, format="json")
     demande = DemandeInscription.objects.using("central").get(courriel="awa@ong-nouvelle.bf")
     assert demande.identifiant == "awa@ong-nouvelle.bf" and demande.sous_domaine == "ong-nouvelle"
     # Avant l'activation : page d'abonnement.
@@ -225,7 +231,9 @@ def test_inscription_puis_activation_par_la_console(deux_organisations, settings
         demande.refresh_from_db(using="central")
         assert demande.statut == "ACTIVEE", demande.erreur_activation
         org = Organisation.objects.using("central").get(sous_domaine="ong-nouvelle")
-        assert org.statut == "ACTIVE" and any("Votre espace est prêt" in m.subject for m in mail.outbox)
+        validation = [m for m in mail.outbox if m.to == ["awa@ong-nouvelle.bf"] and "partenariat est validé" in m.subject]
+        assert org.statut == "ACTIVE" and len(validation) == 1 and "a validé votre demande de partenariat" in validation[0].body
+        assert all("Sous-domaine" not in m.body for m in mail.outbox)
         # Connexion par courriel : mot de passe choisi à l'inscription, puis code.
         client = APIClient()
         etape = client.post("/api/v1/auth/token/", {"courriel": profil["courriel"], "password": profil["mot_de_passe"]}).data
@@ -259,3 +267,185 @@ def test_demo(deux_organisations):
         assert identite["mode_demo"] is True and identite["espace"]["sous_domaine"] == org_b.sous_domaine
     finally:
         Organisation.objects.using("central").filter(pk=org_b.pk).update(mode_demo=False)
+
+
+def test_espace_de_stockage(deux_organisations, monkeypatch):
+    """Espace selon l'offre (25 Go…) : un fichier qui le dépasserait est refusé ; Expertise-ID peut l'agrandir."""
+    from django.core.cache import cache
+    from django.core.files.base import ContentFile
+    from django.core.files.storage import default_storage
+    from rest_framework.exceptions import ValidationError
+
+    from apps.accounts.models import User
+
+    from . import quota
+
+    org_a, _ = deux_organisations
+    Organisation.objects.using("central").filter(pk=org_a.pk).update(offre="STANDARD_25")
+    org = Organisation.objects.using("central").get(pk=org_a.pk)
+    assert quota.limite_go(org) == 25
+    monkeypatch.setattr(quota, "GO", 10_000)  # 25 « Go » = 250 000 octets, pour l'essai
+    monkeypatch.setattr(quota, "_taille_base", lambda org: 0)
+    cache.clear()
+
+    admin = _client(org_a, _admin(org_a))
+    depart = admin.get("/api/v1/stockage/").data  # fichiers laissés par les autres essais
+    assert depart["limite"] == 250_000 and depart["limite_go"] == 25 and depart["utilise"] < 1000
+    depart = depart["utilise"]
+    with contexte.cles_de(org), monkeypatch.context() as m:
+        m.setattr(contexte, "courante", lambda: org)
+        nom = default_storage.save("essai/a.bin", ContentFile(b"x" * 200_000))
+        assert quota.utilise(org) == depart + 200_000
+        with pytest.raises(ValidationError):
+            default_storage.save("essai/b.bin", ContentFile(b"x" * 60_000))
+        assert not default_storage.exists("essai/b.bin")
+
+    # Console : Expertise-ID agrandit l'espace à 50 Go, puis revient à celui de l'offre.
+    operateur = APIClient()
+    operateur.force_authenticate(User.objects.create_superuser(username="op_stockage", password="x", email="op@expertise-id.com", role="ADMIN"))
+    reponse = operateur.post(f"/api/v1/console/organisations/{org.pk}/stockage/", {"stockage_go": 50}, format="json")
+    assert reponse.status_code == 200 and reponse.data["stockage"]["limite_go"] == 50
+    assert reponse.data["stockage"]["utilise"] == depart + 200_000
+    assert operateur.post(f"/api/v1/console/organisations/{org.pk}/stockage/", {"stockage_go": 0}, format="json").status_code == 400
+    assert operateur.post(f"/api/v1/console/organisations/{org.pk}/stockage/", {"stockage_go": None}, format="json").data["stockage_go"] is None
+    assert admin.post(f"/api/v1/console/organisations/{org.pk}/stockage/", {"stockage_go": 500}, format="json").status_code == 403
+    with contexte.cles_de(org):
+        default_storage.delete(nom)
+
+
+def test_achat_de_stockage(deux_organisations, monkeypatch, settings):
+    """Page Stockage : l'administrateur paie 2 × 10 Go par mobile money ; payé, l'espace grandit aussitôt, une seule fois."""
+    from django.core import mail
+    from django.core.cache import cache
+
+    from . import paiement
+    from .models import PaiementAbonnement
+    from .test_paiement import CinetPaySimule
+
+    settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    settings.COURRIEL_ABONNEMENTS = "abonnements@expertise-id.com"
+    settings.CINETPAY_API_KEY, settings.CINETPAY_API_PASSWORD = "sk_test_cle", "mot-de-passe"
+    settings.ABONNEMENT_PRIX_TRANCHE, settings.ABONNEMENT_PRIX_TRANCHE_USD = 3000, 5
+    simule = CinetPaySimule()
+    monkeypatch.setattr(paiement, "_appel", simule)
+    cache.clear()
+    org_a, _ = deux_organisations
+    Organisation.objects.using("central").filter(pk=org_a.pk).update(offre="STANDARD_25", stockage_go=None)
+
+    admin = _client(org_a, _admin(org_a))
+    page = admin.get("/api/v1/stockage/").data
+    assert page["limite_go"] == 25 and page["offre_go"] == 25 and page["peut_acheter"] is True
+    assert page["tarifs"]["tranche"] == 3000 and page["achats"] == []
+    assert admin.post("/api/v1/stockage/achat/", {"tranches": 0, "mois": 1}, format="json").status_code == 400
+
+    reponse = admin.post("/api/v1/stockage/achat/", {"tranches": 2, "mois": 3}, format="json")
+    assert reponse.status_code == 200 and reponse.data["montant"] == 3 * 2 * 3000
+    envoi = simule.appels[-1][2]
+    assert envoi["success_url"].endswith(f"/stockage?paiement={reponse.data['paiement']}") and "+ 20 Go" in envoi["designation"]
+    ref = reponse.data["paiement"]
+    # Pas encore payé : rien ne change. L'autre organisation ne voit pas ce paiement.
+    assert admin.get(f"/api/v1/stockage/paiement/{ref}/").data["statut"] == "EN_ATTENTE"
+    simule.statut = "SUCCESS"
+    for _ in range(2):  # retour sur la page puis notification de CinetPay : agrandi une seule fois
+        admin.get(f"/api/v1/stockage/paiement/{ref}/")
+    APIClient().post("/api/v1/public/inscription/paiement/notification/", {"merchant_transaction_id": ref, "notify_token": "nt-secret"}, format="json")
+    assert Organisation.objects.using("central").get(pk=org_a.pk).stockage_go == 45
+    assert PaiementAbonnement.objects.using("central").get(reference=ref).statut == "PAYE"
+    assert [m.subject for m in mail.outbox] == [f"Stockage ajouté : {org_a.nom}"] and "de 25 à 45 Go" in mail.outbox[0].body
+    page = admin.get("/api/v1/stockage/").data
+    assert page["limite_go"] == 45 and len(page["achats"]) == 1
+    # Le lien public d'un paiement d'abonnement ne donne rien sur un achat de stockage.
+    assert APIClient().get(f"/api/v1/public/inscription/paiement/{ref}/").status_code == 400
+
+    # Carte bancaire : demande transmise à Expertise-ID, montant en dollars ; espace inchangé.
+    assert admin.post("/api/v1/stockage/achat/", {"tranches": 1, "mois": 12, "moyen": "carte"}, format="json").data == {"carte": True}
+    assert mail.outbox[-1].subject == f"Stockage par carte demandé : {org_a.nom}" and "60 $ HT" in mail.outbox[-1].body
+    assert Organisation.objects.using("central").get(pk=org_a.pk).stockage_go == 45
+    Organisation.objects.using("central").filter(pk=org_a.pk).update(stockage_go=None)
+
+
+def test_alertes_de_stockage(deux_organisations, monkeypatch, settings):
+    """À 90 % puis à 100 % : les administrateurs sont prévenus une fois par seuil (cloche, courriel), Expertise-ID quand c'est plein."""
+    from django.core import mail
+
+    from apps.notifications.models import Notification
+
+    from . import quota
+
+    settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    settings.COURRIEL_ABONNEMENTS = "abonnements@expertise-id.com"
+    org_a, _ = deux_organisations
+    Organisation.objects.using("central").filter(pk=org_a.pk).update(offre="STANDARD_25", stockage_go=None, stockage_alerte=0)
+    occupe = {"octets": 10 * quota.GO}
+    monkeypatch.setattr(quota, "utilise", lambda org: occupe["octets"])
+
+    def notifications():
+        with contexte.dans_organisation(org_a):
+            return list(Notification.objects.filter(type="STOCKAGE").values_list("titre", "lien"))
+
+    with contexte.dans_organisation(org_a):
+        quota.alerter()
+    assert notifications() == []
+    occupe["octets"] = int(23 * quota.GO)  # 92 %
+    for _ in range(2):  # une seule fois par seuil
+        with contexte.dans_organisation(org_a):
+            quota.alerter()
+    assert notifications() == [("Espace de stockage presque plein", "/stockage")]
+    assert mail.outbox[-1].to == ["admin@essai-iso-a.org"] and "23,0 Go sur 25 Go (90 %)" in mail.outbox[-1].body
+
+    # Un fichier refusé : « plein », administrateurs et Expertise-ID prévenus.
+    with contexte.dans_organisation(org_a):
+        with pytest.raises(Exception):
+            quota.verifier(3 * quota.GO)
+    assert notifications()[0] == ("Espace de stockage plein", "/stockage")
+    assert any(m.subject == f"Espace de stockage plein : {org_a.nom}" for m in mail.outbox)
+
+    # Espace agrandi (achat ou console) : de nouveau sous les seuils, alertes à nouveau possibles.
+    Organisation.objects.using("central").filter(pk=org_a.pk).update(stockage_go=50, stockage_alerte=0)
+    with contexte.dans_organisation(org_a):
+        quota.alerter()
+        Notification.objects.filter(type="STOCKAGE").delete()
+    assert Organisation.objects.using("central").get(pk=org_a.pk).stockage_alerte == 0
+    Organisation.objects.using("central").filter(pk=org_a.pk).update(stockage_go=None)
+
+
+def test_alerte_disque_commun(monkeypatch, settings):
+    """Disque commun (Volume) : courriel à Expertise-ID près du plafond ou rempli à 90 %, une fois par jour."""
+    import shutil
+    from collections import namedtuple
+
+    from django.core import mail
+    from django.core.cache import cache
+
+    from . import quota
+
+    settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    settings.COURRIEL_ABONNEMENTS = "abonnements@expertise-id.com"
+    Usage = namedtuple("Usage", "total used free")
+    disque = {"usage": Usage(60 * quota.GO, 6 * quota.GO, 54 * quota.GO)}
+    monkeypatch.setattr(shutil, "disk_usage", lambda chemin: disque["usage"])
+    with contexte.cles_de(None):
+        cache.delete("alerte-disque")
+    envoyes = len(mail.outbox)
+
+    settings.VOLUME_PLAFOND_GO = 0  # sans plafond déclaré : pas de surveillance
+    disque["usage"] = Usage(60 * quota.GO, 58 * quota.GO, 2 * quota.GO)
+    quota.alerter_disque()
+    settings.VOLUME_PLAFOND_GO = 1000
+    disque["usage"] = Usage(60 * quota.GO, 6 * quota.GO, 54 * quota.GO)
+    quota.alerter_disque()
+    assert len(mail.outbox) == envoyes
+
+    disque["usage"] = Usage(60 * quota.GO, 58 * quota.GO, 2 * quota.GO)  # 97 % : l'agrandissement n'a pas suivi
+    quota.alerter_disque()
+    quota.alerter_disque()  # une seule fois par jour
+    assert [m.subject for m in mail.outbox[envoyes:]] == ["Disque des données rempli à 97 %"]
+    assert mail.outbox[-1].to == ["abonnements@expertise-id.com"]
+
+    with contexte.cles_de(None):
+        cache.delete("alerte-disque")
+    disque["usage"] = Usage(950 * quota.GO, 500 * quota.GO, 450 * quota.GO)
+    quota.alerter_disque()
+    assert mail.outbox[-1].subject == "Disque des données proche du plafond (950 Go sur 1000 Go)"
+    with contexte.cles_de(None):
+        cache.delete("alerte-disque")

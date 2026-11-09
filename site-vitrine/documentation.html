@@ -5,20 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Documentation — Expertise-ID Monitora</title>
   <meta name="description" content="Guide complet de la plateforme Expertise-ID Monitora : démarrer, projets, indicateurs, suivi, bénéficiaires, documents, plaintes, utilisateurs.">
-  <link rel="icon" href="vitrine/logo-plateforme.svg">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="vitrine/site.css">
-  <script src="vitrine/config.js"></script>
+  <link rel="icon" type="image/svg+xml" href="vitrine/logo-plateforme.svg?v=20261106d">
+  <link rel="stylesheet" href="vitrine/polices.css?v=20261106d">
+  <link rel="stylesheet" href="vitrine/site.css?v=20261106d">
+  <script src="vitrine/config.js?v=20261106d"></script>
 </head>
 <body>
 
 <header class="entete">
   <div class="conteneur">
     <a class="marque" href="index.html">
-      <img src="vitrine/logo-plateforme.svg" alt="">
-      <span><strong>Expertise-ID Monitora</strong><span>Documentation</span></span>
+      <img class="logo-langue" src="vitrine/logos/logo-fr.svg?v=20261106d" data-logo="logo" alt="Expertise-ID Monitora">
     </a>
     <nav class="menu" aria-label="Navigation principale">
       <a href="index.html#fonctionnalites">Fonctionnalités</a>
@@ -26,6 +23,7 @@
       <a href="partenaires.html">Partenaires</a>
       <a href="index.html#video">Vidéo</a>
       <a href="index.html#offres">Offres</a>
+      <a href="contact.html">Contact</a>
       <a href="#" data-lien="CONNEXION">Se connecter</a>
       <a class="bouton bouton-plein" href="inscription.html">Créer mon espace</a>
     </nav>
@@ -39,7 +37,7 @@
   <div class="conteneur">
     <div class="etiquette">Guide d'utilisation</div>
     <h1>Documentation de la plateforme</h1>
-    <p class="intro">Tout ce qu'il faut savoir pour utiliser la plateforme, écran par écran. Les captures viennent de l'espace de démonstration : <a href="#" data-lien="DEMO" style="color:var(--safran)">ouvrez-le</a> pour essayer en même temps.</p>
+    <p class="intro">Tout ce qu'il faut savoir pour utiliser la plateforme, écran par écran.</p>
   </div>
 </div>
 
@@ -63,7 +61,7 @@
     <a href="#indicateurs">Indicateurs</a>
     <a href="#suivi">Suivi et approbations</a>
     <a href="#beneficiaires">Bénéficiaires</a>
-    <a href="#carte">Carte</a>
+    <a href="#carte">Cartographie</a>
     <p>Gérer</p>
     <a href="#documents">Documents et corbeille</a>
     <a href="#plaintes">Plaintes et retours</a>
@@ -85,7 +83,7 @@
       <ol>
         <li>Ouvrez la page <a href="inscription.html">Créer mon espace</a>.</li>
         <li>Renseignez l'organisation, la personne de contact, son <b>adresse courriel</b> et un <b>mot de passe</b> : ce seront les accès de l'administrateur.</li>
-        <li>Choisissez votre <b>offre</b> (Essentiel, Standard ou Institution).</li>
+        <li>Choisissez votre <b>offre</b> (Standard 25 Go, Standard 50 Go, Standard ou Partenariat).</li>
         <li>Expertise-ID active l'espace : sa base et votre compte administrateur sont créés, et vous êtes prévenu par courriel.</li>
       </ol>
       <div class="astuce"><b>Bon à savoir :</b> tant que l'espace n'est pas activé, l'adresse courriel choisie ne donne accès à rien ; la page de connexion vous indique où en est la demande.</div>
@@ -105,7 +103,7 @@
     <section id="ecran">
       <h2>Se repérer dans l'écran</h2>
       <ul>
-        <li><b>À gauche, le menu</b> : les modules (tableau de bord, projets, indicateurs, suivi, bénéficiaires, carte, documents, plaintes…). La <b>Corbeille</b> est en bas des modules ; les pages d'administration suivent pour l'administrateur.</li>
+        <li><b>À gauche, le menu</b> : les modules (tableau de bord, projets, indicateurs, suivi, bénéficiaires, cartographie, documents, plaintes…). La <b>Corbeille</b> est en bas des modules ; les pages d'administration suivent pour l'administrateur.</li>
         <li><b>En haut</b> : le logo de votre organisation, la langue, les notifications et votre compte.</li>
         <li><b>« ← Retour »</b> en haut de chaque page ramène à la page précédente.</li>
         <li>Le bouton <span class="chip">Éditer</span> des listes fait apparaître les actions de modification et de suppression.</li>
@@ -208,8 +206,8 @@
     </section>
 
     <section id="carte">
-      <h2>La carte</h2>
-      <p>Menu <b>Carte</b> : bénéficiaires et projets placés sur les zones administratives (régions, provinces, communes). Les cercles montrent où se trouvent les bénéficiaires ; un clic affiche le détail.</p>
+      <h2>La cartographie</h2>
+      <p>Menu <b>Cartographie</b> : bénéficiaires et projets placés sur les zones administratives (régions, provinces, communes). Les cercles montrent où se trouvent les bénéficiaires ; un clic affiche le détail.</p>
       <ol>
         <li><b>Filtrer</b> : période (toutes, une année, une plage de dates), statut des projets, un projet ou une zone précise. Les compteurs au-dessus de la carte (bénéficiaires, positionnés par GPS, placés selon leur localité, sans localisation) suivent les filtres.</li>
         <li><b>Couches</b> : bénéficiaires, régions, provinces, routes, villes et villages, noms… à afficher ou masquer. <span class="chip">Importer une couche</span> ajoute vos propres données (Shapefile en archive .zip, GeoPackage, GeoJSON ou KML).</li>
@@ -313,7 +311,7 @@
 
     <section id="faq">
       <h2>Questions fréquentes</h2>
-      <div class="faq" style="max-width:none">
+      <div class="faq u-sans-max">
         <details><summary>Je ne reçois pas le code de connexion</summary><p>Vérifiez les courriers indésirables, puis « Renvoyer le code » (une minute d'attente entre deux envois). Si votre compte n'a pas d'adresse courriel valide, demandez à votre administrateur de la renseigner dans Utilisateurs.</p></details>
         <details><summary>J'ai supprimé un document par erreur</summary><p>Ouvrez la Corbeille (en bas du menu) et cliquez sur « Restaurer » : il revient à sa place. Passé 30 jours, il est effacé définitivement.</p></details>
         <details><summary>Un collègue ne voit pas un projet</summary><p>Son rôle ne lui donne peut-être accès qu'aux projets auxquels il est affecté : ajoutez-le à l'équipe du projet, ou changez son rôle dans Utilisateurs.</p></details>
@@ -322,9 +320,9 @@
       </div>
     </section>
 
-    <div class="appel" style="margin-top:20px">
+    <div class="appel u-mt-20">
       <h2>Prêt à commencer ?</h2>
-      <div class="actions"><a class="bouton bouton-plein" href="inscription.html">Créer mon espace</a><a class="bouton bouton-contour" href="#" data-lien="DEMO">Essayer la démo</a></div>
+      <div class="actions"><a class="bouton bouton-plein" href="inscription.html">Créer mon espace</a></div>
     </div>
   </article>
 </div>
@@ -334,16 +332,16 @@
 <footer class="pied">
   <div class="conteneur">
     <div>
-      <a class="marque" href="index.html"><img src="vitrine/logo-plateforme.svg" alt=""><span><strong>Expertise-ID Monitora</strong></span></a>
+      <a class="marque logo-pied" href="index.html"><img src="vitrine/logos/logo-complet-fr.svg?v=20261106d" data-logo="logo-complet" alt="Expertise-ID Monitora"></a>
       <a class="signature" href="https://www.expertise-id.com" target="_blank" rel="noopener"><img src="vitrine/logo-expertise-id.png" alt="Expertise-ID"><span>Développé par <b>Expertise-ID</b></span></a>
     </div>
-    <div><h4>La plateforme</h4><a href="index.html#fonctionnalites">Fonctionnalités</a><a href="index.html#video">Vidéo</a><a href="#" data-lien="DEMO">Démonstration</a></div>
-    <div><h4>Commencer</h4><a href="inscription.html">Créer mon espace</a><a href="#" data-lien="CONNEXION">Se connecter</a></div>
+    <div><h4>La plateforme</h4><a href="index.html#fonctionnalites">Fonctionnalités</a><a href="index.html#video">Vidéo</a></div>
+    <div><h4>Commencer</h4><a href="inscription.html">Créer mon espace</a><a href="contact.html">Contact</a><a href="#" data-lien="CONNEXION">Se connecter</a></div>
     <div class="bas"><span>© 2026 Expertise-ID</span></div>
   </div>
 </footer>
-<script src="vitrine/traductions.js"></script>
-<script src="vitrine/langues.js"></script>
-<script src="vitrine/site.js"></script>
+<script src="vitrine/traductions.js?v=20261106d"></script>
+<script src="vitrine/langues.js?v=20261106d"></script>
+<script src="vitrine/site.js?v=20261106d"></script>
 </body>
 </html>

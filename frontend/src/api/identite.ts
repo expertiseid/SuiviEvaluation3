@@ -65,16 +65,29 @@ export interface DemandeAbonnement {
   reference: string;
   organisation: string;
   statut: "ABONNEMENT_REQUIS" | "OFFRE_CHOISIE" | "EN_ACTIVATION" | "ACTIVEE" | "REFUSEE";
-  offre: "" | "ESSENTIEL" | "STANDARD" | "INSTITUTION";
+  offre: "" | "STANDARD_25" | "STANDARD_50" | "STANDARD" | "STOCKAGE_PLUS" | "PARTENARIAT";
   contact: string;
   /** Organisation activée (plateforme multi-organisations) : page de connexion. */
   espace: string;
+  /** Paiement en ligne (CinetPay) : prix d'un mois de l'offre Standard et d'une tranche de 10 Go. */
+  tarifs?: { paiement: boolean; devise: string; mois: number; tranche: number; durees: number[]; tranches_max: number;
+    /** Prix affichés et payés par carte bancaire (finalisée avec Expertise-ID). */
+    usd?: { mois: number; tranche: number };
+    /** Prix d'un mois de chaque offre payante (FCFA et dollars). */
+    offres?: Record<string, { mois: number; usd: number }>;
+    /** Formation gratuite à partir de ce nombre de mois de licence, par offre. */
+    formation?: Record<string, number> };
 }
 
 export const creerProfil = async (profil: ProfilOrganisation & { site_web: string }) =>
   (await apiClient.post<DemandeAbonnement>("/public/inscription/", profil)).data;
-export const choisirOffre = async (reference: string, offre: string, message: string) =>
-  (await apiClient.post<DemandeAbonnement>("/public/inscription/offre/", { reference, offre, message })).data;
+export const choisirOffre = async (reference: string, offre: string, message: string,
+  carte?: { mois: number; tranches: number }) =>
+  (await apiClient.post<DemandeAbonnement>("/public/inscription/offre/",
+    { reference, offre, message, ...(carte ? { moyen: "carte", ...carte } : {}) })).data;
+/** Offre payée en ligne : renvoie le lien vers la page de paiement de CinetPay (l'espace est créé une fois payé). */
+export const payerOffre = async (demande: { reference: string; offre: string; mois: number; tranches: number; message: string; langue: string }) =>
+  (await apiClient.post<{ lien: string; paiement: string; montant: number; devise: string }>("/public/inscription/paiement/", demande)).data;
 
 export const connexionDemo = async () => (await apiClient.post<JetonsConnexion>("/public/demo/")).data;
 

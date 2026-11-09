@@ -1,20 +1,34 @@
-import { Anchor, Group, Image, Stack, Text } from "@mantine/core";
+import { Anchor, Box, Group, Image, Stack, Text } from "@mantine/core";
 import { useIdentiteOrganisation } from "../../api/identite";
+import { langue } from "../../utils/i18n";
 import { voc } from "../../utils/vocabulaire";
 
-/** Logo de la plateforme (marque) avec, au besoin, son nom. */
+/** Logo de la plateforme : symbole, nom et devise dans la langue de l'interface (public/logos/logo-<langue>.svg).
+ * Sur fond foncé (`clair`), le symbole seul sur une pastille blanche, et le nom en blanc. */
 export function LogoPlateforme({ taille = 36, avecNom = true, clair = false }: { taille?: number; avecNom?: boolean; clair?: boolean }) {
+  if (avecNom && !clair) return <Image src={`/logos/logo-${langue()}.svg?v=20261105c`} h={Math.round(taille * 1.5)} w="auto" fit="contain" alt="Expertise-ID Monitora" />;
   return (
     <Group gap={10} wrap="nowrap">
-      <Image src="/logo-plateforme.svg" w={taille} h={taille} alt="Expertise-ID Monitora" />
+      <SymbolePlateforme taille={taille} pastille={clair} />
       {avecNom && (
         <Stack gap={0}>
-          <Text fw={800} size={taille > 40 ? "xl" : "md"} lh={1.1} c={clair ? "white" : undefined}>Expertise-ID Monitora</Text>
-          <Text size="xs" lh={1.2} c={clair ? "teal.1" : "dimmed"}>{voc("Plateforme de suivi et d'évaluation de projets")}</Text>
+          <Text fw={800} size={taille > 40 ? "xl" : "md"} lh={1.1} c="white">Expertise-ID Monitora</Text>
+          <Text size="xs" lh={1.2} c="teal.1">{voc("Plateforme de monitoring")}</Text>
         </Stack>
       )}
     </Group>
   );
+}
+
+/** Le symbole seul ; `pastille` le pose sur un rond blanc pour les fonds foncés. */
+export function SymbolePlateforme({ taille = 36, pastille = false }: { taille?: number; pastille?: boolean }) {
+  const image = <Image src="/logo-plateforme.svg?v=20261105c" w={taille} h={taille} alt="Expertise-ID Monitora" />;
+  return pastille ? <Box bg="white" p={2} style={{ borderRadius: "50%", display: "flex", flexShrink: 0 }}>{image}</Box> : image;
+}
+
+/** Logo complet (avec la phrase d'accroche), dans la langue de l'interface. */
+export function LogoComplet({ largeur = 320 }: { largeur?: number }) {
+  return <Image src={`/logos/logo-complet-${langue()}.svg?v=20261105c`} w={largeur} maw="100%" h="auto" alt="Expertise-ID Monitora" />;
 }
 
 /** Logo de l'organisation cliente, s'il a été ajouté dans les paramètres. */

@@ -1,0 +1,52 @@
+{
+ "fr": {
+  "tableau_de_bord": 5,
+  "strategie": 16,
+  "projets": 22,
+  "planification": 28,
+  "cadre_logique": 34,
+  "indicateurs": 40,
+  "carte": 47,
+  "plaintes": 63
+ },
+ "en": {
+  "tableau_de_bord": 5,
+  "strategie": 16,
+  "projets": 22,
+  "planification": 28,
+  "cadre_logique": 34,
+  "indicateurs": 40,
+  "carte": 47,
+  "plaintes": 63
+ },
+ "ar": {
+  "tableau_de_bord": 5,
+  "strategie": 16,
+  "projets": 22,
+  "planification": 28,
+  "cadre_logique": 34,
+  "indicateurs": 40,
+  "carte": 47,
+  "plaintes": 63
+ },
+ "es": {
+  "tableau_de_bord": 5,
+  "strategie": 16,
+  "projets": 22,
+  "planification": 28,
+  "cadre_logique": 34,
+  "indicateurs": 40,
+  "carte": 47,
+  "plaintes": 63
+ },
+ "de": {
+  "tableau_de_bord": 5,
+  "strategie": 16,
+  "projets": 22,
+  "planification": 28,
+  "cadre_logique": 34,
+  "indicateurs": 40,
+  "carte": 47,
+  "plaintes": 63
+ }
+}

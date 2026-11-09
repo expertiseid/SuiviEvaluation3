@@ -21,7 +21,8 @@ from rest_framework.throttling import AnonRateThrottle
 IDENTIFIANT = "visiteur_demo"
 MARQUE = "demo"
 # Écritures de pure lecture (exports, aperçus, renouvellement du jeton) : permises au visiteur.
-LECTURES = re.compile(r"/(auth/token/refresh|export[a-z-]*|exporter[a-z-]*|apercu[a-z-]*|telecharger[a-z-]*|lien)/?($|\?)")
+# Connexion (auth/token, code) : jamais bloquée par un jeton de démo resté dans le navigateur.
+LECTURES = re.compile(r"/(auth/token|auth/token/refresh|auth/double-authentification/[a-z]+|export[a-z-]*|exporter[a-z-]*|apercu[a-z-]*|telecharger[a-z-]*|lien)/?($|\?)")
 
 
 def actif() -> bool:
@@ -58,8 +59,12 @@ def connexion_demo(request):
     """Jetons du visiteur de démonstration (installation de démonstration seulement)."""
     from .double_auth import jetons
 
+    from django.conf import settings
+
     from apps.organisations import contexte
 
+    if not getattr(settings, "DEMO_OUVERTE", False):
+        raise PermissionDenied("La démonstration n'est pas disponible.")
     if contexte.actif() and contexte.courante() is None:
         # Adresse unique : la démonstration est l'espace marqué « démonstration » du registre.
         org = espace_demo()

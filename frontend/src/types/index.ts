@@ -931,7 +931,9 @@ export type TypeNotification =
   | "RAPPORT_VALIDE"
   | "DOUBLON_SIGNALE"
   | "ECHEANCE_ACTIVITE"
-  | "ACTIVITE_MODIFIEE";
+  | "ACTIVITE_MODIFIEE"
+  | "PLAINTE"
+  | "STOCKAGE";
 
 export interface AppNotification {
   id: number;

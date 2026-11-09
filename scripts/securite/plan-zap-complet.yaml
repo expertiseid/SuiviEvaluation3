@@ -1,0 +1,102 @@
+# Analyse de sécurité ZAP COMPLÈTE (connectée + attaques actives), sur un espace d'essai jetable.
+# Lancé par scripts/securite/analyse_zap_complete.sh, qui remplace JETON_ESSAI par un jeton de connexion
+# du compte d'essai et coupe l'envoi des courriels pendant l'analyse.
+env:
+  contexts:
+    - name: monitora
+      urls:
+        - http://zap.localhost:5192/
+        - http://zap.localhost:5193/
+        - http://zap.localhost:8093/api/v1/identite/
+      includePaths:
+        - "http://zap.localhost:5192.*"
+        - "http://zap.localhost:5193.*"
+        - "http://zap.localhost:8093.*"
+      excludePaths:
+        # Serveur de développement (absent en production).
+        - ".*/src/.*"
+        - ".*/node_modules/.*"
+        - ".*/@vite/.*"
+        - ".*/@react-refresh.*"
+        - ".*/@fs/.*"
+        - ".*/@id/.*"
+        - ".*\\.(png|jpe?g|webp|svg|gif|woff2?|ttf|webm|mp4|ico)(\\?.*)?$"
+        # Hors de l'espace d'essai : plateforme commune (inscription, connexion, console, démo).
+        - "http://zap.localhost:8093/api/v1/auth/.*"
+        - "http://zap.localhost:8093/api/v1/public/inscription.*"
+        - "http://zap.localhost:8093/api/v1/public/demo.*"
+        - "http://zap.localhost:8093/api/v1/console/.*"
+        - "http://zap.localhost:8093/admin.*"
+        # Comptes : le compte d'essai ne doit pas se supprimer lui-même pendant l'analyse.
+        - "http://zap.localhost:8093/api/v1/utilisateurs/\\d+/.*"
+        - "http://zap.localhost:8093/api/v1/utilisateurs/me/.*"
+  parameters:
+    failOnError: false
+    failOnWarning: false
+    progressToStdout: true
+jobs:
+  - type: replacer
+    parameters:
+      deleteAllRules: true
+    rules:
+      - description: "Connexion du compte d'essai"
+        url: "http://zap.localhost:8093/.*"
+        matchType: req_header
+        matchString: Authorization
+        matchRegex: false
+        replacementString: "Bearer JETON_ESSAI"
+  # Fausses alertes vérifiées, limitées aux réponses de données de l'API :
+  # - 10096 : les montants de budget (ex. 1681000000) ressemblent à des dates Unix ;
+  # - 40014 : le texte saisi par ZAP est rendu tel quel dans le JSON, que le navigateur n'exécute jamais
+  #   (Content-Type JSON, nosniff, CSP « default-src 'none' ») et que l'interface affiche comme du texte.
+  - type: alertFilter
+    alertFilters:
+      - ruleId: 10096
+        newRisk: False Positive
+        url: "http://zap.localhost:8093/api/v1/.*"
+        urlRegex: true
+      - ruleId: 40014
+        newRisk: False Positive
+        url: "http://zap.localhost:8093/api/v1/.*"
+        urlRegex: true
+  - type: openapi
+    parameters:
+      apiUrl: http://zap.localhost:8093/api/schema/
+      targetUrl: http://zap.localhost:8093
+      context: monitora
+  - type: spider
+    parameters:
+      context: monitora
+      maxDuration: 4
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 20
+  - type: activeScan
+    parameters:
+      context: monitora
+      maxRuleDurationInMins: 3
+      maxScanDurationInMins: 120
+      threadPerHost: 4
+    policyDefinition:
+      defaultStrength: medium
+      defaultThreshold: medium
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 20
+  - type: report
+    parameters:
+      template: traditional-pdf
+      reportDir: /zap/wrk
+      reportFile: rapport-zap-complet
+      reportTitle: "Analyse de sécurité ZAP complète (connectée, attaques actives) — Expertise-ID Monitora"
+  - type: report
+    parameters:
+      template: traditional-html
+      reportDir: /zap/wrk
+      reportFile: rapport-zap-complet
+      reportTitle: "Analyse de sécurité ZAP complète (connectée, attaques actives) — Expertise-ID Monitora"
+  - type: report
+    parameters:
+      template: traditional-json
+      reportDir: /zap/wrk
+      reportFile: rapport-zap-complet

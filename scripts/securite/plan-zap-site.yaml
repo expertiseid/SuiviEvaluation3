@@ -1,0 +1,46 @@
+# Analyse de sécurité ZAP (passive) du site vitrine seul (port 5193). Lancement :
+#   PLAN=plan-zap-site.yaml MEMOIRE=2g scripts/securite/analyse_zap.sh
+# Légère (pas de navigateur robot) : peut tourner pendant l'analyse complète de la plateforme.
+env:
+  contexts:
+    - name: site
+      urls:
+        - http://zap.localhost:5193/
+        - http://zap.localhost:5193/contact.html
+        - http://zap.localhost:5193/inscription.html
+        - http://zap.localhost:5193/documentation.html
+        - http://zap.localhost:5193/actualites.html
+        - http://zap.localhost:5193/partenaires.html
+      includePaths:
+        - "http://zap.localhost:5193.*"
+      excludePaths:
+        - ".*\\.(png|jpe?g|webp|svg|gif|woff2?|ttf|webm|mp4|ico)(\\?.*)?$"
+  parameters:
+    failOnError: false
+    failOnWarning: false
+    progressToStdout: true
+jobs:
+  - type: spider
+    parameters:
+      context: site
+      maxDuration: 3
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 10
+  - type: report
+    parameters:
+      template: traditional-pdf
+      reportDir: /zap/wrk
+      reportFile: rapport-zap-site
+      reportTitle: "Analyse de sécurité ZAP — site vitrine Expertise-ID Monitora (local)"
+  - type: report
+    parameters:
+      template: traditional-html
+      reportDir: /zap/wrk
+      reportFile: rapport-zap-site
+      reportTitle: "Analyse de sécurité ZAP — site vitrine Expertise-ID Monitora (local)"
+  - type: report
+    parameters:
+      template: traditional-json
+      reportDir: /zap/wrk
+      reportFile: rapport-zap-site

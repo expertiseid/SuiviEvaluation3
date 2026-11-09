@@ -81,7 +81,7 @@ function moduleDe(lieu: string) {
 const libellesModules = (): Record<string, string> => ({
   approbations: voc("Approbations"),
   beneficiaires: voc("Bénéficiaires"),
-  carte: voc("Carte"),
+  carte: voc("Cartographie"),
   commun: voc("Éléments communs"),
   connexion: voc("Connexion"),
   dashboard: voc("Tableau de bord"),

@@ -1,0 +1,11 @@
+# Ajout à docker-compose.prod.yml quand le HTTPS public est géré par un autre serveur (relais.conf.template).
+# Utilisé par deployer.sh dès que RELAIS_IP est rempli dans .env.prod.
+services:
+  web:
+    environment:
+      RELAIS_IP: ${RELAIS_IP:?RELAIS_IP manquant dans .env.prod}
+    volumes:
+      - ./relais.conf.template:/etc/nginx/templates/relais.conf.template:ro
+      - ./relais:/etc/nginx/relais:ro
+    ports:
+      - "${PORT_RELAIS:-8443}:8443"

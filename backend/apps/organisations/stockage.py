@@ -4,7 +4,7 @@ import os
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 
-from . import contexte
+from . import contexte, quota
 
 
 def racine_fichiers(base: str) -> str:
@@ -23,3 +23,11 @@ class StockageOrganisation(FileSystemStorage):
     @property
     def location(self):
         return os.path.abspath(self.base_location)
+
+    def _save(self, name, content):
+        # Espace de stockage de l'organisation (quota.py) : refus avant d'écrire s'il serait dépassé.
+        taille = getattr(content, "size", 0) or 0
+        quota.verifier(taille)
+        nom = super()._save(name, content)
+        quota.ajouter(taille)
+        return nom

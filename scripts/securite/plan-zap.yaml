@@ -1,0 +1,64 @@
+# Analyse de sécurité ZAP (passive) de la plateforme locale : plateforme (5192), site vitrine (5193), API (8093).
+# Lancé par scripts/securite/analyse_zap.sh. « zap.localhost » désigne le Mac depuis le conteneur de ZAP.
+# Passive : ZAP parcourt et examine les réponses, sans attaque (pas de faux formulaires ni de courriels envoyés).
+env:
+  contexts:
+    - name: monitora
+      urls:
+        - http://zap.localhost:5192/
+        - http://zap.localhost:5193/
+        - http://zap.localhost:8093/api/v1/identite/
+      includePaths:
+        - "http://zap.localhost:5192.*"
+        - "http://zap.localhost:5193.*"
+        - "http://zap.localhost:8093.*"
+      # Fichiers internes du serveur de développement (code source, bibliothèques) : absents en production.
+      excludePaths:
+        - ".*/src/.*"
+        - ".*/node_modules/.*"
+        - ".*/@vite/.*"
+        - ".*/@react-refresh.*"
+        - ".*/@fs/.*"
+        - ".*/@id/.*"
+        - ".*\\.(png|jpe?g|webp|svg|gif|woff2?|ttf|webm|mp4|ico)(\\?.*)?$"
+  parameters:
+    failOnError: false
+    failOnWarning: false
+    progressToStdout: true
+jobs:
+  - type: openapi
+    parameters:
+      apiUrl: http://zap.localhost:8093/api/schema/
+      targetUrl: http://zap.localhost:8093
+      context: monitora
+  - type: spider
+    parameters:
+      context: monitora
+      maxDuration: 4
+  - type: spiderAjax
+    parameters:
+      context: monitora
+      maxDuration: 4
+      maxCrawlDepth: 4
+      numberOfBrowsers: 2
+      browserId: firefox-headless
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 20
+  - type: report
+    parameters:
+      template: traditional-pdf
+      reportDir: /zap/wrk
+      reportFile: rapport-zap
+      reportTitle: "Analyse de sécurité ZAP — Expertise-ID Monitora (local)"
+  - type: report
+    parameters:
+      template: traditional-html
+      reportDir: /zap/wrk
+      reportFile: rapport-zap
+      reportTitle: "Analyse de sécurité ZAP — Expertise-ID Monitora (local)"
+  - type: report
+    parameters:
+      template: traditional-json
+      reportDir: /zap/wrk
+      reportFile: rapport-zap

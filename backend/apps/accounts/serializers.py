@@ -1,6 +1,8 @@
 from django.utils.text import slugify
 from rest_framework import serializers
 
+from apps.core.vocabulaire import v
+
 from .constants import ROLE_ADMIN
 from .models import DemandeInscription, Role, User
 
@@ -144,6 +146,12 @@ class UserWriteSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         """Seul le lien correspondant au type de structure est gardé (les autres sont vidés)."""
         attrs = super().validate(attrs)
+        from apps.organisations import contexte
+
+        # Plateforme multi-organisations : l'adresse courriel sert à se connecter, elle est obligatoire.
+        courriel = attrs.get("email", getattr(self.instance, "email", ""))
+        if contexte.actif() and contexte.courante() is not None and not (courriel or "").strip():
+            raise serializers.ValidationError({"email": v("L'adresse courriel est obligatoire : elle sert à se connecter.")})
         type_structure = attrs.get("type_structure", getattr(self.instance, "type_structure", ""))
         garde = {
             "INTERNE": "structure_interne",

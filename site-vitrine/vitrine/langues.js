@@ -72,6 +72,10 @@
     });
     document.documentElement.lang = code;
     document.documentElement.dir = code === "ar" ? "rtl" : "ltr";
+    // Logos traduits : vitrine/logos/<logo>-<langue>.svg
+    document.querySelectorAll("img[data-logo]").forEach(function (img) {
+      img.src = "vitrine/logos/" + img.getAttribute("data-logo") + "-" + code + ".svg?v=20261105k";
+    });
     var choix = document.getElementById("choix-langue");
     if (choix) choix.value = code;
     document.dispatchEvent(new CustomEvent("langue-site", { detail: code }));

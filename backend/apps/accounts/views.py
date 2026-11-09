@@ -139,11 +139,65 @@ def inscription(request):
 
 @_public
 def inscription_offre(request):
-    """{reference, offre, message} : offre d'abonnement choisie, transmise à Expertise-ID."""
+    """{reference, offre, message, moyen?, mois?, tranches?} : offre transmise à Expertise-ID (Partenariat, ou carte bancaire)."""
     from . import inscriptions
 
     demande = inscriptions.demande_du_jeton(request.data.get("reference"))
-    return Response(inscriptions.resume(inscriptions.choisir_offre(demande, request.data.get("offre"), request.data.get("message") or "")))
+    return Response(inscriptions.resume(inscriptions.choisir_offre(
+        demande, request.data.get("offre"), request.data.get("message") or "", request.data.get("moyen") or "",
+        request.data.get("mois") or 1, request.data.get("tranches") or 0)))
+
+
+# --- Paiement en ligne de l'abonnement (apps.organisations.paiement) -------------------------------
+
+class LimiteEtatPaiement(AnonRateThrottle):
+    scope = "etat_paiement"  # compté à part : ne doit pas épuiser la limite des inscriptions
+    rate = "300/hour"  # la page de retour redemande le statut toutes les quelques secondes
+
+
+@_public
+def inscription_paiement(request):
+    """{reference, offre, mois, tranches, message, langue} : renvoie le lien vers la page de paiement de CinetPay."""
+    from apps.organisations import paiement
+
+    from . import inscriptions
+
+    demande = inscriptions.demande_du_jeton(request.data.get("reference"))
+    suite = paiement.creer(demande, request.data.get("offre"), request.data.get("mois") or 1, request.data.get("tranches") or 0,
+                           request.data.get("message") or "", request.data.get("langue") or "fr")
+    return Response({"lien": suite.lien, "paiement": suite.reference, "montant": suite.montant, "devise": suite.devise})
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def inscription_tarifs(request):
+    """Prix des offres payées en ligne, affichés par le site (page d'accueil et inscription)."""
+    from apps.organisations import paiement
+
+    return Response(paiement.tarifs())
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+@throttle_classes([LimiteEtatPaiement])
+def inscription_paiement_etat(request, reference):
+    """Retour sur le site après le paiement : payé, en attente ou échoué."""
+    from apps.organisations import paiement
+
+    return Response(paiement.etat(reference))
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def inscription_paiement_notification(request):
+    """Notification de CinetPay (notify_token vérifié, statut redemandé à CinetPay). Répond toujours 200."""
+    from apps.organisations import paiement
+
+    paiement.notifier(request.data)
+    return Response({"recu": True})
 
 
 class DemandeInscriptionViewSet(viewsets.ReadOnlyModelViewSet):

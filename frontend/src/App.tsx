@@ -29,6 +29,7 @@ import { PlanificationImportPage } from "./pages/planification/PlanificationImpo
 import { DocumentsGlobauxPage } from "./pages/documents/DocumentsGlobauxPage";
 import { CorbeillePage } from "./pages/documents/CorbeillePage";
 import { LanguesPage } from "./pages/langues/LanguesPage";
+import { StockagePage } from "./pages/stockage/StockagePage";
 import { JournalAuditPage } from "./pages/journal-audit/JournalAuditPage";
 import { ParametresAlertePage } from "./pages/parametres/ParametresAlertePage";
 import { PagePartagee } from "./pages/partage/PagePartagee";
@@ -120,6 +121,14 @@ export default function App() {
           element={
             <RequireAuth roles={["ADMIN"]}>
               <JournalAuditPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/stockage"
+          element={
+            <RequireAuth roles={["ADMIN"]}>
+              <StockagePage />
             </RequireAuth>
           }
         />

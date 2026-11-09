@@ -1,0 +1,72 @@
+{
+ "fr": {
+  "debut": ["Expertise-ID présente", "Expertise-ID Monitora", "Planifier vos projets, suivre vos résultats, rendre compte."],
+  "fin": ["Votre espace en quelques minutes", "Créez le compte de votre organisation", "Inscription en ligne · Activation par Expertise-ID · Démo gratuite"],
+  "legendes": {
+   "tableau_de_bord": [["Tableau de bord", "Vos chiffres clés, à jour à chaque saisie"]],
+   "strategie": [["Stratégie et programmes", "Stratégie → Programme → Projet : chaque projet remonte jusqu'aux objectifs"]],
+   "projets": [["Projets", "Tous vos projets : statut, période, budget, responsable"]],
+   "planification": [["Planification", "Une planification libre : vos niveaux, vos activités, votre budget"]],
+   "cadre_logique": [["Cadre logique", "Le cadre logique se construit tout seul, avec les valeurs réelles"]],
+   "indicateurs": [["Indicateurs", "Chaque indicateur suivi, avec son taux de réalisation"]],
+   "carte": [["Carte", "Bénéficiaires et projets sur la carte"], ["Carte", "Filtres, couches, fond satellite : la carte se télécharge pour vos rapports"]],
+   "plaintes": [["Plaintes et retours", "Les retours des communautés, suivis jusqu'à la réponse"]]
+  }
+ },
+ "en": {
+  "debut": ["Expertise-ID presents", "Expertise-ID Monitora", "Plan your projects, track your results, report back."],
+  "fin": ["Your space in a few minutes", "Create your organisation's account", "Online registration · Activation by Expertise-ID · Free demo"],
+  "legendes": {
+   "tableau_de_bord": [["Dashboard", "Your key figures, updated with every entry"]],
+   "strategie": [["Strategy and programmes", "Strategy → Programme → Project: every project rolls up to the objectives"]],
+   "projets": [["Projects", "All your projects: status, period, budget, manager"]],
+   "planification": [["Planning", "Free-form planning: your levels, your activities, your budget"]],
+   "cadre_logique": [["Logical framework", "The logical framework builds itself, with actual values"]],
+   "indicateurs": [["Indicators", "Every indicator tracked, with its achievement rate"]],
+   "carte": [["Map", "Beneficiaries and projects on the map"], ["Map", "Filters, layers, satellite background: download the map for your reports"]],
+   "plaintes": [["Complaints and feedback", "Community feedback, followed up until the answer"]]
+  }
+ },
+ "es": {
+  "debut": ["Expertise-ID presenta", "Expertise-ID Monitora", "Planifique sus proyectos, siga sus resultados, rinda cuentas."],
+  "fin": ["Su espacio en pocos minutos", "Cree la cuenta de su organización", "Registro en línea · Activación por Expertise-ID · Demo gratuita"],
+  "legendes": {
+   "tableau_de_bord": [["Panel", "Sus cifras clave, actualizadas con cada registro"]],
+   "strategie": [["Estrategia y programas", "Estrategia → Programa → Proyecto: cada proyecto sube hasta los objetivos"]],
+   "projets": [["Proyectos", "Todos sus proyectos: estado, período, presupuesto, responsable"]],
+   "planification": [["Planificación", "Una planificación libre: sus niveles, sus actividades, su presupuesto"]],
+   "cadre_logique": [["Marco lógico", "El marco lógico se construye solo, con los valores reales"]],
+   "indicateurs": [["Indicadores", "Cada indicador con seguimiento, con su tasa de realización"]],
+   "carte": [["Mapa", "Beneficiarios y proyectos en el mapa"], ["Mapa", "Filtros, capas, fondo satelital: el mapa se descarga para sus informes"]],
+   "plaintes": [["Quejas y retroalimentación", "La retroalimentación de las comunidades, seguida hasta la respuesta"]]
+  }
+ },
+ "de": {
+  "debut": ["Expertise-ID präsentiert", "Expertise-ID Monitora", "Projekte planen, Ergebnisse verfolgen, Rechenschaft ablegen."],
+  "fin": ["Ihr Bereich in wenigen Minuten", "Erstellen Sie das Konto Ihrer Organisation", "Online-Registrierung · Aktivierung durch Expertise-ID · Kostenlose Demo"],
+  "legendes": {
+   "tableau_de_bord": [["Dashboard", "Ihre Kennzahlen, bei jeder Eingabe aktuell"]],
+   "strategie": [["Strategie und Programme", "Strategie → Programm → Projekt: Jedes Projekt fließt bis zu den Zielen"]],
+   "projets": [["Projekte", "Alle Ihre Projekte: Status, Zeitraum, Budget, Leitung"]],
+   "planification": [["Planung", "Eine freie Planung: Ihre Ebenen, Ihre Aktivitäten, Ihr Budget"]],
+   "cadre_logique": [["Logframe", "Der Logframe entsteht von selbst, mit den tatsächlichen Werten"]],
+   "indicateurs": [["Indikatoren", "Jeder Indikator verfolgt, mit seinem Erfüllungsgrad"]],
+   "carte": [["Karte", "Begünstigte und Projekte auf der Karte"], ["Karte", "Filter, Ebenen, Satellitenhintergrund: die Karte für Ihre Berichte herunterladen"]],
+   "plaintes": [["Beschwerden und Rückmeldungen", "Rückmeldungen der Gemeinschaften, verfolgt bis zur Antwort"]]
+  }
+ },
+ "ar": {
+  "debut": ["تقدّم Expertise-ID", "Expertise-ID Monitora", "خطّطوا مشاريعكم، تابعوا نتائجكم، وقدّموا الحساب."],
+  "fin": ["فضاؤكم في دقائق", "أنشئوا حساب منظمتكم", "تسجيل عبر الإنترنت · تفعيل من قبل Expertise-ID · عرض توضيحي مجاني"],
+  "legendes": {
+   "tableau_de_bord": [["لوحة القيادة", "أرقامكم الرئيسية، محدّثة مع كل إدخال"]],
+   "strategie": [["الاستراتيجية والبرامج", "استراتيجية ← برنامج ← مشروع: كل مشروع يصعد حتى الأهداف"]],
+   "projets": [["المشاريع", "كل مشاريعكم: الحالة، الفترة، الميزانية، المسؤول"]],
+   "planification": [["التخطيط", "تخطيط حر: مستوياتكم، أنشطتكم، ميزانيتكم"]],
+   "cadre_logique": [["الإطار المنطقي", "يُبنى الإطار المنطقي تلقائياً بالقيم الفعلية"]],
+   "indicateurs": [["المؤشرات", "كل مؤشر متابَع، مع نسبة إنجازه"]],
+   "carte": [["الخريطة", "المستفيدون والمشاريع على الخريطة"], ["الخريطة", "عوامل التصفية، الطبقات، خلفية الأقمار الصناعية: تُنزَّل الخريطة لتقاريركم"]],
+   "plaintes": [["الشكاوى والملاحظات", "ملاحظات المجتمعات، متابَعة حتى الرد"]]
+  }
+ }
+}

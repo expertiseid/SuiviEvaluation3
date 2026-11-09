@@ -3,7 +3,7 @@ import { Anchor, Box, Button, Card, Container, Group, Image, List, SimpleGrid, S
 import { ArrowLeft, CircleCheck } from "lucide-react";
 import { useIdentiteOrganisation } from "../../api/identite";
 import { useAuth } from "../../auth/useAuth";
-import { LogoPlateforme } from "../../components/common/Logos";
+import { LogoComplet } from "../../components/common/Logos";
 import { voc } from "../../utils/vocabulaire";
 import { CadreVitrine } from "./CadreVitrine";
 
@@ -33,7 +33,7 @@ function Contenu() {
       </Card>
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
         <Card withBorder radius="md" padding="lg">
-          <LogoPlateforme />
+          <LogoComplet largeur={340} />
           <List mt="md" size="sm" spacing={6} icon={<CircleCheck size={16} color="var(--mantine-color-teal-6)" />}>
             <List.Item>{voc("Cadres stratégiques, cadre logique et planification à niveaux libres")}</List.Item>
             <List.Item>{voc("Indicateurs, suivi périodique, alertes et tableaux de bord")}</List.Item>

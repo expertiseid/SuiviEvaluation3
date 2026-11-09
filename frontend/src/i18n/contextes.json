@@ -15,6 +15,12 @@
   "pages/projets/PlanificationPeriodeTab.tsx",
   "pages/suivi/SuiviPeriodeTab.tsx"
  ],
+ " · {0} Go ajoutés": [
+  "pages/stockage/StockagePage.tsx"
+ ],
+ " · {0} Go en moins": [
+  "pages/stockage/StockagePage.tsx"
+ ],
  " · expire le {0}": [
   "components/partage/BoutonPartage.tsx"
  ],
@@ -240,6 +246,9 @@
  "{0} affecté(s) directement, {1} avec les services en dessous": [
   "pages/organisation/OrganisationPage.tsx"
  ],
+ "{0} ans": [
+  "pages/stockage/StockagePage.tsx"
+ ],
  "{0} associé(s), {1} en échec.": [
   "components/beneficiaires/BeneficiairesTab.tsx"
  ],
@@ -360,6 +369,19 @@
  "{0} fichier(s) joint(s)": [
   "pages/plaintes/DossierPlaintePage.tsx"
  ],
+ "{0} Go": [
+  "pages/stockage/StockagePage.tsx",
+  "utils/stockage.ts"
+ ],
+ "{0} Go de stockage pour vos données": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
+ "{0} Go inclus dans votre offre": [
+  "pages/stockage/StockagePage.tsx"
+ ],
+ "{0} HT par mois": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
  "{0} indicateur(s)": [
   "pages/indicateurs/IndicateursListPage.tsx"
  ],
@@ -399,10 +421,14 @@
   "pages/formation/FormationPage.tsx"
  ],
  "{0} Mo": [
-  "api/plaintes.ts"
+  "api/plaintes.ts",
+  "utils/stockage.ts"
  ],
  "{0} modèle(s) ajouté(s).": [
   "pages/plaintes/MessagesPlaintes.tsx"
+ ],
+ "{0} mois": [
+  "pages/stockage/StockagePage.tsx"
  ],
  "{0} n'est ni un dossier ni une archive .zip.": [
   "serveur"
@@ -456,6 +482,9 @@
  "{0} sur {1}": [
   "pages/plaintes/ElementsTableau.tsx"
  ],
+ "{0} sur {1} Go": [
+  "components/common/EspaceStockage.tsx"
+ ],
  "{0} texte(s) · {1} correction(s) pour cette langue": [
   "pages/langues/LanguesPage.tsx"
  ],
@@ -492,6 +521,12 @@
  "+ {0} de rallonges": [
   "pages/projets/BailleursMontants.tsx"
  ],
+ "+ {0} Go": [
+  "pages/stockage/StockagePage.tsx"
+ ],
+ "+ 5 $ pour chaque tranche de 10 Go ajoutée": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
  "+ Ajouter": [
   "components/common/MultiSelectOrCreate.tsx"
  ],
@@ -519,8 +554,17 @@
  "1 à 5 projets": [
   "pages/accueil/InscriptionPage.tsx"
  ],
+ "1 an": [
+  "pages/stockage/StockagePage.tsx"
+ ],
+ "1 an (12 mois)": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
  "1 jour": [
   "components/documents/PartageDocumentModal.tsx"
+ ],
+ "1 mois": [
+  "pages/accueil/AbonnementPage.tsx"
  ],
  "1. Télécharge le canevas : la planification du projet et ses indicateurs y sont déjà, il ne reste que les objectifs de la période à saisir (colonnes bleues). 2. Complète-le hors ligne. 3. Réimporte-le : un aperçu montre les objectifs ajoutés ou modifiés, et les cellules en erreur, avant tout enregistrement.": [
   "pages/projets/PlanificationPeriodeTab.tsx"
@@ -528,11 +572,23 @@
  "1. Télécharge le canevas prérempli avec la planification du projet et ses indicateurs. 2. Complète les colonnes bleues hors ligne. 3. Réimporte-le : un aperçu montre ce qui sera ajouté ou modifié, et les cellules en erreur, avant tout enregistrement.": [
   "components/suivi/ImportCanevasSuiviModal.tsx"
  ],
+ "100 Go de stockage pour vos données": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
  "12 derniers mois": [
   "pages/plaintes/TableauPlaintesPage.tsx"
  ],
+ "2 ans (24 mois)": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
  "21 à 50 projets": [
   "pages/accueil/InscriptionPage.tsx"
+ ],
+ "3 ans (36 mois)": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
+ "3 mois": [
+  "pages/accueil/AbonnementPage.tsx"
  ],
  "30 jours": [
   "components/documents/PartageDocumentModal.tsx"
@@ -543,11 +599,17 @@
  "6 à 20 projets": [
   "pages/accueil/InscriptionPage.tsx"
  ],
+ "6 mois": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
  "7 jours": [
   "components/documents/PartageDocumentModal.tsx"
  ],
  "8 caractères au moins, pas trop simple.": [
   "pages/accueil/InscriptionPage.tsx"
+ ],
+ "86 $ HT par mois": [
+  "pages/accueil/AbonnementPage.tsx"
  ],
  "À ajouter dans l'écran Organisation": [
   "pages/utilisateurs/UtilisateursPage.tsx"
@@ -800,7 +862,8 @@
   "pages/accueil/InscriptionPage.tsx"
  ],
  "Adresse courriel": [
-  "auth/LoginPage.tsx"
+  "auth/LoginPage.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
  ],
  "Adresse courriel ou mot de passe incorrect.": [
   "auth/LoginPage.tsx",
@@ -839,6 +902,9 @@
  ],
  "Agence des Nations unies": [
   "pages/accueil/InscriptionPage.tsx"
+ ],
+ "Agrandir": [
+  "pages/formation/FormationPage.tsx"
  ],
  "Agrégation des éléments en dessous": [
   "pages/projets/ActiviteForm.tsx"
@@ -1179,12 +1245,12 @@
  "arrive sur {0}": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
  ],
+ "Assistance comprise": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
  "Assistance et référencement": [
   "api/plaintes.ts",
   "pages/plaintes/DossierPlaintePage.tsx"
- ],
- "Assistance prioritaire": [
-  "pages/accueil/AbonnementPage.tsx"
  ],
  "Association": [
   "pages/accueil/InscriptionPage.tsx"
@@ -1522,6 +1588,9 @@
   "pages/projets/CadreLogiqueTab.tsx",
   "pages/suivi/SuiviProjetDashboard.tsx"
  ],
+ "Aucune activité prévue ce jour-là.": [
+  "pages/projets/PlanificationTableau.tsx"
+ ],
  "Aucune activité.": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
  ],
@@ -1654,8 +1723,12 @@
  "Aucune zone ne correspond à la recherche.": [
   "pages/geo/ZonesAdministrativesPage.tsx"
  ],
+ "Augmenter mon stockage": [
+  "pages/stockage/StockagePage.tsx"
+ ],
  "Aujourd'hui": [
-  "pages/plaintes/DelaiDossier.tsx"
+  "pages/plaintes/DelaiDossier.tsx",
+  "pages/projets/PlanificationTableau.tsx"
  ],
  "aussi": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
@@ -1885,11 +1958,11 @@
  "Bénéficiaires seuls, sans inscription automatique à un projet.": [
   "pages/planification/PlanificationImportPage.tsx"
  ],
- "Bénéficiaires, carte, plaintes et retours": [
-  "pages/accueil/AbonnementPage.tsx"
- ],
  "Bénéficiaires, zones d'intervention et carte": [
   "pages/accueil/AProposPage.tsx"
+ ],
+ "Besoin de plus de stockage ? Chaque offre peut être augmentée sur demande, après l'inscription.": [
+  "pages/accueil/AbonnementPage.tsx"
  ],
  "Binaire (achevé / non achevé)": [
   "utils/methodesCalcul.ts"
@@ -2059,21 +2132,25 @@
   "pages/plaintes/ParametragePlaintesPage.tsx",
   "pages/projets/PlanificationPeriodeTab.tsx"
  ],
- "Carte": [
-  "layouts/AppLayout.tsx",
-  "pages/beneficiaires/BeneficiairesListPage.tsx",
-  "pages/carte/CartePage.tsx",
-  "pages/langues/LanguesPage.tsx",
-  "utils/modules.ts"
- ],
  "Carte à l'échelle avec grille de coordonnées, légende, situation, chiffres clés, tableau des localités et cartouche ; mêmes filtres (projet, zone) que la carte à l'écran.": [
   "pages/carte/FenetresCarte.tsx"
+ ],
+ "Carte bancaire (dollars)": [
+  "pages/accueil/AbonnementPage.tsx",
+  "pages/stockage/StockagePage.tsx"
  ],
  "Carte bénéficiaire": [
   "serveur"
  ],
  "Carte des bénéficiaires": [
   "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Cartographie": [
+  "layouts/AppLayout.tsx",
+  "pages/beneficiaires/BeneficiairesListPage.tsx",
+  "pages/carte/CartePage.tsx",
+  "pages/langues/LanguesPage.tsx",
+  "utils/modules.ts"
  ],
  "Catégorie": [
   "pages/console/SiteVitrine.tsx",
@@ -2183,9 +2260,6 @@
   "pages/documents/DocumentPartagePage.tsx"
  ],
  "Ce mécanisme n'accepte pas de fichiers joints.": [
-  "serveur"
- ],
- "Ce modèle n'a pas d'historique.": [
   "serveur"
  ],
  "Ce module n'est pas accessible avec votre compte.": [
@@ -2610,6 +2684,12 @@
  "Choisis une ou plusieurs personnes déjà enregistrées, ou crée-en une nouvelle.": [
   "pages/projets/ActiviteForm.tsx"
  ],
+ "Choisissez 1 an de licence ou plus pour bénéficier de la formation gratuite.": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
+ "Choisissez 2 ans de licence pour bénéficier de la formation gratuite.": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
  "Choisissez au moins un fichier.": [
   "serveur"
  ],
@@ -2959,6 +3039,9 @@
  "Compte actif": [
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
+ "Compte les documents, images et pièces jointes de votre organisation, ainsi que ses données.": [
+  "pages/stockage/StockagePage.tsx"
+ ],
  "Compte lié": [
   "pages/projets/EquipeTab.tsx"
  ],
@@ -3127,6 +3210,10 @@
  ],
  "Continuer": [
   "pages/projets/ProjetForm.tsx"
+ ],
+ "Continuer avec la carte bancaire": [
+  "pages/accueil/AbonnementPage.tsx",
+  "pages/stockage/StockagePage.tsx"
  ],
  "Contours : geoBoundaries ({0}) — un découpage plus récent que la source n'y figure pas encore ; ses zones sont placées au centre de leurs zones rattachées.": [
   "pages/carte/CartePage.tsx"
@@ -3359,7 +3446,8 @@
   "pages/journal-audit/JournalAuditPage.tsx",
   "pages/langues/LanguesPage.tsx",
   "pages/plaintes/CalendrierPlaintes.tsx",
-  "pages/projets/RisquesTab.tsx"
+  "pages/projets/RisquesTab.tsx",
+  "pages/stockage/StockagePage.tsx"
  ],
  "Date d'accord": [
   "pages/projets/FinancementsTab.tsx"
@@ -3534,6 +3622,9 @@
  ],
  "Demande enregistrée": [
   "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
+ ],
+ "Demande envoyée : notre équipe vous contacte au plus vite pour le paiement par carte bancaire. Votre espace sera agrandi dès le paiement reçu.": [
+  "pages/stockage/StockagePage.tsx"
  ],
  "Demande rejetée": [
   "pages/approbations/ApprobationsPage.tsx"
@@ -3926,12 +4017,24 @@
   "pages/projets/RapportFinancierModal.tsx",
   "pages/strategie/SuiviStrategiqueTab.tsx"
  ],
+ "Du {0} au {1}": [
+  "pages/projets/PlanificationTableau.tsx"
+ ],
  "Dupliquer ce « {0} » avec tout ce qui est en dessous (sans les réalisations)": [
   "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Durée": [
+  "pages/stockage/StockagePage.tsx"
  ],
  "Durée : {0}": [
   "pages/projets/ActiviteForm.tsx",
   "pages/projets/SousActiviteForm.tsx"
+ ],
+ "Durée de l'abonnement": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
+ "Durée ou stockage invalide.": [
+  "serveur"
  ],
  "Écarter (faux positif)": [
   "pages/beneficiaires/DoublonsPage.tsx"
@@ -4096,6 +4199,9 @@
  "Élevé": [
   "pages/projets/RisquesTab.tsx"
  ],
+ "Elle sert à se connecter ; le code de connexion y est envoyé.": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
  "Email": [
   "pages/organisation/OrganisationPage.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
@@ -4197,6 +4303,7 @@
   "layouts/AppLayout.tsx",
   "pages/beneficiaires/BeneficiaireForm.tsx",
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
+  "pages/console/ConsolePage.tsx",
   "pages/console/SiteVitrine.tsx",
   "pages/geo/ZonesAdministrativesPage.tsx",
   "pages/indicateurs/IndicateurForm.tsx",
@@ -4600,6 +4707,21 @@
   "pages/projets/ExportPlanification.tsx",
   "pages/strategie/ChaineDocumentsModal.tsx"
  ],
+ "Espace alloué": [
+  "pages/stockage/StockagePage.tsx"
+ ],
+ "Espace de stockage (Go)": [
+  "pages/console/ConsolePage.tsx"
+ ],
+ "Espace de stockage enregistré": [
+  "pages/console/ConsolePage.tsx"
+ ],
+ "Espace de stockage plein ({0} Go) : supprimez des fichiers ou demandez à Expertise-ID d'agrandir votre espace.": [
+  "serveur"
+ ],
+ "Espace disponible": [
+  "pages/stockage/StockagePage.tsx"
+ ],
  "Espace Expertise-ID": [
   "auth/LoginPage.tsx"
  ],
@@ -4609,6 +4731,9 @@
  "Espace suspendu": [
   "pages/console/ConsolePage.tsx"
  ],
+ "Espace utilisé": [
+  "pages/stockage/StockagePage.tsx"
+ ],
  "Espaces des organisations": [
   "pages/console/ConsolePage.tsx"
  ],
@@ -4617,9 +4742,6 @@
  ],
  "Essayer la démo sans compte": [
   "auth/LoginPage.tsx"
- ],
- "Essentiel": [
-  "pages/accueil/AbonnementPage.tsx"
  ],
  "Étape": [
   "pages/plaintes/CircuitsPlaintes.tsx",
@@ -4846,6 +4968,9 @@
  ],
  "Expertise-ID accompagne les ONG, les institutions publiques et les partenaires techniques et financiers dans le suivi-évaluation, la gestion axée sur les résultats et les solutions numériques.": [
   "pages/accueil/AProposPage.tsx"
+ ],
+ "Expertise-ID réalise un marché, une étude ou un accompagnement pour votre structure : un arrangement adapté est convenu pour l'accès à la plateforme.": [
+  "pages/accueil/AbonnementPage.tsx"
  ],
  "Expiré": [
   "components/documents/PartageDocumentModal.tsx",
@@ -5132,6 +5257,12 @@
   "layouts/AppLayout.tsx",
   "pages/formation/FormationPage.tsx"
  ],
+ "Formation gratuite : pour 2 ans de licence avec les offres Standard 25 Go et Standard 50 Go, et dès 1 an de licence avec l'offre Standard (100 Go).": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
+ "Formation gratuite incluse avec cette durée.": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
  "Formulaire": [
   "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
@@ -5189,9 +5320,6 @@
  ],
  "Global : {0} {1}": [
   "pages/projets/PlanificationPeriodeTab.tsx"
- ],
- "Grands programmes et institutions": [
-  "pages/accueil/AbonnementPage.tsx"
  ],
  "Graphiques": [
   "pages/langues/LanguesPage.tsx"
@@ -5253,6 +5381,12 @@
  "Habilitations confidentielles à double validation": [
   "pages/accueil/AProposPage.tsx"
  ],
+ "Hébergement de nos données": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
+ "Héberger mes données chez moi : nous contacter": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
  "Hériter (niveau au-dessus / projet)": [
   "components/suivi/MethodeCalculLigne.tsx",
   "pages/projets/ActiviteForm.tsx"
@@ -5304,6 +5438,9 @@
  "Hors période de rapportage, fermer": [
   "pages/parametres/RapportageCard.tsx",
   "pages/projets/ProjetForm.tsx"
+ ],
+ "HT par mois": [
+  "pages/accueil/AbonnementPage.tsx"
  ],
  "Hypothèses / risques": [
   "pages/projets/CadreLogiqueTab.tsx"
@@ -5616,6 +5753,9 @@
  "Indiquez si le plaignant se dit satisfait.": [
   "serveur"
  ],
+ "Indiquez un nombre de Go entre 1 et 100 000.": [
+  "serveur"
+ ],
  "Indiquez un nombre de jours entre 1 et 180.": [
   "serveur"
  ],
@@ -5653,9 +5793,6 @@
  "Inscrit(e) le": [
   "pages/beneficiaires/BeneficiaireDetailPage.tsx"
  ],
- "Installation dédiée, formation et accompagnement": [
-  "pages/accueil/AbonnementPage.tsx"
- ],
  "Installer le référentiel des zones du Burkina Faso (régions et provinces)": [
   "pages/console/ConsolePage.tsx"
  ],
@@ -5663,7 +5800,6 @@
   "pages/plaintes/MessagesPlaintes.tsx"
  ],
  "Institution": [
-  "pages/accueil/AbonnementPage.tsx",
   "pages/console/SiteVitrine.tsx"
  ],
  "Intérêt, influence, attentes…": [
@@ -5715,6 +5851,18 @@
  "Joignez au plus {0} fichiers à la fois.": [
   "serveur"
  ],
+ "Jour ou semaine à afficher": [
+  "pages/projets/PlanificationTableau.tsx"
+ ],
+ "Jour précédent": [
+  "pages/projets/PlanificationTableau.tsx"
+ ],
+ "Jour précis": [
+  "pages/projets/PlanificationTableau.tsx"
+ ],
+ "Jour suivant": [
+  "pages/projets/PlanificationTableau.tsx"
+ ],
  "Journal d'audit": [
   "layouts/AppLayout.tsx",
   "pages/journal-audit/JournalAuditPage.tsx"
@@ -5731,20 +5879,11 @@
  "Jusqu'à {0} fichiers de {1} Mo au plus. Formats : {2}.": [
   "pages/plaintes/ChoixFichiers.tsx"
  ],
- "Jusqu'à 10 utilisateurs": [
-  "pages/accueil/AbonnementPage.tsx"
- ],
- "Jusqu'à 25 projets": [
-  "pages/accueil/AbonnementPage.tsx"
- ],
- "Jusqu'à 5 projets": [
-  "pages/accueil/AbonnementPage.tsx"
- ],
- "Jusqu'à 50 utilisateurs": [
-  "pages/accueil/AbonnementPage.tsx"
- ],
  "Juste.": [
   "pages/formation/FormationPage.tsx"
+ ],
+ "L'abonnement de cette organisation est déjà actif : connectez-vous.": [
+  "serveur"
  ],
  "L'abonnement de cette organisation est suspendu. Contactez Expertise-ID.": [
   "serveur"
@@ -5760,6 +5899,9 @@
   "pages/console/ConsolePage.tsx"
  ],
  "L'Administrateur accède déjà aux dossiers confidentiels.": [
+  "serveur"
+ ],
+ "L'adresse courriel est obligatoire : elle sert à se connecter.": [
   "serveur"
  ],
  "L'ancienne et la nouvelle valeur seront inscrites au journal du dossier, avec votre nom.": [
@@ -5866,7 +6008,6 @@
   "pages/accueil/AccueilPage.tsx"
  ],
  "La démonstration n'est pas disponible sur cette installation.": [
-  "pages/accueil/AccueilPage.tsx",
   "serveur"
  ],
  "La démonstration n'est pas disponible.": [
@@ -6007,9 +6148,6 @@
  "Le circuit alternatif doit être un circuit confidentiel.": [
   "serveur"
  ],
- "Le code de connexion est envoyé à cette adresse.": [
-  "pages/utilisateurs/UtilisateursPage.tsx"
- ],
  "Le code de connexion n'a pas pu être envoyé. Réessayez dans un instant.": [
   "auth/LoginPage.tsx",
   "serveur"
@@ -6134,6 +6272,18 @@
  "Le nombre d'ouvertures prévu est atteint.": [
   "pages/documents/DocumentPartagePage.tsx"
  ],
+ "Le paiement en ligne n'est pas disponible : contactez Expertise-ID.": [
+  "pages/stockage/StockagePage.tsx",
+  "serveur"
+ ],
+ "Le paiement n'a pas abouti : votre espace n'a pas changé. Vous pouvez réessayer.": [
+  "pages/stockage/StockagePage.tsx"
+ ],
+ "Le paiement n'a pas pu être préparé. Réessayez dans un moment.": [
+  "pages/accueil/AbonnementPage.tsx",
+  "pages/stockage/StockagePage.tsx",
+  "serveur"
+ ],
  "Le parent principal n'a pas à être repris dans les autres liens.": [
   "serveur"
  ],
@@ -6164,9 +6314,6 @@
  "Le plaignant se dit-il satisfait du traitement ?": [
   "pages/plaintes/OperationsDossier.tsx"
  ],
- "Le plus choisi": [
-  "pages/accueil/AbonnementPage.tsx"
- ],
  "Le préfixe ne contient que des lettres et des chiffres (ex : MGP).": [
   "serveur"
  ],
@@ -6174,6 +6321,9 @@
   "pages/carte/FenetresCarte.tsx"
  ],
  "Le profil de {0} est créé. Pour accéder à la plateforme, choisissez une offre : l'équipe d'Expertise-ID vous contacte pour activer votre espace.": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
+ "Le profil de {0} est créé. Pour accéder à la plateforme, choisissez une offre et réglez-la en ligne : votre espace est créé aussitôt.": [
   "pages/accueil/AbonnementPage.tsx"
  ],
  "Le rattachement du document": [
@@ -6252,6 +6402,9 @@
  "Les deux mots de passe ne sont pas identiques.": [
   "pages/accueil/InscriptionPage.tsx"
  ],
+ "Les données peuvent aussi être placées sur le serveur de votre structure, ou enregistrées en local. Contact : contact@expertise-id.com · +226 25 65 84 75 · +226 73 69 42 38 · +226 75 64 77 91": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
  "Les fêtes à date mobile (Pâques, Ascension, Pentecôte, Ramadan, Tabaski, Maouloud) sont à ajouter chaque année.": [
   "pages/plaintes/CalendrierPlaintes.tsx"
  ],
@@ -6275,9 +6428,6 @@
  ],
  "Les notes sont internes : le plaignant ne les voit jamais.": [
   "pages/plaintes/OperationsDossier.tsx"
- ],
- "Les offres et tarifs sont donnés à titre indicatif et confirmés avec Expertise-ID.": [
-  "pages/accueil/AbonnementPage.tsx"
  ],
  "Les plaignants peuvent joindre des fichiers (formulaire public et complément)": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
@@ -6496,6 +6646,9 @@
  "Maîtrisé": [
   "pages/projets/RisquesTab.tsx"
  ],
+ "Manuel d'utilisateur inclus dans l'offre": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
  "Maraîchage, élevage, petit commerce... — tape un nouveau type s'il manque à la liste.": [
   "pages/beneficiaires/BeneficiaireForm.tsx"
  ],
@@ -6712,6 +6865,10 @@
  "Mise en page": [
   "pages/carte/FenetresCarte.tsx"
  ],
+ "Mobile money (FCFA)": [
+  "pages/accueil/AbonnementPage.tsx",
+  "pages/stockage/StockagePage.tsx"
+ ],
  "Mode de réponse inconnu.": [
   "serveur"
  ],
@@ -6798,6 +6955,9 @@
  "Modifier l'équipe": [
   "pages/projets/EquipeTab.tsx"
  ],
+ "Modifier l'espace de stockage": [
+  "pages/console/ConsolePage.tsx"
+ ],
  "Modifier l'indicateur": [
   "pages/indicateurs/IndicateurDetailPage.tsx",
   "pages/indicateurs/IndicateursListPage.tsx"
@@ -6874,6 +7034,7 @@
  ],
  "Montant": [
   "pages/DashboardConsolidePage.tsx",
+  "pages/stockage/StockagePage.tsx",
   "pages/strategie/FicheDocument.tsx"
  ],
  "Montant (FCFA)": [
@@ -6891,6 +7052,10 @@
  ],
  "Montant = financements saisis ; à défaut, budget du projet hors fonds propres, attribué au bailleur principal.": [
   "pages/DashboardConsolidePage.tsx"
+ ],
+ "Montant à payer (HT) :": [
+  "pages/accueil/AbonnementPage.tsx",
+  "pages/stockage/StockagePage.tsx"
  ],
  "Montant ajouté (FCFA)": [
   "pages/projets/FinancementsTab.tsx"
@@ -6947,6 +7112,9 @@
  "Moyen": [
   "pages/plaintes/OperationsDossier.tsx",
   "pages/projets/RisquesTab.tsx"
+ ],
+ "Moyen de paiement": [
+  "pages/accueil/AbonnementPage.tsx"
  ],
  "Moyenne des activités dont l'objectif est défini": [
   "pages/suivi/SuiviPeriodeTab.tsx"
@@ -7158,6 +7326,9 @@
  "Nombre d'ouvertures (facultatif)": [
   "components/documents/PartageDocumentModal.tsx"
  ],
+ "Nombre d'utilisateurs illimité": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
  "Nombre de bailleurs": [
   "utils/carteParZone.ts"
  ],
@@ -7175,6 +7346,9 @@
  ],
  "Nombre de projets": [
   "utils/carteParZone.ts"
+ ],
+ "Nombre de projets illimité": [
+  "pages/accueil/AbonnementPage.tsx"
  ],
  "Noms": [
   "pages/carte/CartePage.tsx",
@@ -7246,6 +7420,9 @@
   "components/notifications/NotificationBell.tsx",
   "pages/langues/LanguesPage.tsx"
  ],
+ "Nous avons bien reçu votre demande et nous vous contactons rapidement.": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
  "Nous chargeons ici, en un seul classeur Excel, un cadre stratégique complet (objectifs, axes...), un projet (modalités, budget, planification), ses indicateurs et ses bénéficiaires. Pour importer chaque élément séparément, utilise plutôt les écrans listés plus bas.": [
   "pages/planification/PlanificationImportPage.tsx"
  ],
@@ -7257,6 +7434,9 @@
  ],
  "Nous définissons ici les niveaux propres à ce cadre stratégique (nombre, noms, ordre) — par exemple « Plan » → « Orientation » → « Axe » → « Activité », ou « Priorité » → « Sous-priorité ». Cette structuration reste propre à ce cadre, sans effet sur les autres.": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Nous écrire": [
+  "pages/accueil/AbonnementPage.tsx"
  ],
  "Nouveau « {0} » en dessous (ajouté aussi à la planification globale)": [
   "pages/projets/PlanificationPeriodeTab.tsx"
@@ -7547,9 +7727,6 @@
  "Organisation, adresse : figure dans le registre des traitements.": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
- "Organisations avec plusieurs projets": [
-  "pages/accueil/AbonnementPage.tsx"
- ],
  "Organisations de la plateforme": [
   "pages/console/ConsolePage.tsx"
  ],
@@ -7636,6 +7813,21 @@
  "Page de suivi": [
   "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
+ "Paiement en cours de confirmation… Cette page se met à jour toute seule.": [
+  "pages/stockage/StockagePage.tsx"
+ ],
+ "Paiement par carte bancaire": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
+ "Paiement par carte bancaire : notre équipe finalise le paiement avec vous et active votre espace.": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
+ "Paiement reçu : votre espace a été agrandi de {0} Go.": [
+  "pages/stockage/StockagePage.tsx"
+ ],
+ "Paiement sécurisé par CinetPay (mobile money : Orange Money, Moov Money, Wave…). Dès qu'il est confirmé, votre espace est créé et vous recevez un courriel.": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
  "par": [
   "components/partage/BoutonPartage.tsx",
   "pages/carte/FenetresCarte.tsx"
@@ -7688,6 +7880,9 @@
  ],
  "Par téléphone": [
   "api/plaintes.ts"
+ ],
+ "Par tranche de 10 Go : {0} ({1} $) HT par mois. Votre espace est agrandi dès que le paiement est confirmé.": [
+  "pages/stockage/StockagePage.tsx"
  ],
  "Par zone :": [
   "pages/carte/CartePage.tsx"
@@ -7777,6 +7972,10 @@
   "pages/strategie/DocumentModal.tsx",
   "pages/strategie/FicheDocument.tsx"
  ],
+ "Partenariat": [
+  "pages/accueil/AbonnementPage.tsx",
+  "pages/console/ConsolePage.tsx"
+ ],
  "Partie prenante": [
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
@@ -7826,6 +8025,15 @@
  ],
  "Patientez une minute avant de demander un nouveau code.": [
   "serveur"
+ ],
+ "Payer et agrandir mon espace": [
+  "pages/stockage/StockagePage.tsx"
+ ],
+ "Payer et créer mon espace": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
+ "Payer par mobile money (FCFA)": [
+  "pages/accueil/AbonnementPage.tsx"
  ],
  "Pays": [
   "pages/DashboardConsolidePage.tsx",
@@ -7971,9 +8179,6 @@
  "personnes, ha…": [
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
  ],
- "Petites organisations": [
-  "pages/accueil/AbonnementPage.tsx"
- ],
  "Peut être rattaché à n'importe quelle ligne du cadre stratégique (orientation, axe, activité, sous-activité…), limité au cadre de ce projet.": [
   "pages/projets/ActiviteForm.tsx",
   "pages/projets/SousActiviteForm.tsx"
@@ -8099,9 +8304,6 @@
   "pages/projets/ProjetDetailPage.tsx",
   "utils/modules.ts"
  ],
- "Planification, cadre logique et indicateurs": [
-  "pages/accueil/AbonnementPage.tsx"
- ],
  "Planifié :": [
   "pages/suivi/SuiviProjetDashboard.tsx"
  ],
@@ -8112,7 +8314,7 @@
   "pages/suivi/SuiviProjetDashboard.tsx",
   "utils/statusTones.ts"
  ],
- "Plateforme de suivi et d'évaluation de projets": [
+ "Plateforme de monitoring": [
   "components/common/Logos.tsx"
  ],
  "Plein écran": [
@@ -8179,6 +8381,12 @@
  "positionnés par GPS": [
   "pages/carte/CartePage.tsx"
  ],
+ "Pour augmenter le stockage, adressez-vous à l'administrateur de votre organisation.": [
+  "pages/stockage/StockagePage.tsx"
+ ],
+ "pour chaque tranche de 10 Go ajoutée": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
  "Pour faire traduire une langue entière, exportez-la, faites compléter la colonne de traduction dans Excel puis importez le fichier.": [
   "pages/langues/LanguesPage.tsx"
  ],
@@ -8186,6 +8394,9 @@
   "pages/strategie/CadreStrategiqueDetailPage.tsx",
   "pages/strategie/CadresStrategiquesListPage.tsx",
   "pages/strategie/FicheDocument.tsx"
+ ],
+ "Pour les structures qui confient une mission à Expertise-ID": [
+  "pages/accueil/AbonnementPage.tsx"
  ],
  "Pour qui": [
   "components/documents/PartageDocumentModal.tsx"
@@ -8306,6 +8517,9 @@
   "pages/projets/PlanificationTableau.tsx",
   "pages/strategie/CadreTableau.tsx"
  ],
+ "Programmation du {0}": [
+  "pages/projets/PlanificationTableau.tsx"
+ ],
  "Progression": [
   "components/suivi/TranchesPlanifieesTab.tsx"
  ],
@@ -8425,9 +8639,6 @@
  ],
  "Projets et planification": [
   "utils/modules.ts"
- ],
- "Projets et utilisateurs sans limite": [
-  "pages/accueil/AbonnementPage.tsx"
  ],
  "projets financés": [
   "pages/organisation/OrganisationPage.tsx"
@@ -8559,9 +8770,6 @@
  ],
  "Rapport financier…": [
   "pages/projets/ProjetDetailPage.tsx"
- ],
- "Rapports multilingues": [
-  "pages/accueil/AbonnementPage.tsx"
  ],
  "Rapports, études, comptes rendus…": [
   "pages/strategie/SuiviStrategiqueTab.tsx"
@@ -8767,6 +8975,9 @@
  "Récusation": [
   "api/plaintes.ts"
  ],
+ "Réduction possible, jusqu'à la gratuité pendant un an": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
  "Réévaluation enregistrée": [
   "pages/projets/RisquesTab.tsx"
  ],
@@ -8925,6 +9136,9 @@
  "Reprise de l'existant": [
   "pages/plaintes/HabilitationsPlaintes.tsx"
  ],
+ "Réservé à l'administrateur de l'organisation.": [
+  "serveur"
+ ],
  "Réservé à l'Administrateur.": [
   "serveur"
  ],
@@ -9066,6 +9280,9 @@
  ],
  "Revenir à l'adresse courriel": [
   "auth/LoginPage.tsx"
+ ],
+ "Revenir à l'espace de l'offre": [
+  "pages/console/ConsolePage.tsx"
  ],
  "Revenir à l'identifiant": [
   "auth/LoginPage.tsx"
@@ -9363,6 +9580,18 @@
  "Selon le réglage général": [
   "pages/projets/ProjetForm.tsx"
  ],
+ "Semaine du {0} au {1}": [
+  "pages/projets/PlanificationTableau.tsx"
+ ],
+ "Semaine précédente": [
+  "pages/projets/PlanificationTableau.tsx"
+ ],
+ "Semaine suivante": [
+  "pages/projets/PlanificationTableau.tsx"
+ ],
+ "Semaines": [
+  "pages/projets/PlanificationTableau.tsx"
+ ],
  "Semestrielle": [
   "pages/indicateurs/IndicateurForm.tsx",
   "pages/indicateurs/IndicateursListPage.tsx",
@@ -9594,7 +9823,15 @@
   "pages/carte/FenetresCarte.tsx"
  ],
  "Standard": [
-  "pages/accueil/AbonnementPage.tsx"
+  "pages/accueil/AbonnementPage.tsx",
+  "pages/console/ConsolePage.tsx"
+ ],
+ "Standard {0} Go": [
+  "pages/accueil/AbonnementPage.tsx",
+  "pages/console/ConsolePage.tsx"
+ ],
+ "Standard + stockage": [
+  "pages/console/ConsolePage.tsx"
  ],
  "Statut": [
   "components/projets/ListeProjets.tsx",
@@ -9628,6 +9865,23 @@
  ],
  "Statuts particuliers": [
   "pages/beneficiaires/BeneficiaireForm.tsx"
+ ],
+ "Stockage": [
+  "layouts/AppLayout.tsx",
+  "pages/console/ConsolePage.tsx",
+  "pages/stockage/StockagePage.tsx"
+ ],
+ "Stockage à ajouter": [
+  "pages/stockage/StockagePage.tsx"
+ ],
+ "Stockage à la demande": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
+ "Stockage acheté": [
+  "pages/stockage/StockagePage.tsx"
+ ],
+ "Stockage ajouté (tranches de 10 Go)": [
+  "pages/accueil/AbonnementPage.tsx"
  ],
  "Stratégie & capitalisation": [
   "pages/projets/ProjetForm.tsx"
@@ -9673,9 +9927,6 @@
   "pages/suivi/SuiviProjetDashboard.tsx",
   "utils/modules.ts"
  ],
- "Suivi périodique et documents": [
-  "pages/accueil/AbonnementPage.tsx"
- ],
  "Suivi quand une personne mise en cause fait partie du circuit confidentiel habituel : direction, siège, référent extérieur… Obligatoire pour l'activation.": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
@@ -9708,6 +9959,9 @@
  ],
  "Suppression impossible : ce partenaire est utilisé par un projet.": [
   "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Suppression impossible : cet élément est encore utilisé ailleurs dans la plateforme. Retirez d'abord ce qui s'y rattache.": [
+  "serveur"
  ],
  "Suppression impossible : la structure a des services rattachés.": [
   "pages/organisation/OrganisationPage.tsx"
@@ -9976,7 +10230,7 @@
  "Taper une réponse puis Entrée": [
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
  ],
- "Tarif sur devis": [
+ "Tarif réduit, jusqu'à la gratuité pendant un an": [
   "pages/accueil/AbonnementPage.tsx"
  ],
  "Taux": [
@@ -10198,7 +10452,7 @@
  "Tous les indicateurs": [
   "pages/indicateurs/IndicateursListPage.tsx"
  ],
- "Tous les modules": [
+ "Tous les modules de la plateforme": [
   "pages/accueil/AbonnementPage.tsx"
  ],
  "Tous les projets": [
@@ -10218,6 +10472,9 @@
  ],
  "Tout afficher": [
   "components/dashboard/PersonnalisationModal.tsx"
+ ],
+ "Tout ce qu'il faut pour suivre vos projets": [
+  "pages/accueil/AbonnementPage.tsx"
  ],
  "Tout cocher sur cette page": [
   "pages/projets/BeneficiairesProjetSection.tsx"
@@ -10264,7 +10521,10 @@
   "components/documents/ExplorateurDocuments.tsx",
   "pages/documents/CorbeillePage.tsx"
  ],
- "Toute l'offre Essentiel": [
+ "Toute l'offre Standard : projets et utilisateurs illimités, 100 Go de stockage": [
+  "pages/accueil/AbonnementPage.tsx"
+ ],
+ "Toute l'offre Standard, avec {0} Go de stockage": [
   "pages/accueil/AbonnementPage.tsx"
  ],
  "Toute personne peut demander l'accès à ses données, leur rectification, leur effacement ou s'opposer à leur traitement. Chaque demande est enregistrée, suivie jusqu'à la réponse (sous un mois) et inscrite au journal d'audit.": [
@@ -10862,6 +11122,9 @@
  "Votre compte permet de consulter ce module, pas d'y créer ou modifier.": [
   "serveur"
  ],
+ "Votre espace est presque plein : supprimez des fichiers inutiles ou augmentez votre stockage.": [
+  "pages/stockage/StockagePage.tsx"
+ ],
  "Votre espace est prêt": [
   "pages/accueil/AbonnementPage.tsx"
  ],
@@ -10870,6 +11133,9 @@
  ],
  "Votre navigateur ne permet pas la géolocalisation.": [
   "pages/carte/OutilsCarte.tsx"
+ ],
+ "Votre organisation n'a pas de limite de stockage. Espace occupé : {0}.": [
+  "pages/stockage/StockagePage.tsx"
  ],
  "Votre organisation veut l'utiliser ?": [
   "pages/accueil/AccueilPage.tsx"
@@ -10912,6 +11178,9 @@
  ],
  "Vous pouvez tout consulter et essayer chaque formulaire : l'enregistrement est simulé, rien n'est conservé.": [
   "layouts/AppLayout.tsx"
+ ],
+ "Vous rencontrez des difficultés ? Contactez-nous au plus vite : notre équipe finalise le paiement avec vous et active votre espace.": [
+  "pages/accueil/AbonnementPage.tsx"
  ],
  "Vous vous connecterez avec cette adresse ; le code de connexion y sera envoyé.": [
   "pages/accueil/InscriptionPage.tsx"

@@ -1,0 +1,26 @@
+# Ajout à docker-compose.prod.yml quand les données sont sur un serveur à part (donnees/) : la base
+# est jointe par le tunnel privé (DATABASE_URL vers 10.77.0.2) et les fichiers sont ceux du serveur de
+# données, montés dans /mnt/monitora-fichiers (donnees/relier-plateforme-donnees.sh). La base locale
+# « db » n'est plus démarrée. Utilisé par deployer.sh dès que SERVEUR_DONNEES est rempli dans .env.prod.
+x-fichiers: &fichiers
+  depends_on: !override
+    redis:
+      condition: service_started
+  volumes:
+    # Montage absent (tunnel coupé) : le conteneur ne démarre pas, plutôt que d'écrire sur ce serveur.
+    - type: bind
+      source: /mnt/monitora-fichiers/media
+      target: /app/media
+      bind: { create_host_path: false }
+    - type: bind
+      source: /mnt/monitora-fichiers/prive
+      target: /app/prive
+      bind: { create_host_path: false }
+
+services:
+  db:
+    profiles: ["base-locale"]
+  backend:
+    <<: *fichiers
+  scheduler:
+    <<: *fichiers

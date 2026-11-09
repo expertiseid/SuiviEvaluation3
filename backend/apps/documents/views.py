@@ -8,6 +8,7 @@ from rest_framework.response import Response
 
 from apps.core.permissions import HasGlobalVisibilityOrAssigned
 from apps.core.vocabulaire import v
+from apps.organisations import quota
 from apps.projects.queryset_filters import visible_projets_ids
 
 from .models import Document, DocumentVersion, Dossier, PieceJustificative
@@ -214,6 +215,8 @@ class DocumentViewSet(viewsets.ModelViewSet):
         fichier = request.data.get("fichier")
         if not fichier:
             raise ValidationError({"fichier": v('Un fichier est requis pour créer un document.')})
+        # Espace de stockage plein : refus avant de créer le document (sinon il resterait sans fichier).
+        quota.verifier(getattr(fichier, "size", 0))
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

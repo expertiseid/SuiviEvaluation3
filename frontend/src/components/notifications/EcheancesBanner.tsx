@@ -28,20 +28,10 @@ export function EcheancesBanner() {
         position: "relative",
         background: "var(--mantine-color-red-8)",
         borderTop: "1px solid rgba(255,255,255,0.2)",
+        // Durée du défilement (index.css, .defilement-echeances-piste) : selon le nombre d'échéances.
+        ["--duree-defilement" as string]: `${Math.max(35, echeances.length * 12)}s`,
       }}
     >
-      <style>{`
-        @keyframes defilement-echeances {
-          from { transform: translateX(0); }
-          to { transform: translateX(-50%); }
-        }
-        .defilement-echeances-piste {
-          animation: defilement-echeances ${Math.max(35, echeances.length * 12)}s linear infinite;
-        }
-        .defilement-echeances-piste:hover {
-          animation-play-state: paused;
-        }
-      `}</style>
       <Group
         className="defilement-echeances-piste"
         gap="xl"

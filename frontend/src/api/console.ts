@@ -17,7 +17,18 @@ export interface OrganisationPlateforme {
   active_le: string | null;
   /** Comptes qui peuvent se connecter (adresse courriel réelle). */
   comptes: number;
+  /** Espace fixé par Expertise-ID (Go) ; null : celui de l'offre. */
+  stockage_go: number | null;
+  stockage: EspaceStockage;
 }
+
+/** Espace de stockage d'une organisation : occupé et limite en octets (limite null : sans limite). */
+export interface EspaceStockage {
+  utilise: number | null;
+  limite: number | null;
+  limite_go: number | null;
+}
+
 
 export function useDemandesConsole() {
   return useQuery({
@@ -50,5 +61,52 @@ export function useStatutOrganisation() {
     mutationFn: async ({ id, statut }: { id: number; statut: "ACTIVE" | "SUSPENDUE" }) =>
       (await apiClient.post<OrganisationPlateforme>(`/console/organisations/${id}/statut/`, { statut })).data,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["console"] }),
+  });
+}
+
+export function useStockageOrganisation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, stockage_go }: { id: number; stockage_go: number | null }) =>
+      (await apiClient.post<OrganisationPlateforme>(`/console/organisations/${id}/stockage/`, { stockage_go })).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["console"] }),
+  });
+}
+
+/** Page Stockage : espace de l'organisation, tarifs du stockage supplémentaire, achats déjà payés. */
+export interface PageStockage extends EspaceStockage {
+  offre?: string;
+  /** Espace inclus dans l'offre (Go). */
+  offre_go?: number | null;
+  /** Administrateur de l'organisation : peut acheter du stockage. */
+  peut_acheter?: boolean;
+  tarifs?: { paiement: boolean; devise: string; tranche: number; tranche_usd: number; durees: number[]; tranches_max: number };
+  achats?: { date: string; tranches: number; mois: number; montant: number; devise: string }[];
+}
+
+export function usePageStockage() {
+  return useQuery({
+    queryKey: ["stockage"],
+    queryFn: async () => (await apiClient.get<PageStockage>("/stockage/")).data,
+  });
+}
+
+/** Stockage supplémentaire : mobile money (lien vers la page de paiement) ou carte (demande à Expertise-ID). */
+export async function acheterStockage(achat: { tranches: number; mois: number; moyen: "mobile" | "carte"; langue: string }) {
+  return (await apiClient.post<{ lien?: string; paiement?: string; carte?: boolean }>("/stockage/achat/", achat)).data;
+}
+
+/** Retour de CinetPay : statut du paiement (redemandé à CinetPay tant qu'il est en attente). */
+export function useEtatPaiementStockage(reference: string | null) {
+  const queryClient = useQueryClient();
+  return useQuery({
+    queryKey: ["stockage", "paiement", reference],
+    enabled: !!reference,
+    queryFn: async () => {
+      const etat = (await apiClient.get<{ statut: "EN_ATTENTE" | "PAYE" | "ECHOUE"; tranches: number }>(`/stockage/paiement/${reference}/`)).data;
+      if (etat.statut === "PAYE") await queryClient.invalidateQueries({ queryKey: ["stockage"], exact: true });
+      return etat;
+    },
+    refetchInterval: (requete) => (requete.state.data?.statut === "EN_ATTENTE" ? 4000 : false),
   });
 }

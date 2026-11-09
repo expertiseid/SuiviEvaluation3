@@ -13,15 +13,26 @@
 	}
 }
 
+# 1 bis. En-têtes communs (HTTPS obligatoire pour le navigateur, pas de nom de serveur annoncé),
+#    repris par « import securite » dans chaque bloc ci-dessous.
+(securite) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+}
+
 # 2. Remplace l'ancien bloc « 204-168-227-18.sslip.io » (ports 8090 / 5190).
 204-168-227-18.sslip.io {
 	encode gzip
+	import securite
 	reverse_proxy 172.18.0.1:8097
 }
 
 # 3. Remplace l'ancien bloc « demo.204-168-227-18.sslip.io » (ports 8092 / 5191).
 demo.204-168-227-18.sslip.io {
 	encode gzip
+	import securite
 	reverse_proxy 172.18.0.1:8097
 }
 
@@ -32,5 +43,6 @@ demo.204-168-227-18.sslip.io {
 		on_demand
 	}
 	encode gzip
+	import securite
 	reverse_proxy 172.18.0.1:8097
 }

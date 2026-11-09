@@ -12,10 +12,12 @@
         API: "http://" + hote + ":8093/api/v1",
         CONNEXION: "http://" + hote + ":5192/login",
         DEMO: "http://" + hote + ":5192/accueil?demo=1",
+        VIDEOS: "http://" + hote + ":5192/videos",
       }
     : {
         API: "/api/v1",
         CONNEXION: "/login",
         DEMO: "/accueil?demo=1",
+        VIDEOS: "/videos",
       };
 })();

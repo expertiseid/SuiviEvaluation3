@@ -264,6 +264,8 @@ const LIBELLES_NIVEAU_ACCES: Record<string, string> = {
 };
 
 function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User | null; onClose: () => void }) {
+  // Plateforme multi-organisations : on se connecte avec son adresse courriel, elle est donc obligatoire.
+  const courrielObligatoire = !!useIdentiteOrganisation().data?.multi_organisations;
   const updateUtilisateur = useUpdateUtilisateur();
 
   const [prenom, setPrenom] = useState("");
@@ -330,7 +332,8 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
           <TextInput label={voc("Prénom")} value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} />
           <TextInput label={voc("Nom")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
         </Group>
-        <TextInput label={voc("Email")} value={email} onChange={(e) => setEmail(e.currentTarget.value)} />
+        <TextInput label={voc("Adresse courriel")} type="email" value={email} onChange={(e) => setEmail(e.currentTarget.value)}
+          required={courrielObligatoire} description={voc("Elle sert à se connecter ; le code de connexion y est envoyé.")} />
         <RoleSelect value={role} onChange={setRole} />
         <ChoixStructure value={structure} onChange={setStructure} />
         <Select
@@ -365,6 +368,7 @@ export function UtilisateursPage() {
   const { user: utilisateurConnecte } = useAuth();
   // Plateforme multi-organisations : les demandes d'inscription se suivent dans la console Expertise-ID.
   const { data: plateforme } = useIdentiteOrganisation();
+  const courrielObligatoire = !!plateforme?.multi_organisations;
   const { data: utilisateurs, isLoading } = useUtilisateurs();
   const createUtilisateur = useCreateUtilisateur();
   const deleteUtilisateur = useDeleteUtilisateur();
@@ -580,7 +584,8 @@ export function UtilisateursPage() {
             <TextInput label={voc("Prénom")} value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} />
             <TextInput label={voc("Nom")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
           </Group>
-          <TextInput label={voc("Email")} description={voc("Le code de connexion est envoyé à cette adresse.")} value={email}
+          <TextInput label={voc("Adresse courriel")} type="email" required={courrielObligatoire}
+            description={voc("Elle sert à se connecter ; le code de connexion y est envoyé.")} value={email}
             onChange={(e) => setEmail(e.currentTarget.value)} />
           <Group grow align="flex-start">
             <RoleSelect value={role} onChange={setRole} />

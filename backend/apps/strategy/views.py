@@ -3,7 +3,7 @@ import datetime
 
 from django.db.models import Q
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
+from rest_framework.generics import get_object_or_404  # répond 404 (pas 500) si l'identifiant n'est pas un nombre
 from django.utils.text import slugify
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -393,6 +393,8 @@ class ElementStrategiqueViewSet(viewsets.ModelViewSet):
         cadre_id = request.data.get("cadre_strategique")
         if not cadre_id:
             raise ValidationError({"cadre_strategique": "Paramètre requis."})
+        if not str(cadre_id).isdigit():
+            raise ValidationError({"cadre_strategique": "Identifiant invalide."})
         cadre = get_object_or_404(CadreStrategique, pk=cadre_id)
         if not fichier:
             raise ValidationError({"fichier": "Un fichier Excel (.xlsx) est requis."})

@@ -4,21 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Expertise-ID Monitora — Planifier vos projets, suivre vos résultats</title>
-  <meta name="description" content="Expertise-ID Monitora : plateforme en ligne de suivi-évaluation des projets de développement : planification, indicateurs, bénéficiaires, carte, documents et mécanisme de gestion des plaintes. Développée par Expertise-ID.">
-  <link rel="icon" href="vitrine/logo-plateforme.svg">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="vitrine/site.css">
-  <script src="vitrine/config.js"></script>
+  <meta name="description" content="Expertise-ID Monitora : plateforme en ligne de monitoring des projets de développement : planification, indicateurs, bénéficiaires, cartographie, documents et mécanisme de gestion des plaintes. Développée par Expertise-ID.">
+  <link rel="icon" type="image/svg+xml" href="vitrine/logo-plateforme.svg?v=20261106d">
+  <link rel="stylesheet" href="vitrine/polices.css?v=20261106d">
+  <link rel="stylesheet" href="vitrine/site.css?v=20261106d">
+  <script src="vitrine/config.js?v=20261106d"></script>
 </head>
 <body>
 
 <header class="entete">
   <div class="conteneur">
     <a class="marque" href="index.html">
-      <img src="vitrine/logo-plateforme.svg" alt="">
-      <span><strong>Expertise-ID Monitora</strong><span>Plateforme de suivi-évaluation</span></span>
+      <img class="logo-langue" src="vitrine/logos/logo-fr.svg?v=20261106d" data-logo="logo" alt="Expertise-ID Monitora">
     </a>
     <nav class="menu" aria-label="Navigation principale">
       <a href="#fonctionnalites">Fonctionnalités</a>
@@ -26,6 +23,7 @@
       <a href="partenaires.html">Partenaires</a>
       <a href="documentation.html">Documentation</a>
       <a href="#offres">Offres</a>
+      <a href="contact.html">Contact</a>
       <a href="#" data-lien="CONNEXION">Se connecter</a>
       <a class="bouton bouton-plein" href="inscription.html">Créer mon espace</a>
     </nav>
@@ -48,15 +46,14 @@
             Créer l'espace de mon organisation
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </a>
-          <a class="bouton bouton-contour" href="#" data-lien="DEMO">Essayer la démo</a>
         </div>
         <div class="preuves">
-          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Démo sans inscription</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Accès immédiat après paiement</span>
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>5 langues</span>
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Données isolées par organisation</span>
         </div>
       </div>
-      <div class="apparait" style="position:relative">
+      <div class="apparait u-relatif">
         <div class="ecran"><img src="images/tableau-de-bord.webp" alt="Tableau de bord de la plateforme : projets, budget, bénéficiaires et indicateurs" width="1800" height="1125"></div>
         <div class="badge-flottant"><div><b>1 clic</b>pour partager votre tableau de bord</div></div>
       </div>
@@ -65,7 +62,7 @@
 
   <div class="publics">
     <div class="conteneur">
-      <span>Conçue pour les <b>ONG</b></span><span><b>Associations</b></span><span><b>Administrations</b> et collectivités</span><span><b>Agences des Nations unies</b></span><span><b>Bailleurs</b> et bureaux d'études</span>
+      <span>Conçue pour les <b>ONG</b></span><span><b>Associations</b></span><span><b>Administrations publiques</b> et collectivités</span><span><b>Agences des Nations unies</b></span><span><b>Bailleurs</b> et bureaux d'études</span><span><b>Entreprises</b></span><span><b>Particuliers</b></span>
     </div>
   </div>
 
@@ -78,20 +75,19 @@
         <p class="intro">Du tableau de bord aux plaintes des communautés : la visite guidée, écran par écran.</p>
       </div>
       <div class="lecteur apparait">
-        <video controls preload="metadata" poster="video/affiche.webp" playsinline>
-          <source src="video/presentation.webm" type="video/webm">
-          Votre navigateur ne lit pas cette vidéo : <a href="video/presentation.webm">téléchargez-la</a>.
+        <!-- Vidéo de la langue choisie (vitrine/site.js), servie par la plateforme : /videos/presentation-<langue>.webm -->
+        <video id="video-presentation" controls preload="metadata" playsinline>
         </video>
       </div>
       <div class="chapitres" aria-label="Chapitres de la vidéo">
-        <button data-temps="4">Tableau de bord</button>
-        <button data-temps="15">Stratégie et programmes</button>
-        <button data-temps="21">Projets</button>
-        <button data-temps="27">Planification</button>
-        <button data-temps="33">Cadre logique</button>
-        <button data-temps="39">Indicateurs</button>
-        <button data-temps="46">Carte</button>
-        <button data-temps="62">Plaintes et retours</button>
+        <button data-chapitre="tableau_de_bord" data-temps="4">Tableau de bord</button>
+        <button data-chapitre="strategie" data-temps="15">Stratégie et programmes</button>
+        <button data-chapitre="projets" data-temps="21">Projets</button>
+        <button data-chapitre="planification" data-temps="27">Planification</button>
+        <button data-chapitre="cadre_logique" data-temps="33">Cadre logique</button>
+        <button data-chapitre="indicateurs" data-temps="39">Indicateurs</button>
+        <button data-chapitre="carte" data-temps="46">Cartographie</button>
+        <button data-chapitre="plaintes" data-temps="62">Plaintes et retours</button>
       </div>
     </div>
   </section>
@@ -135,7 +131,7 @@
 
       <div class="fonction apparait">
         <div class="texte">
-          <div class="numero">03 — Bénéficiaires et carte</div>
+          <div class="numero">03 — Bénéficiaires et cartographie</div>
           <h3>Qui vous touchez, et où</h3>
           <p>Un registre des bénéficiaires par projet, avec détection des doublons d'enregistrement et cartes de bénéficiaire imprimables. Projets et bénéficiaires s'affichent sur la carte des zones administratives.</p>
           <ul>
@@ -172,7 +168,7 @@
   </section>
 
   <!-- Comment ça marche -->
-  <section style="background:var(--sable)">
+  <section class="u-fond-sable">
     <div class="conteneur">
       <div class="titre-section apparait">
         <div class="etiquette">Démarrer</div>
@@ -181,10 +177,10 @@
       </div>
       <div class="etapes">
         <div class="etape apparait"><h3>Inscrivez votre organisation</h3><p>Profil de l'organisation, personne de contact, adresse courriel et mot de passe de l'administrateur.</p></div>
-        <div class="etape apparait"><h3>Choisissez votre offre</h3><p>Essentiel, Standard ou Institution, selon le nombre de vos projets et de vos utilisateurs.</p></div>
+        <div class="etape apparait"><h3>Choisissez votre offre</h3><p>Standard 25 Go, 50 Go ou 100 Go selon la place dont vous avez besoin, ou Partenariat si vous confiez une mission à Expertise-ID.</p></div>
         <div class="etape apparait"><h3>Expertise-ID active votre espace</h3><p>Vous êtes prévenu par courriel. Connectez-vous avec votre adresse courriel et votre mot de passe : votre espace est prêt.</p></div>
       </div>
-      <p style="margin-top:34px" class="apparait"><a class="bouton bouton-sombre" href="inscription.html">Commencer l'inscription</a></p>
+      <p class="apparait u-mt-34"><a class="bouton bouton-sombre" href="inscription.html">Commencer l'inscription</a></p>
     </div>
   </section>
 
@@ -212,37 +208,63 @@
       <div class="titre-section centre apparait">
         <div class="etiquette">Offres</div>
         <h2>Une offre pour chaque organisation</h2>
-        <p class="intro">Choisissez votre offre à l'inscription ; l'équipe d'Expertise-ID vous contacte pour l'activer.</p>
+        <p class="intro">Choisissez votre offre à l'inscription et payez-la en ligne : votre espace est créé aussitôt.</p>
       </div>
-      <div class="offres">
+      <div class="offres quatre">
         <div class="offre apparait">
-          <h3>Essentiel</h3><p class="pour">Petites organisations</p>
-          <ul><li>Jusqu'à 5 projets</li><li>Planification, cadre logique et indicateurs</li><li>Suivi périodique et documents</li><li>Jusqu'à 10 utilisateurs</li></ul>
-          <a class="bouton bouton-contour" href="inscription.html?offre=ESSENTIEL">Choisir Essentiel</a>
-        </div>
-        <div class="offre vedette apparait">
-          <span class="ruban">La plus choisie</span>
-          <h3>Standard</h3><p class="pour">Organisations avec plusieurs projets</p>
-          <ul><li>Jusqu'à 25 projets</li><li>Toute l'offre Essentiel</li><li>Bénéficiaires, carte, plaintes et retours</li><li>Rapports multilingues</li><li>Jusqu'à 50 utilisateurs</li></ul>
-          <a class="bouton bouton-plein" href="inscription.html?offre=STANDARD">Choisir Standard</a>
+          <h3>Standard 25 Go</h3><p class="pour">Toute l'offre Standard, avec 25 Go de stockage</p>
+          <p class="prix" data-tarif="STANDARD_25" data-sans-traduction>34 $ <small>HT par mois</small><span class="prix-dollars">20 000 FCFA</span></p>
+          <ul><li>Nombre de projets illimité</li><li>Nombre d'utilisateurs illimité</li><li>25 Go de stockage pour vos données</li><li>Tous les modules de la plateforme</li><li>Manuel d'utilisateur inclus dans l'offre</li></ul>
+          <a class="bouton bouton-contour" href="inscription.html?offre=STANDARD_25">Choisir Standard 25 Go</a>
         </div>
         <div class="offre apparait">
-          <h3>Institution</h3><p class="pour">Grands programmes et institutions</p>
-          <ul><li>Projets et utilisateurs sans limite</li><li>Tous les modules</li><li>Installation dédiée, formation et accompagnement</li><li>Assistance prioritaire</li></ul>
-          <a class="bouton bouton-contour" href="inscription.html?offre=INSTITUTION">Choisir Institution</a>
+          <h3>Standard 50 Go</h3><p class="pour">Toute l'offre Standard, avec 50 Go de stockage</p>
+          <p class="prix" data-tarif="STANDARD_50" data-sans-traduction>52 $ <small>HT par mois</small><span class="prix-dollars">30 000 FCFA</span></p>
+          <ul><li>Nombre de projets illimité</li><li>Nombre d'utilisateurs illimité</li><li>50 Go de stockage pour vos données</li><li>Tous les modules de la plateforme</li><li>Manuel d'utilisateur inclus dans l'offre</li></ul>
+          <a class="bouton bouton-contour" href="inscription.html?offre=STANDARD_50">Choisir Standard 50 Go</a>
+        </div>
+        <div class="offre apparait">
+          <h3>Standard</h3><p class="pour">Tout ce qu'il faut pour suivre vos projets</p>
+          <p class="prix" data-tarif="mois" data-sans-traduction>86 $ <small>HT par mois</small><span class="prix-dollars">50 000 FCFA</span></p>
+          <ul><li>Nombre de projets illimité</li><li>Nombre d'utilisateurs illimité</li><li>100 Go de stockage pour vos données</li><li>Tous les modules de la plateforme</li><li>Manuel d'utilisateur inclus dans l'offre</li></ul>
+          <a class="bouton bouton-contour" href="inscription.html?offre=STANDARD">Choisir Standard</a>
+        </div>
+        <div class="offre apparait">
+          <h3>Partenariat</h3><p class="pour">Pour les structures qui confient une mission à Expertise-ID</p>
+          <p class="prix prix-texte">Tarif réduit <small>jusqu'à la gratuité pendant un an</small></p>
+          <ul><li>Expertise-ID réalise un marché, une étude ou un accompagnement pour votre structure : un arrangement adapté est convenu pour l'accès à la plateforme.</li><li>Toute l'offre Standard : projets et utilisateurs illimités, 100 Go de stockage</li><li>Réduction possible, jusqu'à la gratuité pendant un an</li><li>Assistance comprise</li><li>Manuel d'utilisateur inclus dans l'offre</li></ul>
+          <a class="bouton bouton-contour" href="inscription.html?offre=PARTENARIAT">Choisir Partenariat</a>
         </div>
       </div>
-      <p class="note">Les offres et tarifs sont confirmés avec Expertise-ID.</p>
+      <p class="stockage-demande" data-tarif="tranche">Besoin de plus de stockage ? Chaque offre peut être augmentée sur demande : <b>+ 5 $ (3 000 FCFA) HT pour chaque tranche de 10 Go ajoutée</b>, par mois. <a href="contact.html">Contactez-nous</a>.</p>
+      <p class="avantage-annuel">Formation gratuite : pour 2 ans de licence avec les offres Standard 25 Go et Standard 50 Go, et dès 1 an de licence avec l'offre Standard (100 Go).</p>
+      <div class="donnees-chez-vous apparait">
+        <h2>Vos données, là où vous le voulez</h2>
+        <p class="intro">Les données de votre organisation peuvent être placées sur le serveur de votre propre structure, et vous pouvez aussi les enregistrer en local.</p>
+        <div class="contacts">
+          <div class="contact-carte">
+            <div class="icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="7" rx="2"/><path d="M7 6.5h.01M7 17.5h.01"/></svg></div>
+            <h3>Sur le serveur de votre structure</h3>
+            <p>Les données peuvent être dirigées vers le serveur de votre organisation : elles restent chez vous, sous votre contrôle. Expertise-ID s'occupe de l'installation.</p>
+          </div>
+          <div class="contact-carte">
+            <div class="icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+            <h3>Enregistrement en local</h3>
+            <p>Vous pouvez aussi enregistrer vos données en local, sur un ordinateur ou un serveur installé dans vos locaux.</p>
+          </div>
+      </div>
+        <p>Parlez-en avec nous : nous choisissons ensemble la solution adaptée à votre organisation.</p>
+        <p><a class="bouton bouton-plein" href="contact.html">Héberger mes données chez moi : nous contacter</a></p>
+      </div>
     </div>
   </section>
 
   <!-- FAQ -->
-  <section style="background:var(--sable)" id="faq">
+  <section class="u-fond-sable" id="faq">
     <div class="conteneur">
       <div class="titre-section centre apparait"><div class="etiquette">Questions fréquentes</div><h2>Vous vous demandez…</h2></div>
       <div class="faq apparait">
         <details><summary>Faut-il installer quelque chose ?</summary><p>Non. La plateforme s'utilise dans le navigateur, sur ordinateur, tablette ou téléphone. Chacun se connecte avec son adresse courriel et son mot de passe.</p></details>
-        <details><summary>Puis-je essayer avant de m'inscrire ?</summary><p>Oui : la démonstration présente cinq projets complets, sans compte ni mot de passe. Vous pouvez tout parcourir ; rien de ce que vous faites n'est enregistré.</p></details>
         <details><summary>Nos données sont-elles visibles par d'autres organisations ?</summary><p>Jamais. Chaque organisation a sa propre base de données ; ses utilisateurs ne voient que leur espace.</p></details>
         <details><summary>Peut-on reprendre nos fichiers Excel existants ?</summary><p>Oui. Un modèle Excel unique permet d'importer d'un coup le cadre stratégique, les projets, la planification, les indicateurs et les bénéficiaires ; chaque partie peut aussi être importée séparément.</p></details>
         <details><summary>Dans quelles langues ?</summary><p>Français, anglais, arabe, espagnol et allemand : chaque utilisateur choisit la sienne.</p></details>
@@ -254,12 +276,11 @@
   <section>
     <div class="conteneur">
       <div class="appel apparait">
-        <div class="etiquette" style="justify-content:center">Prêt à commencer ?</div>
+        <div class="etiquette u-centre">Prêt à commencer ?</div>
         <h2>Créez l'espace de votre organisation</h2>
-        <p class="intro" style="margin-inline:auto;color:#b9c7d6">Inscription en ligne en cinq minutes. Une question ? Lisez la <a href="documentation.html" style="color:var(--safran)">documentation</a>.</p>
+        <p class="intro u-intro-sombre">Inscription en ligne en cinq minutes. Une question ? Lisez la <a class="u-safran" href="documentation.html">documentation</a>.</p>
         <div class="actions">
           <a class="bouton bouton-plein" href="inscription.html">Créer mon espace</a>
-          <a class="bouton bouton-contour" href="#" data-lien="DEMO">Essayer la démo</a>
         </div>
       </div>
     </div>
@@ -269,28 +290,23 @@
 <footer class="pied">
   <div class="conteneur">
     <div>
-      <a class="marque" href="index.html"><img src="vitrine/logo-plateforme.svg" alt=""><span><strong>Expertise-ID Monitora</strong></span></a>
-      <p style="margin-top:14px">Plateforme de suivi et d'évaluation des projets de développement.</p>
+      <a class="marque logo-pied" href="index.html"><img src="vitrine/logos/logo-complet-fr.svg?v=20261106d" data-logo="logo-complet" alt="Expertise-ID Monitora"></a>
+      <p class="u-mt-14">Plateforme de monitoring des projets de développement.</p>
       <a class="signature" href="https://www.expertise-id.com" target="_blank" rel="noopener"><img src="vitrine/logo-expertise-id.png" alt="Expertise-ID"><span>Développé par <b>Expertise-ID</b></span></a>
     </div>
     <div>
       <h4>La plateforme</h4>
-      <a href="#fonctionnalites">Fonctionnalités</a><a href="#video">Vidéo</a><a href="#offres">Offres</a><a href="#" data-lien="DEMO">Démonstration</a><a href="https://www.expertise-id.com" target="_blank" rel="noopener">Site d'Expertise-ID ↗</a>
+      <a href="#fonctionnalites">Fonctionnalités</a><a href="#video">Vidéo</a><a href="#offres">Offres</a><a href="https://www.expertise-id.com" target="_blank" rel="noopener">Site d'Expertise-ID ↗</a>
     </div>
     <div>
       <h4>Commencer</h4>
-      <a href="inscription.html">Créer mon espace</a><a href="actualites.html">Actualités</a><a href="partenaires.html">Partenaires</a><a href="documentation.html">Documentation</a><a href="#" data-lien="CONNEXION">Se connecter</a>
+      <a href="inscription.html">Créer mon espace</a><a href="actualites.html">Actualités</a><a href="partenaires.html">Partenaires</a><a href="documentation.html">Documentation</a><a href="contact.html">Contact</a><a href="#" data-lien="CONNEXION">Se connecter</a>
     </div>
     <div class="bas"><span>© <span id="annee">2026</span> Expertise-ID</span><span>Fait pour les organisations de développement</span></div>
   </div>
 </footer>
-<script src="vitrine/traductions.js"></script>
-<script src="vitrine/langues.js"></script>
-<script>
-  // Année du pied de page, remise après chaque changement de langue.
-  var annee = function () { var e = document.getElementById("annee"); if (e) e.textContent = new Date().getFullYear(); };
-  annee(); document.addEventListener("langue-site", annee);
-</script>
-<script src="vitrine/site.js"></script>
+<script src="vitrine/traductions.js?v=20261106d"></script>
+<script src="vitrine/langues.js?v=20261106d"></script>
+<script src="vitrine/site.js?v=20261106d"></script>
 </body>
 </html>

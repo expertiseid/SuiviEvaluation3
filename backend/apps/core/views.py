@@ -340,6 +340,8 @@ def _demo_disponible():
     from apps.accounts.demo import espace_demo
     from apps.organisations import contexte
 
+    if not getattr(settings, "DEMO_OUVERTE", False):
+        return False
     if demo_actif() or getattr(settings, "URL_DEMO", ""):
         return True
     return bool(contexte.actif() and espace_demo())

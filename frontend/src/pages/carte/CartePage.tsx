@@ -79,20 +79,9 @@ const ZOOM_NOMS: Record<number, [number, number]> = { 1: [0, 9], 2: [8, 11], 3: 
 const ZOOM_VILLAGES = 10;
 const ZOOM_NOMS_VILLAGES = 12;
 
-const STYLE_ETIQUETTES = `
-.etiquette-carte { background: none; border: none; white-space: nowrap; pointer-events: none;
-  font: 600 11px/1 system-ui, sans-serif; color: #374151; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 2px #fff; }
-.etiquette-carte span { display: inline-block; transform: translate(-50%, -50%); }
-.etiquette-carte.n1 { font-size: 13px; font-weight: 700; color: #111827; text-transform: uppercase; letter-spacing: .5px; }
-.etiquette-carte.n3 { font-weight: 500; color: #6b7280; font-size: 10px; }
-.etiquette-carte.village span { transform: translate(5px, -50%); font-weight: 500; font-size: 10px; color: #1f2937; }
-.encadre-carte:fullscreen { border-radius: 0; }
-.encadre-carte:fullscreen .leaflet-container { height: 100vh !important; }
-.etiquette-carte.valeur-zone { pointer-events: auto; cursor: pointer; }
-.etiquette-carte.valeur-zone span { font-size: 12px; font-weight: 800; color: #111827; background: rgba(255,255,255,.88); border: 1px solid #6b7280; border-radius: 8px; padding: 2px 6px; text-align: center; line-height: 1.15; }
-.etiquette-carte.valeur-zone small { display: block; font-size: 9px; font-weight: 600; color: #4b5563; text-transform: uppercase; letter-spacing: .3px; }
-.etiquette-carte.beneficiaire span { transform: translate(8px, -50%); font-weight: 600; font-size: 11px; color: #9a3412; }
-`;
+/** Texte d'un fichier importé affiché dans une bulle Leaflet (écrite en HTML) : jamais interprété. */
+const echapper = (texte: unknown) =>
+  String(texte).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 function etiquette(texte: string, classe: string) {
   const span = document.createElement("span");
@@ -136,7 +125,7 @@ function Limites({ pays, niveau, zoom, noms }: { pays: string | undefined; nivea
         key={`${data.pays}-${data.niveau}-${data.source}`}
         data={data.geojson}
         style={STYLE_LIMITES[niveau]}
-        onEachFeature={(feature, couche) => couche.bindTooltip(String(feature.properties?.shapeName ?? ""), { sticky: true })}
+        onEachFeature={(feature, couche) => couche.bindTooltip(echapper(feature.properties?.shapeName ?? ""), { sticky: true })}
       />
       {noms && zoom >= min && zoom < max &&
         data.geojson.features.map((f) =>
@@ -166,7 +155,7 @@ function Routes({ pays }: { pays: string | undefined }) {
       }}
       onEachFeature={(f, couche) => {
         const s = STYLE_ROUTES[f.properties?.classe];
-        if (f.properties?.nom || s) couche.bindTooltip(`${f.properties?.nom || "Route"}${s ? ` — ${s.libelle.toLowerCase()}` : ""}`, { sticky: true });
+        if (f.properties?.nom || s) couche.bindTooltip(echapper(`${f.properties?.nom || "Route"}${s ? ` — ${s.libelle.toLowerCase()}` : ""}`), { sticky: true });
       }}
     />
   );
@@ -229,9 +218,9 @@ function CoucheImporteeCarte({ couche }: { couche: CoucheImportee }) {
       onEachFeature={(f, calque) => {
         const p = f.properties ?? {};
         const nom = couche.champ_etiquette ? p[couche.champ_etiquette] : null;
-        if (nom) calque.bindTooltip(String(nom), { sticky: true });
-        const lignes = Object.entries(p).filter(([, v]) => v !== null && v !== "").map(([k, v]) => `<b>${k}</b> : ${String(v).replace(/</g, "&lt;")}`);
-        calque.bindPopup(`<div style="font-size:12px"><div style="font-weight:600;margin-bottom:4px">${couche.nom.replace(/</g, "&lt;")}</div>${lignes.join("<br>")}</div>`);
+        if (nom) calque.bindTooltip(echapper(nom), { sticky: true });
+        const lignes = Object.entries(p).filter(([, v]) => v !== null && v !== "").map(([k, v]) => `<b>${echapper(k)}</b> : ${echapper(v)}`);
+        calque.bindPopup(`<div class="bulle-couche"><div class="bulle-couche-titre">${echapper(couche.nom)}</div>${lignes.join("<br>")}</div>`);
       }}
     />
   );
@@ -306,9 +295,8 @@ export function CartePage() {
 
   return (
     <Stack gap="md">
-      <style>{STYLE_ETIQUETTES}</style>
       <Group justify="space-between">
-        <TitreRubrique route="/carte" defaut={voc("Carte")} />
+        <TitreRubrique route="/carte" defaut={voc("Cartographie")} />
         <Group gap="xs">
           {peutEcrire("/carte") && (
             <Button variant="light" color="grape" leftSection={<Upload size={16} />} onClick={() => setFenetre("import")}>{voc("Importer une couche")}</Button>

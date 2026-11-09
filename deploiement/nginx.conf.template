@@ -12,12 +12,16 @@ server {
     location = /accueil { return 302 /; }
     location / {
         root /usr/share/nginx/site;
+        include /etc/nginx/conf.d/securite-site.inc;
         try_files $uri $uri.html $uri/ @application;
     }
     location @application {
         root /usr/share/nginx/html;
-        try_files /index.html =404;
+        # Fichiers de l'interface (logos, vidéos…), sinon la page de l'application (« =404 » : /index.html
+        # est cherché ici, et non renvoyé vers « location / », qui donnerait l'accueil du site).
+        try_files $uri /index.html =404;
         add_header Cache-Control "no-cache";
+        include /etc/nginx/conf.d/securite-application.inc;
     }
 }
 
@@ -31,5 +35,6 @@ server {
         root /usr/share/nginx/html;
         try_files $uri /index.html;
         add_header Cache-Control "no-cache";
+        include /etc/nginx/conf.d/securite-application.inc;
     }
 }

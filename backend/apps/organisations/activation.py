@@ -28,9 +28,15 @@ def creer_espace(demande, zones=True):
     demande.statut = DemandeInscription.Statut.ACTIVEE
     demande.erreur_activation = ""
     demande.save(using="central", update_fields=["statut", "erreur_activation"])
+    # Offre Partenariat : validée par Expertise-ID, le courriel le dit ; offre payée en ligne : espace prêt.
+    partenariat = demande.offre == DemandeInscription.Offre.PARTENARIAT
+    sujet = f"Votre partenariat est validé : l'espace de {org.nom} est prêt" if partenariat else f"Votre espace est prêt : {org.nom}"
+    debut = (f"Expertise-ID a validé votre demande de partenariat. L'espace de {org.nom} sur la plateforme "
+             "Expertise-ID Monitora est ouvert et prêt.") if partenariat else (
+        f"L'espace de {org.nom} sur la plateforme Expertise-ID Monitora est prêt.")
     send_mail(
-        f"Votre espace est prêt : {org.nom}",
-        f"Bonjour {demande.contact_nom},\n\nL'espace de {org.nom} sur la plateforme Expertise-ID Monitora est prêt.\n\n"
+        sujet,
+        f"Bonjour {demande.contact_nom},\n\n{debut}\n\n"
         f"Connectez-vous ici : {contexte.adresse()}/login\nAdresse courriel : {demande.courriel}\nMot de passe : celui "
         "que vous avez choisi à l'inscription.\n\nÀ chaque connexion, un code vous sera envoyé à cette adresse "
         "courriel.\n\nExpertise-ID",

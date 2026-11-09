@@ -1,5 +1,5 @@
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
+from rest_framework.generics import get_object_or_404  # répond 404 (pas 500) si l'identifiant n'est pas un nombre
 from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action, api_view, permission_classes

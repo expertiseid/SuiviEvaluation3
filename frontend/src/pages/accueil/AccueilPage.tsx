@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Badge, Box, Button, Card, Container, Group, Image, List, SimpleGrid, Stack, Text, ThemeIcon, Title, Tooltip } from "@mantine/core";
+import { Badge, Box, Button, Card, Container, Group, List, SimpleGrid, Stack, Text, ThemeIcon, Title } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import {
   BarChart3,
@@ -20,6 +20,7 @@ import { connexionDemo, useIdentiteOrganisation } from "../../api/identite";
 import { useAuth } from "../../auth/useAuth";
 import { messageErreurApi } from "../../utils/erreurs";
 import { voc } from "../../utils/vocabulaire";
+import { LogoComplet } from "../../components/common/Logos";
 import { CadreVitrine } from "./CadreVitrine";
 
 const FONCTIONNALITES = [
@@ -71,7 +72,7 @@ export function AccueilPage() {
 
   const boutonDemo = (
     <Button size="lg" variant="white" color="teal" leftSection={<MonitorPlay size={20} />} onClick={essayerDemo} loading={demarrage}
-      disabled={!demoDisponible}>
+      >
       {voc("Essayer la démo")}
     </Button>
   );
@@ -93,9 +94,7 @@ export function AccueilPage() {
                     {voc("Créer le profil de mon organisation")}
                   </Button>
                 )}
-                {demoDisponible ? boutonDemo : (
-                  <Tooltip label={voc("La démonstration n'est pas disponible sur cette installation.")}><span>{boutonDemo}</span></Tooltip>
-                )}
+                {demoDisponible && boutonDemo}
               </Group>
               <Text size="sm" c="teal.1">
                 {voc("Déjà abonné ?")}{" "}
@@ -104,7 +103,7 @@ export function AccueilPage() {
             </Stack>
             <Card radius="lg" shadow="xl" padding="xl" visibleFrom="md">
               <Stack align="center" gap="md">
-                <Image src="/logo-plateforme.svg" w={120} h={120} alt="" />
+                <LogoComplet largeur={380} />
                 <SimpleGrid cols={3} w="100%">
                   {[[voc("Projets"), "51"], [voc("Indicateurs"), "340"], [voc("Bénéficiaires"), "12 400"]].map(([l, n]) => (
                     <Stack key={l} gap={0} align="center">
@@ -141,7 +140,7 @@ export function AccueilPage() {
       <Box bg="white">
         <Container size="lg" py={48}>
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing={32} style={{ alignItems: "center" }}>
-            <Stack gap="sm">
+            {demoDisponible && <Stack gap="sm">
               <Group gap="xs"><MonitorPlay size={22} color="var(--mantine-color-teal-7)" /><Title order={3}>{voc("Mode démonstration")}</Title></Group>
               <Text c="dimmed">{voc("Découvrez la plateforme sans compte, sur des données d'exemple :")}</Text>
               <List size="sm" spacing={4}>
@@ -150,9 +149,9 @@ export function AccueilPage() {
                 <List.Item>{voc("vous pouvez ouvrir et remplir chaque formulaire : l'enregistrement est simulé, rien n'est conservé.")}</List.Item>
               </List>
               <Group>
-                <Button leftSection={<MonitorPlay size={18} />} onClick={essayerDemo} loading={demarrage} disabled={!demoDisponible}>{voc("Essayer la démo")}</Button>
+                <Button leftSection={<MonitorPlay size={18} />} onClick={essayerDemo} loading={demarrage}>{voc("Essayer la démo")}</Button>
               </Group>
-            </Stack>
+            </Stack>}
             <Card withBorder radius="md" padding="lg" bg="teal.0">
               <Group gap="sm" wrap="nowrap" align="flex-start">
                 <ThemeIcon size={42} radius="md" color="teal"><Building2 size={22} /></ThemeIcon>

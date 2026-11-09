@@ -57,11 +57,13 @@ MIDDLEWARE = [
     # Plateforme multi-organisations : la requête travaille dans la base de son organisation.
     "apps.organisations.middleware.OrganisationMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
+    "apps.core.securite.CommunMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Politique de contenu (CSP) des réponses de l'API : apps.core.securite.
+    "apps.core.securite.EntetesSecuriteMiddleware",
     "simple_history.middleware.HistoryRequestMiddleware",
     "apps.core.modules.ModulesMasquesMiddleware",
     # Installation de démonstration : le visiteur ne peut rien enregistrer (apps.accounts.demo).
@@ -157,6 +159,8 @@ REST_FRAMEWORK = {
         "rest_framework.filters.OrderingFilter",
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Suppression d'un élément encore utilisé : message clair au lieu d'une erreur 500 (apps.core.erreurs).
+    "EXCEPTION_HANDLER": "apps.core.erreurs.gestionnaire_erreurs",
 }
 
 SPECTACULAR_SETTINGS = {
@@ -172,10 +176,36 @@ SPECTACULAR_SETTINGS = {
 # Sur une installation d'organisation : URL_DEMO = adresse de l'installation de démonstration.
 MODE_DEMO = env.bool("MODE_DEMO", default=False)
 URL_DEMO = env("URL_DEMO", default="")
+# Accès à la démonstration (bouton « Essayer la démo », connexion du visiteur) : fermé par défaut ; True pour
+# le rouvrir. L'espace de démonstration et ses données restent en place.
+DEMO_OUVERTE = env.bool("DEMO_OUVERTE", default=False)
 # Page d'accueil : une organisation peut demander à créer son profil (puis s'abonner).
 INSCRIPTIONS_OUVERTES = env.bool("INSCRIPTIONS_OUVERTES", default=True)
-# Adresse d'Expertise-ID qui reçoit les profils créés et les offres d'abonnement choisies.
+# Adresse(s) d'Expertise-ID prévenues des inscriptions, paiements et demandes de paiement par carte
+# (plusieurs adresses séparées par des virgules ; la première est montrée aux clients comme contact).
 COURRIEL_ABONNEMENTS = env("COURRIEL_ABONNEMENTS", default="")
+# Plafond (Go) de l'agrandissement automatique du Volume des fichiers (deploiement/donnees/
+# installer-agrandissement.sh) : Expertise-ID est prévenue quand il approche ou que le disque se remplit
+# quand même (apps/organisations/quota.alerter_disque). 0 : pas de surveillance (développement).
+VOLUME_PLAFOND_GO = env.int("VOLUME_PLAFOND_GO", default=0)
+# Paiement en ligne de l'abonnement (apps/organisations/paiement.py) : sans clé, l'offre choisie est
+# seulement transmise à Expertise-ID. Clé sk_test_ : bac à sable de CinetPay ; sk_live_ : paiements réels.
+CINETPAY_API_KEY = env("CINETPAY_API_KEY", default="")
+CINETPAY_API_PASSWORD = env("CINETPAY_API_PASSWORD", default="")
+# Tarifs payés en ligne (CinetPay n'accepte pas le dollar sur ce compte) : prix d'un mois de l'offre
+# Standard, et d'une tranche de 10 Go de stockage ajoutée, par mois.
+ABONNEMENT_DEVISE = env("ABONNEMENT_DEVISE", default="XOF")
+ABONNEMENT_PRIX_MOIS = env.int("ABONNEMENT_PRIX_MOIS", default=50000)
+ABONNEMENT_PRIX_TRANCHE = env.int("ABONNEMENT_PRIX_TRANCHE", default=3000)
+# Prix affichés en dollars (offres du site) et payés par carte bancaire : la carte n'est pas encore encaissée
+# en ligne, Expertise-ID finalise avec le client (inscriptions.choisir_offre, moyen « carte »).
+ABONNEMENT_PRIX_MOIS_USD = env.int("ABONNEMENT_PRIX_MOIS_USD", default=86)
+ABONNEMENT_PRIX_TRANCHE_USD = env.int("ABONNEMENT_PRIX_TRANCHE_USD", default=5)
+# Offres Standard 25 Go et Standard 50 Go (prix d'un mois, en FCFA et en dollars).
+ABONNEMENT_PRIX_25GO = env.int("ABONNEMENT_PRIX_25GO", default=20000)
+ABONNEMENT_PRIX_25GO_USD = env.int("ABONNEMENT_PRIX_25GO_USD", default=34)
+ABONNEMENT_PRIX_50GO = env.int("ABONNEMENT_PRIX_50GO", default=30000)
+ABONNEMENT_PRIX_50GO_USD = env.int("ABONNEMENT_PRIX_50GO_USD", default=52)
 
 # Code de connexion envoyé par courriel à chaque connexion, pour tous les comptes
 # (apps/accounts/double_auth.py). À ne désactiver que sur un poste de développement.
@@ -227,6 +257,9 @@ PLAINTES_CLE_CHIFFREMENT = env("PLAINTES_CLE_CHIFFREMENT", default="")
 # --- Plaintes : messages au plaignant ---
 # Adresse publique de la plateforme (lien de suivi dans les messages).
 PLAINTES_URL_PUBLIQUE = env("PLAINTES_URL_PUBLIQUE", default="http://localhost:5192")
+# Adresse du site vitrine (retour après le paiement de l'abonnement) : en production, la même adresse
+# que la plateforme ; sur un poste de développement, http://localhost:5193.
+URL_SITE = env("URL_SITE", default=PLAINTES_URL_PUBLIQUE)
 # Passerelle SMS (HTTP POST JSON {to, message, from}, jeton en « Authorization: Bearer »). Vide : envoi simulé.
 PLAINTES_SMS_URL = env("PLAINTES_SMS_URL", default="")
 PLAINTES_SMS_JETON = env("PLAINTES_SMS_JETON", default="")

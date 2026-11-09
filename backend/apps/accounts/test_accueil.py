@@ -36,7 +36,8 @@ def test_inscription_puis_abonnement_requis():
     assert reponse.status_code == 201 and reponse.data["statut"] == "ABONNEMENT_REQUIS"
     demande = DemandeInscription.objects.get()
     assert demande.mot_de_passe != PROFIL["mot_de_passe"]  # empreinte seulement
-    assert {tuple(m.to) for m in mail.outbox} == {("abonnements@expertise-id.com",), ("awa@ong-exemple.bf",)}
+    # Un seul courriel : l'accusé. Expertise-ID n'est prévenu qu'au paiement (ou à l'offre Partenariat).
+    assert [tuple(m.to) for m in mail.outbox] == [("awa@ong-exemple.bf",)]
     # Identifiant déjà pris.
     assert client.post("/api/v1/public/inscription/", {**PROFIL, "courriel": "b@ong.bf"}, format="json").status_code == 400
     # Connexion avec ces identifiants : page d'abonnement, pas de jetons.
@@ -87,3 +88,12 @@ def test_identite_et_logo():
     faux.name = "logo.png"
     assert client.patch("/api/v1/identite/", {"logo": faux}, format="multipart").status_code == 400
     assert public.patch("/api/v1/identite/", {"nom": "x"}, format="multipart").status_code == 403
+
+
+@pytest.mark.django_db
+def test_demo_fermee(settings):
+    """DEMO_OUVERTE=False (par défaut) : plus de bouton « Essayer la démo », connexion du visiteur refusée."""
+    settings.DEMO_OUVERTE = False
+    settings.MODE_DEMO = True
+    assert APIClient().get("/api/v1/identite/").data["demo_disponible"] is False
+    assert APIClient().post("/api/v1/public/demo/").status_code == 403

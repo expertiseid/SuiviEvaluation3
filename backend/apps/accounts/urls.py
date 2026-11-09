@@ -5,6 +5,7 @@ from .demo import connexion_demo
 
 from .views import (
     DemandeInscriptionViewSet, RoleViewSet, UserViewSet, connexion_code, connexion_renvoyer, inscription, inscription_offre,
+    inscription_paiement, inscription_paiement_etat, inscription_paiement_notification, inscription_tarifs,
 )
 
 router = DefaultRouter()
@@ -19,5 +20,9 @@ urlpatterns = router.urls + [
     # Page d'accueil : profil d'une organisation, puis abonnement (apps.accounts.inscriptions).
     path("public/inscription/", inscription, name="inscription"),
     path("public/inscription/offre/", inscription_offre, name="inscription-offre"),
+    path("public/inscription/tarifs/", inscription_tarifs, name="inscription-tarifs"),
+    path("public/inscription/paiement/", inscription_paiement, name="inscription-paiement"),
+    path("public/inscription/paiement/notification/", inscription_paiement_notification, name="inscription-paiement-notification"),
+    path("public/inscription/paiement/<str:reference>/", inscription_paiement_etat, name="inscription-paiement-etat"),
     path("public/demo/", connexion_demo, name="connexion-demo"),
 ]

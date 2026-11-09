@@ -583,7 +583,9 @@ export function ProjetDetailPage() {
   // Périodes de planification : le suivi de chacune s'exporte aussi depuis le menu Exporter.
   const { data: periodesSuivi } = usePeriodesPlanification(projetId);
   // Programmation choisie dans le mode Tableau : reprise par l'export depuis le mode Arbre.
-  const [programmationPlan] = usePreference("programmation-planification", ["trimestres", "dates"] as const);
+  const [programmationLue] = usePreference("programmation-planification", ["trimestres", "dates", "semaines"] as const);
+  // Vue par semaine : l'export reprend les dates de début et de fin.
+  const programmationPlan = programmationLue === "semaines" ? "dates" : programmationLue;
   const supprimerElement = (a: Activite, profondeur: number) =>
     supprimerAvecConfirmation(
       voc`Supprimer « ${a.libelle} » (${nomDuNiveau(niveauxNoms, profondeur)}) ainsi que tout ce qui se trouve en dessous (niveaux inférieurs, sous-activités, indicateurs liés) ? Cette action est irréversible.`,

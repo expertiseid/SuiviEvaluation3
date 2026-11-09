@@ -129,9 +129,17 @@ class DemandeInscription(models.Model):
     """
 
     class Offre(models.TextChoices):
-        ESSENTIEL = "ESSENTIEL", "Essentiel"
+        # Standard : projets et utilisateurs illimités, 100 Go, 86 $ par mois. Standard + stockage : la
+        # même offre, plus 5 $ par tranche de 10 Go ajoutée. (Avant le 4 nov. 2026 : Essentiel, Standard,
+        # Institution, ramenées à Standard par la migration 0013.)
+        # Standard 25 Go et Standard 50 Go : l'offre Standard avec moins de stockage, moins chère (5 nov. 2026).
+        STANDARD_25 = "STANDARD_25", "Standard 25 Go"
+        STANDARD_50 = "STANDARD_50", "Standard 50 Go"
         STANDARD = "STANDARD", "Standard"
-        INSTITUTION = "INSTITUTION", "Institution"
+        STOCKAGE_PLUS = "STOCKAGE_PLUS", "Standard + stockage"
+        # Partenariat : l'offre Standard pour les structures avec lesquelles Expertise-ID collabore,
+        # avec une réduction possible jusqu'à la gratuité pendant un an, assistance comprise.
+        PARTENARIAT = "PARTENARIAT", "Partenariat"
 
     class Statut(models.TextChoices):
         ABONNEMENT_REQUIS = "ABONNEMENT_REQUIS", "Abonnement requis"

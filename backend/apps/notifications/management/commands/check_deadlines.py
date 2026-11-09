@@ -64,6 +64,10 @@ class Command(BaseCommand):
         purges = purger()
         if purges:
             self.stdout.write(f"{purges} élément(s) de la corbeille supprimé(s) définitivement (plus de 30 jours).")
+        # Espace de stockage presque plein ou plein : administrateurs prévenus (une fois par seuil).
+        from apps.organisations import quota
+
+        quota.alerter()
 
     def notifier_echeance(self, *, destinataires, titre, projet_nom, echeance, lien):
         deja_notifie = Notification.objects.filter(

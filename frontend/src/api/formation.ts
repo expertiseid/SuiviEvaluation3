@@ -24,6 +24,9 @@ export type Bloc =
   | { type: "texte" | "astuce" | "attention"; texte: string }
   | { type: "etapes" | "exercice"; items: string[] }
   | { type: "image"; src: string; legende: string }
+  /** Capture annotée : les cadres rouges numérotés de l'image correspondent, dans l'ordre, aux repères. */
+  | { type: "capture"; src: string; legende: string; reperes: string[] }
+  | { type: "tableau"; titre: string; colonnes: string[]; lignes: string[][] }
   | { type: "video"; chapitre: string; debut: number; fin: number };
 
 export interface Lecon {
