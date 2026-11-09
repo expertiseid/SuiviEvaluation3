@@ -110,3 +110,36 @@ export function useEtatPaiementStockage(reference: string | null) {
     refetchInterval: (requete) => (requete.state.data?.statut === "EN_ATTENTE" ? 4000 : false),
   });
 }
+
+interface Disque { total: number; utilise: number; libre: number }
+
+/** Vue d'ensemble de la console (supervision.py) : mesures prises à chaque ouverture. */
+export interface VueEnsemble {
+  organisations: { actives: number; suspendues: number; demonstration: number };
+  demandes_a_traiter: number;
+  paiements_30_jours: { devise: string; total: number }[];
+  paiements: {
+    date: string; organisation: string; nature: "ABONNEMENT" | "STOCKAGE"; nature_libelle: string; offre: string;
+    mois: number; tranches: number; montant: number; devise: string; statut: "EN_ATTENTE" | "PAYE" | "ECHOUE"; statut_libelle: string;
+  }[];
+  stockage: {
+    vendu_go: number;
+    utilise: number;
+    espaces: (EspaceStockage & { id: number; nom: string; statut: string; mode_demo: boolean })[];
+  };
+  /** Disque commun des fichiers (Volume du serveur de données), agrandi tout seul à `seuil` %. */
+  disque: (Disque & { plafond_go: number | null; seuil: number }) | null;
+  serveurs: {
+    plateforme: { processeurs: number | null; charge: number | null; memoire: { total: number | null; libre: number | null }; disque: Disque | null; allume_depuis: number | null };
+    donnees: { adresse: string; joignable: boolean; reponse_ms?: number; taille_bases?: number; bases?: number };
+  };
+}
+
+export function useVueEnsemble(actif = true) {
+  return useQuery({
+    queryKey: ["console", "vue-ensemble"],
+    enabled: actif,
+    queryFn: async () => (await apiClient.get<VueEnsemble>("/console/vue-ensemble/")).data,
+    refetchInterval: 60_000,
+  });
+}

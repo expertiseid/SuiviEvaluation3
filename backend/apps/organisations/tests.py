@@ -190,6 +190,12 @@ def test_connexion_par_courriel(deux_organisations, settings):
     assert operateur.get("/api/v1/utilisateurs/me/").data["est_operateur"] is True
     assert operateur.get("/api/v1/console/organisations/").status_code == 200
     assert operateur.get("/api/v1/projets/").status_code == 403
+    # Vue d'ensemble (supervision.py) : organisations, disque commun, serveurs ; opérateurs seulement.
+    vue = operateur.get("/api/v1/console/vue-ensemble/").data
+    assert vue["organisations"]["actives"] >= 2 and vue["serveurs"]["donnees"]["joignable"] is True
+    assert {e["nom"] for e in vue["stockage"]["espaces"]} >= {"Organisation A", "Organisation B"}
+    assert vue["disque"]["total"] > 0 and vue["serveurs"]["plateforme"]["memoire"]["total"] > 0
+    assert client.get("/api/v1/console/vue-ensemble/").status_code == 403
 
 
 def test_inscription_puis_activation_par_la_console(deux_organisations, settings, monkeypatch):

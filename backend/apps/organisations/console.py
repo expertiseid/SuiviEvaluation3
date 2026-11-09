@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from apps.accounts.constants import ROLE_ADMIN
 from apps.core.audit import A, auditer
 
-from . import activation, contexte, gestion, paiement, quota
+from . import activation, contexte, gestion, paiement, quota, supervision
 from .models import Organisation
 
 
@@ -85,6 +85,13 @@ def changer_stockage(request, pk):
     auditer(request.user, A.CONFIGURATION, f"Espace {org.sous_domaine} : stockage {quota.limite_go(org) or '∞'} Go",
             module="console", operation="stockage")
     return Response(OrganisationSerializer(org).data)
+
+
+@api_view(["GET"])
+@permission_classes([EstOperateur])
+def vue_ensemble(request):
+    """Organisations, demandes à traiter, paiements, disque commun et état des serveurs (supervision.py)."""
+    return Response(supervision.vue_ensemble())
 
 
 @api_view(["GET"])

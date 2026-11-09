@@ -22,6 +22,7 @@ urlpatterns = router.urls + [
     path("stockage/", console.stockage, name="stockage"),
     path("stockage/achat/", console.acheter_stockage, name="stockage-achat"),
     path("stockage/paiement/<str:reference>/", console.paiement_stockage, name="stockage-paiement"),
+    path("console/vue-ensemble/", console.vue_ensemble, name="console-vue-ensemble"),
     path("console/demandes/", console.demandes, name="console-demandes"),
     path("console/demandes/<int:pk>/activer/", console.activer, name="console-demande-activer"),
 ]

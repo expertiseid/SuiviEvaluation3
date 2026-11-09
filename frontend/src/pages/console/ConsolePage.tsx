@@ -1,11 +1,17 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { type ReactNode, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
-  ActionIcon, Alert, Anchor, Badge, Box, Button, Checkbox, Container, Group, Loader, Modal, NumberInput, Popover, Stack, Table, Tabs, Text, TextInput, Title, Tooltip,
+  ActionIcon, Alert, Anchor, AppShell, Badge, Box, Burger, Button, Card, Checkbox, Container, Group, Loader, Modal, NavLink, NumberInput, Popover,
+  ScrollArea, Stack, Table, Text, TextInput, Tooltip,
 } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
-import { Building2, CirclePause, CirclePlay, Handshake, LogOut, Newspaper, Pencil, Rocket, UserPlus } from "lucide-react";
-import { type OrganisationPlateforme, useActiverDemande, useDemandesConsole, useOrganisationsConsole, useStatutOrganisation, useStockageOrganisation } from "../../api/console";
+import {
+  Building2, CirclePause, CirclePlay, CreditCard, Handshake, HardDrive, LayoutDashboard, LogOut, Newspaper, Pencil, Rocket, UserPlus,
+} from "lucide-react";
+import {
+  type OrganisationPlateforme, useActiverDemande, useDemandesConsole, useOrganisationsConsole, useStatutOrganisation, useStockageOrganisation, useVueEnsemble,
+} from "../../api/console";
 import { type DemandeInscription, useIdentiteOrganisation } from "../../api/identite";
 import { useAuth } from "../../auth/useAuth";
 import { JaugeStockage } from "../../components/common/EspaceStockage";
@@ -15,6 +21,7 @@ import { locale } from "../../utils/i18n";
 import { voc } from "../../utils/vocabulaire";
 import { erreursParChamp } from "../plaintes/saisieRetour";
 import { ActualitesSite, PartenairesSite } from "./SiteVitrine";
+import { EnTeteRubrique, PaiementsConsole, StockageServeurs, VueEnsembleConsole } from "./Supervision";
 
 const COULEUR_DEMANDE: Record<string, string> = {
   ABONNEMENT_REQUIS: "orange", OFFRE_CHOISIE: "blue", EN_ACTIVATION: "grape", ACTIVEE: "teal", REFUSEE: "gray",
@@ -63,7 +70,7 @@ function Demandes() {
   return (
     <>
       <Table.ScrollContainer minWidth={980}>
-        <Table withTableBorder striped verticalSpacing="sm">
+        <Table striped highlightOnHover verticalSpacing="sm">
           <Table.Thead>
             <Table.Tr>
               <Table.Th>{voc("Reçue le")}</Table.Th>
@@ -166,7 +173,7 @@ function Organisations() {
   if (isLoading) return <Loader size="sm" />;
   return (
     <Table.ScrollContainer minWidth={1040}>
-      <Table withTableBorder striped verticalSpacing="sm">
+      <Table striped highlightOnHover verticalSpacing="sm">
         <Table.Thead>
           <Table.Tr>
             <Table.Th>{voc("Organisation")}</Table.Th>
@@ -174,7 +181,7 @@ function Organisations() {
             <Table.Th>{voc("Offre")}</Table.Th>
             <Table.Th w={190}>{voc("Stockage")}</Table.Th>
             <Table.Th>{voc("Ouvert le")}</Table.Th>
-            <Table.Th>{voc("État")}</Table.Th>
+            <Table.Th miw={120}>{voc("État")}</Table.Th>
             <Table.Th w={150} />
           </Table.Tr>
         </Table.Thead>
@@ -215,48 +222,105 @@ function Organisations() {
   );
 }
 
+const RUBRIQUES = [
+  { groupe: "", items: [{ cle: "vue", label: "Vue d'ensemble", icone: LayoutDashboard }] },
+  { groupe: "Clients", items: [
+    { cle: "demandes", label: "Demandes d'inscription", icone: UserPlus },
+    { cle: "organisations", label: "Organisations", icone: Building2 },
+    { cle: "paiements", label: "Paiements", icone: CreditCard },
+  ] },
+  { groupe: "Infrastructure", items: [{ cle: "stockage", label: "Stockage et serveurs", icone: HardDrive }] },
+  { groupe: "Site vitrine", items: [
+    { cle: "actualites", label: "Actualités", icone: Newspaper },
+    { cle: "partenaires", label: "Partenaires", icone: Handshake },
+  ] },
+];
+
+/** Rubrique de la console : titre, description et contenu dans une carte. */
+function Rubrique({ titre, description, children }: { titre: string; description: string; children: ReactNode }) {
+  return (
+    <>
+      <EnTeteRubrique titre={titre} description={description} />
+      <Card withBorder radius="md" padding="lg">{children}</Card>
+    </>
+  );
+}
+
+function Contenu({ rubrique, aller }: { rubrique: string; aller: (cle: string) => void }) {
+  switch (rubrique) {
+    case "demandes":
+      return <Rubrique titre={voc("Demandes d'inscription")} description={voc("Organisations qui ont créé leur profil sur le site : activez leur espace une fois l'abonnement réglé.")}><Demandes /></Rubrique>;
+    case "organisations":
+      return <Rubrique titre={voc("Organisations")} description={voc("Espaces ouverts : offre, comptes, stockage ; suspendre ou réactiver un client.")}><Organisations /></Rubrique>;
+    case "paiements":
+      return <PaiementsConsole />;
+    case "stockage":
+      return <StockageServeurs />;
+    case "actualites":
+      return <Rubrique titre={voc("Actualités du site")} description={voc("Articles affichés sur le site vitrine.")}><ActualitesSite /></Rubrique>;
+    case "partenaires":
+      return <Rubrique titre={voc("Partenaires du site")} description={voc("Logos des partenaires affichés sur le site vitrine.")}><PartenairesSite /></Rubrique>;
+    default:
+      return <VueEnsembleConsole aller={aller} />;
+  }
+}
+
 /** Console Expertise-ID (plateforme multi-organisations), ouverte depuis sa page de connexion /expertise-id. */
 export function ConsolePage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { data: plateforme } = useIdentiteOrganisation();
+  const [parametres, setParametres] = useSearchParams();
+  const [ouvert, { toggle, close }] = useDisclosure();
+  const rubrique = parametres.get("rubrique") || "vue";
+  const operateur = !!plateforme?.multi_organisations && !!user?.est_operateur;
+  const { data: vue } = useVueEnsemble(operateur);
+  const aller = (cle: string) => { setParametres(cle === "vue" ? {} : { rubrique: cle }); close(); window.scrollTo(0, 0); };
+
   return (
-    <Box bg="gray.0" mih="100vh" style={{ display: "flex", flexDirection: "column" }}>
-      <Box bg="teal.9" c="white">
-        <Container size="xl" py="sm">
-          <Group justify="space-between">
-            <Group gap="sm"><LogoPlateforme taille={30} clair /><Badge color="white" c="teal.9" variant="filled">{voc("Console Expertise-ID")}</Badge></Group>
-            <Group gap="sm">
-              <Text size="sm">{user?.first_name || user?.username}</Text>
-              <Button size="xs" variant="subtle" color="gray.0" leftSection={<LogOut size={14} />} onClick={() => { logout(); navigate("/expertise-id"); }}>{voc("Déconnexion")}</Button>
-            </Group>
+    <AppShell header={{ height: 60 }} navbar={{ width: 250, breakpoint: "sm", collapsed: { mobile: !ouvert } }} padding={0}>
+      <AppShell.Header withBorder={false} bg="teal.9" c="white">
+        <Group h="100%" px="md" justify="space-between" wrap="nowrap">
+          <Group gap="sm" wrap="nowrap">
+            <Burger opened={ouvert} onClick={toggle} hiddenFrom="sm" size="sm" color="white" />
+            <Box visibleFrom="sm"><LogoPlateforme taille={30} clair /></Box>
+            <Box hiddenFrom="sm"><LogoPlateforme taille={30} clair avecNom={false} /></Box>
+            <Badge color="white" c="teal.9" variant="filled" visibleFrom="xs">{voc("Console Expertise-ID")}</Badge>
           </Group>
+          <Group gap="sm" wrap="nowrap">
+            <Text size="sm" visibleFrom="sm">{user?.email || user?.username}</Text>
+            <Button size="xs" variant="subtle" color="gray.0" leftSection={<LogOut size={14} />} onClick={() => { logout(); navigate("/expertise-id"); }}>{voc("Déconnexion")}</Button>
+          </Group>
+        </Group>
+      </AppShell.Header>
+
+      <AppShell.Navbar p="xs" bg="gray.0">
+        <AppShell.Section grow component={ScrollArea}>
+          {operateur && RUBRIQUES.map(({ groupe, items }) => (
+            <Box key={groupe} mb="xs">
+              {groupe && <Text size="xs" fw={700} c="dimmed" tt="uppercase" px="sm" pt="sm" pb={4}>{voc(groupe)}</Text>}
+              {items.map(({ cle, label, icone: Icone }) => (
+                <NavLink key={cle} label={voc(label)} leftSection={<Icone size={17} strokeWidth={2} />} active={rubrique === cle}
+                  variant="filled" color="teal" mb={2} onClick={() => aller(cle)}
+                  rightSection={cle === "demandes" && vue?.demandes_a_traiter ? <Badge size="sm" color="orange" circle>{vue.demandes_a_traiter}</Badge> : undefined} />
+              ))}
+            </Box>
+          ))}
+        </AppShell.Section>
+        <AppShell.Section><PiedDePage /></AppShell.Section>
+      </AppShell.Navbar>
+
+      <AppShell.Main bg="gray.0">
+        <Container size="xl" py="lg">
+          {!plateforme ? <Loader /> : !plateforme.multi_organisations ? (
+            <Alert color="gray">{voc("La console Expertise-ID n'est disponible que sur la plateforme multi-organisations.")}</Alert>
+          ) : !user?.est_operateur ? (
+            <Alert color="orange">{voc("Réservé aux opérateurs Expertise-ID.")}</Alert>
+          ) : (
+            <Contenu rubrique={rubrique} aller={aller} />
+          )}
         </Container>
-      </Box>
-      <Container size="xl" py="lg" style={{ flex: 1, width: "100%" }}>
-        {!plateforme ? <Loader /> : !plateforme.multi_organisations ? (
-          <Alert color="gray">{voc("La console Expertise-ID n'est disponible que sur la plateforme multi-organisations.")}</Alert>
-        ) : !user?.est_operateur ? (
-          <Alert color="orange">{voc("Réservé aux opérateurs Expertise-ID.")}</Alert>
-        ) : (
-          <Stack gap="md">
-            <Title order={2}>{voc("Organisations de la plateforme")}</Title>
-            <Tabs defaultValue="demandes" keepMounted={false}>
-              <Tabs.List>
-                <Tabs.Tab value="demandes" leftSection={<UserPlus size={15} />}>{voc("Demandes d'inscription")}</Tabs.Tab>
-                <Tabs.Tab value="organisations" leftSection={<Building2 size={15} />}>{voc("Espaces des organisations")}</Tabs.Tab>
-                <Tabs.Tab value="actualites" leftSection={<Newspaper size={15} />}>{voc("Site : actualités")}</Tabs.Tab>
-                <Tabs.Tab value="partenaires" leftSection={<Handshake size={15} />}>{voc("Site : partenaires")}</Tabs.Tab>
-              </Tabs.List>
-              <Tabs.Panel value="demandes" pt="md"><Demandes /></Tabs.Panel>
-              <Tabs.Panel value="organisations" pt="md"><Organisations /></Tabs.Panel>
-              <Tabs.Panel value="actualites" pt="md"><ActualitesSite /></Tabs.Panel>
-              <Tabs.Panel value="partenaires" pt="md"><PartenairesSite /></Tabs.Panel>
-            </Tabs>
-          </Stack>
-        )}
-      </Container>
-      <PiedDePage />
-    </Box>
+      </AppShell.Main>
+    </AppShell>
   );
 }
