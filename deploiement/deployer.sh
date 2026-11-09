@@ -31,5 +31,7 @@ echo "3/3 Reconstruction et redémarrage…"
 ssh "$CIBLE" "cd $DOSSIER/deploiement && test -f .env.prod && FICHIERS='-f docker-compose.prod.yml' && \
   { ! grep -q '^RELAIS_IP=.' .env.prod || FICHIERS=\"\$FICHIERS -f docker-compose.relais.yml\"; } && \
   { ! grep -q '^SERVEUR_DONNEES=.' .env.prod || FICHIERS=\"\$FICHIERS -f docker-compose.donnees.yml\"; } && \
-  docker compose --env-file .env.prod \$FICHIERS up -d --build --remove-orphans"
+  docker compose --env-file .env.prod \$FICHIERS up -d --build --remove-orphans && \
+  docker compose --env-file .env.prod \$FICHIERS exec -T web nginx -s reload"
+# Nginx garde l'adresse de l'ancien conteneur backend recréé (502) : rechargé ci-dessus.
 echo "Terminé."
