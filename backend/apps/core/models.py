@@ -139,6 +139,9 @@ class IdentiteOrganisation(models.Model):
 
     nom = models.CharField(max_length=200, blank=True, help_text="Nom affiché (ex : ONG Exemple).")
     logo = models.ImageField(upload_to="identite/", blank=True)
+    session_inactivite_min = models.PositiveSmallIntegerField(
+        default=30, help_text="Déconnexion après ce nombre de minutes sans activité (apps.core.inactivite), de 5 à 480.",
+    )
     modifie_le = models.DateTimeField(auto_now=True)
 
     class Meta:

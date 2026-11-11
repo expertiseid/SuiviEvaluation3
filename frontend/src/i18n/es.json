@@ -3758,5 +3758,10 @@
  "Non renseigné": "No indicado",
  "Protection de vos données": "Protección de sus datos",
  "Sinon, les dossiers arrivés à échéance apparaissent dans « À anonymiser » et sont confirmés un par un. Jamais pour un dossier sous suspension légale.": "De lo contrario, los expedientes vencidos aparecen en «Por anonimizar» y se confirman uno a uno. Nunca para un expediente bajo suspensión legal.",
- "L'essai gratuit de votre organisation est terminé : l'accès est bloqué. Vos données sont conservées 60 jours, puis supprimées : choisissez une offre depuis la page Abonnement pour continuer.": "La prueba gratuita de su organización ha terminado: el acceso está bloqueado. Sus datos se conservan 60 días y después se eliminan: elija una oferta en la página Suscripción para continuar."
+ "L'essai gratuit de votre organisation est terminé : l'accès est bloqué. Vos données sont conservées 60 jours, puis supprimées : choisissez une offre depuis la page Abonnement pour continuer.": "La prueba gratuita de su organización ha terminado: el acceso está bloqueado. Sus datos se conservan 60 días y después se eliminan: elija una oferta en la página Suscripción para continuar.",
+ "Déconnexion après inactivité (minutes)": "Cierre de sesión tras inactividad (minutos)",
+ "Tous les utilisateurs de l'organisation sont déconnectés après cette durée sans activité, avec un avertissement une minute avant. Entre 5 et 480 minutes ; 30 par défaut.": "Todos los usuarios de la organización se desconectan tras este tiempo sin actividad, con un aviso un minuto antes. Entre 5 y 480 minutos; 30 por defecto.",
+ "Indiquez une durée entre 5 et 480 minutes.": "Indique una duración entre 5 y 480 minutos.",
+ "Propre à ce compte, entre 5 et 480 minutes. Laisser vide pour suivre le réglage de l'organisation ({0} min).": "Propio de esta cuenta, entre 5 y 480 minutos. Deje vacío para seguir el ajuste de la organización ({0} min).",
+ "Réglage de l'organisation : {0} min": "Ajuste de la organización: {0} min"
 }

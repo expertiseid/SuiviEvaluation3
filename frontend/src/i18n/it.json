@@ -3758,5 +3758,10 @@
  "Non renseigné": "Non indicato",
  "Protection de vos données": "Protezione dei tuoi dati",
  "Sinon, les dossiers arrivés à échéance apparaissent dans « À anonymiser » et sont confirmés un par un. Jamais pour un dossier sous suspension légale.": "Altrimenti, i fascicoli scaduti compaiono in «Da anonimizzare» e vengono confermati uno per uno. Mai per un fascicolo sotto sospensione legale.",
- "L'essai gratuit de votre organisation est terminé : l'accès est bloqué. Vos données sont conservées 60 jours, puis supprimées : choisissez une offre depuis la page Abonnement pour continuer.": "La prova gratuita della tua organizzazione è terminata: l'accesso è bloccato. I tuoi dati sono conservati 60 giorni, poi eliminati: scegli un'offerta dalla pagina Abbonamento per continuare."
+ "L'essai gratuit de votre organisation est terminé : l'accès est bloqué. Vos données sont conservées 60 jours, puis supprimées : choisissez une offre depuis la page Abonnement pour continuer.": "La prova gratuita della tua organizzazione è terminata: l'accesso è bloccato. I tuoi dati sono conservati 60 giorni, poi eliminati: scegli un'offerta dalla pagina Abbonamento per continuare.",
+ "Déconnexion après inactivité (minutes)": "Disconnessione dopo inattività (minuti)",
+ "Tous les utilisateurs de l'organisation sont déconnectés après cette durée sans activité, avec un avertissement une minute avant. Entre 5 et 480 minutes ; 30 par défaut.": "Tutti gli utenti dell'organizzazione vengono disconnessi dopo questo tempo senza attività, con un avviso un minuto prima. Tra 5 e 480 minuti; 30 per impostazione predefinita.",
+ "Indiquez une durée entre 5 et 480 minutes.": "Indica una durata tra 5 e 480 minuti.",
+ "Propre à ce compte, entre 5 et 480 minutes. Laisser vide pour suivre le réglage de l'organisation ({0} min).": "Specifico per questo account, tra 5 e 480 minuti. Lascia vuoto per seguire l'impostazione dell'organizzazione ({0} min).",
+ "Réglage de l'organisation : {0} min": "Impostazione dell'organizzazione: {0} min"
 }

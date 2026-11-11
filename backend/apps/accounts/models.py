@@ -27,6 +27,10 @@ class User(AbstractUser):
     langue = models.CharField(
         max_length=5, blank=True, help_text="Langue de l'interface pour cet utilisateur (vide : celle de l'organisation)."
     )
+    session_inactivite_min = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        help_text="Déconnexion après ce nombre de minutes sans activité, pour ce compte (5 à 480) ; vide : réglage de l'organisation.",
+    )
     class TypeStructure(models.TextChoices):
         INTERNE = "INTERNE", "Organisation (interne)"
         CONSORTIUM = "CONSORTIUM", "Partenaire de consortium"

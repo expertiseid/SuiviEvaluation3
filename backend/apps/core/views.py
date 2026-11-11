@@ -15,6 +15,7 @@ from .audit import A, auditer
 from .langues import dans_la_langue_demandee
 from .models import CODES_LANGUES, LANGUES, EvenementAudit, TraductionCorrigee
 from .permissions import IsAdmin, IsAdminOrReadOnly
+from .vocabulaire import v
 
 REPERE = re.compile(r"\{\d+\}")
 
@@ -345,7 +346,15 @@ def _plateforme(request):
         # Plateforme multi-organisations : organisation du compte connecté (sinon None).
         "multi_organisations": getattr(settings, "MULTI_ORGANISATIONS", False),
         "espace": _espace_courant(),
+        # Déconnexion après inactivité, en minutes (0 : jamais) : minuteur de l'interface, réglage de l'Administrateur.
+        "session_inactivite_min": _inactivite_minutes(),
     }
+
+
+def _inactivite_minutes():
+    from . import inactivite
+
+    return inactivite.minutes()
 
 
 def demo_actif():
@@ -397,6 +406,20 @@ def identite(request):
         if "nom" in request.data:
             objet.nom = (request.data.get("nom") or "").strip()[:200]
             changements.append("nom")
+        if "session_inactivite_min" in request.data:
+            from rest_framework.exceptions import ValidationError
+
+            from . import inactivite
+
+            try:
+                duree = int(request.data.get("session_inactivite_min"))
+            except (TypeError, ValueError):
+                duree = 0
+            if not inactivite.DUREE_MIN <= duree <= inactivite.DUREE_MAX:
+                raise ValidationError({"session_inactivite_min": v("Indiquez une durée entre 5 et 480 minutes.")})
+            if duree != objet.session_inactivite_min:
+                objet.session_inactivite_min = duree
+                changements.append("session_inactivite_min")
         if request.data.get("supprimer_logo") in ("true", True, "1"):
             if objet.logo:
                 objet.logo.delete(save=False)
@@ -423,6 +446,10 @@ def identite(request):
             objet.logo.save(f"logo.{format_.lower()}", fichier, save=False)
             changements.append("logo")
         objet.save()
+        if "session_inactivite_min" in changements:
+            from . import inactivite
+
+            inactivite.oublier_duree()
         if changements:
             auditer(utilisateur, A.CONFIGURATION, "Identité de l'organisation", module="comptes",
                     operation="modification", champs=changements)

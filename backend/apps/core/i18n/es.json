@@ -1266,5 +1266,6 @@
  "Anonymisation automatique à l'échéance (Oui / Non)": "Anonimización automática al vencimiento (Sí / No)",
  "Clause de consentement des plaignants": "Cláusula de consentimiento de los reclamantes",
  "- Consentement (facultatif) : Oui si la personne a donné son accord pour l'enregistrement de ses données, Non sinon ; vide si non renseigné. Date du consentement : AAAA-MM-JJ.": "- Consentimiento (opcional): Sí si la persona aceptó el registro de sus datos, No en caso contrario; vacío si no se indica. Fecha del consentimiento: AAAA-MM-DD.",
- "Consentement : Oui ou Non attendu — ignoré.": "Consentimiento: se espera Sí o No — ignorado."
+ "Consentement : Oui ou Non attendu — ignoré.": "Consentimiento: se espera Sí o No — ignorado.",
+ "Indiquez une durée entre 5 et 480 minutes.": "Indique una duración entre 5 y 480 minutos."
 }

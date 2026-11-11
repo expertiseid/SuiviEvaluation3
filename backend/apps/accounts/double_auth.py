@@ -74,7 +74,7 @@ def jetons(utilisateur, **marques) -> dict:
     refresh = RefreshToken.for_user(utilisateur)
     refresh[MARQUE] = True  # recopié dans les jetons d'accès, et conservé à chaque renouvellement
     refresh["org"] = organisation_courante()  # espace qui a délivré le jeton
-    refresh[inactivite.MARQUE] = inactivite.minutes()  # minuteur d'avertissement de l'interface
+    refresh[inactivite.MARQUE] = inactivite.minutes(utilisateur)  # minuteur d'avertissement de l'interface
     inactivite.noter(utilisateur, forcer=True)
     for cle, valeur in marques.items():  # ex : demo=True (apps.accounts.demo)
         refresh[cle] = valeur

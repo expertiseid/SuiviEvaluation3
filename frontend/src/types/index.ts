@@ -52,6 +52,10 @@ export interface User {
   /** Activités et éléments stratégiques masqués à cet utilisateur (et ce qui est en dessous). */
   activites_masquees?: number[];
   elements_masques?: number[];
+  /** Déconnexion après ce nombre de minutes sans activité, pour ce compte ; null : réglage de l'organisation. */
+  session_inactivite_min?: number | null;
+  /** Durée qui s'applique à ce compte (la sienne, sinon celle de l'organisation) ; 0 : jamais. */
+  inactivite_effective?: number;
   is_active: boolean;
   /** Visiteur de l'installation de démonstration : bandeau, rien ne s'enregistre. */
   est_demo?: boolean;

@@ -5,7 +5,8 @@ import { voc } from "../utils/vocabulaire";
 /**
  * Déconnexion après une période d'inactivité (le serveur la décide : apps/core/inactivite.py).
  *
- * - La durée, en minutes, est écrite par le serveur dans le jeton (marque « inactivite » ; 0 : jamais).
+ * - La durée, en minutes, est celle réglée par l'Administrateur (identité de l'organisation) ; à défaut, celle
+ *   écrite par le serveur dans le jeton (marque « inactivite »). 0 : jamais.
  * - L'activité (clavier, souris, toucher, défilement) est partagée entre les onglets du navigateur.
  * - Une saisie longue sans enregistrement compte comme une activité : on la signale au serveur
  *   (/session/activite/) pour qu'il ne ferme pas la session.
@@ -21,11 +22,13 @@ let demarre = false;
 let derniereEcriture = 0;
 let dernierSignal = Date.now();
 let avertissement: string | null = null;
+let minutesReglees: number | null = null;
 
 /** Durée d'inactivité, en minutes, lue dans le jeton ; 0 sans session ou si le serveur ne déconnecte pas. */
 function dureeMinutes(): number {
   const jeton = tokenStorage.getAccess();
   if (!jeton) return 0;
+  if (minutesReglees !== null) return minutesReglees;
   try {
     const charge = JSON.parse(atob(jeton.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
     return typeof charge.inactivite === "number" && charge.inactivite > 0 ? charge.inactivite : 0;
@@ -87,8 +90,9 @@ function verifier() {
   }
 }
 
-/** Démarre la surveillance (une seule fois par onglet), dès qu'une session est ouverte. */
-export function surveillerInactivite() {
+/** Démarre la surveillance (une seule fois par onglet), dès qu'une session est ouverte ; `minutes` : réglage de l'organisation. */
+export function surveillerInactivite(minutes?: number) {
+  if (typeof minutes === "number" && minutes >= 0) minutesReglees = minutes;
   if (demarre) return;
   demarre = true;
   derniereEcriture = 0;

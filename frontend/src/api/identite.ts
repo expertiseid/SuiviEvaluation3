@@ -22,6 +22,8 @@ export interface IdentiteOrganisation {
   multi_organisations: boolean;
   /** Organisation du compte connecté (ou de la page publique), sinon null. */
   espace: { sous_domaine: string; nom: string } | null;
+  /** Déconnexion après ce nombre de minutes sans activité (réglage de l'Administrateur) ; 0 : jamais. */
+  session_inactivite_min: number;
 }
 
 export function useIdentiteOrganisation() {
@@ -36,9 +38,12 @@ export function useIdentiteOrganisation() {
 export function useEnregistrerIdentite() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ nom, logo, supprimerLogo }: { nom?: string; logo?: File | null; supprimerLogo?: boolean }) => {
+    mutationFn: async ({ nom, logo, supprimerLogo, sessionInactiviteMin }: {
+      nom?: string; logo?: File | null; supprimerLogo?: boolean; sessionInactiviteMin?: number;
+    }) => {
       const envoi = new FormData();
       if (nom !== undefined) envoi.append("nom", nom);
+      if (sessionInactiviteMin !== undefined) envoi.append("session_inactivite_min", String(sessionInactiviteMin));
       if (logo) envoi.append("logo", logo);
       if (supprimerLogo) envoi.append("supprimer_logo", "true");
       return (await apiClient.patch<IdentiteOrganisation>("/identite/", envoi)).data;

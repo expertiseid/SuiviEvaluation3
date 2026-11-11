@@ -61,3 +61,43 @@ def test_desactivee_avec_zero(compte, settings):
     client = _client(jetons(compte)["access"])
     cache.clear()
     assert client.get(MOI).status_code == 200
+
+
+def test_duree_reglee_par_l_administrateur(compte):
+    from apps.accounts.constants import ROLE_ADMIN
+
+    from .models import IdentiteOrganisation
+
+    admin = User.objects.create_user(username="adm_inactif", password="x", role=ROLE_ADMIN)
+    client_admin = _client(jetons(admin)["access"])
+    assert APIClient().get("/api/v1/identite/").data["session_inactivite_min"] == 30
+    # Réservé à l'Administrateur ; entre 5 et 480 minutes.
+    assert _client(jetons(compte)["access"]).patch("/api/v1/identite/", {"session_inactivite_min": 60}).status_code == 403
+    assert client_admin.patch("/api/v1/identite/", {"session_inactivite_min": 2}).status_code == 400
+    assert client_admin.patch("/api/v1/identite/", {"session_inactivite_min": 15}).data["session_inactivite_min"] == 15
+    assert IdentiteOrganisation.courante().session_inactivite_min == 15 and inactivite.minutes() == 15
+    # Durée raccourcie : une activité vieille de 20 minutes ne suffit plus.
+    client = _client(jetons(compte)["access"])
+    cache.set(f"{inactivite.PREFIXE}{compte.pk}", time.time() - 20 * 60, timeout=3600)
+    assert client.get(MOI).data["code"] == "session_inactive"
+
+
+def test_duree_propre_a_un_utilisateur(compte):
+    from apps.accounts.constants import ROLE_ADMIN
+
+    admin = User.objects.create_user(username="adm_inactif2", password="x", role=ROLE_ADMIN)
+    client_admin = _client(jetons(admin)["access"])
+    assert client_admin.patch(f"/api/v1/utilisateurs/{compte.pk}/", {"session_inactivite_min": 500}, format="json").status_code == 400
+    assert client_admin.patch(f"/api/v1/utilisateurs/{compte.pk}/", {"session_inactivite_min": 120}, format="json").status_code == 200
+    compte.refresh_from_db()
+    j = jetons(compte)
+    assert AccessToken(j["access"])[inactivite.MARQUE] == 120
+    client = _client(j["access"])
+    assert client.get(MOI).data["inactivite_effective"] == 120
+    # 60 minutes sans activité : au-delà des 30 de l'organisation, mais dans les 120 de ce compte.
+    cache.set(f"{inactivite.PREFIXE}{compte.pk}", time.time() - 60 * 60, timeout=3600 * 3)
+    assert client.get(MOI).status_code == 200
+    # Retour au réglage de l'organisation.
+    client_admin.patch(f"/api/v1/utilisateurs/{compte.pk}/", {"session_inactivite_min": None}, format="json")
+    compte.refresh_from_db()
+    assert inactivite.minutes(compte) == 30

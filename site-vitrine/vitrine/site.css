@@ -216,7 +216,8 @@ kbd, .chip { display: inline-block; background: var(--sable); border: 1px solid 
 .adresse span { padding: 12px 14px; background: var(--sable); color: var(--gris); font-size: 0.92rem; white-space: nowrap; display: flex; align-items: center; }
 .case { display: flex; gap: 12px; align-items: flex-start; font-size: 0.95rem; }
 .case input { width: 20px; height: 20px; margin-top: 3px; accent-color: var(--encre); }
-.piege { position: absolute; left: -5000px; }
+/* Champ piège anti-robots : invisible et sans effet sur la mise en page, aussi en arabe (de droite à gauche). */
+.piege { position: absolute; width: 1px; height: 1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); opacity: 0; pointer-events: none; }
 .message-global { border-radius: 12px; padding: 14px 18px; margin-bottom: 22px; display: none; }
 .message-global.visible { display: block; }
 .message-global.erreur { background: #fdeee9; color: #9b3417; }
@@ -318,8 +319,8 @@ a.partenaire:hover { border-color: var(--safran); }
 .partenaire .initiale { width: 70px; height: 70px; border-radius: 50%; display: grid; place-items: center; font: 600 1.8rem var(--serif); background: #e6f4f1; color: #0b4f3c; }
 .partenaire h3 { font-size: 1.05rem; margin: 6px 0 0; }
 .partenaire p { margin: 0; font-size: .92rem; color: var(--gris); }
-/* Menu replié sous 1260 px : au-dessus, la marque, le menu et la langue tiennent sur une ligne dans toutes les langues. */
-@media (max-width: 1260px) {
+/* Menu replié sous 1320 px : au-dessus, la marque, le menu et la langue tiennent sur une ligne dans toutes les langues. */
+@media (max-width: 1320px) {
   .menu { display: none; position: absolute; top: 74px; left: 0; right: 0; background: var(--papier); flex-direction: column; align-items: stretch; padding: 16px 20px 24px; border-bottom: 1px solid var(--trait); gap: 14px; }
   .menu.ouvert { display: flex; }
   .bascule { display: block; }
@@ -436,7 +437,6 @@ a.partenaire:hover { border-color: var(--safran); }
 .pied .ligne-newsletter input::placeholder { color: #8fa1b4; }
 .case-newsletter { display: flex; gap: 8px; align-items: flex-start; font-size: 0.88rem; cursor: pointer; }
 .case-newsletter input { margin-top: 3px; }
-.form-newsletter .piege { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .message-newsletter { margin: 0; font-size: 0.9rem; min-height: 1.2em; }
 .pied .message-newsletter { color: #c5d2df; }
 .message-newsletter.erreur { color: #e5484d; }
@@ -451,3 +451,32 @@ a.partenaire:hover { border-color: var(--safran); }
 @media (max-width: 1200px) { .offres.cinq { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 860px) { .offres.cinq { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 560px) { .offres.cinq { grid-template-columns: 1fr; } }
+
+/* Page « Sécurité des données » (securite.html). */
+.menu a[aria-current="page"] { color: var(--safran-fonce); }
+.securite-entete { padding: 80px 0 64px; background: var(--sable); border-bottom: 1px solid var(--trait); }
+.securite-entete .intro { margin-bottom: 0; }
+.securite-bloc { padding: 90px 0; }
+.securite-sable { background: var(--sable); border-block: 1px solid var(--trait); }
+.points-cles { list-style: none; display: flex; flex-wrap: wrap; gap: 12px; padding: 0; margin: 30px 0 0; }
+.points-cles li { display: inline-flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--trait); border-radius: 999px; padding: 9px 18px; font-weight: 600; font-size: 0.95rem; color: var(--encre); }
+.points-cles svg { width: 20px; height: 20px; color: var(--safran-fonce); flex-shrink: 0; }
+.duo { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; }
+.carte-claire { background: #fff; border: 1px solid var(--trait); border-radius: var(--rayon); padding: 28px; }
+.carte-claire .icone { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; background: rgba(244, 183, 64, 0.16); color: var(--safran-fonce); margin-bottom: 18px; }
+.carte-claire .icone svg { width: 24px; height: 24px; }
+.carte-claire p { margin: 0; color: var(--gris); font-size: 0.97rem; }
+.duo-texte { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+.duo-texte .intro { margin-bottom: 0; }
+.liste-coches { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; }
+.liste-coches li { position: relative; padding-inline-start: 38px; }
+.liste-coches li::before { content: "✓"; position: absolute; inset-inline-start: 0; top: 0.1em; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 0.8rem; font-weight: 700; background: rgba(60, 207, 154, 0.2); color: #17805a; }
+.securite-contact { text-align: center; }
+.securite-contact .intro { margin-inline: auto; }
+@media (max-width: 980px) { .duo, .duo-texte { grid-template-columns: 1fr; gap: 28px; } }
+.securite-contact .actions-contact { justify-content: center; }
+/* Écrans de portable : menu un peu resserré pour que ses 9 entrées (dont « Sécurité des données ») tiennent sur une ligne. */
+@media (min-width: 1321px) and (max-width: 1480px) { .menu { gap: 11px; font-size: 14px; } .menu .bouton { padding-inline: 16px; } }
+.carte-claire .liste-coches { gap: 10px; margin-top: 14px; font-size: 0.95rem; color: var(--gris); }
+.carte-claire .liste-coches li::before { width: 20px; height: 20px; font-size: 0.7rem; top: 0.15em; }
+.carte-claire .liste-coches li { padding-inline-start: 30px; }

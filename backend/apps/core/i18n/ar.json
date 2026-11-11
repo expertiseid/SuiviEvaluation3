@@ -1266,5 +1266,6 @@
  "Anonymisation automatique à l'échéance (Oui / Non)": "إخفاء الهوية تلقائيًا عند الانتهاء (نعم / لا)",
  "Clause de consentement des plaignants": "بند موافقة مقدمي الشكاوى",
  "- Consentement (facultatif) : Oui si la personne a donné son accord pour l'enregistrement de ses données, Non sinon ; vide si non renseigné. Date du consentement : AAAA-MM-JJ.": "- الموافقة (اختياري): نعم إذا وافق الشخص على تسجيل بياناته، ولا خلاف ذلك؛ فارغ إذا لم تُحدد. تاريخ الموافقة: YYYY-MM-DD.",
- "Consentement : Oui ou Non attendu — ignoré.": "الموافقة: يُنتظر نعم أو لا — تم التجاهل."
+ "Consentement : Oui ou Non attendu — ignoré.": "الموافقة: يُنتظر نعم أو لا — تم التجاهل.",
+ "Indiquez une durée entre 5 et 480 minutes.": "حدّد مدة بين 5 و480 دقيقة."
 }

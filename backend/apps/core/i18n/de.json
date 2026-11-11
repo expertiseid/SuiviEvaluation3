@@ -1266,5 +1266,6 @@
  "Anonymisation automatique à l'échéance (Oui / Non)": "Automatische Anonymisierung bei Ablauf (Ja / Nein)",
  "Clause de consentement des plaignants": "Einwilligungsklausel für Beschwerdeführende",
  "- Consentement (facultatif) : Oui si la personne a donné son accord pour l'enregistrement de ses données, Non sinon ; vide si non renseigné. Date du consentement : AAAA-MM-JJ.": "- Einwilligung (optional): Ja, wenn die Person der Erfassung ihrer Daten zugestimmt hat, sonst Nein; leer, wenn nicht angegeben. Datum der Einwilligung: JJJJ-MM-TT.",
- "Consentement : Oui ou Non attendu — ignoré.": "Einwilligung: Ja oder Nein erwartet — ignoriert."
+ "Consentement : Oui ou Non attendu — ignoré.": "Einwilligung: Ja oder Nein erwartet — ignoriert.",
+ "Indiquez une durée entre 5 et 480 minutes.": "Geben Sie eine Dauer zwischen 5 und 480 Minuten an."
 }

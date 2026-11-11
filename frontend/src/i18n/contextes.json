@@ -3802,6 +3802,10 @@
   "pages/abonnement/MonAbonnementPage.tsx",
   "pages/console/ConsolePage.tsx"
  ],
+ "Déconnexion après inactivité (minutes)": [
+  "pages/organisation/IdentiteOrganisation.tsx",
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
  "Découvrez la plateforme pendant 1 mois, sans payer": [
   "pages/accueil/AbonnementPage.tsx"
  ],
@@ -6148,6 +6152,9 @@
   "serveur"
  ],
  "Indiquez une adresse courriel valide.": [
+  "serveur"
+ ],
+ "Indiquez une durée entre 5 et 480 minutes.": [
   "serveur"
  ],
  "Indiquez vers qui le dossier est orienté.": [
@@ -9291,6 +9298,9 @@
  "Proposé automatiquement d'après les dates — modifiable.": [
   "pages/projets/PlanificationPeriodeTab.tsx"
  ],
+ "Propre à ce compte, entre 5 et 480 minutes. Laisser vide pour suivre le réglage de l'organisation ({0} min).": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
  "Protection": [
   "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
@@ -9662,6 +9672,9 @@
  ],
  "Registre des traitements — mécanisme de plaintes et retours": [
   "serveur"
+ ],
+ "Réglage de l'organisation : {0} min": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
  ],
  "Réglage enregistré": [
   "pages/parametres/ParametresAlertePage.tsx",
@@ -11188,6 +11201,9 @@
   "pages/console/Newsletter.tsx",
   "pages/plaintes/ActionsCorrectivesPage.tsx",
   "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
+ "Tous les utilisateurs de l'organisation sont déconnectés après cette durée sans activité, avec un avertissement une minute avant. Entre 5 et 480 minutes ; 30 par défaut.": [
+  "pages/organisation/IdentiteOrganisation.tsx"
  ],
  "Tout afficher": [
   "components/dashboard/PersonnalisationModal.tsx"

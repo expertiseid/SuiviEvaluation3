@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Alert, Box, Button, Card, FileInput, Group, Image, Stack, Text, TextInput } from "@mantine/core";
+import { Alert, Box, Button, Card, FileInput, Group, Image, NumberInput, Stack, Text, TextInput } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { ImageUp, Trash2 } from "lucide-react";
 import { useEnregistrerIdentite, useIdentiteOrganisation } from "../../api/identite";
@@ -11,9 +11,11 @@ export function IdentiteOrganisation() {
   const { data: identite } = useIdentiteOrganisation();
   const enregistrer = useEnregistrerIdentite();
   const [nom, setNom] = useState("");
+  const [inactivite, setInactivite] = useState<number | string>(30);
   const [fichier, setFichier] = useState<File | null>(null);
   const [apercu, setApercu] = useState<string | null>(null);
   useEffect(() => { setNom(identite?.nom ?? ""); }, [identite?.nom]);
+  useEffect(() => { if (identite?.session_inactivite_min) setInactivite(identite.session_inactivite_min); }, [identite?.session_inactivite_min]);
   useEffect(() => {
     if (!fichier) { setApercu(null); return; }
     const url = URL.createObjectURL(fichier);
@@ -23,7 +25,10 @@ export function IdentiteOrganisation() {
 
   const sauver = async (options: { supprimerLogo?: boolean } = {}) => {
     try {
-      await enregistrer.mutateAsync({ nom, logo: fichier, ...options });
+      await enregistrer.mutateAsync({
+        nom, logo: fichier, ...options,
+        ...(identite?.session_inactivite_min ? { sessionInactiviteMin: Number(inactivite) } : {}),
+      });
       setFichier(null);
       notifications.show({ color: "teal", message: voc("Identité enregistrée") });
     } catch (error) {
@@ -53,6 +58,18 @@ export function IdentiteOrganisation() {
             )}
           </Stack>
         </Group>
+        {!!identite?.session_inactivite_min && (
+          <NumberInput
+            label={voc("Déconnexion après inactivité (minutes)")}
+            description={voc("Tous les utilisateurs de l'organisation sont déconnectés après cette durée sans activité, avec un avertissement une minute avant. Entre 5 et 480 minutes ; 30 par défaut.")}
+            min={5}
+            max={480}
+            allowDecimal={false}
+            maw={320}
+            value={inactivite}
+            onChange={setInactivite}
+          />
+        )}
         {fichier && <Alert color="blue" p="xs">{voc("Aperçu : cliquez sur « Enregistrer » pour l'appliquer.")}</Alert>}
         <Group justify="flex-end">
           <Button onClick={() => sauver()} loading={enregistrer.isPending}>{voc("Enregistrer")}</Button>

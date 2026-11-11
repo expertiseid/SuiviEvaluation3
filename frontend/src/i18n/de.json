@@ -3758,5 +3758,10 @@
  "Non renseigné": "Nicht angegeben",
  "Protection de vos données": "Schutz Ihrer Daten",
  "Sinon, les dossiers arrivés à échéance apparaissent dans « À anonymiser » et sont confirmés un par un. Jamais pour un dossier sous suspension légale.": "Andernfalls erscheinen abgelaufene Fälle unter „Zu anonymisieren“ und werden einzeln bestätigt. Nie für einen Fall unter rechtlicher Sperre.",
- "L'essai gratuit de votre organisation est terminé : l'accès est bloqué. Vos données sont conservées 60 jours, puis supprimées : choisissez une offre depuis la page Abonnement pour continuer.": "Die kostenlose Testphase Ihrer Organisation ist beendet: Der Zugang ist gesperrt. Ihre Daten werden 60 Tage aufbewahrt und dann gelöscht: Wählen Sie auf der Seite Abonnement ein Angebot, um weiterzumachen."
+ "L'essai gratuit de votre organisation est terminé : l'accès est bloqué. Vos données sont conservées 60 jours, puis supprimées : choisissez une offre depuis la page Abonnement pour continuer.": "Die kostenlose Testphase Ihrer Organisation ist beendet: Der Zugang ist gesperrt. Ihre Daten werden 60 Tage aufbewahrt und dann gelöscht: Wählen Sie auf der Seite Abonnement ein Angebot, um weiterzumachen.",
+ "Déconnexion après inactivité (minutes)": "Abmeldung nach Inaktivität (Minuten)",
+ "Tous les utilisateurs de l'organisation sont déconnectés après cette durée sans activité, avec un avertissement une minute avant. Entre 5 et 480 minutes ; 30 par défaut.": "Alle Benutzer der Organisation werden nach dieser Zeit ohne Aktivität abgemeldet, mit einer Warnung eine Minute vorher. Zwischen 5 und 480 Minuten; standardmäßig 30.",
+ "Indiquez une durée entre 5 et 480 minutes.": "Geben Sie eine Dauer zwischen 5 und 480 Minuten an.",
+ "Propre à ce compte, entre 5 et 480 minutes. Laisser vide pour suivre le réglage de l'organisation ({0} min).": "Nur für dieses Konto, zwischen 5 und 480 Minuten. Leer lassen, um die Einstellung der Organisation zu übernehmen ({0} Min.).",
+ "Réglage de l'organisation : {0} min": "Einstellung der Organisation: {0} Min."
 }

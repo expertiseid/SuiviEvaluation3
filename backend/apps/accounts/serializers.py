@@ -60,6 +60,13 @@ class UserSerializer(serializers.ModelSerializer):
     structure_libelle = serializers.SerializerMethodField()
     est_demo = serializers.SerializerMethodField()
     est_operateur = serializers.SerializerMethodField()
+    inactivite_effective = serializers.SerializerMethodField()
+
+    def get_inactivite_effective(self, obj):
+        """Durée d'inactivité qui s'applique à ce compte (la sienne, sinon celle de l'organisation) ; 0 : jamais."""
+        from apps.core import inactivite
+
+        return inactivite.minutes(obj)
 
     def get_est_operateur(self, obj):
         """Opérateur Expertise-ID (console de la plateforme multi-organisations, adresse principale)."""
@@ -120,6 +127,8 @@ class UserSerializer(serializers.ModelSerializer):
             "est_operateur",
             "activites_masquees",
             "elements_masques",
+            "session_inactivite_min",
+            "inactivite_effective",
         )
         read_only_fields = ("id",)
 
@@ -153,8 +162,16 @@ class UserWriteSerializer(serializers.ModelSerializer):
             "password",
             "activites_masquees",
             "elements_masques",
+            "session_inactivite_min",
         )
         read_only_fields = ("id",)
+
+    def validate_session_inactivite_min(self, valeur):
+        from apps.core import inactivite
+
+        if valeur is not None and not inactivite.DUREE_MIN <= valeur <= inactivite.DUREE_MAX:
+            raise serializers.ValidationError(v("Indiquez une durée entre 5 et 480 minutes."))
+        return valeur
 
     def validate(self, attrs):
         """Seul le lien correspondant au type de structure est gardé (les autres sont vidés)."""

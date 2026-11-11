@@ -10,6 +10,7 @@ import {
   SimpleGrid,
   UnstyledButton,
   Modal,
+  NumberInput,
   PasswordInput,
   Select,
   Stack,
@@ -266,7 +267,9 @@ const LIBELLES_NIVEAU_ACCES: Record<string, string> = {
 
 function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User | null; onClose: () => void }) {
   // Plateforme multi-organisations : on se connecte avec son adresse courriel, elle est donc obligatoire.
-  const courrielObligatoire = !!useIdentiteOrganisation().data?.multi_organisations;
+  const { data: identiteOrganisation } = useIdentiteOrganisation();
+  const courrielObligatoire = !!identiteOrganisation?.multi_organisations;
+  const dureeOrganisation = identiteOrganisation?.session_inactivite_min ?? 0;
   const updateUtilisateur = useUpdateUtilisateur();
 
   const [prenom, setPrenom] = useState("");
@@ -280,6 +283,8 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
   const [structure, setStructure] = useState<StructureUtilisateur>({});
   const [activitesMasquees, setActivitesMasquees] = useState<number[]>([]);
   const [elementsMasques, setElementsMasques] = useState<number[]>([]);
+  // Durée d'inactivité propre à ce compte ; vide : celle de l'organisation.
+  const [inactivite, setInactivite] = useState<number | string>("");
 
   // Le modal reste monté en permanence (seul `utilisateur` change à chaque
   // clic sur "Modifier") — un useEffect est donc nécessaire pour resynchroniser
@@ -296,6 +301,7 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
     setDroits(utilisateur.acces_modules ?? {});
     setActivitesMasquees(utilisateur.activites_masquees ?? []);
     setElementsMasques(utilisateur.elements_masques ?? []);
+    setInactivite(utilisateur.session_inactivite_min ?? "");
     setStructure({
       type_structure: utilisateur.type_structure ?? "",
       structure_interne: utilisateur.structure_interne ?? null,
@@ -321,6 +327,7 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
           acces_modules: estAdmin ? {} : droits,
           activites_masquees: estAdmin ? [] : activitesMasquees,
           elements_masques: estAdmin ? [] : elementsMasques,
+          ...(dureeOrganisation ? { session_inactivite_min: inactivite === "" ? null : Number(inactivite) } : {}),
           ...structure,
           ...(password ? { password } : {}),
         },
@@ -359,6 +366,19 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
             <VisibiliteUtilisateur activites={activitesMasquees} elements={elementsMasques}
               onActivites={setActivitesMasquees} onElements={setElementsMasques} />
           </>
+        )}
+        {dureeOrganisation > 0 && (
+          <NumberInput
+            label={voc("Déconnexion après inactivité (minutes)")}
+            description={voc`Propre à ce compte, entre 5 et 480 minutes. Laisser vide pour suivre le réglage de l'organisation (${dureeOrganisation} min).`}
+            placeholder={voc`Réglage de l'organisation : ${dureeOrganisation} min`}
+            min={5}
+            max={480}
+            allowDecimal={false}
+            maw={360}
+            value={inactivite}
+            onChange={setInactivite}
+          />
         )}
         <Switch label={voc("Compte actif")} checked={actif} onChange={(e) => setActif(e.currentTarget.checked)} />
         <PasswordInput

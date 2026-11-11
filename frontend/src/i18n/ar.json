@@ -3758,5 +3758,10 @@
  "Non renseigné": "غير محدد",
  "Protection de vos données": "حماية بياناتك",
  "Sinon, les dossiers arrivés à échéance apparaissent dans « À anonymiser » et sont confirmés un par un. Jamais pour un dossier sous suspension légale.": "وإلا تظهر الملفات المنتهية مدتها في «للإخفاء» ويتم تأكيدها واحدًا تلو الآخر. لا يُطبّق أبدًا على ملف خاضع لتعليق قانوني.",
- "L'essai gratuit de votre organisation est terminé : l'accès est bloqué. Vos données sont conservées 60 jours, puis supprimées : choisissez une offre depuis la page Abonnement pour continuer.": "انتهت التجربة المجانية لمؤسستك: تم حظر الوصول. تُحفظ بياناتك 60 يومًا ثم تُحذف: اختر عرضًا من صفحة الاشتراك للمتابعة."
+ "L'essai gratuit de votre organisation est terminé : l'accès est bloqué. Vos données sont conservées 60 jours, puis supprimées : choisissez une offre depuis la page Abonnement pour continuer.": "انتهت التجربة المجانية لمؤسستك: تم حظر الوصول. تُحفظ بياناتك 60 يومًا ثم تُحذف: اختر عرضًا من صفحة الاشتراك للمتابعة.",
+ "Déconnexion après inactivité (minutes)": "تسجيل الخروج بعد عدم النشاط (بالدقائق)",
+ "Tous les utilisateurs de l'organisation sont déconnectés après cette durée sans activité, avec un avertissement une minute avant. Entre 5 et 480 minutes ; 30 par défaut.": "يُسجَّل خروج جميع مستخدمي المؤسسة بعد هذه المدة دون نشاط، مع تنبيه قبل دقيقة واحدة. بين 5 و480 دقيقة؛ 30 افتراضيًا.",
+ "Indiquez une durée entre 5 et 480 minutes.": "حدّد مدة بين 5 و480 دقيقة.",
+ "Propre à ce compte, entre 5 et 480 minutes. Laisser vide pour suivre le réglage de l'organisation ({0} min).": "خاص بهذا الحساب، بين 5 و480 دقيقة. اتركه فارغًا لاتباع إعداد المؤسسة ({0} دقيقة).",
+ "Réglage de l'organisation : {0} min": "إعداد المؤسسة: {0} دقيقة"
 }

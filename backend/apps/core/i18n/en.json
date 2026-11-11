@@ -1266,5 +1266,6 @@
  "Anonymisation automatique à l'échéance (Oui / Non)": "Automatic anonymisation at expiry (Yes / No)",
  "Clause de consentement des plaignants": "Complainants' consent clause",
  "- Consentement (facultatif) : Oui si la personne a donné son accord pour l'enregistrement de ses données, Non sinon ; vide si non renseigné. Date du consentement : AAAA-MM-JJ.": "- Consent (optional): Yes if the person agreed to their data being recorded, No otherwise; empty if not specified. Date of consent: YYYY-MM-DD.",
- "Consentement : Oui ou Non attendu — ignoré.": "Consent: Yes or No expected — ignored."
+ "Consentement : Oui ou Non attendu — ignoré.": "Consent: Yes or No expected — ignored.",
+ "Indiquez une durée entre 5 et 480 minutes.": "Enter a duration between 5 and 480 minutes."
 }

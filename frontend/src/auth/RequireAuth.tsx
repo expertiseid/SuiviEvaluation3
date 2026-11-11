@@ -12,8 +12,9 @@ export function RequireAuth({ children, roles }: { children: ReactNode; roles?: 
   const { data: plateforme, isLoading: chargementPlateforme } = useIdentiteOrganisation();
   // Session ouverte : déconnexion automatique après une période d'inactivité.
   useEffect(() => {
-    if (user) surveillerInactivite();
-  }, [user]);
+    // Durée du compte (la sienne, sinon celle de l'organisation), à défaut celle de l'organisation.
+    if (user) surveillerInactivite(user.inactivite_effective ?? plateforme?.session_inactivite_min);
+  }, [user, plateforme?.session_inactivite_min]);
 
   if (loading || chargementPlateforme) {
     return (
