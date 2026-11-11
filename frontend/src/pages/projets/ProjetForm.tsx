@@ -47,6 +47,7 @@ const schema = z.object({
   date_debut: z.string().min(1, "Requis"),
   date_fin: z.string().min(1, "Requis"),
   date_rappel: z.string().nullable().optional(),
+  conservation_beneficiaires_mois: z.number().int().min(1).nullable().optional(),
   statut: z.enum(["EN_PREPARATION", "EN_COURS", "CLOTURE"]),
   type_mise_en_oeuvre: z.enum(["DIRECT", "CONSORTIUM"]),
   partenaire_bailleur: z.string().nullable().optional(),
@@ -196,6 +197,7 @@ export function ProjetForm({ projet, onDone }: { projet?: ProjetResume; onDone: 
           date_debut: projet.date_debut,
           date_fin: projet.date_fin,
           date_rappel: projet.date_rappel,
+          conservation_beneficiaires_mois: projet.conservation_beneficiaires_mois ?? null,
           statut: projet.statut,
           type_mise_en_oeuvre: projet.type_mise_en_oeuvre,
           partenaire_bailleur: projet.partenaire_bailleur ? String(projet.partenaire_bailleur) : null,
@@ -294,6 +296,7 @@ export function ProjetForm({ projet, onDone }: { projet?: ProjetResume; onDone: 
       date_debut: values.date_debut,
       date_fin: values.date_fin,
       date_rappel: values.date_rappel || null,
+      conservation_beneficiaires_mois: values.conservation_beneficiaires_mois ?? null,
       statut: values.statut as StatutProjet,
       type_mise_en_oeuvre: values.type_mise_en_oeuvre,
       partenaire_bailleur: values.partenaire_bailleur ? Number(values.partenaire_bailleur) : null,
@@ -442,6 +445,20 @@ export function ProjetForm({ projet, onDone }: { projet?: ProjetResume; onDone: 
                   value={field.value ?? null}
                   onChange={field.onChange}
                   clearable
+                />
+              )}
+            />
+            <Controller
+              control={control}
+              name="conservation_beneficiaires_mois"
+              render={({ field }) => (
+                <NumberInput
+                  label={voc("Conservation des données des bénéficiaires (mois après la fin du projet)")}
+                  description={voc("Facultatif. Passé ce délai, l'identité des bénéficiaires est effacée (nom, téléphone, pièce, position GPS) ; les chiffres du projet restent justes. Un bénéficiaire suivi par un autre projet en cours n'est pas concerné. Vide : données conservées.")}
+                  min={1}
+                  allowDecimal={false}
+                  value={field.value ?? ""}
+                  onChange={(v) => field.onChange(v === "" ? null : Number(v))}
                 />
               )}
             />

@@ -161,7 +161,7 @@ def appliquer_modele(code: str) -> dict:
 
     from .messages import installer_modeles
 
-    installer_modeles()  # modèles de messages au plaignant, dans les cinq langues
+    installer_modeles()  # modèles de messages au plaignant, dans les six langues
     mecanisme = Mecanisme.courant()
     mecanisme.modele = code
     if mecanisme.circuit_alternatif_id is None:

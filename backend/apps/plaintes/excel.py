@@ -39,11 +39,13 @@ REGLAGES = [
     ("Délais en jours ouvrés (Oui / Non)", "jours_ouvres"),
     ("Conservation des dossiers ordinaires (mois)", "conservation_ordinaire_mois"),
     ("Conservation des dossiers sensibles (mois)", "conservation_sensible_mois"),
+    ("Anonymisation automatique à l'échéance (Oui / Non)", "anonymisation_automatique"),
     ("Texte d'information des plaignants", "texte_information"),
+    ("Clause de consentement des plaignants", "texte_consentement"),
     ("Fichiers joints par les plaignants (Oui / Non)", "pieces_formulaire_public"),
     ("Taille maximale d'un fichier joint (Mo)", "taille_max_piece_mo"),
 ]
-CHAMPS_OUI_NON = {"anonymat_autorise", "jours_ouvres", "pieces_formulaire_public"}
+CHAMPS_OUI_NON = {"anonymat_autorise", "jours_ouvres", "pieces_formulaire_public", "anonymisation_automatique"}
 INSTRUCTIONS = [
     "Paramétrage du mécanisme de plaintes et retours",
     "",

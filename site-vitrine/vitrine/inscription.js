@@ -172,6 +172,13 @@
 
   function afficherTarifs() {
     var t = tarifs();
+    // Offre la plus achetée : étiquette « La plus populaire » sur son choix.
+    form2.querySelectorAll(".choix-offres .ruban-populaire").forEach(function (r) { r.remove(); });
+    form2.querySelectorAll(".choix-offres label").forEach(function (l) {
+      var populaire = !!t && !!l.querySelector("input[value='" + t.populaire + "']");
+      l.classList.toggle("populaire", populaire);
+      if (populaire) { var r = document.createElement("span"); r.className = "ruban-populaire"; r.textContent = T("La plus populaire"); l.appendChild(r); }
+    });
     if (t && t.usd) {
       // Prix en dollars, avec l'équivalent en FCFA (payé par mobile money).
       ["STANDARD_25", "STANDARD_50", "STANDARD"].forEach(function (code) {
@@ -182,6 +189,7 @@
     var o = offreChoisie(), paye = enLigne();
     document.getElementById("options-paiement").classList.toggle("cache", !paye);
     document.getElementById("aide-partenariat").classList.toggle("cache", o !== "PARTENARIAT");
+    document.getElementById("aide-essai").classList.toggle("cache", o !== "ESSAI");
     // Formation gratuite : selon l'offre, à partir d'1 an ou de 2 ans de licence.
     var minimum = paye && t.formation ? t.formation[o] : null, duree = parseInt(document.getElementById("duree").value, 10);
     document.getElementById("formation-oui").classList.toggle("cache", !minimum || duree < minimum);
@@ -195,7 +203,7 @@
       document.getElementById("montant").textContent = carte && t.usd
         ? dollars(mois * (prixMois(t, o, true) + n * t.usd.tranche)) : somme(mois * (prixMois(t, o, false) + n * t.tranche), t);
     }
-    document.getElementById("bouton-2").textContent = T(!paye ? "Envoyer ma demande" : carte ? "Continuer avec la carte bancaire" : "Payer et créer mon espace");
+    document.getElementById("bouton-2").textContent = T(o === "ESSAI" ? "Commencer mon essai gratuit" : !paye ? "Envoyer ma demande" : carte ? "Continuer avec la carte bancaire" : "Payer et créer mon espace");
   }
   form2.addEventListener("change", afficherTarifs);
 
@@ -237,7 +245,7 @@
     envoyer("/public/inscription/offre/", { reference: enCours.reference, offre: choix.value, message: document.getElementById("message-offre").value })
       .then(function () {
         try { sessionStorage.removeItem(CLE); } catch (e) { /* rien */ }
-        fin("fin-demande");
+        fin(choix.value === "ESSAI" ? "fin-essai" : "fin-demande");
       }).catch(function (e) {
         afficherErreurs(form2, erreurReseau(e), "L'offre n'a pas pu être enregistrée.");
       }).finally(function () {
@@ -247,7 +255,7 @@
 
   // Retour de la page de paiement : statut redemandé toutes les 3 secondes (la plateforme le vérifie auprès de CinetPay).
   function fin(id) {
-    ["fin-demande", "fin-attente", "fin-paye", "fin-echec", "fin-carte"].forEach(function (f) { document.getElementById(f).classList.toggle("cache", f !== id); });
+    ["fin-essai", "fin-demande", "fin-attente", "fin-paye", "fin-echec", "fin-carte"].forEach(function (f) { document.getElementById(f).classList.toggle("cache", f !== id); });
     etape(3);
   }
   function suivrePaiement(reference) {

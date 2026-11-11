@@ -36,6 +36,15 @@ def reperes_incoherents(source, traduction):
     return "Emplacements à conserver tels quels : " + " ; ".join(morceaux) + "."
 
 
+@api_view(["POST"])
+def activite(request):
+    """
+    Activité de l'utilisateur sans échange avec le serveur (saisie longue) : signalée par l'interface
+    pour que la session ne soit pas fermée pour inactivité. L'authentification la note (apps.core.inactivite).
+    """
+    return Response(status=204)
+
+
 @api_view(["GET"])
 @authentication_classes([])
 @permission_classes([AllowAny])
@@ -158,6 +167,10 @@ class TraductionCorrigeeViewSet(viewsets.ModelViewSet):
 
 # --- Journal d'audit ---------------------------------------------------------------------------------
 
+ESSAI_TERMINE = ("Votre essai gratuit est terminé : la plateforme n'est plus accessible. Pour continuer, "
+                 "abonnez-vous depuis le site.")
+
+
 class ConnexionAuditee(TokenObtainPairView):
     """
     Connexion, inscrite au journal d'audit, réussie ou refusée (identifiant tenté seulement). Le mot de
@@ -231,6 +244,12 @@ class ConnexionAuditee(TokenObtainPairView):
             if utilisateur is None or not utilisateur.check_password(mot_de_passe):
                 auditer(None, A.CONNEXION_ECHOUEE, module="comptes", identifiant=courriel[:150])
                 return refus
+            # Essai gratuit terminé : la plateforme ne s'ouvre plus ; seule la connexion pour s'abonner (bouton
+            # « J'ai déjà un espace : choisir une offre » du site, {abonnement: true}) mène à la page Abonnement.
+            from apps.organisations import abonnement
+
+            if org.offre == abonnement.ESSAI and abonnement.bloque(org) and request.data.get("abonnement") is not True:
+                return Response({"detail": ESSAI_TERMINE, "code": "essai_termine"}, status=403)
             return self._etape_code(utilisateur)
 
     @staticmethod
@@ -321,6 +340,8 @@ def _plateforme(request):
         "url_demo": getattr(settings, "URL_DEMO", ""),
         "inscriptions": getattr(settings, "INSCRIPTIONS_OUVERTES", True),
         "contact": getattr(settings, "COURRIEL_ABONNEMENTS", ""),
+        # Site vitrine : conditions d'utilisation, confidentialité, cookies (liens du pied de page).
+        "url_site": getattr(settings, "URL_SITE", "").rstrip("/"),
         # Plateforme multi-organisations : organisation du compte connecté (sinon None).
         "multi_organisations": getattr(settings, "MULTI_ORGANISATIONS", False),
         "espace": _espace_courant(),

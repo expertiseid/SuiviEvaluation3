@@ -376,7 +376,7 @@ export function AppLayout() {
   // Premier maillon (ex : « Stratégies ») : son nom donne celui de la rubrique « /strategie ».
   const premierMaillon = maillons?.[0]?.nom_pluriel;
   const itemsPrincipaux = ITEMS_PRINCIPAUX.flatMap((item) =>
-    item.to === "/strategie" ? [premierMaillon ? { ...item, label: premierMaillon } : item, ...itemsMaillons] : [item]);
+    item.to === "/strategie" ? [premierMaillon ? { ...item, label: voc(premierMaillon) } : item, ...itemsMaillons] : [item]);
 
   const surTableauDeBord = pathname === "/";
   const afficherBandeau = surTableauDeBord && !!echeances && echeances.length > 0;

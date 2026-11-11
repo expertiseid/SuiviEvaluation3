@@ -35,7 +35,7 @@ services:
     container_name: suivi-evaluation-3-scheduler
     build: ./backend
     # Chaque organisation (plateforme multi-organisations), ou l'installation unique.
-    command: sh -c "while true; do python manage.py pour_chaque_organisation check_deadlines; python manage.py surveiller_disque; sleep 3600; done"
+    command: sh -c "while true; do python manage.py pour_chaque_organisation check_deadlines; python manage.py supprimer_essais_expires; python manage.py surveiller_disque; sleep 3600; done"
     volumes:
       - ./backend:/app
     env_file: .env

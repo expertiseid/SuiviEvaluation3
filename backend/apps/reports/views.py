@@ -70,7 +70,9 @@ def cadre_logique(request, projet_id):
     projet = _projet_visible(request, projet_id)
     if projet is None:
         return Response({"detail": v("Projet introuvable ou non accessible.")}, status=404)
-    data = construire_cadre_logique(projet)
+    from apps.core.masquage import activites_masquees
+
+    data = construire_cadre_logique(projet, activites_masquees(request.user))
     fichier = request.query_params.get("fichier")
     if fichier == "docx":
         from .word import reponse_docx

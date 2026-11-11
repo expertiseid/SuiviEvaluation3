@@ -7,8 +7,8 @@
   <meta name="description" content="Expertise-ID Monitora : plateforme en ligne de monitoring des projets de développement : planification, indicateurs, bénéficiaires, cartographie, documents et mécanisme de gestion des plaintes. Développée par Expertise-ID.">
   <link rel="icon" type="image/svg+xml" href="vitrine/logo-plateforme.svg?v=20261106d">
   <link rel="stylesheet" href="vitrine/polices.css?v=20261106d">
-  <link rel="stylesheet" href="vitrine/site.css?v=20261106d">
-  <script src="vitrine/config.js?v=20261106d"></script>
+  <link rel="stylesheet" href="vitrine/site.css?v=20261111d">
+  <script src="vitrine/config.js?v=20261110d"></script>
 </head>
 <body>
 
@@ -22,7 +22,7 @@
       <a href="actualites.html">Actualités</a>
       <a href="partenaires.html">Partenaires</a>
       <a href="documentation.html">Documentation</a>
-      <a href="#offres">Offres</a>
+      <a href="#offres">Tarifs</a>
       <a href="contact.html">Contact</a>
       <a href="#" data-lien="CONNEXION">Se connecter</a>
       <a class="bouton bouton-plein" href="inscription.html">Créer mon espace</a>
@@ -49,7 +49,7 @@
         </div>
         <div class="preuves">
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Accès immédiat après paiement</span>
-          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>5 langues</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>6 langues</span>
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Données isolées par organisation</span>
         </div>
       </div>
@@ -206,11 +206,21 @@
   <section id="offres">
     <div class="conteneur">
       <div class="titre-section centre apparait">
-        <div class="etiquette">Offres</div>
+        <div class="etiquette">Tarifs</div>
         <h2>Une offre pour chaque organisation</h2>
         <p class="intro">Choisissez votre offre à l'inscription et payez-la en ligne : votre espace est créé aussitôt.</p>
       </div>
-      <div class="offres quatre">
+      <div class="offre-essai apparait">
+        <div>
+          <h3>Essai gratuit d'un mois</h3>
+          <p>Découvrez toute la plateforme pendant 1 mois, sans payer : 100 Mo de stockage, tous les modules. Un seul essai par adresse courriel ; à la fin, choisissez une offre pour continuer : vos données sont conservées 60 jours, puis supprimées.</p>
+        </div>
+        <div class="actions-essai">
+          <a class="bouton bouton-plein" href="inscription.html?offre=ESSAI">Commencer l'essai gratuit</a>
+          <a class="lien-deja" href="#" data-lien="ABONNEMENT">Déjà en essai ? Choisir une offre</a>
+        </div>
+      </div>
+      <div class="offres cinq">
         <div class="offre apparait">
           <h3>Standard 25 Go</h3><p class="pour">Toute l'offre Standard, avec 25 Go de stockage</p>
           <p class="prix" data-tarif="STANDARD_25" data-sans-traduction>34 $ <small>HT par mois</small><span class="prix-dollars">20 000 FCFA</span></p>
@@ -235,12 +245,19 @@
           <ul><li>Expertise-ID réalise un marché, une étude ou un accompagnement pour votre structure : un arrangement adapté est convenu pour l'accès à la plateforme.</li><li>Toute l'offre Standard : projets et utilisateurs illimités, 100 Go de stockage</li><li>Réduction possible, jusqu'à la gratuité pendant un an</li><li>Assistance comprise</li><li>Manuel d'utilisateur inclus dans l'offre</li></ul>
           <a class="bouton bouton-contour" href="inscription.html?offre=PARTENARIAT">Choisir Partenariat</a>
         </div>
+        <div class="offre apparait">
+          <h3>Sur mesure</h3><p class="pour">Pour les organisations qui veulent leur propre installation</p>
+          <p class="prix prix-texte">Sur devis <small>selon vos besoins</small></p>
+          <ul><li>Déployée sur votre propre infrastructure : vos serveurs, votre cloud ou vos locaux</li><li>Modules et rapports spécifiques</li><li>Intégration à vos outils</li><li>Nom et couleurs de votre organisation</li><li>Formation et accompagnement de vos équipes</li></ul>
+          <a class="bouton bouton-contour" href="mailto:contact@expertise-id.com?subject=Offre%20sur%20mesure%20Expertise-ID%20Monitora">Nous écrire</a>
+        </div>
       </div>
       <p class="stockage-demande" data-tarif="tranche">Besoin de plus de stockage ? Chaque offre peut être augmentée sur demande : <b>+ 5 $ (3 000 FCFA) HT pour chaque tranche de 10 Go ajoutée</b>, par mois. <a href="contact.html">Contactez-nous</a>.</p>
       <p class="avantage-annuel">Formation gratuite : pour 2 ans de licence avec les offres Standard 25 Go et Standard 50 Go, et dès 1 an de licence avec l'offre Standard (100 Go).</p>
       <div class="donnees-chez-vous apparait">
         <h2>Vos données, là où vous le voulez</h2>
-        <p class="intro">Les données de votre organisation peuvent être placées sur le serveur de votre propre structure, et vous pouvez aussi les enregistrer en local.</p>
+        <p class="intro">Par défaut, vos données sont hébergées au sein de l'Union européenne par Hetzner, un prestataire allemand certifié ISO 27001 garantissant des normes de sécurité physique strictes et une stricte conformité au RGPD.</p>
+        <p class="intro">Pour une maîtrise totale de votre infrastructure, vous avez également la possibilité de déployer et de stocker les données de votre organisation directement sur vos propres serveurs ou en local.</p>
         <div class="contacts">
           <div class="contact-carte">
             <div class="icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="7" rx="2"/><path d="M7 6.5h.01M7 17.5h.01"/></svg></div>
@@ -267,7 +284,7 @@
         <details><summary>Faut-il installer quelque chose ?</summary><p>Non. La plateforme s'utilise dans le navigateur, sur ordinateur, tablette ou téléphone. Chacun se connecte avec son adresse courriel et son mot de passe.</p></details>
         <details><summary>Nos données sont-elles visibles par d'autres organisations ?</summary><p>Jamais. Chaque organisation a sa propre base de données ; ses utilisateurs ne voient que leur espace.</p></details>
         <details><summary>Peut-on reprendre nos fichiers Excel existants ?</summary><p>Oui. Un modèle Excel unique permet d'importer d'un coup le cadre stratégique, les projets, la planification, les indicateurs et les bénéficiaires ; chaque partie peut aussi être importée séparément.</p></details>
-        <details><summary>Dans quelles langues ?</summary><p>Français, anglais, arabe, espagnol et allemand : chaque utilisateur choisit la sienne.</p></details>
+        <details><summary>Dans quelles langues ?</summary><p>Français, anglais, arabe, espagnol, allemand et italien : chaque utilisateur choisit la sienne.</p></details>
         <details><summary>Comment se passe la connexion ?</summary><p>Avec votre adresse courriel et votre mot de passe, puis un code à six chiffres envoyé à votre adresse courriel à chaque connexion. Chaque compte doit donc avoir une adresse courriel valide.</p></details>
       </div>
     </div>
@@ -296,17 +313,27 @@
     </div>
     <div>
       <h4>La plateforme</h4>
-      <a href="#fonctionnalites">Fonctionnalités</a><a href="#video">Vidéo</a><a href="#offres">Offres</a><a href="https://www.expertise-id.com" target="_blank" rel="noopener">Site d'Expertise-ID ↗</a>
+      <a href="#fonctionnalites">Fonctionnalités</a><a href="#video">Vidéo</a><a href="#offres">Tarifs</a><a href="https://www.expertise-id.com" target="_blank" rel="noopener">Site d'Expertise-ID ↗</a>
     </div>
     <div>
       <h4>Commencer</h4>
       <a href="inscription.html">Créer mon espace</a><a href="actualites.html">Actualités</a><a href="partenaires.html">Partenaires</a><a href="documentation.html">Documentation</a><a href="contact.html">Contact</a><a href="#" data-lien="CONNEXION">Se connecter</a>
     </div>
+    <div class="newsletter-pied">
+      <div><h4>Newsletter</h4><p>Les nouveautés de la plateforme, les formations et les conseils d'Expertise-ID, dans votre boîte courriel.</p></div>
+      <form class="form-newsletter" novalidate>
+        <div class="ligne-newsletter"><input type="email" name="courriel" required autocomplete="email" placeholder="Votre adresse courriel" aria-label="Votre adresse courriel"><button class="bouton bouton-plein" type="submit">S'inscrire</button></div>
+        <label class="case-newsletter"><input type="checkbox" name="accord"> <span>J'accepte de recevoir la newsletter ; je peux me désinscrire à tout moment.</span></label>
+        <input type="text" name="site_web" class="piege" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <p class="message-newsletter" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+    <nav class="liens-legaux" aria-label="Informations légales"><a href="conditions-utilisation.html">Conditions d'utilisation</a> <a href="confidentialite.html">Politique de confidentialité</a> <a href="cookies.html">Cookies</a></nav>
     <div class="bas"><span>© <span id="annee">2026</span> Expertise-ID</span><span>Fait pour les organisations de développement</span></div>
   </div>
 </footer>
-<script src="vitrine/traductions.js?v=20261109b"></script>
-<script src="vitrine/langues.js?v=20261106d"></script>
-<script src="vitrine/site.js?v=20261106d"></script>
+<script src="vitrine/traductions.js?v=20261112b"></script>
+<script src="vitrine/langues.js?v=20261111a"></script>
+<script src="vitrine/site.js?v=20261111b"></script>
 </body>
 </html>

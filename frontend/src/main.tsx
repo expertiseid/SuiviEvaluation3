@@ -13,6 +13,7 @@ import "dayjs/locale/en-gb";
 import "dayjs/locale/ar";
 import "dayjs/locale/es";
 import "dayjs/locale/de";
+import "dayjs/locale/it";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 
 import "@fontsource/inter/400.css";
@@ -30,7 +31,7 @@ import { demarrerLangue, estRtl, langue } from "./utils/i18n";
 // Dates dans la langue de l'interface (noms des mois et jours), semaine commençant le lundi,
 // affichage et saisie au clavier au format JJ/MM/AAAA.
 dayjs.extend(customParseFormat);
-const LOCALES_DAYJS = { fr: "fr", en: "en-gb", ar: "ar", es: "es", de: "de" } as const;
+const LOCALES_DAYJS = { fr: "fr", en: "en-gb", ar: "ar", es: "es", de: "de", it: "it" } as const;
 
 function lireDateSaisie(texte: string): string | null {
   const date = dayjs(texte.trim(), ["DD/MM/YYYY", "D/M/YYYY", "DD-MM-YYYY", "YYYY-MM-DD"], true);

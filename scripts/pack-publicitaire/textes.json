@@ -1,0 +1,927 @@
+{
+  "fr": {
+    "nom_langue": "Français",
+    "voix": {
+      "homme": "fr-FR-HenriNeural",
+      "femme": "fr-FR-VivienneMultilingualNeural"
+    },
+    "commun": {
+      "slogan": "Piloter. Mesurer. Rendre compte.",
+      "url": "expertise-id-monitora.com",
+      "signature": "Développé par Expertise-ID",
+      "accroche": "La plateforme de suivi-évaluation des ONG, entreprises et institutions."
+    },
+    "lancement": {
+      "s1": {
+        "ecran": [
+          "Vos projets.",
+          "Vos indicateurs.",
+          "Vos communautés."
+        ],
+        "voix": "Vos projets. Vos indicateurs. Vos communautés."
+      },
+      "s2": {
+        "ecran": "Encore éparpillés ?",
+        "mots": [
+          "Tableurs Excel",
+          "Courriels",
+          "Rapports PDF",
+          "Cahiers",
+          "Messages"
+        ],
+        "voix": "Encore éparpillés entre tableurs, courriels et rapports ?"
+      },
+      "s3": {
+        "ecran": "Voici",
+        "voix": "Voici Expertise-ID Monitora."
+      },
+      "s4": {
+        "ecran": "Tout votre suivi-évaluation, au même endroit.",
+        "puces": [
+          "Planification",
+          "Indicateurs",
+          "Bénéficiaires",
+          "Cartographie",
+          "Plaintes et retours",
+          "5 langues"
+        ],
+        "voix": "La plateforme qui réunit planification, indicateurs, bénéficiaires, cartographie et plaintes, en temps réel."
+      },
+      "s5": {
+        "ecran": "Maintenant en ligne",
+        "bouton": "Essayez-la dès aujourd'hui",
+        "voix": "Expertise-ID Monitora est en ligne. Essayez-la dès aujourd'hui."
+      }
+    },
+    "presentation": {
+      "s1": {
+        "ecran": "Découvrez Expertise-ID Monitora",
+        "sous": "en 30 secondes",
+        "voix": "En trente secondes, découvrez Expertise-ID Monitora."
+      },
+      "s2": {
+        "ecran": "Un tableau de bord clair",
+        "voix": "Un tableau de bord clair, dès la connexion."
+      },
+      "s3": {
+        "ecran": "De la stratégie aux activités",
+        "voix": "De la stratégie jusqu'aux activités, tout est relié."
+      },
+      "s4": {
+        "ecran": "Indicateurs suivis, alertes automatiques",
+        "voix": "Vos indicateurs sont suivis période après période, avec des alertes."
+      },
+      "s5": {
+        "ecran": "Vos bénéficiaires sur la carte",
+        "voix": "Vos bénéficiaires apparaissent sur la carte."
+      },
+      "s6": {
+        "ecran": "Plaintes et retours, en toute confidentialité",
+        "voix": "Et les plaintes des communautés sont traitées en toute confidentialité."
+      },
+      "s7": {
+        "voix": "Expertise-ID Monitora : piloter, mesurer, rendre compte."
+      }
+    },
+    "offres": {
+      "s1": {
+        "ecran": "Combien coûte un suivi-évaluation professionnel ?",
+        "voix": "Combien coûte un suivi-évaluation professionnel ?"
+      },
+      "s2": {
+        "ecran": "Moins que vous ne le pensez.",
+        "voix": "Moins que vous ne le pensez."
+      },
+      "s3": {
+        "par_mois": "HT par mois",
+        "voix": "25 gigaoctets : 34 dollars par mois. 50 gigaoctets : 52 dollars. 100 gigaoctets : 86 dollars."
+      },
+      "s4": {
+        "points": [
+          "Mobile money",
+          "Carte bancaire",
+          "Espace prêt en 10 minutes",
+          "Formation offerte sur les abonnements longs"
+        ],
+        "voix": "Payez par mobile money ou par carte bancaire : votre espace est prêt en quelques minutes."
+      },
+      "s5": {
+        "ecran": "Inscrivez-vous",
+        "voix": "Inscrivez-vous sur expertise-id-monitora point com."
+      }
+    },
+    "affiches": {
+      "lancement": {
+        "surtitre": "Nouveau",
+        "titre": "Expertise-ID Monitora est en ligne",
+        "texte": "La plateforme de suivi-évaluation des ONG, entreprises et institutions.",
+        "cta": "Découvrez-la maintenant"
+      },
+      "fonctionnalites": {
+        "titre": "Tout votre suivi-évaluation au même endroit",
+        "items": [
+          [
+            "Planification",
+            "Stratégies, programmes, projets, activités"
+          ],
+          [
+            "Indicateurs",
+            "Suivi par période et alertes automatiques"
+          ],
+          [
+            "Bénéficiaires",
+            "Fiches, doublons repérés, exports"
+          ],
+          [
+            "Cartographie",
+            "Vos actions sur une carte interactive"
+          ],
+          [
+            "Plaintes et retours",
+            "Un mécanisme confidentiel et traçable"
+          ],
+          [
+            "5 langues",
+            "Français, anglais, espagnol, allemand, arabe"
+          ]
+        ]
+      },
+      "tableau": {
+        "surtitre": "En temps réel",
+        "titre": "Pilotez vos projets d'un coup d'œil",
+        "texte": "Budget, bénéficiaires, indicateurs : un tableau de bord toujours à jour."
+      },
+      "plaintes": {
+        "surtitre": "Mécanisme de plaintes",
+        "titre": "Écoutez vos communautés",
+        "texte": "Recevez, traitez et suivez chaque plainte jusqu'à la réponse, en toute confidentialité.",
+        "points": [
+          "Formulaire public et code de suivi",
+          "Délais et alertes",
+          "Tableaux de bord et rapports"
+        ]
+      },
+      "carte": {
+        "surtitre": "Cartographie",
+        "titre": "Voyez où vous agissez",
+        "texte": "Bénéficiaires, zones et projets sur une carte interactive, téléchargeable."
+      },
+      "offres": {
+        "titre": "Des offres simples",
+        "sous": "Hors taxes, par mois",
+        "pied": "Mobile money ou carte bancaire · Espace prêt en 10 minutes"
+      },
+      "qr": {
+        "titre": "Découvrez la plateforme",
+        "texte": "Scannez le code avec votre téléphone."
+      }
+    },
+    "publications": {
+      "lancement": "🚀 Expertise-ID Monitora est en ligne !\n\nPlanification, indicateurs, bénéficiaires, cartographie, plaintes et retours : tout votre suivi-évaluation réuni sur une seule plateforme, en temps réel et en 5 langues.\n\nPensée pour les ONG, les entreprises et les institutions.\n\n👉 expertise-id-monitora.com",
+      "presentation": "En 30 secondes, découvrez Expertise-ID Monitora 🎬\n\n✅ Un tableau de bord clair\n✅ De la stratégie aux activités\n✅ Des indicateurs suivis, avec alertes\n✅ Vos bénéficiaires sur la carte\n✅ Les plaintes traitées en toute confidentialité\n\n👉 expertise-id-monitora.com",
+      "offres": "💡 Un suivi-évaluation professionnel, à partir de 34 $ (20 000 FCFA) HT par mois.\n\n• Standard 25 Go : 34 $ / 20 000 FCFA\n• Standard 50 Go : 52 $ / 30 000 FCFA\n• Standard 100 Go : 86 $ / 50 000 FCFA\n\nPaiement par mobile money ou carte bancaire. Votre espace est prêt en 10 minutes.\n\n👉 expertise-id-monitora.com",
+      "whatsapp": "Bonjour 👋 Expertise-ID Monitora, notre plateforme de suivi-évaluation, est en ligne : projets, indicateurs, bénéficiaires, carte et plaintes au même endroit. Découvrez-la ici : https://expertise-id-monitora.com",
+      "hashtags": "#SuiviEvaluation #MonitoringEvaluation #ONG #Développement #GestionDeProjet #Afrique #ExpertiseID #Monitora"
+    }
+  },
+  "en": {
+    "nom_langue": "English",
+    "voix": {
+      "homme": "en-US-AndrewMultilingualNeural",
+      "femme": "en-US-AvaMultilingualNeural"
+    },
+    "commun": {
+      "slogan": "Plan. Measure. Report.",
+      "url": "expertise-id-monitora.com",
+      "signature": "Developed by Expertise-ID",
+      "accroche": "The monitoring and evaluation platform for NGOs, companies and institutions."
+    },
+    "lancement": {
+      "s1": {
+        "ecran": [
+          "Your projects.",
+          "Your indicators.",
+          "Your communities."
+        ],
+        "voix": "Your projects. Your indicators. Your communities."
+      },
+      "s2": {
+        "ecran": "Still scattered?",
+        "mots": [
+          "Excel sheets",
+          "Emails",
+          "PDF reports",
+          "Notebooks",
+          "Messages"
+        ],
+        "voix": "Still scattered across spreadsheets, emails and reports?"
+      },
+      "s3": {
+        "ecran": "Meet",
+        "voix": "Meet Expertise-ID Monitora."
+      },
+      "s4": {
+        "ecran": "All your monitoring and evaluation, in one place.",
+        "puces": [
+          "Planning",
+          "Indicators",
+          "Beneficiaries",
+          "Mapping",
+          "Complaints and feedback",
+          "5 languages"
+        ],
+        "voix": "The platform that brings together planning, indicators, beneficiaries, mapping and complaints, in real time."
+      },
+      "s5": {
+        "ecran": "Now online",
+        "bouton": "Try it today",
+        "voix": "Expertise-ID Monitora is now online. Try it today."
+      }
+    },
+    "presentation": {
+      "s1": {
+        "ecran": "Discover Expertise-ID Monitora",
+        "sous": "in 30 seconds",
+        "voix": "In thirty seconds, discover Expertise-ID Monitora."
+      },
+      "s2": {
+        "ecran": "A clear dashboard",
+        "voix": "A clear dashboard, as soon as you log in."
+      },
+      "s3": {
+        "ecran": "From strategy to activities",
+        "voix": "From strategy down to activities, everything is linked."
+      },
+      "s4": {
+        "ecran": "Tracked indicators, automatic alerts",
+        "voix": "Your indicators are tracked period after period, with alerts."
+      },
+      "s5": {
+        "ecran": "Your beneficiaries on the map",
+        "voix": "Your beneficiaries appear on the map."
+      },
+      "s6": {
+        "ecran": "Complaints and feedback, fully confidential",
+        "voix": "And community complaints are handled with full confidentiality."
+      },
+      "s7": {
+        "voix": "Expertise-ID Monitora: plan, measure, report."
+      }
+    },
+    "offres": {
+      "s1": {
+        "ecran": "How much does professional monitoring and evaluation cost?",
+        "voix": "How much does professional monitoring and evaluation cost?"
+      },
+      "s2": {
+        "ecran": "Less than you think.",
+        "voix": "Less than you think."
+      },
+      "s3": {
+        "par_mois": "excl. tax per month",
+        "voix": "25 gigabytes: 34 dollars a month. 50 gigabytes: 52 dollars. 100 gigabytes: 86 dollars."
+      },
+      "s4": {
+        "points": [
+          "Mobile money",
+          "Bank card",
+          "Space ready in 10 minutes",
+          "Free training on long subscriptions"
+        ],
+        "voix": "Pay by mobile money or bank card: your space is ready in minutes."
+      },
+      "s5": {
+        "ecran": "Sign up",
+        "voix": "Sign up at expertise-id-monitora dot com."
+      }
+    },
+    "affiches": {
+      "lancement": {
+        "surtitre": "New",
+        "titre": "Expertise-ID Monitora is online",
+        "texte": "The monitoring and evaluation platform for NGOs, companies and institutions.",
+        "cta": "Discover it now"
+      },
+      "fonctionnalites": {
+        "titre": "All your monitoring and evaluation in one place",
+        "items": [
+          [
+            "Planning",
+            "Strategies, programmes, projects, activities"
+          ],
+          [
+            "Indicators",
+            "Tracking by period and automatic alerts"
+          ],
+          [
+            "Beneficiaries",
+            "Records, duplicates detected, exports"
+          ],
+          [
+            "Mapping",
+            "Your work on an interactive map"
+          ],
+          [
+            "Complaints and feedback",
+            "A confidential, traceable mechanism"
+          ],
+          [
+            "5 languages",
+            "French, English, Spanish, German, Arabic"
+          ]
+        ]
+      },
+      "tableau": {
+        "surtitre": "Real time",
+        "titre": "Steer your projects at a glance",
+        "texte": "Budget, beneficiaries, indicators: a dashboard that is always up to date."
+      },
+      "plaintes": {
+        "surtitre": "Complaints mechanism",
+        "titre": "Listen to your communities",
+        "texte": "Receive, handle and follow every complaint until it is answered, fully confidentially.",
+        "points": [
+          "Public form and tracking code",
+          "Deadlines and alerts",
+          "Dashboards and reports"
+        ]
+      },
+      "carte": {
+        "surtitre": "Mapping",
+        "titre": "See where you work",
+        "texte": "Beneficiaries, areas and projects on an interactive, downloadable map."
+      },
+      "offres": {
+        "titre": "Simple plans",
+        "sous": "Excl. tax, per month",
+        "pied": "Mobile money or bank card · Space ready in 10 minutes"
+      },
+      "qr": {
+        "titre": "Discover the platform",
+        "texte": "Scan the code with your phone."
+      }
+    },
+    "publications": {
+      "lancement": "🚀 Expertise-ID Monitora is online!\n\nPlanning, indicators, beneficiaries, mapping, complaints and feedback: all your monitoring and evaluation on one platform, in real time and in 5 languages.\n\nBuilt for NGOs, companies and institutions.\n\n👉 expertise-id-monitora.com",
+      "presentation": "Discover Expertise-ID Monitora in 30 seconds 🎬\n\n✅ A clear dashboard\n✅ From strategy to activities\n✅ Tracked indicators with alerts\n✅ Your beneficiaries on the map\n✅ Complaints handled confidentially\n\n👉 expertise-id-monitora.com",
+      "offres": "💡 Professional monitoring and evaluation from $34 (20,000 FCFA) excl. tax per month.\n\n• Standard 25 GB: $34 / 20,000 FCFA\n• Standard 50 GB: $52 / 30,000 FCFA\n• Standard 100 GB: $86 / 50,000 FCFA\n\nPay by mobile money or bank card. Your space is ready in 10 minutes.\n\n👉 expertise-id-monitora.com",
+      "whatsapp": "Hello 👋 Expertise-ID Monitora, our monitoring and evaluation platform, is online: projects, indicators, beneficiaries, map and complaints in one place. Discover it here: https://expertise-id-monitora.com",
+      "hashtags": "#MonitoringAndEvaluation #MandE #NGO #Development #ProjectManagement #Africa #ExpertiseID #Monitora"
+    }
+  },
+  "es": {
+    "nom_langue": "Español",
+    "voix": {
+      "homme": "es-ES-AlvaroNeural",
+      "femme": "es-ES-XimenaNeural"
+    },
+    "commun": {
+      "slogan": "Dirigir. Medir. Rendir cuentas.",
+      "url": "expertise-id-monitora.com",
+      "signature": "Desarrollado por Expertise-ID",
+      "accroche": "La plataforma de seguimiento y evaluación para ONG, empresas e instituciones."
+    },
+    "lancement": {
+      "s1": {
+        "ecran": [
+          "Sus proyectos.",
+          "Sus indicadores.",
+          "Sus comunidades."
+        ],
+        "voix": "Sus proyectos. Sus indicadores. Sus comunidades."
+      },
+      "s2": {
+        "ecran": "¿Todavía dispersos?",
+        "mots": [
+          "Hojas de Excel",
+          "Correos",
+          "Informes PDF",
+          "Cuadernos",
+          "Mensajes"
+        ],
+        "voix": "¿Todavía dispersos entre hojas de cálculo, correos e informes?"
+      },
+      "s3": {
+        "ecran": "Le presentamos",
+        "voix": "Le presentamos Expertise-ID Monitora."
+      },
+      "s4": {
+        "ecran": "Todo su seguimiento y evaluación, en un solo lugar.",
+        "puces": [
+          "Planificación",
+          "Indicadores",
+          "Beneficiarios",
+          "Cartografía",
+          "Quejas y comentarios",
+          "5 idiomas"
+        ],
+        "voix": "La plataforma que reúne planificación, indicadores, beneficiarios, cartografía y quejas, en tiempo real."
+      },
+      "s5": {
+        "ecran": "Ya en línea",
+        "bouton": "Pruébela hoy",
+        "voix": "Expertise-ID Monitora ya está en línea. Pruébela hoy mismo."
+      }
+    },
+    "presentation": {
+      "s1": {
+        "ecran": "Descubra Expertise-ID Monitora",
+        "sous": "en 30 segundos",
+        "voix": "Descubra Expertise-ID Monitora."
+      },
+      "s2": {
+        "ecran": "Un panel de control claro",
+        "voix": "Un panel claro, desde el inicio."
+      },
+      "s3": {
+        "ecran": "De la estrategia a las actividades",
+        "voix": "De la estrategia a las actividades, todo conectado."
+      },
+      "s4": {
+        "ecran": "Indicadores seguidos, alertas automáticas",
+        "voix": "Indicadores seguidos por período, con alertas."
+      },
+      "s5": {
+        "ecran": "Sus beneficiarios en el mapa",
+        "voix": "Sus beneficiarios, en el mapa."
+      },
+      "s6": {
+        "ecran": "Quejas y comentarios, con total confidencialidad",
+        "voix": "Y las quejas, tratadas con total confidencialidad."
+      },
+      "s7": {
+        "voix": "Expertise-ID Monitora: dirigir, medir, rendir cuentas."
+      }
+    },
+    "offres": {
+      "s1": {
+        "ecran": "¿Cuánto cuesta un seguimiento y evaluación profesional?",
+        "voix": "¿Cuánto cuesta un seguimiento y evaluación profesional?"
+      },
+      "s2": {
+        "ecran": "Menos de lo que cree.",
+        "voix": "Menos de lo que cree."
+      },
+      "s3": {
+        "par_mois": "sin impuestos al mes",
+        "voix": "25 gigabytes: 34 dólares al mes. 50 gigabytes: 52 dólares. 100 gigabytes: 86 dólares."
+      },
+      "s4": {
+        "points": [
+          "Dinero móvil",
+          "Tarjeta bancaria",
+          "Espacio listo en 10 minutos",
+          "Formación gratuita en suscripciones largas"
+        ],
+        "voix": "Pague con dinero móvil o tarjeta bancaria: su espacio estará listo en pocos minutos."
+      },
+      "s5": {
+        "ecran": "Regístrese",
+        "voix": "Regístrese en expertise-id-monitora punto com."
+      }
+    },
+    "affiches": {
+      "lancement": {
+        "surtitre": "Novedad",
+        "titre": "Expertise-ID Monitora ya está en línea",
+        "texte": "La plataforma de seguimiento y evaluación para ONG, empresas e instituciones.",
+        "cta": "Descúbrala ahora"
+      },
+      "fonctionnalites": {
+        "titre": "Todo su seguimiento y evaluación en un solo lugar",
+        "items": [
+          [
+            "Planificación",
+            "Estrategias, programas, proyectos, actividades"
+          ],
+          [
+            "Indicadores",
+            "Seguimiento por período y alertas automáticas"
+          ],
+          [
+            "Beneficiarios",
+            "Fichas, duplicados detectados, exportaciones"
+          ],
+          [
+            "Cartografía",
+            "Sus acciones en un mapa interactivo"
+          ],
+          [
+            "Quejas y comentarios",
+            "Un mecanismo confidencial y trazable"
+          ],
+          [
+            "5 idiomas",
+            "Francés, inglés, español, alemán, árabe"
+          ]
+        ]
+      },
+      "tableau": {
+        "surtitre": "En tiempo real",
+        "titre": "Dirija sus proyectos de un vistazo",
+        "texte": "Presupuesto, beneficiarios, indicadores: un panel siempre actualizado."
+      },
+      "plaintes": {
+        "surtitre": "Mecanismo de quejas",
+        "titre": "Escuche a sus comunidades",
+        "texte": "Reciba, trate y siga cada queja hasta la respuesta, con total confidencialidad.",
+        "points": [
+          "Formulario público y código de seguimiento",
+          "Plazos y alertas",
+          "Paneles e informes"
+        ]
+      },
+      "carte": {
+        "surtitre": "Cartografía",
+        "titre": "Vea dónde actúa",
+        "texte": "Beneficiarios, zonas y proyectos en un mapa interactivo y descargable."
+      },
+      "offres": {
+        "titre": "Ofertas sencillas",
+        "sous": "Sin impuestos, al mes",
+        "pied": "Dinero móvil o tarjeta bancaria · Espacio listo en 10 minutos"
+      },
+      "qr": {
+        "titre": "Descubra la plataforma",
+        "texte": "Escanee el código con su teléfono."
+      }
+    },
+    "publications": {
+      "lancement": "🚀 ¡Expertise-ID Monitora ya está en línea!\n\nPlanificación, indicadores, beneficiarios, cartografía, quejas y comentarios: todo su seguimiento y evaluación en una sola plataforma, en tiempo real y en 5 idiomas.\n\nPensada para ONG, empresas e instituciones.\n\n👉 expertise-id-monitora.com",
+      "presentation": "Descubra Expertise-ID Monitora en 30 segundos 🎬\n\n✅ Un panel claro\n✅ De la estrategia a las actividades\n✅ Indicadores seguidos, con alertas\n✅ Sus beneficiarios en el mapa\n✅ Quejas tratadas con confidencialidad\n\n👉 expertise-id-monitora.com",
+      "offres": "💡 Seguimiento y evaluación profesional desde 34 $ (20 000 FCFA) sin impuestos al mes.\n\n• Standard 25 GB: 34 $ / 20 000 FCFA\n• Standard 50 GB: 52 $ / 30 000 FCFA\n• Standard 100 GB: 86 $ / 50 000 FCFA\n\nPago con dinero móvil o tarjeta. Su espacio está listo en 10 minutos.\n\n👉 expertise-id-monitora.com",
+      "whatsapp": "Hola 👋 Expertise-ID Monitora, nuestra plataforma de seguimiento y evaluación, ya está en línea: proyectos, indicadores, beneficiarios, mapa y quejas en un solo lugar. Descúbrala aquí: https://expertise-id-monitora.com",
+      "hashtags": "#SeguimientoYEvaluación #ONG #Desarrollo #GestiónDeProyectos #África #ExpertiseID #Monitora"
+    }
+  },
+  "de": {
+    "nom_langue": "Deutsch",
+    "voix": {
+      "homme": "de-DE-ConradNeural",
+      "femme": "de-DE-SeraphinaMultilingualNeural"
+    },
+    "commun": {
+      "slogan": "Steuern. Messen. Berichten.",
+      "url": "expertise-id-monitora.com",
+      "signature": "Entwickelt von Expertise-ID",
+      "accroche": "Die Plattform für Monitoring und Evaluierung von NGOs, Unternehmen und Institutionen."
+    },
+    "lancement": {
+      "s1": {
+        "ecran": [
+          "Ihre Projekte.",
+          "Ihre Indikatoren.",
+          "Ihre Gemeinschaften."
+        ],
+        "voix": "Ihre Projekte. Ihre Indikatoren. Ihre Gemeinschaften."
+      },
+      "s2": {
+        "ecran": "Noch verstreut?",
+        "mots": [
+          "Excel-Tabellen",
+          "E-Mails",
+          "PDF-Berichte",
+          "Notizbücher",
+          "Nachrichten"
+        ],
+        "voix": "Immer noch verstreut auf Tabellen, E-Mails und Berichte?"
+      },
+      "s3": {
+        "ecran": "Das ist",
+        "voix": "Das ist Expertise-ID Monitora."
+      },
+      "s4": {
+        "ecran": "Ihr gesamtes Monitoring und Ihre Evaluierung, an einem Ort.",
+        "puces": [
+          "Planung",
+          "Indikatoren",
+          "Begünstigte",
+          "Kartografie",
+          "Beschwerden und Rückmeldungen",
+          "5 Sprachen"
+        ],
+        "voix": "Die Plattform, die Planung, Indikatoren, Begünstigte, Karten und Beschwerden in Echtzeit vereint."
+      },
+      "s5": {
+        "ecran": "Jetzt online",
+        "bouton": "Heute ausprobieren",
+        "voix": "Expertise-ID Monitora ist jetzt online. Probieren Sie es noch heute aus."
+      }
+    },
+    "presentation": {
+      "s1": {
+        "ecran": "Entdecken Sie Expertise-ID Monitora",
+        "sous": "in 30 Sekunden",
+        "voix": "Entdecken Sie Expertise-ID Monitora."
+      },
+      "s2": {
+        "ecran": "Ein klares Dashboard",
+        "voix": "Ein klares Dashboard, sofort nach dem Login."
+      },
+      "s3": {
+        "ecran": "Von der Strategie bis zu den Aktivitäten",
+        "voix": "Von der Strategie bis zur Aktivität: alles verbunden."
+      },
+      "s4": {
+        "ecran": "Verfolgte Indikatoren, automatische Warnungen",
+        "voix": "Indikatoren pro Periode verfolgt, mit Warnungen."
+      },
+      "s5": {
+        "ecran": "Ihre Begünstigten auf der Karte",
+        "voix": "Ihre Begünstigten auf der Karte."
+      },
+      "s6": {
+        "ecran": "Beschwerden und Rückmeldungen, streng vertraulich",
+        "voix": "Und Beschwerden werden streng vertraulich bearbeitet."
+      },
+      "s7": {
+        "voix": "Expertise-ID Monitora: steuern, messen, berichten."
+      }
+    },
+    "offres": {
+      "s1": {
+        "ecran": "Was kostet professionelles Monitoring und Evaluierung?",
+        "voix": "Was kostet professionelles Monitoring und Evaluierung?"
+      },
+      "s2": {
+        "ecran": "Weniger, als Sie denken.",
+        "voix": "Weniger, als Sie denken."
+      },
+      "s3": {
+        "par_mois": "netto pro Monat",
+        "voix": "25 Gigabyte: 34 Dollar pro Monat. 50 Gigabyte: 52 Dollar. 100 Gigabyte: 86 Dollar."
+      },
+      "s4": {
+        "points": [
+          "Mobile Money",
+          "Bankkarte",
+          "Bereich in 10 Minuten bereit",
+          "Gratis-Schulung bei langen Abos"
+        ],
+        "voix": "Zahlen Sie per Mobile Money oder Karte: Ihr Bereich ist in Minuten bereit."
+      },
+      "s5": {
+        "ecran": "Jetzt registrieren",
+        "voix": "Registrieren Sie sich auf expertise-id-monitora punkt com."
+      }
+    },
+    "affiches": {
+      "lancement": {
+        "surtitre": "Neu",
+        "titre": "Expertise-ID Monitora ist online",
+        "texte": "Die Plattform für Monitoring und Evaluierung von NGOs, Unternehmen und Institutionen.",
+        "cta": "Jetzt entdecken"
+      },
+      "fonctionnalites": {
+        "titre": "Ihr gesamtes Monitoring und Ihre Evaluierung an einem Ort",
+        "items": [
+          [
+            "Planung",
+            "Strategien, Programme, Projekte, Aktivitäten"
+          ],
+          [
+            "Indikatoren",
+            "Verfolgung pro Periode und automatische Warnungen"
+          ],
+          [
+            "Begünstigte",
+            "Datenblätter, erkannte Dubletten, Exporte"
+          ],
+          [
+            "Kartografie",
+            "Ihre Arbeit auf einer interaktiven Karte"
+          ],
+          [
+            "Beschwerden",
+            "Ein vertraulicher, nachvollziehbarer Mechanismus"
+          ],
+          [
+            "5 Sprachen",
+            "Französisch, Englisch, Spanisch, Deutsch, Arabisch"
+          ]
+        ]
+      },
+      "tableau": {
+        "surtitre": "In Echtzeit",
+        "titre": "Steuern Sie Ihre Projekte auf einen Blick",
+        "texte": "Budget, Begünstigte, Indikatoren: ein Dashboard, das immer aktuell ist."
+      },
+      "plaintes": {
+        "surtitre": "Beschwerdemechanismus",
+        "titre": "Hören Sie Ihren Gemeinschaften zu",
+        "texte": "Jede Beschwerde empfangen, bearbeiten und bis zur Antwort verfolgen, streng vertraulich.",
+        "points": [
+          "Öffentliches Formular und Verfolgungscode",
+          "Fristen und Warnungen",
+          "Dashboards und Berichte"
+        ]
+      },
+      "carte": {
+        "surtitre": "Kartografie",
+        "titre": "Sehen Sie, wo Sie wirken",
+        "texte": "Begünstigte, Gebiete und Projekte auf einer interaktiven, herunterladbaren Karte."
+      },
+      "offres": {
+        "titre": "Einfache Angebote",
+        "sous": "Netto, pro Monat",
+        "pied": "Mobile Money oder Bankkarte · Bereich in 10 Minuten bereit"
+      },
+      "qr": {
+        "titre": "Entdecken Sie die Plattform",
+        "texte": "Scannen Sie den Code mit Ihrem Telefon."
+      }
+    },
+    "publications": {
+      "lancement": "🚀 Expertise-ID Monitora ist online!\n\nPlanung, Indikatoren, Begünstigte, Karten, Beschwerden und Rückmeldungen: Ihr gesamtes Monitoring und Ihre Evaluierung auf einer Plattform, in Echtzeit und in 5 Sprachen.\n\nFür NGOs, Unternehmen und Institutionen.\n\n👉 expertise-id-monitora.com",
+      "presentation": "Entdecken Sie Expertise-ID Monitora in 30 Sekunden 🎬\n\n✅ Ein klares Dashboard\n✅ Von der Strategie zu den Aktivitäten\n✅ Verfolgte Indikatoren mit Warnungen\n✅ Ihre Begünstigten auf der Karte\n✅ Vertrauliche Bearbeitung von Beschwerden\n\n👉 expertise-id-monitora.com",
+      "offres": "💡 Professionelles Monitoring und Evaluierung ab 34 $ (20 000 FCFA) netto pro Monat.\n\n• Standard 25 GB: 34 $ / 20 000 FCFA\n• Standard 50 GB: 52 $ / 30 000 FCFA\n• Standard 100 GB: 86 $ / 50 000 FCFA\n\nZahlung per Mobile Money oder Bankkarte. Ihr Bereich ist in 10 Minuten bereit.\n\n👉 expertise-id-monitora.com",
+      "whatsapp": "Hallo 👋 Expertise-ID Monitora, unsere Plattform für Monitoring und Evaluierung, ist online: Projekte, Indikatoren, Begünstigte, Karte und Beschwerden an einem Ort. Hier entdecken: https://expertise-id-monitora.com",
+      "hashtags": "#Monitoring #Evaluierung #NGO #Entwicklung #Projektmanagement #Afrika #ExpertiseID #Monitora"
+    }
+  },
+  "ar": {
+    "nom_langue": "العربية",
+    "voix": {
+      "homme": "ar-SA-HamedNeural",
+      "femme": "ar-SA-ZariyahNeural"
+    },
+    "commun": {
+      "slogan": "قيادة. قياس. مساءلة.",
+      "url": "expertise-id-monitora.com",
+      "signature": "من تطوير Expertise-ID",
+      "accroche": "منصة المتابعة والتقييم للمنظمات غير الحكومية والشركات والمؤسسات."
+    },
+    "lancement": {
+      "s1": {
+        "ecran": [
+          "مشاريعكم.",
+          "مؤشراتكم.",
+          "مجتمعاتكم."
+        ],
+        "voix": "مشاريعكم. مؤشراتكم. مجتمعاتكم."
+      },
+      "s2": {
+        "ecran": "ما زالت متفرقة؟",
+        "mots": [
+          "جداول إكسل",
+          "رسائل البريد",
+          "تقارير PDF",
+          "دفاتر",
+          "رسائل"
+        ],
+        "voix": "هل ما زالت متفرقة بين الجداول والرسائل؟"
+      },
+      "s3": {
+        "ecran": "نقدم لكم",
+        "voix": "نقدم لكم إكسبرتيز آي دي مونيتورا."
+      },
+      "s4": {
+        "ecran": "كل المتابعة والتقييم في مكان واحد.",
+        "puces": [
+          "التخطيط",
+          "المؤشرات",
+          "المستفيدون",
+          "الخرائط",
+          "الشكاوى والملاحظات",
+          "5 لغات"
+        ],
+        "voix": "المنصة التي تجمع التخطيط والمؤشرات والمستفيدين والخرائط والشكاوى، في الوقت الفعلي."
+      },
+      "s5": {
+        "ecran": "متاحة الآن",
+        "bouton": "جرّبوها اليوم",
+        "voix": "إكسبرتيز آي دي مونيتورا متاحة الآن. جرّبوها اليوم."
+      }
+    },
+    "presentation": {
+      "s1": {
+        "ecran": "اكتشفوا Expertise-ID Monitora",
+        "sous": "في 30 ثانية",
+        "voix": "اكتشفوا إكسبرتيز آي دي مونيتورا."
+      },
+      "s2": {
+        "ecran": "لوحة متابعة واضحة",
+        "voix": "لوحة متابعة واضحة منذ الدخول."
+      },
+      "s3": {
+        "ecran": "من الاستراتيجية إلى الأنشطة",
+        "voix": "من الاستراتيجية إلى الأنشطة، كل شيء مترابط."
+      },
+      "s4": {
+        "ecran": "مؤشرات متابعة وتنبيهات تلقائية",
+        "voix": "مؤشرات تُتابَع كل فترة، مع تنبيهات."
+      },
+      "s5": {
+        "ecran": "مستفيدوكم على الخريطة",
+        "voix": "مستفيدوكم على الخريطة."
+      },
+      "s6": {
+        "ecran": "الشكاوى والملاحظات بسرية تامة",
+        "voix": "وشكاوى المجتمعات تُعالَج بسرية تامة."
+      },
+      "s7": {
+        "voix": "إكسبرتيز آي دي مونيتورا: قيادة، قياس، مساءلة."
+      }
+    },
+    "offres": {
+      "s1": {
+        "ecran": "كم تكلّف المتابعة والتقييم الاحترافية؟",
+        "voix": "كم تكلّف المتابعة والتقييم الاحترافية؟"
+      },
+      "s2": {
+        "ecran": "أقل مما تظنون.",
+        "voix": "أقل مما تظنون."
+      },
+      "s3": {
+        "par_mois": "شهريًا دون ضريبة",
+        "voix": "25 غيغابايت: 34 دولارًا شهريًا. 50 غيغابايت: 52 دولارًا. 100 غيغابايت: 86 دولارًا."
+      },
+      "s4": {
+        "points": [
+          "الدفع عبر الهاتف",
+          "البطاقة المصرفية",
+          "مساحة جاهزة خلال 10 دقائق",
+          "تدريب مجاني للاشتراكات الطويلة"
+        ],
+        "voix": "ادفعوا عبر الهاتف أو بالبطاقة: مساحتكم جاهزة خلال دقائق."
+      },
+      "s5": {
+        "ecran": "سجّلوا الآن",
+        "voix": "سجّلوا على موقع إكسبرتيز آي دي مونيتورا دوت كوم."
+      }
+    },
+    "affiches": {
+      "lancement": {
+        "surtitre": "جديد",
+        "titre": "Expertise-ID Monitora متاحة الآن",
+        "texte": "منصة المتابعة والتقييم للمنظمات غير الحكومية والشركات والمؤسسات.",
+        "cta": "اكتشفوها الآن"
+      },
+      "fonctionnalites": {
+        "titre": "كل المتابعة والتقييم في مكان واحد",
+        "items": [
+          [
+            "التخطيط",
+            "استراتيجيات وبرامج ومشاريع وأنشطة"
+          ],
+          [
+            "المؤشرات",
+            "متابعة حسب الفترة وتنبيهات تلقائية"
+          ],
+          [
+            "المستفيدون",
+            "بطاقات، كشف التكرار، تصدير"
+          ],
+          [
+            "الخرائط",
+            "أعمالكم على خريطة تفاعلية"
+          ],
+          [
+            "الشكاوى والملاحظات",
+            "آلية سرية وقابلة للتتبع"
+          ],
+          [
+            "5 لغات",
+            "الفرنسية والإنجليزية والإسبانية والألمانية والعربية"
+          ]
+        ]
+      },
+      "tableau": {
+        "surtitre": "في الوقت الفعلي",
+        "titre": "قودوا مشاريعكم بنظرة واحدة",
+        "texte": "الميزانية والمستفيدون والمؤشرات: لوحة متابعة محدّثة دائمًا."
+      },
+      "plaintes": {
+        "surtitre": "آلية الشكاوى",
+        "titre": "أصغوا إلى مجتمعاتكم",
+        "texte": "استقبلوا كل شكوى وعالجوها وتابعوها حتى الرد، بسرية تامة.",
+        "points": [
+          "استمارة عامة ورمز متابعة",
+          "آجال وتنبيهات",
+          "لوحات متابعة وتقارير"
+        ]
+      },
+      "carte": {
+        "surtitre": "الخرائط",
+        "titre": "شاهدوا أين تعملون",
+        "texte": "المستفيدون والمناطق والمشاريع على خريطة تفاعلية قابلة للتنزيل."
+      },
+      "offres": {
+        "titre": "عروض بسيطة",
+        "sous": "دون ضريبة، شهريًا",
+        "pied": "الدفع عبر الهاتف أو البطاقة · مساحة جاهزة خلال 10 دقائق"
+      },
+      "qr": {
+        "titre": "اكتشفوا المنصة",
+        "texte": "امسحوا الرمز بهاتفكم."
+      }
+    },
+    "publications": {
+      "lancement": "🚀 Expertise-ID Monitora متاحة الآن!\n\nالتخطيط والمؤشرات والمستفيدون والخرائط والشكاوى: كل المتابعة والتقييم على منصة واحدة، في الوقت الفعلي وبخمس لغات.\n\nمصممة للمنظمات غير الحكومية والشركات والمؤسسات.\n\n👈 expertise-id-monitora.com",
+      "presentation": "اكتشفوا Expertise-ID Monitora في 30 ثانية 🎬\n\n✅ لوحة متابعة واضحة\n✅ من الاستراتيجية إلى الأنشطة\n✅ مؤشرات مع تنبيهات\n✅ المستفيدون على الخريطة\n✅ معالجة الشكاوى بسرية\n\n👈 expertise-id-monitora.com",
+      "offres": "💡 متابعة وتقييم احترافيان ابتداءً من 34 $ (20 000 فرنك أفريقي) شهريًا دون ضريبة.\n\n• Standard 25 GB: ‏34 $ / 20 000 FCFA\n• Standard 50 GB: ‏52 $ / 30 000 FCFA\n• Standard 100 GB: ‏86 $ / 50 000 FCFA\n\nالدفع عبر الهاتف أو البطاقة المصرفية. مساحتكم جاهزة خلال 10 دقائق.\n\n👈 expertise-id-monitora.com",
+      "whatsapp": "مرحبًا 👋 منصتنا للمتابعة والتقييم Expertise-ID Monitora متاحة الآن: المشاريع والمؤشرات والمستفيدون والخريطة والشكاوى في مكان واحد. اكتشفوها هنا: https://expertise-id-monitora.com",
+      "hashtags": "#المتابعة_والتقييم #منظمات_غير_حكومية #التنمية #إدارة_المشاريع #أفريقيا #ExpertiseID #Monitora"
+    }
+  }
+}

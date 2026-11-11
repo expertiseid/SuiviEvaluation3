@@ -17,8 +17,11 @@ def supprimer_projet_cascade(projet):
     from .models import Activite, JalonLivrable, SousActivite, TauxManuel
     from .verrou import verrou_desactive
 
-    # Suppression complète : permise même pour un projet clôturé (voir verrou.py).
-    with transaction.atomic(), verrou_desactive():
+    from apps.core.effacement import effacement_definitif
+
+    # Suppression complète : permise même pour un projet clôturé (voir verrou.py) ; sans reste dans
+    # l'historique ni fichiers orphelins (apps.core.effacement).
+    with effacement_definitif(), verrou_desactive():
         activites = Activite.objects.filter(projet=projet)
         sous_activites = SousActivite.objects.filter(activite__in=activites)
         JalonLivrable.objects.filter(activite__in=activites).delete()
@@ -68,9 +71,11 @@ def supprimer_activite_cascade(activite):
     from apps.indicators.models import Indicateur, ValeurIndicateur
     from apps.suivi.models import PointSuivi
 
+    from apps.core.effacement import effacement_definitif
+
     from .models import JalonLivrable, SousActivite, TauxManuel
 
-    with transaction.atomic():
+    with effacement_definitif():
         # Les éléments imbriqués (activite_parent) doivent être supprimés
         # avant leur parent (activite_parent est en PROTECT) — récursif, quel
         # que soit le nombre de niveaux.

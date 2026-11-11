@@ -23,6 +23,10 @@ export interface MecanismePlaintes {
   anonymat_autorise: boolean;
   langues: string[];
   texte_information: string;
+  /** Clause de consentement (RGPD) du formulaire public ; vide : phrase par défaut. */
+  texte_consentement: string;
+  /** Anonymiser sans intervention les dossiers dont la durée de conservation est écoulée. */
+  anonymisation_automatique: boolean;
   prefixe_numero: string;
   jours_ouvres: boolean;
   conservation_ordinaire_mois: number | null;
@@ -312,6 +316,9 @@ export interface DossierPlainte {
   courriel: string;
   mode_reponse: ModeReponse;
   consentement: boolean;
+  /** Preuve du consentement : texte exact accepté et date. */
+  consentement_texte?: string;
+  consentement_le?: string | null;
   langue: string;
   saisi_par_nom: string | null;
   created_at: string;
@@ -493,7 +500,7 @@ export interface DossierDetail extends DossierPlainte {
 export type OperationDossier =
   | "classer" | "affecter" | "recuser" | "etape" | "noter" | "communiquer" | "decider" | "cloturer" | "rouvrir" | "recours" | "lier"
   | "prolonger" | "lever-sensibilite" | "mettre-en-cause" | "assistance" | "suspendre" | "anonymiser" | "envoyer-message" | "plaignant"
-  | "retirer-piece";
+  | "retirer-piece" | "effacer";
 
 /** Données d'un retour, communes au formulaire public et à la saisie par un agent. */
 export interface SaisieRetour {
@@ -599,6 +606,7 @@ export interface FormulairePublic {
   disponible: boolean;
   nom: string;
   texte_information?: string;
+  texte_consentement?: string;
   anonymat_autorise?: boolean;
   langues?: string[];
   projet_fixe?: boolean;
@@ -975,6 +983,7 @@ export const LANGUES_MESSAGES = [
   { value: "ar", label: "العربية" },
   { value: "es", label: "Español" },
   { value: "de", label: "Deutsch" },
+  { value: "it", label: "Italiano" },
 ];
 
 export interface ModeleMessage {

@@ -9,17 +9,18 @@
  */
 import axios from "axios";
 
-export type Langue = "fr" | "en" | "ar" | "es" | "de";
+export type Langue = "fr" | "en" | "ar" | "es" | "de" | "it";
 export const LANGUES: { code: Langue; nom: string }[] = [
   { code: "fr", nom: "Français" },
   { code: "en", nom: "English" },
   { code: "ar", nom: "العربية" },
   { code: "es", nom: "Español" },
   { code: "de", nom: "Deutsch" },
+  { code: "it", nom: "Italiano" },
 ];
 const CLE_STOCKAGE = "langue";
 // Nombres et dates ; en arabe, chiffres latins (usage courant dans les rapports de projet).
-const LOCALES: Record<Langue, string> = { fr: "fr-FR", en: "en-GB", ar: "ar-u-nu-latn", es: "es-ES", de: "de-DE" };
+const LOCALES: Record<Langue, string> = { fr: "fr-FR", en: "en-GB", ar: "ar-u-nu-latn", es: "es-ES", de: "de-DE", it: "it-IT" };
 
 let langueCourante: Langue = "fr";
 let langueDefaut: Langue = "fr";
@@ -150,8 +151,16 @@ export function changerLangue(nouvelle: Langue, destination?: string) {
   } catch {
     /* navigation privée : la langue ne sera pas mémorisée */
   }
-  if (destination) window.location.replace(destination);
-  else window.location.reload();
+  if (destination) {
+    window.location.replace(destination);
+    return;
+  }
+  // ?lang= dans l'adresse (lien venu du site vitrine) : retiré, sinon il l'emporterait sur ce nouveau choix.
+  const adresse = new URL(window.location.href);
+  if (adresse.searchParams.has("lang")) {
+    adresse.searchParams.delete("lang");
+    window.location.replace(adresse.toString());
+  } else window.location.reload();
 }
 
 /**

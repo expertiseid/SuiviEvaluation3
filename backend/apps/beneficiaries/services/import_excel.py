@@ -31,6 +31,8 @@ COLONNES_IDENTITE = [
     "Types d'activité menée (séparés par ;)",
     "Latitude",
     "Longitude",
+    "Consentement (Oui/Non)",
+    "Date du consentement (AAAA-MM-JJ)",
 ]
 # Colonnes par défaut (Burkina Faso) : libellés fixes connus du vocabulaire et de l'import combiné.
 COLONNES = [COLONNE_PAYS, *LOCALISATION_PAR_DEFAUT, *COLONNES_IDENTITE, "Code projet"]
@@ -60,7 +62,7 @@ def _exemple(pays, niveaux):
         zone = zone.parent
     chemin = (chemin + [""] * len(niveaux))[: len(niveaux)]
     return [pays, *chemin, "Traoré", "Awa", "F", "1990-05-12", "70000001", "CNIB123456", "CNIB", "Femme;Jeune",
-            "Maraîchage", "", "", ""]
+            "Maraîchage", "", "", "Oui", "2026-01-15", ""]
 
 
 def generer_modele_import(pays: str = "BF", projet=None) -> bytes:
@@ -96,6 +98,7 @@ def generer_modele_import(pays: str = "BF", projet=None) -> bytes:
     ])
     instructions.append([f"- {niveaux[-1]} : créé(e) automatiquement s'il (elle) n'existe pas encore."])
     instructions.append(["- Latitude / Longitude (facultatif) : position GPS en degrés décimaux (ex : 12.3714 / -1.5197)."])
+    instructions.append(["- Consentement (facultatif) : Oui si la personne a donné son accord pour l'enregistrement de ses données, Non sinon ; vide si non renseigné. Date du consentement : AAAA-MM-JJ."])
     instructions.append(["- Plusieurs statuts particuliers : séparer par un point-virgule (ex : Femme;Jeune)."])
     instructions.append([
         "- Types d'activité menée (ex : Maraîchage, Élevage) : séparer par un point-virgule — un type inconnu "
@@ -133,6 +136,20 @@ def _normaliser_sexe(valeur) -> str | None:
     if v in ("m", "masculin", "homme"):
         return "M"
     return None
+
+
+def _oui_non(valeur):
+    """True / False ; None si vide ; « ? » si la valeur n'est ni oui ni non (dans l'une des langues)."""
+    from apps.core.langues import vers_francais
+
+    from .variables import NON, OUI
+
+    if valeur is None or str(valeur).strip() == "":
+        return None
+    if isinstance(valeur, bool):
+        return valeur
+    texte = vers_francais(str(valeur).strip()).lower()
+    return True if texte in OUI else False if texte in NON else "?"
 
 
 def _normaliser_date(valeur):
@@ -303,6 +320,11 @@ def importer_beneficiaires_depuis_feuille(feuille, utilisateur, projet=None) -> 
             avertissements.append({"ligne": numero, "message": "Position GPS invalide — ignorée."})
             latitude = longitude = None
 
+        consentement = _oui_non(valeur(ligne, "Consentement (Oui/Non)"))
+        if consentement == "?":
+            avertissements.append({"ligne": numero, "message": "Consentement : Oui ou Non attendu — ignoré."})
+            consentement = None
+
         statuts, inconnus = _resoudre_statuts(valeur(ligne, "Statuts particuliers (séparés par ;)"))
         for nom_inconnu in inconnus:
             avertissements.append({"ligne": numero, "message": f"Statut particulier inconnu ignoré : « {nom_inconnu} »."})
@@ -323,6 +345,8 @@ def importer_beneficiaires_depuis_feuille(feuille, utilisateur, projet=None) -> 
             zone=zone,
             latitude=latitude,
             longitude=longitude,
+            consentement=consentement,
+            date_consentement=_normaliser_date(valeur(ligne, "Date du consentement (AAAA-MM-JJ)")) if consentement is not None else None,
         )
         reponses = {}
         for variable in variables:

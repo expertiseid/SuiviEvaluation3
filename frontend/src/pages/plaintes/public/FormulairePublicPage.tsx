@@ -156,8 +156,16 @@ export function FormulairePublicPage() {
             onChange={(e) => setPiege(e.currentTarget.value)}
             style={{ position: "absolute", insetInlineStart: -10000, height: 1, overflow: "hidden" }}
           />
+          {formulaire.texte_consentement && (
+            <Card withBorder bg="var(--mantine-color-gray-0)">
+              <Text size="sm" fw={600} mb={4}>{voc("Protection de vos données")}</Text>
+              <Text size="sm" dir="auto" style={{ whiteSpace: "pre-line" }}>{formulaire.texte_consentement}</Text>
+            </Card>
+          )}
           <Checkbox
-            label={voc("J'accepte que les informations de ce formulaire soient utilisées pour traiter mon retour.")}
+            label={formulaire.texte_consentement
+              ? voc("J'ai lu ce texte et j'accepte que mes informations soient utilisées pour traiter mon retour.")
+              : voc("J'accepte que les informations de ce formulaire soient utilisées pour traiter mon retour.")}
             checked={valeurs.consentement}
             onChange={(e) => { const coche = e.currentTarget.checked; setValeurs((v) => ({ ...v, consentement: coche })); }}
             error={erreurs.consentement}

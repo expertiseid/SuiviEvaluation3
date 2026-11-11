@@ -72,7 +72,30 @@ def tarifs() -> dict:
             "tranche": settings.ABONNEMENT_PRIX_TRANCHE, "durees": list(DUREES), "tranches_max": TRANCHES_MAX,
             "usd": {"mois": settings.ABONNEMENT_PRIX_MOIS_USD, "tranche": settings.ABONNEMENT_PRIX_TRANCHE_USD},
             "offres": {o: {"mois": prix_mois(o), "usd": prix_mois(o, usd=True)} for o in OFFRES_PAYANTES},
-            "formation": FORMATION}
+            "formation": FORMATION, "populaire": offre_populaire()}
+
+
+def offre_populaire() -> str:
+    """
+    Offre la plus achetée (abonnements et renouvellements payés ; Standard + stockage compte pour Standard),
+    signalée « la plus populaire » par le site ; sans achat encore, ABONNEMENT_OFFRE_POPULAIRE. À égalité,
+    celle du réglage l'emporte, sinon la moins chère.
+    """
+    from django.db.models import Count
+
+    achats = {}
+    for ligne in (PaiementAbonnement.objects.using("central")
+                  .filter(statut=PaiementAbonnement.Statut.PAYE, offre__in=OFFRES_PAYANTES,
+                          nature__in=[PaiementAbonnement.Nature.ABONNEMENT, PaiementAbonnement.Nature.RENOUVELLEMENT])
+                  .values("offre").annotate(n=Count("id"))):
+        offre = "STANDARD" if ligne["offre"] == "STOCKAGE_PLUS" else ligne["offre"]
+        achats[offre] = achats.get(offre, 0) + ligne["n"]
+    defaut = settings.ABONNEMENT_OFFRE_POPULAIRE
+    if not achats:
+        return defaut
+    plus = max(achats.values())
+    egales = [o for o in ("STANDARD_25", "STANDARD_50", "STANDARD") if achats.get(o) == plus]
+    return defaut if defaut in egales else egales[0]
 
 
 def montant(offre: str, mois: int, tranches: int, usd=False) -> int:
@@ -284,6 +307,8 @@ def creer_stockage(org, utilisateur, tranches, mois, langue="fr") -> PaiementAbo
     """Paiement de `tranches` × 10 Go pendant `mois` mois ; renvoie le paiement, dont le lien vers CinetPay."""
     if not actif():
         raise ValidationError({"detail": v("Le paiement en ligne n'est pas disponible : contactez Expertise-ID.")})
+    if org.offre == "ESSAI":
+        raise ValidationError({"detail": v("Pendant l'essai gratuit, le stockage ne s'agrandit pas : choisissez d'abord une offre (page Abonnement).")})
     tranches, mois = _lire_achat(tranches, mois)
     paiement = PaiementAbonnement.objects.using("central").create(
         nature=PaiementAbonnement.Nature.STOCKAGE, organisation=org, payeur=utilisateur.email or "",

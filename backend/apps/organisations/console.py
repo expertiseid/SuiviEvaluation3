@@ -227,7 +227,7 @@ def abonnement_organisation(request):
     jours, valeur = abonnement.reste(org)
     return Response({
         **abonnement.etat(org), "offre_libelle": dict(DemandeInscription.Offre.choices).get(org.offre, org.offre or "—"),
-        "prix_mois": org.abonnement_prix_mois, "reste": valeur, "grace": abonnement.GRACE,
+        "prix_mois": org.abonnement_prix_mois, "reste": valeur, "grace": abonnement.grace(org),
         "peut_payer": request.user.role == ROLE_ADMIN, "paiement": paiement.actif(), "devise": settings.ABONNEMENT_DEVISE,
         "renouvelable": org.offre in paiement.OFFRES_PAYANTES, "offres": _offres(), "durees": list(paiement.DUREES),
         "paiements": paiement.paiements_abonnement(org) if request.user.role == ROLE_ADMIN else [],

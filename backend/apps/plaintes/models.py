@@ -65,6 +65,13 @@ class Mecanisme(TimestampedModel):
     # Conservation : aucune valeur par défaut imposée, l'organisation la fixe avant l'activation.
     conservation_ordinaire_mois = models.PositiveIntegerField(null=True, blank=True)
     conservation_sensible_mois = models.PositiveIntegerField(null=True, blank=True)
+    anonymisation_automatique = models.BooleanField(
+        default=False, help_text="Anonymiser sans intervention les dossiers dont la durée de conservation est écoulée "
+        "(sinon : liste « À anonymiser », confirmation dossier par dossier).",
+    )
+    texte_consentement = models.TextField(
+        blank=True, help_text="Clause de consentement (RGPD) affichée sur le formulaire public ; vide : phrase par défaut.",
+    )
     projets = models.ManyToManyField(
         "projects.Projet", blank=True, related_name="mecanismes_plaintes",
         help_text="Projets couverts ; aucun = tous les projets.",
@@ -351,6 +358,8 @@ class Dossier(TimestampedModel):
     consentement = models.BooleanField(
         default=False, help_text="Accord du plaignant pour l'utilisation de ses informations dans le traitement.",
     )
+    consentement_texte = models.TextField(blank=True, help_text="Texte exact accepté par le plaignant (preuve du consentement).")
+    consentement_le = models.DateTimeField(null=True, blank=True)
     langue = models.CharField(max_length=5, blank=True)
     saisi_par = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="dossiers_plaintes_saisis",

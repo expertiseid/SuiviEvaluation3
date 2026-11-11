@@ -62,6 +62,7 @@ def formulaire(request):
         "disponible": True,
         "nom": mecanisme.nom,
         "texte_information": mecanisme.texte_information,
+        "texte_consentement": mecanisme.texte_consentement,
         "anonymat_autorise": mecanisme.anonymat_autorise,
         "pieces": _pieces_acceptees(mecanisme),
         "langues": mecanisme.langues,

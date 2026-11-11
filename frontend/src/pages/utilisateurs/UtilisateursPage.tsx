@@ -38,6 +38,7 @@ import { ModifierRoleModal, RolesTab } from "./RolesTab";
 import { useIdentiteOrganisation } from "../../api/identite";
 import { DemandesInscription } from "./DemandesInscription";
 import { DroitsModules } from "./DroitsModules";
+import { VisibiliteUtilisateur } from "./Visibilite";
 import { usePartiesPrenantes, useStructures, useTousPartenaires } from "../../api/organisation";
 import { optionsStructures } from "../../utils/organisation";
 import { TitreRubrique } from "../../components/common/TitreRubrique";
@@ -277,6 +278,8 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
   const [password, setPassword] = useState("");
   const [droits, setDroits] = useState<Record<string, NiveauModule>>({});
   const [structure, setStructure] = useState<StructureUtilisateur>({});
+  const [activitesMasquees, setActivitesMasquees] = useState<number[]>([]);
+  const [elementsMasques, setElementsMasques] = useState<number[]>([]);
 
   // Le modal reste monté en permanence (seul `utilisateur` change à chaque
   // clic sur "Modifier") — un useEffect est donc nécessaire pour resynchroniser
@@ -291,6 +294,8 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
     setActif(utilisateur.is_active);
     setPassword("");
     setDroits(utilisateur.acces_modules ?? {});
+    setActivitesMasquees(utilisateur.activites_masquees ?? []);
+    setElementsMasques(utilisateur.elements_masques ?? []);
     setStructure({
       type_structure: utilisateur.type_structure ?? "",
       structure_interne: utilisateur.structure_interne ?? null,
@@ -314,6 +319,8 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
           niveau_acces: (estAdmin ? "LECTURE_ECRITURE" : niveauAcces) as never,
           is_active: actif,
           acces_modules: estAdmin ? {} : droits,
+          activites_masquees: estAdmin ? [] : activitesMasquees,
+          elements_masques: estAdmin ? [] : elementsMasques,
           ...structure,
           ...(password ? { password } : {}),
         },
@@ -347,7 +354,11 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
         {estAdmin ? (
           <Text size="xs" c="dimmed">{voc("Un Administrateur a toujours accès à tous les modules.")}</Text>
         ) : (
-          <DroitsModules value={droits} onChange={setDroits} niveauAcces={niveauAcces} />
+          <>
+            <DroitsModules value={droits} onChange={setDroits} niveauAcces={niveauAcces} />
+            <VisibiliteUtilisateur activites={activitesMasquees} elements={elementsMasques}
+              onActivites={setActivitesMasquees} onElements={setElementsMasques} />
+          </>
         )}
         <Switch label={voc("Compte actif")} checked={actif} onChange={(e) => setActif(e.currentTarget.checked)} />
         <PasswordInput

@@ -6,11 +6,13 @@ import { voc } from "../utils/vocabulaire";
 
 export type ActionAudit =
   | "CONNEXION" | "CONNEXION_ECHOUEE" | "CONSULTATION_SENSIBLE" | "DOSSIER" | "TELECHARGEMENT" | "EXPORT"
-  | "CONFIGURATION" | "PERMISSION" | "HABILITATION" | "DROITS_PERSONNES" | "DOUBLE_AUTHENTIFICATION";
+  | "CONFIGURATION" | "PERMISSION" | "HABILITATION" | "DROITS_PERSONNES" | "DOUBLE_AUTHENTIFICATION"
+  | "PARTAGE" | "MOT_DE_PASSE" | "SUPPRESSION";
 
 export const ACTIONS_AUDIT: ActionAudit[] = [
   "CONNEXION", "CONNEXION_ECHOUEE", "CONSULTATION_SENSIBLE", "DOSSIER", "TELECHARGEMENT", "EXPORT",
   "CONFIGURATION", "PERMISSION", "HABILITATION", "DROITS_PERSONNES", "DOUBLE_AUTHENTIFICATION",
+  "PARTAGE", "MOT_DE_PASSE", "SUPPRESSION",
 ];
 
 export const libelleActionAudit = (a: ActionAudit): string =>
@@ -26,6 +28,9 @@ export const libelleActionAudit = (a: ActionAudit): string =>
     HABILITATION: voc("Habilitation confidentielle"),
     DROITS_PERSONNES: voc("Demande d'une personne sur ses données"),
     DOUBLE_AUTHENTIFICATION: voc("Double authentification"),
+    PARTAGE: voc("Partage d'un document par lien"),
+    MOT_DE_PASSE: voc("Mot de passe oublié"),
+    SUPPRESSION: voc("Suppression"),
   })[a];
 
 export interface EvenementAudit {

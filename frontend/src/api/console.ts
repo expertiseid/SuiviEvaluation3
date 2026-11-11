@@ -157,6 +157,8 @@ export interface PageAbonnement {
   jours_restants: number | null;
   offre?: string;
   offre_libelle?: string;
+  /** Essai gratuit (1 mois, 100 Mo) : pas de grâce à la fin, une offre payante à choisir. */
+  essai?: boolean;
   prix_mois?: number | null;
   /** Valeur des jours payés qui restent (déduite lors d'un changement d'offre). */
   reste?: number;

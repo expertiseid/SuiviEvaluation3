@@ -39,9 +39,10 @@ export function LogoOrganisation({ hauteur = 32 }: { hauteur?: number }) {
 }
 
 /** « Développé par Expertise-ID » avec le logo de l'entreprise, en pied de chaque page (aussi dans l'en-tête des pages connectées). */
-export function PiedDePage({ clair = false }: { clair?: boolean }) {
+export function PiedDePage({ clair = false, liens = true }: { clair?: boolean; liens?: boolean }) {
   return (
-    <Group justify="center" gap={8} py="sm" wrap="nowrap">
+    <Stack gap={2} py="sm" align="center">
+    <Group justify="center" gap={8} wrap="nowrap">
       <Anchor href="https://www.expertise-id.com" target="_blank" rel="noopener" style={{ display: "flex", background: "white", borderRadius: 6, padding: 2 }}>
         <Image src="/logo-expertise-id.png" w={28} h={28} fit="contain" alt="Expertise-ID" />
       </Anchor>
@@ -50,6 +51,25 @@ export function PiedDePage({ clair = false }: { clair?: boolean }) {
         <Anchor href="https://www.expertise-id.com" target="_blank" rel="noopener" size="xs" fw={700} c={clair ? "white" : "teal.8"} underline="hover">Expertise-ID</Anchor>
         {" · "}© {new Date().getFullYear()}
       </Text>
+    </Group>
+    {liens && <LiensLegaux clair={clair} />}
+    </Stack>
+  );
+}
+
+/** Pages du site vitrine : conditions d'utilisation, politique de confidentialité, cookies. */
+export function LiensLegaux({ clair = false }: { clair?: boolean }) {
+  const { data } = useIdentiteOrganisation();
+  const site = data?.url_site ?? "";
+  const lien = (page: string) => `${site}/${page}?lang=${langue()}`;
+  const couleur = clair ? "teal.0" : "dimmed";
+  return (
+    <Group justify="center" gap={6} wrap="wrap">
+      <Anchor href={lien("conditions-utilisation.html")} target="_blank" rel="noopener" size="xs" c={couleur}>{voc("Conditions d'utilisation")}</Anchor>
+      <Text size="xs" c={couleur} aria-hidden>·</Text>
+      <Anchor href={lien("confidentialite.html")} target="_blank" rel="noopener" size="xs" c={couleur}>{voc("Politique de confidentialité")}</Anchor>
+      <Text size="xs" c={couleur} aria-hidden>·</Text>
+      <Anchor href={lien("cookies.html")} target="_blank" rel="noopener" size="xs" c={couleur}>{voc("Cookies")}</Anchor>
     </Group>
   );
 }

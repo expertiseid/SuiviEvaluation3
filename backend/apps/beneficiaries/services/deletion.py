@@ -5,13 +5,15 @@ les signalements de doublon le concernant n'ont de sens que rattachés à lui
 mais pour ne jamais la faire fuiter par un autre chemin de code), donc on les
 supprime avec lui plutôt que de bloquer l'opération.
 """
-from django.db import transaction
 
 
 def supprimer_beneficiaire_cascade(beneficiaire):
+    from apps.core.effacement import effacement_definitif
+
     from ..models import ParticipationProjet, SignalementDoublon
 
-    with transaction.atomic():
+    # Sans reste dans l'historique (apps.core.effacement) : droit à l'effacement.
+    with effacement_definitif():
         SignalementDoublon.objects.filter(beneficiaire_1=beneficiaire).delete()
         SignalementDoublon.objects.filter(beneficiaire_2=beneficiaire).delete()
         ParticipationProjet.objects.filter(beneficiaire=beneficiaire).delete()

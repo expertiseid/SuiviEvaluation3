@@ -171,3 +171,45 @@ def test_conservation_suspension_et_anonymisation(actif, admin, point_focal):
     assert "Récit" not in d.description and d.statut == "CLOTURE" and d.categorie.nom == "Retard" and d.numero
     assert not ActionDossier.objects.filter(dossier=d).exclude(texte="").exists()
     assert d.history.count() == 0
+
+
+@pytest.mark.django_db
+def test_effacement_definitif(actif, admin, point_focal):
+    """Droit à l'effacement : Administrateur seulement, numéro recopié, bloqué par la suspension légale ; rien ne reste."""
+    from apps.core.models import EvenementAudit
+
+    d = _dossier()
+    _client(admin).post(f"{URL}dossiers/{d.id}/noter/", {"texte": "Note"}, format="json")
+    effacer = f"{URL}dossiers/{d.id}/effacer/"
+    assert _client(point_focal).post(effacer, {"raison": "ERREUR_SAISIE", "numero": d.numero}, format="json").status_code == 400
+    erreurs = _client(admin).post(effacer, {"raison": "INVENTEE", "numero": "MGP-0000"}, format="json").data
+    assert set(erreurs) == {"raison", "numero"}
+    _client(admin).post(f"{URL}dossiers/{d.id}/suspendre/", {"motif": "Plainte en justice"}, format="json")
+    assert _client(admin).post(effacer, {"raison": "DEMANDE_PERSONNE", "numero": d.numero}, format="json").status_code == 400
+    _client(admin).post(f"{URL}dossiers/{d.id}/suspendre/", {"motif": "Procédure close", "suspendre": False}, format="json")
+
+    reponse = _client(admin).post(effacer, {"raison": "DEMANDE_PERSONNE", "numero": d.numero.lower()}, format="json")
+    assert reponse.status_code == 200 and reponse.data == {"numero": d.numero, "efface": True}
+    assert not Dossier.objects.filter(pk=d.id).exists() and not ActionDossier.objects.filter(dossier_id=d.id).exists()
+    assert not Dossier.history.filter(id=d.id).exists()
+    trace = EvenementAudit.objects.get(action="SUPPRESSION", objet=d.numero)
+    assert trace.details == {"raison": "DEMANDE_PERSONNE"} and trace.module == "plaintes"
+
+
+@pytest.mark.django_db
+def test_anonymisation_automatique_et_preuve_du_consentement(actif, admin):
+    """Option du mécanisme : à l'échéance, anonymisation sans intervention ; le consentement accepté est gardé."""
+    d = _dossier(consentement=True)
+    assert d.consentement_le is not None and d.consentement_texte  # phrase par défaut
+    Mecanisme.objects.filter(pk=1).update(texte_consentement="Clause de l'organisation.")
+    assert _dossier(consentement=True).consentement_texte == "Clause de l'organisation."
+
+    _client(admin).post(f"{URL}dossiers/{d.id}/cloturer/", {"issue": "RESOLU", "motif": "Réglé", "retour_donne": True,
+                                                            "decision": "Réparation faite"}, format="json")
+    Dossier.objects.filter(pk=d.pk).update(date_cloture=datetime.date(2024, 1, 15))
+    assert confidentiel.anonymiser_automatiquement() == 0  # option désactivée par défaut
+    Mecanisme.objects.filter(pk=1).update(anonymisation_automatique=True)
+    assert confidentiel.anonymiser_automatiquement() == 1
+    d.refresh_from_db()
+    assert d.anonymise and d.nom == "" and d.history.count() == 0
+    assert confidentiel.anonymiser_automatiquement() == 0  # une seule fois

@@ -297,6 +297,7 @@ def effacer_fichier(piece):
         chemin(piece).unlink(missing_ok=True)
     except OSError:
         logger.warning("Pièce jointe %s : fichier non effacé.", piece.pk)
+    quota.oublier()  # espace occupé remesuré à la prochaine lecture
 
 
 @receiver(post_delete, sender=PieceJointe)

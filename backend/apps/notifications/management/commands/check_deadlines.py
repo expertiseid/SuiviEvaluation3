@@ -63,7 +63,19 @@ class Command(BaseCommand):
 
         purges = purger()
         if purges:
+            from apps.core.audit import A, auditer
+
+            auditer(None, A.SUPPRESSION, f"Corbeille : {purges} élément(s) de plus de 30 jours", module="documents",
+                    operation="vidage automatique")
             self.stdout.write(f"{purges} élément(s) de la corbeille supprimé(s) définitivement (plus de 30 jours).")
+        # Durées de conservation (RGPD) : identité des bénéficiaires des projets échus ; dossiers de plaintes
+        # si l'anonymisation automatique est activée.
+        from apps.core import conservation
+        from apps.plaintes.confidentiel import anonymiser_automatiquement
+
+        beneficiaires, dossiers = conservation.appliquer(), anonymiser_automatiquement()
+        if beneficiaires or dossiers:
+            self.stdout.write(f"Conservation : {beneficiaires} bénéficiaire(s) et {dossiers} dossier(s) anonymisé(s).")
         # Espace de stockage presque plein ou plein : administrateurs prévenus (une fois par seuil).
         from apps.organisations import quota
 

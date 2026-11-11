@@ -342,7 +342,7 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
           ) : (
             data.projets_par_zone.map((n) => (
               <div key={n.niveau}>
-                <Text fw={600} mb="xs">{voc("Par")} {langue() === "de" ? traduireDonnee(n.niveau) : traduireDonnee(n.niveau).toLowerCase()}</Text>
+                <Text fw={600} mb="xs">{voc`Par ${langue() === "de" ? traduireDonnee(n.niveau) : traduireDonnee(n.niveau).toLowerCase()}`}</Text>
                 <RepartitionProjets type={type} lignes={n.zones} colonne={traduireDonnee(n.niveau)} vide="—" couleur="#1098ad" />
               </div>
             ))

@@ -13,6 +13,7 @@ from apps.core.langues import dans_la_langue_demandee
 from apps.core.permissions import AvertissementsSaisieMixin, HasGlobalVisibilityOrAssigned, SuppressionAtomiqueMixin
 from apps.core.vocabulaire import v
 from apps.projects.models import Projet
+from apps.core.masquage import activites_masquees
 from apps.projects.queryset_filters import visible_projets_ids
 
 from .canevas import (
@@ -47,11 +48,13 @@ class PointSuiviViewSet(AvertissementsSaisieMixin, SuppressionAtomiqueMixin, vie
 
     def get_queryset(self):
         ids = visible_projets_ids(self.request.user)
+        masquees = activites_masquees(self.request.user)  # apps.core.masquage
         return (
             PointSuivi.tous.filter(
                 Q(activite__projet__id__in=ids)
                 | Q(sous_activite__activite__projet__id__in=ids)
             )
+            .exclude(Q(activite_id__in=masquees) | Q(sous_activite__activite_id__in=masquees))
             .select_related("activite", "sous_activite", "saisi_par")
         )
 
@@ -85,12 +88,15 @@ class TranchePlanifieeViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         ids = visible_projets_ids(self.request.user)
+        masquees = activites_masquees(self.request.user)
         return TranchePlanifiee.objects.filter(
             Q(activite__projet__id__in=ids)
             | Q(sous_activite__activite__projet__id__in=ids)
             | Q(indicateur__isnull=False, indicateur__projet__isnull=True, indicateur__activite__isnull=True)
             | Q(indicateur__projet__id__in=ids)
             | Q(indicateur__activite__projet__id__in=ids)
+        ).exclude(
+            Q(activite_id__in=masquees) | Q(sous_activite__activite_id__in=masquees) | Q(indicateur__activite_id__in=masquees)
         ).select_related("activite", "sous_activite", "indicateur")
 
 

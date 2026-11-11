@@ -20,6 +20,7 @@ const PAR_PAGE = 25;
 const COULEUR: Partial<Record<ActionAudit, string>> = {
   CONNEXION_ECHOUEE: "red", CONSULTATION_SENSIBLE: "grape", HABILITATION: "grape", PERMISSION: "orange",
   CONFIGURATION: "blue", EXPORT: "cyan", TELECHARGEMENT: "cyan", DROITS_PERSONNES: "teal", DOUBLE_AUTHENTIFICATION: "indigo",
+  SUPPRESSION: "red", PARTAGE: "cyan", MOT_DE_PASSE: "orange",
 };
 
 const libelleOperation = (o: string): string =>

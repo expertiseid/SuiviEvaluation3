@@ -9,7 +9,7 @@ from .models import (
 )
 from .traitement import nom_personne
 
-LANGUES = {"fr", "en", "ar", "de", "es"}
+LANGUES = {"fr", "en", "ar", "de", "es", "it"}
 
 
 class MecanismeSerializer(serializers.ModelSerializer):
@@ -27,7 +27,7 @@ class MecanismeSerializer(serializers.ModelSerializer):
             "delai_defaut_jours", "rappel_jours_avant", "escalade_active", "notifications_courriel",
             "circuit_alternatif", "seuil_masquage", "accuse_reception_auto", "signature_messages",
             "pieces_formulaire_public", "taille_max_piece_mo", "plafond_piece_mo", "pieces_equipe",
-            "responsable_traitement", "contact_donnees",
+            "responsable_traitement", "contact_donnees", "anonymisation_automatique", "texte_consentement",
         )
         read_only_fields = ("actif", "modele")
 
@@ -228,7 +228,7 @@ class DossierSerializer(serializers.ModelSerializer):
             "categorie", "categorie_nom", "categorie_parent_nom", "priorite", "priorite_nom", "priorite_urgente",
             "projet", "projet_nom", "projet_code", "lieu", "description", "concerne_personnel", "sensible", "circuit",
             "circuit_nom", "etape", "etape_nom", "statut", "anonyme", "nom", "telephone", "courriel", "mode_reponse",
-            "consentement", "langue", "saisi_par", "saisi_par_nom", "created_at",
+            "consentement", "consentement_texte", "consentement_le", "langue", "saisi_par", "saisi_par_nom", "created_at",
             "responsable", "responsable_nom", "decision", "date_decision", "date_reponse", "issue", "motif_cloture",
             "retour_donne", "raison_sans_retour", "oriente_vers", "consentement_reference", "date_cloture", "en_recours",
             "gestionnaire_initial", "gestionnaire_initial_nom",

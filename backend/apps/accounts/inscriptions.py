@@ -132,6 +132,8 @@ def choisir_offre(demande, offre, message="", moyen="", mois=1, tranches=0):
         complement = [f"Paiement par carte bancaire demandé : {paiement.montant(offre, mois, tranches, usd=True)} $ "
                       f"({mois} mois{stockage}). À finaliser avec le client, puis activer l'espace depuis la console.",
                       f"Formation gratuite : {'oui' if paiement.formation_offerte(offre, mois) else 'non'}."]
+    if offre == DemandeInscription.Offre.ESSAI:
+        return _commencer_essai(demande)
     demande.offre = offre
     if demande.statut == DemandeInscription.Statut.ABONNEMENT_REQUIS:
         demande.statut = DemandeInscription.Statut.OFFRE_CHOISIE
@@ -140,6 +142,38 @@ def choisir_offre(demande, offre, message="", moyen="", mois=1, tranches=0):
     demande.save()
     sujet = "Paiement par carte demandé" if complement else f"Offre {demande.get_offre_display()} choisie"
     prevenir_expertise_id(demande, sujet, complement)
+    return demande
+
+
+def essai_deja_utilise(courriel) -> bool:
+    from .models import EssaiGratuit
+
+    return EssaiGratuit.objects.using("central").filter(courriel=(courriel or "").strip().lower()).exists()
+
+
+def _commencer_essai(demande):
+    """Essai gratuit : une fois par adresse courriel ; l'espace est créé aussitôt (1 mois, 100 Mo)."""
+    from django.db import IntegrityError
+
+    from apps.organisations import activation, contexte
+
+    from .models import EssaiGratuit
+
+    if not contexte.actif():
+        raise ValidationError({"offre": v("L'essai gratuit n'est pas proposé sur cette installation.")})
+    if demande.statut not in (DemandeInscription.Statut.ABONNEMENT_REQUIS, DemandeInscription.Statut.OFFRE_CHOISIE):
+        raise ValidationError({"offre": v("Une offre est déjà en cours pour ce profil.")})
+    erreur = v("Cette adresse courriel a déjà bénéficié de l'essai gratuit d'un mois. Choisissez une offre pour continuer.")
+    if essai_deja_utilise(demande.courriel):
+        raise ValidationError({"offre": erreur})
+    try:
+        EssaiGratuit.objects.using("central").create(courriel=demande.courriel.strip().lower(), organisation=demande.organisation)
+    except IntegrityError:  # deux demandes en même temps pour la même adresse
+        raise ValidationError({"offre": erreur})
+    demande.offre = DemandeInscription.Offre.ESSAI
+    demande.save(using="central", update_fields=["offre"])
+    prevenir_expertise_id(demande, "Essai gratuit commencé", ["Espace créé automatiquement : 1 mois, 100 Mo."])
+    activation.lancer(demande)
     return demande
 
 

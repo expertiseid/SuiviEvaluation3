@@ -30,7 +30,7 @@ const FONCTIONNALITES = [
   { icone: Users, titre: () => voc("Bénéficiaires et carte"), texte: () => voc("Registre des bénéficiaires, détection des doublons, carte des zones d'intervention.") },
   { icone: MessagesSquare, titre: () => voc("Plaintes et retours"), texte: () => voc("Mécanisme complet : formulaire public, circuit confidentiel, délais, messages au plaignant.") },
   { icone: FileText, titre: () => voc("Documents"), texte: () => voc("Dossiers et sous-dossiers, versions, aperçu des photos, liens sécurisés.") },
-  { icone: BarChart3, titre: () => voc("Tableaux de bord et rapports"), texte: () => voc("Exports Excel, PDF et Word, en français, anglais, arabe, espagnol et allemand.") },
+  { icone: BarChart3, titre: () => voc("Tableaux de bord et rapports"), texte: () => voc("Exports Excel, PDF et Word, en français, anglais, arabe, espagnol, allemand et italien.") },
   { icone: ShieldCheck, titre: () => voc("Sécurité"), texte: () => voc("Code de connexion par courriel, données protégées chiffrées, journal d'audit non modifiable.") },
 ];
 

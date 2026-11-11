@@ -21,3 +21,12 @@ export const connexionCode = async (jeton: string, code: string) =>
   (await apiClient.post<JetonsConnexion>(`${ETAPE}code/`, { jeton, code })).data;
 export const renvoyerCode = async (jeton: string) =>
   (await apiClient.post<EtapeDoubleAuth>(`${ETAPE}renvoyer/`, { jeton })).data;
+
+// Mot de passe oublié (apps/accounts/mot_de_passe.py) : lien envoyé par courriel, puis nouveau mot de passe.
+const OUBLI = "/public/mot-de-passe-oublie/";
+export const demanderNouveauMotDePasse = async (courriel: string, langue: string) =>
+  (await apiClient.post<{ detail: string }>(OUBLI, { courriel, langue })).data;
+export const verifierLienMotDePasse = async (jeton: string) =>
+  (await apiClient.post<{ compte: string }>(`${OUBLI}verifier/`, { jeton })).data;
+export const changerMotDePasse = async (jeton: string, mot_de_passe: string) =>
+  (await apiClient.post<{ detail: string }>(`${OUBLI}changer/`, { jeton, mot_de_passe })).data;

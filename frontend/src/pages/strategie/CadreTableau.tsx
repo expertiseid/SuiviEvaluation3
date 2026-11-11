@@ -88,7 +88,8 @@ export function CadreTableau({
       const activites = [...propres, ...sous.flatMap((s) => s.activites)];
       const ligne: Ligne = { type: "element", element: e, rang: rang.get(e.type_niveau) ?? 0, groupe: sous.length + propres.length > 0, activites };
       return {
-        lignes: [ligne, ...sous.flatMap((s) => s.lignes), ...propres.map((a) => ({ type: "activite" as const, activite: a }))],
+        // Activités masquées à cet utilisateur : comptées dans les totaux de l'élément, sans ligne propre.
+        lignes: [ligne, ...sous.flatMap((s) => s.lignes), ...propres.filter((a) => !a.masquee).map((a) => ({ type: "activite" as const, activite: a }))],
         activites,
       };
     }

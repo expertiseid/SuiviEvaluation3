@@ -8,6 +8,7 @@ from rest_framework.response import Response
 
 from apps.accounts.constants import ROLE_CHARGE_SE
 from apps.core.langues import dans_la_langue_demandee
+from apps.core.masquage import activites_masquees, elements_masques
 from apps.core.permissions import AvertissementsSaisieMixin, HasGlobalVisibilityOrAssigned, IsAdminOrReadOnly, SuppressionAtomiqueMixin
 from apps.core.vocabulaire import v
 from apps.notifications.models import Notification
@@ -162,6 +163,9 @@ class IndicateurViewSet(viewsets.ModelViewSet):
                 | Q(projet__id__in=ids)
                 | Q(activite__projet__id__in=ids)
             )
+            # Rattachés à un élément masqué à cet utilisateur (apps.core.masquage) : exclus.
+            .exclude(Q(activite_id__in=activites_masquees(self.request.user))
+                     | Q(elements_strategiques__in=elements_masques(self.request.user)))
             .select_related("projet", "activite__projet")
             .distinct()
         )
@@ -219,7 +223,7 @@ class ValeurIndicateurViewSet(AvertissementsSaisieMixin, SuppressionAtomiqueMixi
             Q(indicateur__projet__isnull=True, indicateur__activite__isnull=True)
             | Q(indicateur__projet__id__in=ids)
             | Q(indicateur__activite__projet__id__in=ids)
-        ).distinct()
+        ).exclude(indicateur__activite_id__in=activites_masquees(self.request.user)).distinct()
 
     def perform_create(self, serializer):
         super().perform_create(serializer)

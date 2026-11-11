@@ -7,7 +7,7 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
 import {
-  Building2, CirclePause, CirclePlay, CreditCard, Handshake, HardDrive, LayoutDashboard, LogOut, Newspaper, Pencil, Rocket, UserPlus,
+  Building2, CirclePause, CirclePlay, CreditCard, Handshake, HardDrive, LayoutDashboard, LogOut, Mail, Newspaper, Pencil, Rocket, UserPlus,
 } from "lucide-react";
 import {
   type OrganisationPlateforme, useActiverDemande, useDemandesConsole, useOrganisationsConsole, useStatutOrganisation, useStockageOrganisation, useVueEnsemble, useEcheanceOrganisation,
@@ -21,12 +21,14 @@ import { locale } from "../../utils/i18n";
 import { voc } from "../../utils/vocabulaire";
 import { erreursParChamp } from "../plaintes/saisieRetour";
 import { ActualitesSite, PartenairesSite } from "./SiteVitrine";
+import { NewsletterConsole } from "./Newsletter";
 import { EnTeteRubrique, PaiementsConsole, StockageServeurs, VueEnsembleConsole } from "./Supervision";
 
 const COULEUR_DEMANDE: Record<string, string> = {
   ABONNEMENT_REQUIS: "orange", OFFRE_CHOISIE: "blue", EN_ACTIVATION: "grape", ACTIVEE: "teal", REFUSEE: "gray",
 };
 const date = (d: string | null) => (d ? new Date(d).toLocaleDateString(locale()) : "—");
+const heure = (d: string | null) => (d ? new Date(d).toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" }) : "");
 
 /** Création de l'espace d'une organisation inscrite : identifiant interne (nom de sa base), référentiel des zones. */
 function ActiverModal({ demande, onClose }: { demande: DemandeInscription; onClose: () => void }) {
@@ -85,7 +87,10 @@ function Demandes() {
           <Table.Tbody>
             {demandes.map((d) => (
               <Table.Tr key={d.id} style={{ verticalAlign: "top" }}>
-                <Table.Td><Text size="sm">{date(d.cree_le)}</Text></Table.Td>
+                <Table.Td>
+                  <Text size="sm">{date(d.cree_le)}</Text>
+                  <Text size="xs" c="dimmed">{heure(d.cree_le)}</Text>
+                </Table.Td>
                 <Table.Td>
                   <Text size="sm" fw={600}>{d.organisation}</Text>
                   <Text size="xs" c="dimmed">{[d.type_organisation, d.pays, d.taille].filter(Boolean).join(" · ")}</Text>
@@ -237,7 +242,7 @@ function Organisations() {
                 {o.mode_demo && <Badge size="xs" variant="light" color="orange">{voc("Démonstration")}</Badge>}
               </Table.Td>
               <Table.Td><Text size="sm">{o.comptes}</Text></Table.Td>
-              <Table.Td><Text size="sm">{o.offre === "STOCKAGE_PLUS" ? voc("Standard + stockage") : o.offre === "PARTENARIAT" ? voc("Partenariat") : o.offre === "STANDARD" ? voc("Standard")
+              <Table.Td><Text size="sm">{o.offre === "STOCKAGE_PLUS" ? voc("Standard + stockage") : o.offre === "PARTENARIAT" ? voc("Partenariat") : o.offre === "ESSAI" ? voc("Essai gratuit") : o.offre === "STANDARD" ? voc("Standard")
                 : o.offre === "STANDARD_25" ? voc`Standard ${25} Go` : o.offre === "STANDARD_50" ? voc`Standard ${50} Go` : o.offre || "—"}</Text></Table.Td>
               <Table.Td>
                 <Group gap={4} wrap="nowrap" align="flex-start">
@@ -286,6 +291,7 @@ const RUBRIQUES = [
   { groupe: "Site vitrine", items: [
     { cle: "actualites", label: "Actualités", icone: Newspaper },
     { cle: "partenaires", label: "Partenaires", icone: Handshake },
+    { cle: "newsletter", label: "Newsletter", icone: Mail },
   ] },
 ];
 
@@ -313,6 +319,8 @@ function Contenu({ rubrique, aller }: { rubrique: string; aller: (cle: string) =
       return <Rubrique titre={voc("Actualités du site")} description={voc("Articles affichés sur le site vitrine.")}><ActualitesSite /></Rubrique>;
     case "partenaires":
       return <Rubrique titre={voc("Partenaires du site")} description={voc("Logos des partenaires affichés sur le site vitrine.")}><PartenairesSite /></Rubrique>;
+    case "newsletter":
+      return <Rubrique titre={voc("Newsletter")} description={voc("Abonnés du site et newsletters : rédiger, s'envoyer un essai, puis envoyer à tous les abonnés confirmés, chacun dans sa langue.")}><NewsletterConsole /></Rubrique>;
     default:
       return <VueEnsembleConsole aller={aller} />;
   }

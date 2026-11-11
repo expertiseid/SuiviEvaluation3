@@ -53,7 +53,7 @@ fs.writeFileSync(path.join(SRC, "i18n", "sources.json"), JSON.stringify(liste, n
 fs.writeFileSync(path.join(SRC, "i18n", "contextes.json"),
   JSON.stringify(Object.fromEntries(liste.map((x) => [x, [...contextes[x]].sort()])), null, 1) + "\n");
 console.log(`${liste.length} textes`);
-for (const langue of ["en", "ar", "es", "de"]) {
+for (const langue of ["en", "ar", "es", "de", "it"]) {
   const chemin = path.join(SRC, "i18n", `${langue}.json`);
   const catalogue = fs.existsSync(chemin) ? JSON.parse(fs.readFileSync(chemin, "utf8")) : {};
   const manquants = liste.filter((x) => !(x in catalogue));

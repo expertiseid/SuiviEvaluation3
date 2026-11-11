@@ -166,7 +166,7 @@ function LignesElement({
           nomsNiveaux={nomsNiveaux}
         />
       ))}
-      {directes.map((a) => (
+      {directes.filter((a) => !a.masquee).map((a) => (
         <LigneActivite key={a.id} a={a} profondeur={profondeur + 1} />
       ))}
     </LigneGroupe>
@@ -282,7 +282,7 @@ export function AxesBudgetsTab({ cadreId, niveaux }: { cadreId: number; niveaux:
                   ouvert={ouverts.includes(CLE_NON_RATTACHEES)}
                   basculer={basculer}
                 >
-                  {arbre.nonRattachees.map((act) => <LigneActivite key={act.id} a={act} profondeur={1} />)}
+                  {arbre.nonRattachees.filter((act) => !act.masquee).map((act) => <LigneActivite key={act.id} a={act} profondeur={1} />)}
                 </LigneGroupe>
               )}
             </Table.Tbody>

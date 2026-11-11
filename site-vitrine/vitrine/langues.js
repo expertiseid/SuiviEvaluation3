@@ -1,5 +1,5 @@
 /*
- * Langues du site vitrine (les mêmes que la plateforme) : français, anglais, arabe, espagnol, allemand.
+ * Langues du site vitrine (les mêmes que la plateforme) : français, anglais, arabe, espagnol, allemand, italien.
  *
  * Les pages sont écrites en français ; chaque traduction est cherchée par son texte français dans
  * window.TRADUCTIONS_SITE[langue] (vitrine/traductions.js). Un « bloc » est le plus grand élément dont
@@ -12,7 +12,7 @@
  * window.traduire(texte) traduit aussi les messages affichés par les scripts (inscription).
  */
 (function () {
-  var LANGUES = [["fr", "Français"], ["en", "English"], ["ar", "العربية"], ["es", "Español"], ["de", "Deutsch"]];
+  var LANGUES = [["fr", "Français"], ["en", "English"], ["ar", "العربية"], ["es", "Español"], ["de", "Deutsch"], ["it", "Italiano"]];
   var CLE = "langue-site";
   var EN_LIGNE = { B: 1, STRONG: 1, I: 1, EM: 1, A: 1, SPAN: 1, CODE: 1, BR: 1, SMALL: 1, SUP: 1, SUB: 1, ABBR: 1, U: 1, MARK: 1 };
   var IGNORES = { SCRIPT: 1, STYLE: 1, SVG: 1, VIDEO: 1, NOSCRIPT: 1, SELECT: 0, TEXTAREA: 1 };

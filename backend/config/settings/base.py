@@ -68,6 +68,8 @@ MIDDLEWARE = [
     "apps.core.modules.ModulesMasquesMiddleware",
     # Installation de démonstration : le visiteur ne peut rien enregistrer (apps.accounts.demo).
     "apps.accounts.demo.ModeDemoMiddleware",
+    # Exports et suppressions de tous les modules inscrits au journal d'audit (apps.core.journal_automatique).
+    "apps.core.journal_automatique.JournalAutomatiqueMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -116,6 +118,8 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
+# Lien « mot de passe oublié » (apps.accounts.mot_de_passe) : valable 1 heure.
+PASSWORD_RESET_TIMEOUT = 3600
 
 LANGUAGE_CODE = "fr-fr"
 TIME_ZONE = "Africa/Ouagadougou"
@@ -199,6 +203,9 @@ ABONNEMENT_PRIX_MOIS = env.int("ABONNEMENT_PRIX_MOIS", default=50000)
 ABONNEMENT_PRIX_TRANCHE = env.int("ABONNEMENT_PRIX_TRANCHE", default=3000)
 # Montant le plus bas qu'on demande à CinetPay (FCFA) : en dessous, un changement d'offre doit être plus long.
 PAIEMENT_MINIMUM = env.int("PAIEMENT_MINIMUM", default=100)
+# Taille d'une base d'espace neuve (octets), non comptée dans l'espace utilisé quand elle n'a pas été mesurée
+# à la création (espaces ouverts avant le 11 nov. 2026).
+STOCKAGE_BASE_VIDE = env.int("STOCKAGE_BASE_VIDE", default=19 * 1024 * 1024)
 # Prix affichés en dollars (offres du site) et payés par carte bancaire : la carte n'est pas encore encaissée
 # en ligne, Expertise-ID finalise avec le client (inscriptions.choisir_offre, moyen « carte »).
 ABONNEMENT_PRIX_MOIS_USD = env.int("ABONNEMENT_PRIX_MOIS_USD", default=86)
@@ -208,10 +215,15 @@ ABONNEMENT_PRIX_25GO = env.int("ABONNEMENT_PRIX_25GO", default=20000)
 ABONNEMENT_PRIX_25GO_USD = env.int("ABONNEMENT_PRIX_25GO_USD", default=34)
 ABONNEMENT_PRIX_50GO = env.int("ABONNEMENT_PRIX_50GO", default=30000)
 ABONNEMENT_PRIX_50GO_USD = env.int("ABONNEMENT_PRIX_50GO_USD", default=52)
+# Offre signalée « la plus populaire » tant qu'aucun abonnement n'a été payé (ensuite : la plus achetée).
+ABONNEMENT_OFFRE_POPULAIRE = env("ABONNEMENT_OFFRE_POPULAIRE", default="STANDARD_50")
 
 # Code de connexion envoyé par courriel à chaque connexion, pour tous les comptes
 # (apps/accounts/double_auth.py). À ne désactiver que sur un poste de développement.
 DOUBLE_AUTH_OBLIGATOIRE = env.bool("DOUBLE_AUTH_OBLIGATOIRE", default=True)
+
+# Déconnexion après une période sans activité, en minutes (apps/core/inactivite.py) ; 0 : jamais.
+SESSION_INACTIVITE_MIN = env.int("SESSION_INACTIVITE_MIN", default=30)
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=env.int("JWT_ACCESS_LIFETIME_MIN", default=45)),

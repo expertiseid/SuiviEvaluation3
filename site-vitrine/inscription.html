@@ -7,8 +7,8 @@
   <meta name="description" content="Inscrivez votre organisation sur la plateforme Expertise-ID Monitora : profil, offre, paiement en ligne et accès immédiat.">
   <link rel="icon" type="image/svg+xml" href="vitrine/logo-plateforme.svg?v=20261106d">
   <link rel="stylesheet" href="vitrine/polices.css?v=20261106d">
-  <link rel="stylesheet" href="vitrine/site.css?v=20261106d">
-  <script src="vitrine/config.js?v=20261106d"></script>
+  <link rel="stylesheet" href="vitrine/site.css?v=20261111d">
+  <script src="vitrine/config.js?v=20261110d"></script>
 </head>
 <body>
 
@@ -22,7 +22,7 @@
       <a href="actualites.html">Actualités</a>
       <a href="partenaires.html">Partenaires</a>
       <a href="documentation.html">Documentation</a>
-      <a href="index.html#offres">Offres</a>
+      <a href="index.html#offres">Tarifs</a>
       <a href="contact.html">Contact</a>
       <a href="#" data-lien="CONNEXION">Se connecter</a>
     </nav>
@@ -92,7 +92,7 @@
         <fieldset>
           <div class="champ large"><label for="message">Un mot pour l'équipe (facultatif)</label><textarea id="message" data-champ="message" rows="3" placeholder="Vos besoins, le nombre d'utilisateurs prévu, une date de démarrage…"></textarea></div>
           <div class="champ large u-mt-16">
-            <label class="case"><input type="checkbox" id="conditions" data-champ="conditions"> <span>J'accepte que ces informations soient utilisées par Expertise-ID pour créer et gérer l'espace de mon organisation. <span class="req">*</span></span></label>
+            <label class="case"><input type="checkbox" id="conditions" data-champ="conditions"> <span>J'accepte les <a href="conditions-utilisation.html" target="_blank" rel="noopener">conditions d'utilisation</a> et la <a href="confidentialite.html" target="_blank" rel="noopener">politique de confidentialité</a>, et que ces informations soient utilisées par Expertise-ID pour créer et gérer l'espace de mon organisation. <span class="req">*</span></span></label>
           </div>
         </fieldset>
 
@@ -104,6 +104,8 @@
         <div class="message-global erreur" id="erreur-2" role="alert"></div>
         <p>Le profil de <b id="nom-organisation"></b> est créé. Choisissez votre offre et réglez-la en ligne : votre espace est créé aussitôt.</p>
         <div class="choix-offres">
+          <label class="choix-essai"><input type="radio" name="offre" value="ESSAI"><strong>Essai gratuit</strong><small>Gratuit pendant 1 mois, sans paiement</small>
+            <ul><li>100 Mo de stockage</li><li>Tous les modules</li><li>Un seul essai par adresse courriel</li><li>Ensuite, choisissez une offre : vos données sont conservées 60 jours</li></ul></label>
           <label><input type="radio" name="offre" value="STANDARD_25"><strong>Standard 25 Go</strong><small data-prix="STANDARD_25" data-sans-traduction>34 $ HT par mois (20 000 FCFA)</small>
             <ul><li>Projets et utilisateurs illimités</li><li>25 Go de stockage</li><li>Tous les modules</li><li>Manuel d'utilisateur inclus</li></ul></label>
           <label><input type="radio" name="offre" value="STANDARD_50"><strong>Standard 50 Go</strong><small data-prix="STANDARD_50" data-sans-traduction>52 $ HT par mois (30 000 FCFA)</small>
@@ -128,6 +130,7 @@
           <p class="aide cache" id="aide-carte">Paiement par carte bancaire : notre équipe finalise le paiement avec vous et active votre espace.</p>
         </div>
         <p class="aide" id="aide-partenariat">Offre Partenariat : l'équipe d'Expertise-ID étudie votre demande et vous contacte.</p>
+        <p class="aide cache" id="aide-essai">Essai gratuit : votre espace est créé tout de suite, pour 1 mois avec 100 Mo de stockage. À la fin de l'essai, l'accès est bloqué jusqu'au choix d'une offre, depuis la page Abonnement de la plateforme : vos informations et vos données sont gardées, rien à saisir de nouveau.</p>
         <p class="formation-offerte cache" id="formation-oui">Formation gratuite incluse avec cette durée.</p>
         <p class="aide cache" id="formation-24">Choisissez 2 ans de licence pour bénéficier de la formation gratuite.</p>
         <p class="aide cache" id="formation-12">Choisissez 1 an de licence ou plus pour bénéficier de la formation gratuite.</p>
@@ -140,6 +143,13 @@
 
       <!-- Étape 3 : confirmation -->
       <div id="etape-3" class="formulaire cache">
+        <div class="succes cache" id="fin-essai">
+          <div class="rond"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></div>
+          <h2>Votre essai gratuit commence</h2>
+          <p>Votre espace est en cours de création.<br>Dans quelques minutes, vous recevrez un courriel : vous pourrez alors vous connecter.</p>
+          <p><a class="bouton" href="#" data-lien="CONNEXION">Page de connexion</a></p>
+          <p class="aide u-gris">Connectez-vous avec votre adresse courriel et le mot de passe choisi. L'essai dure 1 mois ; ensuite, choisissez une offre depuis la page Abonnement de la plateforme.</p>
+        </div>
         <div class="succes" id="fin-demande">
           <div class="rond"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></div>
           <h2>Demande envoyée</h2>
@@ -179,6 +189,11 @@
     </div>
 
     <aside class="aparte">
+      <div class="deja-espace">
+        <h3>Vous avez déjà un espace ?</h3>
+        <p>Essai gratuit en cours ou terminé, ou offre à changer : connectez-vous, la page Abonnement s'ouvre. Choisissez votre offre et payez : votre organisation, vos comptes et vos données sont déjà là, rien à remplir de nouveau.</p>
+        <p><a class="bouton bouton-plein" href="#" data-lien="ABONNEMENT">J'ai déjà un espace : choisir une offre</a></p>
+      </div>
       <h3>Comment ça se passe ?</h3>
       <ol>
         <li><b>Vous remplissez ce formulaire</b> : cinq minutes suffisent.</li>
@@ -199,12 +214,22 @@
     </div>
     <div><h4>La plateforme</h4><a href="index.html#fonctionnalites">Fonctionnalités</a><a href="index.html#video">Vidéo</a></div>
     <div><h4>Aide</h4><a href="documentation.html">Documentation</a><a href="contact.html">Contact</a><a href="#" data-lien="CONNEXION">Se connecter</a></div>
+    <div class="newsletter-pied">
+      <div><h4>Newsletter</h4><p>Les nouveautés de la plateforme, les formations et les conseils d'Expertise-ID, dans votre boîte courriel.</p></div>
+      <form class="form-newsletter" novalidate>
+        <div class="ligne-newsletter"><input type="email" name="courriel" required autocomplete="email" placeholder="Votre adresse courriel" aria-label="Votre adresse courriel"><button class="bouton bouton-plein" type="submit">S'inscrire</button></div>
+        <label class="case-newsletter"><input type="checkbox" name="accord"> <span>J'accepte de recevoir la newsletter ; je peux me désinscrire à tout moment.</span></label>
+        <input type="text" name="site_web" class="piege" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <p class="message-newsletter" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+    <nav class="liens-legaux" aria-label="Informations légales"><a href="conditions-utilisation.html">Conditions d'utilisation</a> <a href="confidentialite.html">Politique de confidentialité</a> <a href="cookies.html">Cookies</a></nav>
     <div class="bas"><span>© 2026 Expertise-ID</span></div>
   </div>
 </footer>
-<script src="vitrine/traductions.js?v=20261109b"></script>
-<script src="vitrine/langues.js?v=20261106d"></script>
-<script src="vitrine/site.js?v=20261106d"></script>
-<script src="vitrine/inscription.js?v=20261109a"></script>
+<script src="vitrine/traductions.js?v=20261112b"></script>
+<script src="vitrine/langues.js?v=20261111a"></script>
+<script src="vitrine/site.js?v=20261111b"></script>
+<script src="vitrine/inscription.js?v=20261110c"></script>
 </body>
 </html>

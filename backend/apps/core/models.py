@@ -52,7 +52,7 @@ class SaisieApprouvable(models.Model):
 
 
 # Langues de l'interface (le français est la langue source des textes).
-LANGUES = (("fr", "Français"), ("en", "English"), ("ar", "العربية"), ("es", "Español"), ("de", "Deutsch"))
+LANGUES = (("fr", "Français"), ("en", "English"), ("ar", "العربية"), ("es", "Español"), ("de", "Deutsch"), ("it", "Italiano"))
 CODES_LANGUES = tuple(code for code, _ in LANGUES)
 
 
@@ -105,6 +105,8 @@ class EvenementAudit(models.Model):
         DROITS_PERSONNES = "DROITS_PERSONNES", "Demande d'une personne sur ses données"
         DOUBLE_AUTHENTIFICATION = "DOUBLE_AUTHENTIFICATION", "Double authentification"
         PARTAGE = "PARTAGE", "Partage d'un document par lien"
+        MOT_DE_PASSE = "MOT_DE_PASSE", "Mot de passe oublié"
+        SUPPRESSION = "SUPPRESSION", "Suppression"
 
     date = models.DateTimeField(auto_now_add=True, db_index=True)
     utilisateur_id = models.IntegerField(null=True, blank=True, db_index=True)

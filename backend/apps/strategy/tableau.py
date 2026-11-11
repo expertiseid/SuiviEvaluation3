@@ -35,18 +35,34 @@ class _ArbresTaux:
         return self.arbres[activite.projet_id].resultat(activite.id).taux
 
 
-def donnees_recap_axes(cadre, projets_visibles) -> dict:
+def donnees_recap_axes(cadre, projets_visibles, user=None) -> dict:
     """
     Éléments du document et activités qui y arrivent (chaîne des documents comprise, voir
     chaine.activites_rattachees), avec leurs budgets comptés sans double compte et leurs taux.
     Données de l'onglet « Axes & budgets » et du mode Tableau.
+
+    Éléments et activités masqués à `user` (apps.core.masquage) : les éléments ne sont pas renvoyés ; les
+    activités restent, sans libellé ni code et marquées « masquee », sur le premier élément visible au-dessus,
+    pour que les totaux ne changent pas (l'écran ne les affiche pas en ligne).
     """
+    from apps.core.masquage import activites_masquees, elements_masques
+
     from .chaine import activites_rattachees
     from .models import ElementStrategique
 
-    elements = ElementStrategique.objects.filter(type_niveau__cadre_strategique=cadre).select_related("type_niveau")
+    tous_elements = list(ElementStrategique.objects.filter(type_niveau__cadre_strategique=cadre).select_related("type_niveau"))
+    masques, masquees = elements_masques(user), activites_masquees(user)
+    parent_element = {e.id: e.element_parent_id for e in tous_elements}
+
+    def visible(element_id):
+        while element_id is not None and element_id in masques:
+            element_id = parent_element.get(element_id)
+        return element_id
+
+    elements = [e for e in tous_elements if e.id not in masques]
     rattachees = activites_rattachees(cadre, projets_visibles)
     element_de = {a.id: element for a, element in rattachees}
+    cachee = {a.id for a, element in rattachees if a.id in masquees or element in masques}
     arbres_taux = _ArbresTaux()
     # Budgets sans double compte : calculés sur toutes les activités des projets concernés
     # (un niveau parent peut être rattaché à un autre élément du cadre que ses activités).
@@ -82,11 +98,12 @@ def donnees_recap_axes(cadre, projets_visibles) -> dict:
         "activites": [
             {
                 "id": a.id,
-                "code": a.code_activite,
-                "libelle": a.libelle,
+                "code": "" if a.id in cachee else a.code_activite,
+                "libelle": "" if a.id in cachee else a.libelle,
+                "masquee": a.id in cachee,
                 "projet_id": a.projet.id,
                 "projet_code": a.projet.code,
-                "axe": element_de[a.id],
+                "axe": visible(element_de[a.id]),
                 "budget_alloue": a.budget_alloue,
                 "budget_realise": a.budget_realise,
                 # Part comptée dans les totaux (0 si le détail est saisi en dessous).
@@ -136,7 +153,7 @@ def prevu_au_trimestre(debut, fin, annee, trimestre) -> bool:
     return (debut or fin) <= fin_t and (fin or debut) >= debut_t
 
 
-def lignes_tableau(cadre, projets_visibles) -> list:
+def lignes_tableau(cadre, projets_visibles, user=None) -> list:
     """
     Lignes du tableau, dans l'ordre de l'écran : {"type", "code", "libelle", "rang", "groupe",
     "debut", "fin", "budget", "taux"}. `rang` : rang du niveau (0 = le plus haut) ; `groupe` :
@@ -144,7 +161,7 @@ def lignes_tableau(cadre, projets_visibles) -> list:
     """
     from .models import TypeNiveau
 
-    donnees = donnees_recap_axes(cadre, projets_visibles)
+    donnees = donnees_recap_axes(cadre, projets_visibles, user)
     niveaux = list(TypeNiveau.objects.filter(cadre_strategique=cadre).order_by("ordre"))
     rang = {n.id: i for i, n in enumerate(niveaux)}
     nom_niveau = {n.id: n.nom_niveau for n in niveaux}
@@ -172,7 +189,7 @@ def lignes_tableau(cadre, projets_visibles) -> list:
             {"type": "activite", "code": a["code"], "libelle": f"{a['libelle']} ({a['projet_code']})", "rang": None,
              "groupe": False, "debut": a["date_debut"], "fin": a["date_fin"],
              "budget": float(a["budget_alloue"]) if a["budget_alloue"] is not None else None, "taux": a["taux_physique"]}
-            for a in propres
+            for a in propres if not a["masquee"]
         ]
         return lignes, activites
 
@@ -334,7 +351,7 @@ def exporter_tableau_pdf(cadre, lignes, par_trimestre, annee) -> bytes:
 # ------------------------------------------------------------------- export simple (structure)
 
 
-def lignes_simples(cadre) -> list:
+def lignes_simples(cadre, user=None) -> list:
     """
     Structure seule du document : ses éléments dans l'ordre de l'arbre, sans activités ni
     chiffres — {"code", "niveau", "nom", "rang", "profondeur", "contribue_a", "groupe"}.
@@ -343,8 +360,11 @@ def lignes_simples(cadre) -> list:
 
     niveaux = list(TypeNiveau.objects.filter(cadre_strategique=cadre).order_by("ordre"))
     rang = {n.id: i for i, n in enumerate(niveaux)}
+    from apps.core.masquage import elements_masques
+
     elements = list(
         ElementStrategique.objects.filter(type_niveau__cadre_strategique=cadre)
+        .exclude(id__in=elements_masques(user))
         .select_related("type_niveau", "contribue_a")
     )
     enfants = {}

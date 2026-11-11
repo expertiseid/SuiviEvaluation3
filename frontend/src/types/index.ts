@@ -49,6 +49,9 @@ export interface User {
   langue: string;
   telephone: string;
   zones_affectees: number[];
+  /** Activités et éléments stratégiques masqués à cet utilisateur (et ce qui est en dessous). */
+  activites_masquees?: number[];
+  elements_masques?: number[];
   is_active: boolean;
   /** Visiteur de l'installation de démonstration : bandeau, rien ne s'enregistre. */
   est_demo?: boolean;
@@ -305,6 +308,8 @@ export interface RecapAxesCadreStrategique {
     id: number;
     code: string;
     libelle: string;
+    /** Masquée à cet utilisateur : comptée dans les totaux, jamais affichée en ligne. */
+    masquee?: boolean;
     projet_id: number;
     projet_code: string;
     /** Élément stratégique rattaché (null : activité non rattachée). */
@@ -541,6 +546,8 @@ export interface Projet {
   date_debut: string;
   date_fin: string;
   date_rappel: string | null;
+  /** Mois après la fin du projet au terme desquels l'identité de ses bénéficiaires est effacée ; null : conservée. */
+  conservation_beneficiaires_mois?: number | null;
   statut: StatutProjet;
   type_mise_en_oeuvre: TypeMiseEnOeuvre;
   zones: number[];
@@ -823,6 +830,11 @@ export interface Beneficiaire {
   zone_nom: string | null;
   latitude: string | null;
   longitude: string | null;
+  /** Accord de la personne pour l'enregistrement de ses données ; null : non renseigné. */
+  consentement: boolean | null;
+  date_consentement: string | null;
+  /** Identité effacée à l'échéance de conservation de ses projets. */
+  date_anonymisation?: string | null;
   /** Réponses aux variables personnalisées : {id de la variable: valeur}. */
   reponses: Record<string, string | number | boolean | string[]>;
   statuts_particuliers: number[];

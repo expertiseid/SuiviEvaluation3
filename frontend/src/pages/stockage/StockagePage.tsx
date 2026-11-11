@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   Alert, Badge, Button, Card, Group, Loader, SegmentedControl, Select, SimpleGrid, Stack, Table, Text, Title,
 } from "@mantine/core";
@@ -11,7 +11,7 @@ import { StatCard } from "../../components/common/StatCard";
 import { TitreRubrique } from "../../components/common/TitreRubrique";
 import { messageErreurApi } from "../../utils/erreurs";
 import { langue, locale } from "../../utils/i18n";
-import { volumeLisible } from "../../utils/stockage";
+import { GO, volumeLisible } from "../../utils/stockage";
 import { voc } from "../../utils/vocabulaire";
 
 /** « 30000 » → « 30 000 FCFA ». */
@@ -121,7 +121,7 @@ export function StockagePage() {
             <Stack gap="sm">
               <JaugeStockage espace={page} taille="lg" />
               <Text size="sm" c="dimmed">
-                {page.offre_go ? voc`${page.offre_go} Go inclus dans votre offre` : ""}
+                {page.offre_go ? voc`${volumeLisible(page.offre_go * GO)} inclus dans votre offre` : ""}
                 {ajoute > 0 ? voc` · ${ajoute} Go ajoutés` : ""}
                 {ajoute < 0 ? voc` · ${-ajoute} Go en moins` : ""}
               </Text>
@@ -136,8 +136,14 @@ export function StockagePage() {
         </>
       )}
 
-      {page.peut_acheter && page.tarifs && page.limite ? <Augmenter tarifs={page.tarifs} /> : null}
-      {!page.peut_acheter && page.limite ? (
+      {page.offre === "ESSAI" ? (
+        // Essai gratuit : pas de stockage acheté en plus ; une offre payante apporte 25 Go ou plus.
+        <Alert color="blue" variant="light" title={voc("Besoin de plus d'espace ?")}>
+          <Text size="sm">{voc("Pendant l'essai gratuit, le stockage ne s'agrandit pas. Choisissez une offre : elle apporte 25 Go ou plus, et vos données restent en place.")}</Text>
+          <Button mt="sm" size="xs" component={Link} to="/mon-abonnement">{voc("Choisir une offre")}</Button>
+        </Alert>
+      ) : page.peut_acheter && page.tarifs && page.limite ? <Augmenter tarifs={page.tarifs} /> : null}
+      {!page.peut_acheter && page.limite && page.offre !== "ESSAI" ? (
         <Text size="sm" c="dimmed">{voc("Pour augmenter le stockage, adressez-vous à l'administrateur de votre organisation.")}</Text>
       ) : null}
 

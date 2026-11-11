@@ -99,6 +99,7 @@ def lister_echeances(projet_ids, seuil_jours=None):
             {
                 "type": "SOUS_ACTIVITE",
                 "id": sous_activite.id,
+                "activite_id": sous_activite.activite_id,
                 "libelle": sous_activite.libelle,
                 "projet_id": projet.id,
                 "projet_nom": projet.nom,

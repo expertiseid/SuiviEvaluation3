@@ -429,6 +429,7 @@ class ProjetSerializer(serializers.ModelSerializer):
             "date_debut",
             "date_fin",
             "date_rappel",
+            "conservation_beneficiaires_mois",
             "statut",
             "type_mise_en_oeuvre",
             "zones",

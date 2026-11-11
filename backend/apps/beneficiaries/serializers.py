@@ -128,11 +128,15 @@ class BeneficiaireSerializer(serializers.ModelSerializer):
             "zone_nom",
             "latitude",
             "longitude",
+            "consentement",
+            "date_consentement",
+            "date_anonymisation",
             "reponses",
             "statuts_particuliers",
             "types_activite",
             "participations",
         )
+        read_only_fields = ("date_anonymisation",)
 
     def validate_reponses(self, valeur):
         from .services.variables import normaliser_reponses

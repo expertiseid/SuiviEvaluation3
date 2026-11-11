@@ -159,3 +159,47 @@ def test_formation_gratuite():
     assert not paiement.formation_offerte("STANDARD", 6) and paiement.formation_offerte("STANDARD", 12)
     assert not paiement.formation_offerte("PARTENARIAT", 36)
     assert paiement.DUREES == (1, 3, 6, 12, 24, 36)
+
+
+@pytest.mark.django_db(transaction=True, databases=["default", "central"])
+def test_offre_la_plus_populaire(cinetpay, settings):
+    """Sans achat : l'offre du réglage ; ensuite la plus achetée (Standard + stockage compte pour Standard)."""
+    settings.ABONNEMENT_OFFRE_POPULAIRE = "STANDARD_50"
+    client = APIClient()
+    assert client.get("/api/v1/public/inscription/tarifs/").data["populaire"] == "STANDARD_50"
+
+    def achat(offre, statut=PaiementAbonnement.Statut.PAYE):
+        PaiementAbonnement.objects.using("central").create(reference=f"R{PaiementAbonnement.objects.using('central').count()}",
+                                                           offre=offre, montant=1, devise="XOF", statut=statut)
+
+    achat("STANDARD_25")
+    assert client.get("/api/v1/public/inscription/tarifs/").data["populaire"] == "STANDARD_25"
+    achat("STANDARD")
+    achat("STOCKAGE_PLUS")
+    achat("STANDARD_25", PaiementAbonnement.Statut.ECHOUE)  # non payé : ne compte pas
+    assert client.get("/api/v1/public/inscription/tarifs/").data["populaire"] == "STANDARD"
+
+
+@pytest.mark.django_db(transaction=True, databases=["default", "central"])
+def test_essai_gratuit_une_seule_fois(cinetpay, monkeypatch):
+    """Essai gratuit : espace créé sans paiement ; une adresse n'y a droit qu'une fois, même profil supprimé."""
+    from apps.accounts.models import EssaiGratuit
+
+    from . import activation, contexte
+
+    lances = []
+    monkeypatch.setattr(contexte, "actif", lambda: True)
+    monkeypatch.setattr(activation, "lancer", lambda demande: lances.append(demande.pk))
+    client = APIClient()
+    reponse = client.post("/api/v1/public/inscription/offre/", {"reference": _profil(client), "offre": "ESSAI"}, format="json")
+    demande = DemandeInscription.objects.get()
+    assert reponse.status_code == 200 and lances == [demande.pk] and demande.offre == "ESSAI"
+    assert EssaiGratuit.objects.using("central").filter(courriel="awa@ong-paiement.bf").exists()
+    assert mail.outbox[-1].subject.startswith("Essai gratuit commencé")
+    assert not PaiementAbonnement.objects.exists()
+    # Profil supprimé puis recréé avec la même adresse (en majuscules) : plus d'essai, une offre à choisir.
+    demande.delete()
+    reference = client.post("/api/v1/public/inscription/", {**PROFIL, "courriel": "AWA@ong-paiement.bf"}, format="json").data["reference"]
+    refus = client.post("/api/v1/public/inscription/offre/", {"reference": reference, "offre": "ESSAI"}, format="json")
+    assert refus.status_code == 400 and "déjà bénéficié" in refus.data["offre"]
+    assert len(lances) == 1

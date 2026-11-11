@@ -31,3 +31,8 @@ class StockageOrganisation(FileSystemStorage):
         nom = super()._save(name, content)
         quota.ajouter(taille)
         return nom
+
+    def delete(self, name):
+        # Fichier effacé (suppression définitive, corbeille vidée…) : l'espace occupé est remesuré.
+        super().delete(name)
+        quota.oublier()

@@ -37,6 +37,8 @@ const CHAMPS_VIDES = {
   zoneCascade: ZONE_CASCADE_VIDE,
   statutsSelectionnes: [] as string[],
   typesActiviteSelectionnes: [] as string[],
+  consentement: null as string | null,
+  dateConsentement: null as string | null,
 };
 
 export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Beneficiaire; onDone: () => void }) {
@@ -53,6 +55,10 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
   const [prenom, setPrenom] = useState(beneficiaire?.prenom ?? CHAMPS_VIDES.prenom);
   const [sexe, setSexe] = useState<string | null>(beneficiaire?.sexe ?? CHAMPS_VIDES.sexe);
   const [dateNaissance, setDateNaissance] = useState<string | null>(beneficiaire?.date_naissance ?? CHAMPS_VIDES.dateNaissance);
+  // Consentement : « oui », « non » ou non renseigné (null).
+  const [consentement, setConsentement] = useState<string | null>(
+    beneficiaire?.consentement == null ? CHAMPS_VIDES.consentement : beneficiaire.consentement ? "oui" : "non");
+  const [dateConsentement, setDateConsentement] = useState<string | null>(beneficiaire?.date_consentement ?? CHAMPS_VIDES.dateConsentement);
   const [telephone, setTelephone] = useState(beneficiaire?.telephone ?? CHAMPS_VIDES.telephone);
   const [numeroPiece, setNumeroPiece] = useState(beneficiaire?.numero_piece_identite ?? CHAMPS_VIDES.numeroPiece);
   const [pays, setPays] = useState<string | null>(beneficiaire?.pays || CHAMPS_VIDES.pays);
@@ -109,6 +115,8 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
     setPrenom(CHAMPS_VIDES.prenom);
     setSexe(CHAMPS_VIDES.sexe);
     setDateNaissance(CHAMPS_VIDES.dateNaissance);
+    setConsentement(CHAMPS_VIDES.consentement);
+    setDateConsentement(CHAMPS_VIDES.dateConsentement);
     setTelephone(CHAMPS_VIDES.telephone);
     setNumeroPiece(CHAMPS_VIDES.numeroPiece);
     setPays(CHAMPS_VIDES.pays);
@@ -159,6 +167,8 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
       zone,
       latitude: latitude === "" ? null : String(latitude),
       longitude: longitude === "" ? null : String(longitude),
+      consentement: consentement == null ? null : consentement === "oui",
+      date_consentement: consentement == null ? null : dateConsentement,
       statuts_particuliers: statutsSelectionnes.map(Number),
       types_activite: typesActiviteSelectionnes.map(Number),
       reponses,
@@ -277,6 +287,19 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
       <Group grow>
         <TextInput label={voc("Téléphone")} value={telephone} onChange={(e) => setTelephone(e.currentTarget.value)} />
         <TextInput label={voc("N° pièce d'identité")} value={numeroPiece} onChange={(e) => setNumeroPiece(e.currentTarget.value)} />
+      </Group>
+      <Group grow align="flex-start">
+        <Select
+          label={voc("Consentement")}
+          description={voc("La personne a-t-elle donné son accord pour l'enregistrement de ses données ?")}
+          data={[{ value: "oui", label: voc("Oui") }, { value: "non", label: voc("Non") }]}
+          placeholder={voc("Non renseigné")}
+          clearable
+          value={consentement}
+          onChange={setConsentement}
+        />
+        <DateInput label={voc("Date du consentement")} value={dateConsentement} onChange={setDateConsentement}
+          disabled={consentement == null} clearable />
       </Group>
       <MultiSelectOrCreate
         label={voc("Statuts particuliers")}

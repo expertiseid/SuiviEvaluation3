@@ -39,7 +39,7 @@ function Contenu() {
             <List.Item>{voc("Indicateurs, suivi périodique, alertes et tableaux de bord")}</List.Item>
             <List.Item>{voc("Bénéficiaires, zones d'intervention et carte")}</List.Item>
             <List.Item>{voc("Mécanisme de gestion des plaintes et retours, avec circuit confidentiel")}</List.Item>
-            <List.Item>{voc("Documents, rapports et exports en cinq langues")}</List.Item>
+            <List.Item>{voc("Documents, rapports et exports en six langues")}</List.Item>
           </List>
         </Card>
         <Card withBorder radius="md" padding="lg">

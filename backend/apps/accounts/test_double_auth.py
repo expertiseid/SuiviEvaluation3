@@ -134,3 +134,17 @@ def test_courriel_dans_la_langue_du_compte(compte):
     compte.save(update_fields=["langue"])
     _connecter()
     assert mail.outbox[-1].subject.startswith("Your login code: ") and "valid for 10 minutes" in mail.outbox[-1].body
+
+
+@pytest.mark.django_db
+def test_mot_de_passe_oublie_installation_unique(compte):
+    from django.core.cache import cache
+
+    cache.clear()  # limite de 10 demandes par heure, partagée entre les tests
+    lien = APIClient().post("/api/v1/public/mot-de-passe-oublie/", {"courriel": "agent@expertise-id.com"})
+    assert lien.status_code == 200
+    jeton = re.search(r"jeton=(\S+)", mail.outbox[-1].body).group(1)
+    assert "~" not in jeton and "1 heure" in mail.outbox[-1].body
+    assert APIClient().post("/api/v1/public/mot-de-passe-oublie/changer/", {"jeton": jeton, "mot_de_passe": "Tout-nouveau-mdp-4"}).status_code == 200
+    assert _connecter(password="Tout-nouveau-mdp-4").data["double_authentification"] == "code"
+    assert EvenementAudit.objects.filter(action="MOT_DE_PASSE", details__operation="change").count() == 1

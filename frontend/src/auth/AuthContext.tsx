@@ -9,7 +9,7 @@ interface AuthContextValue {
   loading: boolean;
   /** Renvoie l'étape du second facteur à franchir, ou null si la connexion est faite. */
   /** Courriel (ou identifiant, installation unique) et mot de passe ; console : opérateur Expertise-ID. */
-  login: (username: string, password: string, console?: boolean) => Promise<EtapeDoubleAuth | null>;
+  login: (username: string, password: string, console?: boolean, abonnement?: boolean) => Promise<EtapeDoubleAuth | null>;
   /** Termine une connexion, après le code reçu par courriel. */
   ouvrirSession: (jetons: JetonsConnexion, destination?: string) => Promise<void>;
   logout: () => void;
@@ -43,8 +43,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetchMe(destination);
   }
 
-  async function login(username: string, password: string, console = false) {
-    const { data } = await apiClient.post("/auth/token/", { username, courriel: username, password, ...(console ? { console } : {}) });
+  // abonnement : connexion pour s'abonner (bouton du site) ; seule permise après la fin d'un essai gratuit.
+  async function login(username: string, password: string, console = false, abonnement = false) {
+    const { data } = await apiClient.post("/auth/token/", {
+      username, courriel: username, password, ...(console ? { console } : {}), ...(abonnement ? { abonnement } : {}),
+    });
     if (data.double_authentification) return data as EtapeDoubleAuth;
     await ouvrirSession(data, "/");
     return null;

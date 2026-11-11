@@ -177,7 +177,8 @@ def test_localisation_aux_niveaux_du_pays_et_aller_retour_excel():
     feuille = wb["Bénéficiaires"]
     feuille.delete_rows(2, feuille.max_row)
     ligne = {"Pays (code ISO, ex : BF)": "ML", "Région": "Sikasso", "Cercle": "Koutiala", "Commune": "Zangasso",
-             "Nom": "Diarra", "Prénom": "Mariam", "Sexe (F/M)": "F", "Latitude": "12,1615", "Longitude": -5.4605}
+             "Nom": "Diarra", "Prénom": "Mariam", "Sexe (F/M)": "F", "Latitude": "12,1615", "Longitude": -5.4605,
+             "Consentement (Oui/Non)": "oui", "Date du consentement (AAAA-MM-JJ)": "2026-03-02"}
     feuille.append([ligne.get(e, "") for e in entetes])
     utilisateur = User.objects.create_user(username="adm_loc", password="x", role=ROLE_ADMIN)
     resultat = importer_beneficiaires_depuis_feuille(feuille, utilisateur)
@@ -185,6 +186,7 @@ def test_localisation_aux_niveaux_du_pays_et_aller_retour_excel():
     b = Beneficiaire.objects.get(nom="Diarra")
     assert b.zone.nom == "Zangasso" and b.zone.niveau_administratif == niveau_commune and b.zone.parent.nom == "Koutiala"
     assert float(b.latitude) == 12.1615
+    assert b.consentement is True and str(b.date_consentement) == "2026-03-02"
 
     # Export (localisation sur les bonnes colonnes, identifiant), puis réimport à l'identique.
     wb = load_workbook(io.BytesIO(exporter_beneficiaires(Beneficiaire.objects.all(), [], inclure_sans_projet=True)))
@@ -193,9 +195,11 @@ def test_localisation_aux_niveaux_du_pays_et_aller_retour_excel():
     valeurs = dict(zip(entetes, next(export.iter_rows(min_row=2, values_only=True))))
     assert (valeurs["Région"], valeurs["Cercle"], valeurs["Commune"], valeurs["Nom"]) == ("Sikasso", "Koutiala", "Zangasso", "Diarra")
     assert valeurs["Identifiant"] == b.identifiant
+    assert valeurs["Consentement (Oui/Non)"] == "Oui"
     Beneficiaire.objects.all().delete()
     assert importer_beneficiaires_depuis_feuille(export, utilisateur)["crees"] == 1
     assert Beneficiaire.objects.get().zone == b.zone
+    assert Beneficiaire.objects.get().consentement is True
 
 
 @pytest.mark.django_db

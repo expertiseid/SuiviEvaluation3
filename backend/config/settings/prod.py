@@ -13,3 +13,9 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 # Administration Django en HTTPS : origines autorisées (ex. https://plateforme.exemple.com,https://*.plateforme.exemple.com).
 CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
+
+# Déconnexion après inactivité (apps/core/inactivite.py) : la dernière activité doit être partagée par tous
+# les processus (Redis). Sans REDIS_URL, chaque processus aurait la sienne et fermerait des sessions actives :
+# la déconnexion automatique est alors désactivée plutôt que de déconnecter au hasard.
+if not REDIS_URL:  # noqa: F405
+    SESSION_INACTIVITE_MIN = 0

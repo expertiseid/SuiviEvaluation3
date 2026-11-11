@@ -56,12 +56,18 @@ function Etat({ page }: { page: PageAbonnement }) {
       {page.fin && (
         <Group gap="xs" mb="sm">
           <CalendarClock size={18} />
-          <Text>{page.statut === "GRACE" || page.statut === "BLOQUE" ? voc`Terminé le ${jour(page.fin)}` : voc`Payé jusqu'au ${jour(page.fin)}`}</Text>
+          <Text>{page.statut === "GRACE" || page.statut === "BLOQUE" ? voc`Terminé le ${jour(page.fin)}`
+            : page.essai ? voc`Essai gratuit jusqu'au ${jour(page.fin)}` : voc`Payé jusqu'au ${jour(page.fin)}`}</Text>
           {page.statut === "ACTIF" || page.statut === "BIENTOT" ? <Text c="dimmed">{voc`(${page.jours_restants} jours restants)`}</Text> : null}
         </Group>
       )}
+      {page.essai && page.statut === "ACTIF" && (
+        <Alert color="blue" variant="light">{voc("Essai gratuit : 100 Mo de stockage, tous les modules. À la fin de l'essai, l'accès est bloqué jusqu'au choix d'une offre ; vos données sont conservées.")}</Alert>
+      )}
       {page.statut === "BIENTOT" && (
-        <Alert color="yellow" variant="light">{voc`Votre abonnement se termine dans ${page.jours_restants} jours. Renouvelez-le pour continuer sans interruption.`}</Alert>
+        <Alert color="yellow" variant="light">{page.essai
+          ? voc`Votre essai gratuit se termine dans ${page.jours_restants} jours. Choisissez une offre pour continuer sans interruption.`
+          : voc`Votre abonnement se termine dans ${page.jours_restants} jours. Renouvelez-le pour continuer sans interruption.`}</Alert>
       )}
       {page.statut === "GRACE" && (
         <Alert color="orange" variant="light">
@@ -70,7 +76,9 @@ function Etat({ page }: { page: PageAbonnement }) {
       )}
       {page.statut === "BLOQUE" && (
         <Alert color="red" variant="light">
-          {voc("L'accès à la plateforme est bloqué. Vos données sont conservées : l'accès est rétabli dès le paiement.")}
+          {page.essai
+            ? voc("Votre essai gratuit est terminé : l'accès est bloqué. Vos données sont conservées : choisissez une offre ci-dessous, l'accès est rétabli dès le paiement.")
+            : voc("L'accès à la plateforme est bloqué. Vos données sont conservées : l'accès est rétabli dès le paiement.")}
         </Alert>
       )}
       {page.statut === "SANS_ECHEANCE" && <Text size="sm" c="dimmed">{voc("Votre abonnement n'a pas de date de fin.")}</Text>}
@@ -115,9 +123,11 @@ function Payer({ page }: { page: PageAbonnement }) {
   return (
     <Card withBorder radius="md" padding="lg">
       <Stack gap="md">
-        <Group gap="xs"><RefreshCw size={18} /><Title order={4}>{voc("Renouveler ou changer d'offre")}</Title></Group>
+        <Group gap="xs"><RefreshCw size={18} /><Title order={4}>{page.essai ? voc("Choisir une offre") : voc("Renouveler ou changer d'offre")}</Title></Group>
         <Text size="sm" c="dimmed">
-          {voc("Même offre : la nouvelle période s'ajoute à la fin de l'actuelle. Autre offre : elle commence aujourd'hui, et ce qui reste de votre abonnement actuel est déduit du prix.")}
+          {page.essai
+            ? voc("L'offre choisie prend la suite de votre essai dès le paiement. Vos données et vos comptes restent tels quels : rien à saisir de nouveau.")
+            : voc("Même offre : la nouvelle période s'ajoute à la fin de l'actuelle. Autre offre : elle commence aujourd'hui, et ce qui reste de votre abonnement actuel est déduit du prix.")}
         </Text>
         <SegmentedControl value={moyen} onChange={(v) => { setMoyen(v as "mobile" | "carte"); setCarteEnvoyee(false); }} data={[
           { value: "mobile", label: voc("Mobile money (FCFA)") }, { value: "carte", label: voc("Carte bancaire (dollars)") },

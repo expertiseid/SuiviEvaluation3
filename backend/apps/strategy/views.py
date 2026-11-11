@@ -11,6 +11,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
+from apps.core.masquage import elements_masques
 from apps.core.langues import dans_la_langue_demandee
 from apps.core.permissions import HasGlobalVisibilityOrAssigned, IsAdminOrReadOnly, has_global_visibility
 from apps.indicators.services import indicateurs_pour_projet, valeur_realisee_totale
@@ -256,7 +257,8 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
         cadre = self.get_object()
         ids = list(visible_projets_ids(request.user))
         rattachees = activites_rattachees(cadre, ids)
-        elements = list(ElementStrategique.objects.filter(type_niveau__cadre_strategique=cadre).select_related("type_niveau"))
+        elements = list(ElementStrategique.objects.filter(type_niveau__cadre_strategique=cadre).exclude(
+            id__in=elements_masques(request.user)).select_related("type_niveau"))
         indicateurs = {}
         for element_id in IndicateurElement.objects.filter(element_strategique__in=elements).values_list("element_strategique_id", flat=True):
             indicateurs[element_id] = indicateurs.get(element_id, 0) + 1
@@ -297,13 +299,13 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
         if request.query_params.get("contenu") == "simple":
             # Export simple : la structure seule (éléments, niveaux, contributions), sans chiffres.
             nom = f"structure_{slugify(cadre.code or cadre.nom)[:60] or cadre.id}"
-            lignes = lignes_simples(cadre)
+            lignes = lignes_simples(cadre, request.user)
             if request.query_params.get("fichier") == "pdf":
                 response = HttpResponse(exporter_simple_pdf(cadre, lignes), content_type="application/pdf")
                 response["Content-Disposition"] = f"attachment; filename={nom}.pdf"
                 return response
             return self._fichier(exporter_simple_excel(cadre, lignes), f"{nom}.xlsx")
-        lignes = lignes_tableau(cadre, visible_projets_ids(request.user))
+        lignes = lignes_tableau(cadre, visible_projets_ids(request.user), request.user)
         par_trimestre = request.query_params.get("programmation", "trimestres") != "dates"
         annees = annees_possibles(lignes)
         try:
@@ -335,7 +337,7 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
         """
         from .tableau import donnees_recap_axes
 
-        return Response(donnees_recap_axes(self.get_object(), visible_projets_ids(request.user)))
+        return Response(donnees_recap_axes(self.get_object(), visible_projets_ids(request.user), request.user))
 
 
 class TypeNiveauViewSet(viewsets.ModelViewSet):
@@ -357,6 +359,12 @@ class ElementStrategiqueViewSet(viewsets.ModelViewSet):
 
         return Response(suivi_element(self.get_object(), list(visible_projets_ids(request.user)), request))
 
+    @action(detail=False, methods=["get"])
+    def arborescence(self, request):
+        """Tous les éléments des documents stratégiques, en version allégée (sélecteur « Visibilité » des utilisateurs)."""
+        return Response(list(self.get_queryset().order_by("id").values(
+            "id", "code", "nom", "element_parent", "type_niveau__cadre_strategique", "type_niveau__cadre_strategique__nom")))
+
     def get_queryset(self):
         qs = ElementStrategique.objects.select_related(
             "type_niveau__cadre_strategique__type_document", "element_parent", "contribue_a__type_niveau__cadre_strategique__type_document"
@@ -366,7 +374,8 @@ class ElementStrategiqueViewSet(viewsets.ModelViewSet):
         cadre_id = self.request.query_params.get("cadre_strategique")
         if cadre_id:
             qs = qs.filter(type_niveau__cadre_strategique_id=cadre_id)
-        return qs
+        # Éléments masqués à cet utilisateur (apps.core.masquage) : ni eux ni ce qui est en dessous.
+        return qs.exclude(id__in=elements_masques(self.request.user))
 
     @action(detail=False, methods=["get"], url_path="modele-import")
     @dans_la_langue_demandee

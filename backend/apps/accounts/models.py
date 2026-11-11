@@ -140,6 +140,9 @@ class DemandeInscription(models.Model):
         # Partenariat : l'offre Standard pour les structures avec lesquelles Expertise-ID collabore,
         # avec une réduction possible jusqu'à la gratuité pendant un an, assistance comprise.
         PARTENARIAT = "PARTENARIAT", "Partenariat"
+        # Essai gratuit (10 nov. 2026) : 1 mois, 100 Mo, sans paiement, une seule fois par adresse courriel
+        # (EssaiGratuit) ; à la fin, l'espace est bloqué jusqu'au choix d'une offre payante (page Abonnement).
+        ESSAI = "ESSAI", "Essai gratuit"
 
     class Statut(models.TextChoices):
         ABONNEMENT_REQUIS = "ABONNEMENT_REQUIS", "Abonnement requis"
@@ -173,3 +176,21 @@ class DemandeInscription(models.Model):
 
     def __str__(self):
         return self.organisation
+
+
+class EssaiGratuit(models.Model):
+    """
+    Adresses courriel qui ont déjà eu leur essai gratuit d'un mois (base centrale) : gardées même si l'espace
+    ou la demande d'inscription sont supprimés, pour qu'une adresse n'ait droit qu'à un seul essai.
+    """
+
+    courriel = models.EmailField(unique=True, help_text="En minuscules.")
+    organisation = models.CharField(max_length=200, blank=True)
+    cree_le = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Essai gratuit utilisé"
+        verbose_name_plural = "Essais gratuits utilisés"
+
+    def __str__(self):
+        return self.courriel

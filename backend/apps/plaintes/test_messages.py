@@ -49,8 +49,8 @@ def _dossier(categorie="Retard", **champs):
 
 
 @pytest.mark.django_db
-def test_modeles_installes_dans_les_cinq_langues(actif):
-    assert ModeleMessage.objects.count() == 6 * 5
+def test_modeles_installes_dans_les_six_langues(actif):
+    assert ModeleMessage.objects.count() == 6 * 6
     assert messages.installer_modeles() == 0  # rien en double, rien d'écrasé
 
 

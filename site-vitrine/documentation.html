@@ -7,8 +7,8 @@
   <meta name="description" content="Guide complet de la plateforme Expertise-ID Monitora : démarrer, projets, indicateurs, suivi, bénéficiaires, documents, plaintes, utilisateurs.">
   <link rel="icon" type="image/svg+xml" href="vitrine/logo-plateforme.svg?v=20261106d">
   <link rel="stylesheet" href="vitrine/polices.css?v=20261106d">
-  <link rel="stylesheet" href="vitrine/site.css?v=20261106d">
-  <script src="vitrine/config.js?v=20261106d"></script>
+  <link rel="stylesheet" href="vitrine/site.css?v=20261111d">
+  <script src="vitrine/config.js?v=20261110d"></script>
 </head>
 <body>
 
@@ -22,7 +22,7 @@
       <a href="actualites.html">Actualités</a>
       <a href="partenaires.html">Partenaires</a>
       <a href="index.html#video">Vidéo</a>
-      <a href="index.html#offres">Offres</a>
+      <a href="index.html#offres">Tarifs</a>
       <a href="contact.html">Contact</a>
       <a href="#" data-lien="CONNEXION">Se connecter</a>
       <a class="bouton bouton-plein" href="inscription.html">Créer mon espace</a>
@@ -292,7 +292,7 @@
       <ul>
         <li><b>Logo et nom</b> : <b>Organisation › Identité et logo</b>. Le logo s'affiche en haut de toutes les pages et sur la page de connexion. Tant qu'il n'y en a pas, l'administrateur voit un bouton « Ajouter le logo de votre organisation » en haut.</li>
         <li><b>Menu</b> : <span class="chip">Personnaliser le menu</span> (en bas du menu) pour renommer les rubriques, changer leurs icônes et adapter le vocabulaire (projet, activité…).</li>
-        <li><b>Langues</b> : chaque utilisateur choisit la sienne (français, anglais, arabe, espagnol, allemand).</li>
+        <li><b>Langues</b> : chaque utilisateur choisit la sienne (français, anglais, arabe, espagnol, allemand, italien).</li>
         <li><b>Organisation</b> : structure interne, parties prenantes, partenaires.</li>
       </ul>
       <figure><div class="ecran"><img src="images/organisation-logo.webp" alt="Identité et logo de l'organisation" loading="lazy"></div><figcaption>Le nom et le logo de votre organisation.</figcaption></figure>
@@ -337,11 +337,21 @@
     </div>
     <div><h4>La plateforme</h4><a href="index.html#fonctionnalites">Fonctionnalités</a><a href="index.html#video">Vidéo</a></div>
     <div><h4>Commencer</h4><a href="inscription.html">Créer mon espace</a><a href="contact.html">Contact</a><a href="#" data-lien="CONNEXION">Se connecter</a></div>
+    <div class="newsletter-pied">
+      <div><h4>Newsletter</h4><p>Les nouveautés de la plateforme, les formations et les conseils d'Expertise-ID, dans votre boîte courriel.</p></div>
+      <form class="form-newsletter" novalidate>
+        <div class="ligne-newsletter"><input type="email" name="courriel" required autocomplete="email" placeholder="Votre adresse courriel" aria-label="Votre adresse courriel"><button class="bouton bouton-plein" type="submit">S'inscrire</button></div>
+        <label class="case-newsletter"><input type="checkbox" name="accord"> <span>J'accepte de recevoir la newsletter ; je peux me désinscrire à tout moment.</span></label>
+        <input type="text" name="site_web" class="piege" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <p class="message-newsletter" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+    <nav class="liens-legaux" aria-label="Informations légales"><a href="conditions-utilisation.html">Conditions d'utilisation</a> <a href="confidentialite.html">Politique de confidentialité</a> <a href="cookies.html">Cookies</a></nav>
     <div class="bas"><span>© 2026 Expertise-ID</span></div>
   </div>
 </footer>
-<script src="vitrine/traductions.js?v=20261109b"></script>
-<script src="vitrine/langues.js?v=20261106d"></script>
-<script src="vitrine/site.js?v=20261106d"></script>
+<script src="vitrine/traductions.js?v=20261112b"></script>
+<script src="vitrine/langues.js?v=20261111a"></script>
+<script src="vitrine/site.js?v=20261111b"></script>
 </body>
 </html>

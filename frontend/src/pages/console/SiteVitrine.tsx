@@ -16,7 +16,7 @@ import { locale } from "../../utils/i18n";
 import { voc } from "../../utils/vocabulaire";
 import { erreursParChamp } from "../plaintes/saisieRetour";
 
-const NOM_LANGUE: Record<LangueSite, string> = { en: "English", ar: "العربية", es: "Español", de: "Deutsch" };
+const NOM_LANGUE: Record<LangueSite, string> = { en: "English", ar: "العربية", es: "Español", de: "Deutsch", it: "Italiano" };
 const ADRESSE_SITE = (import.meta.env.VITE_URL_SITE as string | undefined) || "http://localhost:5193";
 const date = (d: string) => new Date(d + "T12:00:00").toLocaleDateString(locale());
 const CATEGORIES = () => [

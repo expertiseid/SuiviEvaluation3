@@ -33,7 +33,8 @@ class StockagePlein(APIException):
     """Fichier refusé (espace plein) : l'interface affiche une fenêtre explicative (code « stockage_plein »)."""
     status_code = 400
     default_code = "stockage_plein"
-OFFRE_GO = {"STANDARD_25": 25, "STANDARD_50": 50, "STANDARD": 100, "STOCKAGE_PLUS": 100, "PARTENARIAT": 100}
+OFFRE_GO = {"STANDARD_25": 25, "STANDARD_50": 50, "STANDARD": 100, "STOCKAGE_PLUS": 100, "PARTENARIAT": 100,
+            "ESSAI": 100 / 1024}  # essai gratuit : 100 Mo
 CLE = "stockage-utilise"
 DUREE = 600
 
@@ -71,9 +72,11 @@ def _taille_base(org) -> int:
 
 
 def _mesurer(org) -> int:
+    """Fichiers, plus ce que la base a pris depuis la création de l'espace (sa taille à vide n'est pas comptée)."""
     dossiers = (str(settings.MEDIA_ROOT), str(settings.PLAINTES_STOCKAGE_PRIVE))
     fichiers = sum(_taille_dossier(os.path.join(d, "organisations", org.sous_domaine)) for d in dossiers)
-    return fichiers + _taille_base(org)
+    vide = org.base_vide if org.base_vide is not None else settings.STOCKAGE_BASE_VIDE
+    return fichiers + max(0, _taille_base(org) - vide)
 
 
 def _cles_de(org):
@@ -111,6 +114,15 @@ def verifier(taille: int):
         raise StockagePlein({"detail": f"Espace de stockage plein ({lisible(go)}) : supprimez des fichiers ou "
                                        "augmentez votre stockage depuis la page Stockage.",
                              "code": "stockage_plein", "taille": taille, "utilise": utilise(org), "limite": int(go * GO)})
+
+
+def oublier():
+    """Après l'effacement d'un fichier : l'espace occupé gardé en cache est remesuré à la prochaine lecture."""
+    org = contexte.courante()
+    if org is None:
+        return
+    with _cles_de(org):
+        cache.delete(CLE)
 
 
 def ajouter(taille: int):

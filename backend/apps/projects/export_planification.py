@@ -20,14 +20,17 @@ from apps.core.vocabulaire import v
 from .models import Activite, MethodeCalcul, NiveauActivite, SousActivite
 
 
-def _arbre(projet):
-    """(racines, enfants par parent, sous-activités par élément), dans l'ordre de l'écran (création)."""
-    elements = list(Activite.objects.filter(projet=projet).prefetch_related("structures"))
+def _arbre(projet, masquees=frozenset()):
+    """
+    (racines, enfants par parent, sous-activités par élément), dans l'ordre de l'écran (création) ; sans les
+    éléments masqués à l'utilisateur qui exporte (apps.core.masquage).
+    """
+    elements = list(Activite.objects.filter(projet=projet).exclude(id__in=masquees).prefetch_related("structures"))
     enfants = {}
     for e in elements:
         enfants.setdefault(e.activite_parent_id, []).append(e)
     sous = {}
-    for sa in SousActivite.objects.filter(activite__projet=projet):
+    for sa in SousActivite.objects.filter(activite__projet=projet).exclude(activite_id__in=masquees):
         sous.setdefault(sa.activite_id, []).append(sa)
     return enfants.get(None, []), enfants, sous
 
@@ -43,7 +46,7 @@ def noms_attributs(projet, elements_et_sous) -> list:
     return sorted(noms, key=lambda n: (ordre.index(n) if n in ordre else len(ordre), n.casefold()))
 
 
-def lignes_planification(projet) -> tuple[list, list]:
+def lignes_planification(projet, masquees=frozenset()) -> tuple[list, list]:
     """
     (lignes, attributs). Ligne : {"type": "element"|"sous-activite", "code", "libelle", "niveau",
     "profondeur", "groupe", "attributs", "services", "debut", "fin", "budget", "taux", "objet"}.
@@ -51,7 +54,7 @@ def lignes_planification(projet) -> tuple[list, list]:
     """
     from .taux import ArbreTaux
 
-    racines, enfants, sous = _arbre(projet)
+    racines, enfants, sous = _arbre(projet, masquees)
     niveaux = noms_niveaux(projet)
     arbre_taux = ArbreTaux(projet)
 
@@ -313,7 +316,7 @@ def exporter_simple_pdf(projet, lignes) -> bytes:
 # ------------------------------------------------------------------------------------ canevas
 
 
-def exporter_canevas(projet) -> bytes:
+def exporter_canevas(projet, masquees=frozenset()) -> bytes:
     """
     Feuille « Planification » du modèle d'import, préremplie : une colonne par niveau du projet
     (noms des niveaux), « Code activité », les attributs (« Attribut : … »), puis les colonnes de
@@ -331,7 +334,7 @@ def exporter_canevas(projet) -> bytes:
     from .attributs import PREFIXE
     from .import_excel import COLONNES_PLANIFICATION, COMMENTAIRE_NIVEAU, COULEUR_ATTRIBUT, COULEUR_NIVEAU, LEGENDE_NIVEAUX
 
-    racines, enfants, sous = _arbre(projet)
+    racines, enfants, sous = _arbre(projet, masquees)
     niveaux = noms_niveaux(projet)
     profondeur_max = 0
 

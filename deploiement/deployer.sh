@@ -32,6 +32,7 @@ ssh "$CIBLE" "cd $DOSSIER/deploiement && test -f .env.prod && FICHIERS='-f docke
   { ! grep -q '^RELAIS_IP=.' .env.prod || FICHIERS=\"\$FICHIERS -f docker-compose.relais.yml\"; } && \
   { ! grep -q '^SERVEUR_DONNEES=.' .env.prod || FICHIERS=\"\$FICHIERS -f docker-compose.donnees.yml\"; } && \
   docker compose --env-file .env.prod \$FICHIERS up -d --build --remove-orphans && \
-  docker compose --env-file .env.prod \$FICHIERS exec -T web nginx -s reload"
-# Nginx garde l'adresse de l'ancien conteneur backend recréé (502) : rechargé ci-dessus.
+  docker compose --env-file .env.prod \$FICHIERS up -d --force-recreate --no-deps web"
+# Nginx recréé (quelques secondes) : il garderait sinon l'adresse de l'ancien conteneur backend (502), et les
+# fichiers de configuration montés un par un (*.inc), remplacés par rsync, resteraient dans leur ancienne version.
 echo "Terminé."

@@ -56,6 +56,8 @@ def _colonnes_beneficiaire(b, codes_projets, nb_niveaux):
         "; ".join(t.libelle for t in b.types_activite.all()),
         float(b.latitude) if b.latitude is not None else None,
         float(b.longitude) if b.longitude is not None else None,
+        "" if b.consentement is None else "Oui" if b.consentement else "Non",
+        b.date_consentement,
         codes_projets,
     ]
 

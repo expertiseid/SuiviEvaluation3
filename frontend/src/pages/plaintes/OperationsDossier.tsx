@@ -487,6 +487,52 @@ export function AnonymiserDossier({ dossier, onClose }: { dossier: DossierDetail
   );
 }
 
+/**
+ * Effacement définitif (droit à l'effacement, erreur de saisie) : Administrateur, raison choisie dans une liste,
+ * numéro recopié pour confirmer. Le dossier n'existe plus ensuite : retour à la liste.
+ */
+export function EffacerDossier({ dossier, onClose }: { dossier: DossierDetail; onClose: () => void }) {
+  const operer = useOperationDossier(dossier.id);
+  const navigate = useNavigate();
+  const [raison, setRaison] = useState<string | null>(null);
+  const [numero, setNumero] = useState("");
+  const [erreurs, setErreurs] = useState<Record<string, string>>({});
+  const effacer = async () => {
+    setErreurs({});
+    try {
+      await operer.mutateAsync({ operation: "effacer", donnees: { raison, numero } });
+      onClose();
+      notifications.show({ message: voc`Dossier ${dossier.numero} effacé définitivement.`, color: "teal" });
+      navigate("/plaintes");
+    } catch (error) {
+      const parChamp = erreursParChamp(error);
+      setErreurs(Object.keys(parChamp).length ? parChamp : { detail: messageErreurApi(error, voc("Erreur lors de l'enregistrement")) });
+    }
+  };
+  return (
+    <Modal opened onClose={onClose} title={voc("Effacer définitivement le dossier")} size="lg">
+      <Stack>
+        <Alert color="red">
+          {voc("Tout sera supprimé : le dossier, le récit, les échanges, les pièces jointes et l'historique. Contrairement à l'anonymisation, rien n'est gardé, pas même pour les statistiques. Cette action est irréversible.")}
+        </Alert>
+        <Select label={voc("Raison")} withAsterisk value={raison} onChange={setRaison} error={erreurs.raison}
+          data={[
+            { value: "DEMANDE_PERSONNE", label: voc("Demande de la personne concernée (droit à l'effacement)") },
+            { value: "ERREUR_SAISIE", label: voc("Erreur de saisie ou doublon") },
+            { value: "AUTRE", label: voc("Autre motif légitime") },
+          ]} />
+        <TextInput label={voc`Pour confirmer, recopiez le numéro du dossier : ${dossier.numero}`} withAsterisk value={numero}
+          onChange={(e) => setNumero(e.currentTarget.value)} error={erreurs.numero} autoComplete="off" />
+        {erreurs.detail && <Alert color="red">{erreurs.detail}</Alert>}
+        <Group justify="flex-end">
+          <Button variant="default" onClick={onClose}>{voc("Annuler")}</Button>
+          <Button color="red" onClick={effacer} loading={operer.isPending} disabled={!raison || !numero.trim()}>{voc("Effacer définitivement")}</Button>
+        </Group>
+      </Stack>
+    </Modal>
+  );
+}
+
 /** Signalement manuel comme sensible (même en lecture seule) : on peut en perdre l'accès aussitôt. */
 export function SignalerDossier({ dossier, onClose }: { dossier: DossierDetail; onClose: () => void }) {
   const signaler = useSignalerSensible(dossier.id);

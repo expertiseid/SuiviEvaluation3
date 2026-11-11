@@ -49,6 +49,8 @@ TEXTES = {
            ["Una plataforma al servicio del seguimiento y la evaluación", "para un impacto duradero"]),
     "de": (["Verfolgen", "Bewerten", "Entscheiden"],
            ["Eine Plattform im Dienst von Monitoring und Evaluierung", "für nachhaltige Wirkung"]),
+    "it": (["Monitorare", "Valutare", "Decidere"],
+           ["Una piattaforma al servizio del monitoraggio e della valutazione", "per un impatto duraturo"]),
     "ar": (["متابعة", "تقييم", "قرار"],
            ["منصة في خدمة المتابعة والتقييم", "من أجل أثر مستدام"]),
 }

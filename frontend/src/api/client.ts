@@ -67,13 +67,14 @@ const SANS_SESSION = /^\/(auth\/token|auth\/double-authentification|public)\//;
 
 apiClient.interceptors.request.use((config) => {
   const token = tokenStorage.getAccess();
-  if (SANS_SESSION.test(config.url ?? "")) {
-    // rien : requête anonyme
-  } else if (estPagePublique()) {
-    // Page publique d'une organisation : l'organisation du lien, jamais celle d'une session ouverte
-    // dans ce navigateur (le jeton l'emporterait côté serveur).
+  if (estPagePublique()) {
+    // Page publique d'une organisation (formulaire et suivi des plaintes, partage) : l'organisation du lien,
+    // jamais celle d'une session ouverte dans ce navigateur (le jeton l'emporterait côté serveur). Vaut aussi
+    // pour ses adresses /public/… : sans l'organisation, le serveur ne sait pas quelle base interroger.
     const org = organisationPublique();
     if (org) config.headers["X-Organisation"] = org;
+  } else if (SANS_SESSION.test(config.url ?? "")) {
+    // rien : requête anonyme
   } else if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -125,8 +126,12 @@ apiClient.interceptors.response.use(
   async (error) => {
     const original = error.config;
     // Abonnement terminé depuis plus de 7 jours : seule la page Abonnement reste ouverte (pour payer).
+    // Essai gratuit terminé : la plateforme ne s'ouvre plus ; session fermée, on s'abonne depuis le site.
     if (error.response?.data?.code === "abonnement_expire" && window.location.pathname !== "/mon-abonnement") {
-      window.location.href = "/mon-abonnement";
+      if (error.response.data.essai) {
+        tokenStorage.clear();
+        window.location.href = "/login?essai=termine";
+      } else window.location.href = "/mon-abonnement";
       return Promise.reject(error);
     }
     // Fichier refusé faute de place : fenêtre explicative (FenetreStockagePlein).
@@ -145,13 +150,21 @@ apiClient.interceptors.response.use(
       });
       return Promise.reject(error);
     }
+    // Session fermée par le serveur après une période d'inactivité (apps/core/inactivite.py).
+    if (error.response?.status === 401 && error.response.data?.code === "session_inactive") {
+      tokenStorage.clear();
+      if (!estPagePublique()) window.location.href = "/login?inactif=1";
+      return Promise.reject(error);
+    }
     // Jeton obtenu sans le second facteur alors que le compte l'exige : nouvelle connexion obligatoire.
     if (error.response?.status === 401 && error.response.data?.code === "double_authentification_requise") {
       tokenStorage.clear();
       if (!estPagePublique()) window.location.href = "/login";
       return Promise.reject(error);
     }
-    if (error.response?.status === 401 && !original._retry) {
+    // Connexion (mot de passe, code) et pages publiques : un refus (mot de passe faux) n'est pas une session
+    // expirée ; la page affiche son message, sans rechargement.
+    if (error.response?.status === 401 && !original._retry && !SANS_SESSION.test(original.url ?? "")) {
       original._retry = true;
       if (!refreshingPromise) {
         refreshingPromise = refreshAccessToken().finally(() => {

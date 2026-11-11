@@ -23,7 +23,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from pathlib import Path
 
-LANGUES_TRADUITES = ("en", "ar", "es", "de")
+LANGUES_TRADUITES = ("en", "ar", "es", "de", "it")
 DOSSIER_CATALOGUES = Path(__file__).parent / "i18n"
 
 _langue = ContextVar("langue_fichiers", default="fr")

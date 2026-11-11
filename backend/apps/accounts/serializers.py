@@ -2,6 +2,8 @@ from django.utils.text import slugify
 from rest_framework import serializers
 
 from apps.core.vocabulaire import v
+from apps.projects.models import Activite
+from apps.strategy.models import ElementStrategique
 
 from .constants import ROLE_ADMIN
 from .models import DemandeInscription, Role, User
@@ -49,6 +51,8 @@ class RoleSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    activites_masquees = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    elements_masques = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     role_libelle = serializers.SerializerMethodField()
     peut_personnaliser_tableau_de_bord = serializers.SerializerMethodField()
     peut_approuver = serializers.SerializerMethodField()
@@ -114,12 +118,19 @@ class UserSerializer(serializers.ModelSerializer):
             "is_active",
             "est_demo",
             "est_operateur",
+            "activites_masquees",
+            "elements_masques",
         )
         read_only_fields = ("id",)
 
 
 class UserWriteSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
+    # Éléments masqués à cet utilisateur (apps.core.masquage) : masquer un élément masque ce qui est en dessous.
+    activites_masquees = serializers.PrimaryKeyRelatedField(
+        many=True, required=False, queryset=Activite.objects.all())
+    elements_masques = serializers.PrimaryKeyRelatedField(
+        many=True, required=False, queryset=ElementStrategique.objects.all())
 
     class Meta:
         model = User
@@ -140,6 +151,8 @@ class UserWriteSerializer(serializers.ModelSerializer):
             "partie_prenante",
             "is_active",
             "password",
+            "activites_masquees",
+            "elements_masques",
         )
         read_only_fields = ("id",)
 
@@ -187,20 +200,30 @@ class UserWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(f"Rôle « {value} » inconnu.")
         return value
 
+    MASQUAGES = ("activites_masquees", "elements_masques")  # côté inverse des relations : .set() après l'enregistrement
+
+    def _masquages(self, user, masquages):
+        for champ, valeurs in masquages.items():
+            if valeurs is not None:
+                getattr(user, champ).set(valeurs)
+
     def create(self, validated_data):
         password = validated_data.pop("password", None)
         zones_affectees = validated_data.pop("zones_affectees", None)
+        masquages = {c: validated_data.pop(c, None) for c in self.MASQUAGES}
         user = User(**validated_data)
         if password:
             user.set_password(password)
         user.save()
         if zones_affectees is not None:
             user.zones_affectees.set(zones_affectees)
+        self._masquages(user, masquages)
         return user
 
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
         zones_affectees = validated_data.pop("zones_affectees", None)
+        masquages = {c: validated_data.pop(c, None) for c in self.MASQUAGES}
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         if password:
@@ -208,6 +231,7 @@ class UserWriteSerializer(serializers.ModelSerializer):
         instance.save()
         if zones_affectees is not None:
             instance.zones_affectees.set(zones_affectees)
+        self._masquages(instance, masquages)
         return instance
 
 

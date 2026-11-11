@@ -7,6 +7,7 @@ import { messageErreurApi } from "../../utils/erreurs";
 import { voc } from "../../utils/vocabulaire";
 import { erreursParChamp } from "../plaintes/saisieRetour";
 import { CadreVitrine } from "./CadreVitrine";
+import { LiensLegaux } from "../../components/common/Logos";
 
 // Valeur enregistrée en français ; libellé traduit à l'affichage.
 const TYPES = () => [
@@ -117,7 +118,8 @@ export function InscriptionPage() {
               <TextInput aria-hidden tabIndex={-1} autoComplete="off" value={piege} onChange={(e) => setPiege(e.currentTarget.value)}
                 style={{ display: "none" }} />
               <Checkbox checked={v.conditions} onChange={(e) => changer({ conditions: e.currentTarget.checked })} error={erreurs.conditions}
-                label={voc("J'accepte qu'Expertise-ID utilise ces informations pour me contacter et activer l'espace de mon organisation.")} />
+                label={voc("J'accepte les conditions d'utilisation et la politique de confidentialité de la plateforme, et qu'Expertise-ID utilise ces informations pour me contacter et activer l'espace de mon organisation.")} />
+              <LiensLegaux />
               <Group justify="space-between">
                 <Anchor component={Link} to="/login" size="sm">{voc("J'ai déjà un compte")}</Anchor>
                 <Button size="md" onClick={envoyer} loading={envoi}>{voc("Créer le profil")}</Button>

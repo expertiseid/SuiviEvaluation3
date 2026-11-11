@@ -37,7 +37,15 @@ class Organisation(models.Model):
         null=True, blank=True, help_text="Prix d'un mois payé : sert à déduire ce qui reste lors d'un changement d'offre.")
     abonnement_alerte = models.PositiveSmallIntegerField(
         default=0, help_text="Dernière alerte de fin d'abonnement envoyée (1 : 7 jours avant, 2 : terminé, 3 : bloqué).")
+    base_vide = models.PositiveBigIntegerField(
+        null=True, blank=True,
+        help_text="Taille (octets) de la base à la création de l'espace (tables, référentiel des zones) : elle n'est pas "
+                  "comptée dans l'espace utilisé (apps.organisations.quota).")
     mode_demo = models.BooleanField(default=False, help_text="Organisation de démonstration : visiteur en lecture seule.")
+    suppression_essai = models.JSONField(
+        default=dict, blank=True,
+        help_text="Essai gratuit non converti (essais.py) : {date de suppression prévue, avertissements envoyés, dernier}.",
+    )
     courriel_contact = models.EmailField(blank=True)
     cree_le = models.DateTimeField(auto_now_add=True)
     active_le = models.DateTimeField(null=True, blank=True)
@@ -122,7 +130,7 @@ class PaiementAbonnement(models.Model):
 
 # --- Site vitrine : actualités et partenaires (gérés dans la console Expertise-ID) -----------------
 
-LANGUES_SITE = ("en", "ar", "es", "de")
+LANGUES_SITE = ("en", "ar", "es", "de", "it")
 
 
 def chemin_site(instance, nom):
@@ -181,3 +189,62 @@ class PartenaireSite(models.Model):
 
     def __str__(self):
         return self.nom
+
+
+class AbonneNewsletter(models.Model):
+    """
+    Abonné à la newsletter du site vitrine (apps.organisations.newsletter). Inscrit depuis le site, il ne
+    reçoit rien tant qu'il n'a pas confirmé par le lien envoyé par courriel ; chaque envoi porte un lien
+    de désinscription (le même jeton).
+    """
+
+    courriel = models.EmailField(unique=True, help_text="En minuscules.")
+    langue = models.CharField(max_length=5, default="fr")
+    jeton = models.CharField(max_length=64, unique=True, help_text="Lien de confirmation et de désinscription.")
+    cree_le = models.DateTimeField(auto_now_add=True)
+    confirme_le = models.DateTimeField(null=True, blank=True)
+    desinscrit_le = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ("-cree_le",)
+        verbose_name = "Abonné à la newsletter"
+
+    def __str__(self):
+        return self.courriel
+
+    @property
+    def statut(self) -> str:
+        if self.desinscrit_le:
+            return "DESINSCRIT"
+        return "ACTIF" if self.confirme_le else "EN_ATTENTE"
+
+
+class EnvoiNewsletter(models.Model):
+    """
+    Newsletter rédigée dans la console : en français, traductions facultatives {langue: {sujet, contenu}} ;
+    chaque abonné la reçoit dans sa langue (le français si la traduction manque). Envoyée une seule fois.
+    """
+
+    class Statut(models.TextChoices):
+        BROUILLON = "BROUILLON", "Brouillon"
+        EN_COURS = "EN_COURS", "Envoi en cours"
+        ENVOYE = "ENVOYE", "Envoyée"
+
+    sujet = models.CharField(max_length=200)
+    contenu = models.TextField(help_text="Paragraphes séparés par une ligne vide.")
+    traductions = models.JSONField(default=dict, blank=True)
+    statut = models.CharField(max_length=10, choices=Statut.choices, default=Statut.BROUILLON)
+    destinataires = models.PositiveIntegerField(default=0)
+    envoyes = models.PositiveIntegerField(default=0)
+    echecs = models.PositiveIntegerField(default=0)
+    envoye_par = models.CharField(max_length=254, blank=True)
+    envoye_le = models.DateTimeField(null=True, blank=True)
+    cree_le = models.DateTimeField(auto_now_add=True)
+    modifie_le = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-cree_le",)
+        verbose_name = "Envoi de la newsletter"
+
+    def __str__(self):
+        return self.sujet

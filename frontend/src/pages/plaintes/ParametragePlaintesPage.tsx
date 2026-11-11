@@ -55,6 +55,7 @@ const LANGUES = [
   { value: "ar", label: "العربية" },
   { value: "es", label: "Español" },
   { value: "de", label: "Deutsch" },
+  { value: "it", label: "Italiano" },
 ];
 
 /** Point de départ : un modèle pré-rempli, ensuite entièrement modifiable. */
@@ -183,6 +184,8 @@ function FormulaireMecanisme({ mecanisme, modifiable }: { mecanisme: MecanismePl
         anonymat_autorise: valeurs.anonymat_autorise,
         langues: valeurs.langues,
         texte_information: valeurs.texte_information,
+        texte_consentement: valeurs.texte_consentement,
+        anonymisation_automatique: valeurs.anonymisation_automatique,
         prefixe_numero: valeurs.prefixe_numero,
         jours_ouvres: valeurs.jours_ouvres,
         conservation_ordinaire_mois: valeurs.conservation_ordinaire_mois,
@@ -247,6 +250,13 @@ function FormulaireMecanisme({ mecanisme, modifiable }: { mecanisme: MecanismePl
             onChange={(v) => changer("conservation_sensible_mois", v === "" ? null : Number(v))}
           />
         </SimpleGrid>
+        <Switch
+          label={voc("Anonymiser automatiquement à l'échéance de conservation")}
+          description={voc("Sinon, les dossiers arrivés à échéance apparaissent dans « À anonymiser » et sont confirmés un par un. Jamais pour un dossier sous suspension légale.")}
+          checked={!!valeurs.anonymisation_automatique}
+          disabled={!modifiable}
+          onChange={(e) => changer("anonymisation_automatique", e.currentTarget.checked)}
+        />
         <Select
           label={voc("Circuit alternatif (personne mise en cause)")}
           description={voc("Suivi quand une personne mise en cause fait partie du circuit confidentiel habituel : direction, siège, référent extérieur… Obligatoire pour l'activation.")}
@@ -363,6 +373,22 @@ function FormulaireMecanisme({ mecanisme, modifiable }: { mecanisme: MecanismePl
           disabled={!modifiable}
           onChange={(e) => changer("texte_information", e.currentTarget.value)}
         />
+        <Textarea
+          label={voc("Clause de consentement (RGPD)")}
+          description={voc("Affichée sur le formulaire public juste avant la case d'accord ; le dossier garde le texte accepté et sa date. Vide : une phrase d'accord courte est utilisée.")}
+          autosize
+          minRows={3}
+          value={valeurs.texte_consentement ?? ""}
+          disabled={!modifiable}
+          onChange={(e) => changer("texte_consentement", e.currentTarget.value)}
+        />
+        {modifiable && (
+          <Group justify="flex-start" mt={-8}>
+            <Button size="xs" variant="subtle" onClick={() => changer("texte_consentement", voc("Les informations que vous donnez dans ce formulaire servent uniquement à traiter votre retour et à vous répondre. Elles sont gardées de façon confidentielle, accessibles seulement aux personnes chargées de votre dossier, puis supprimées ou rendues anonymes à la fin de la durée de conservation. Vous pouvez à tout moment demander à consulter, corriger ou effacer vos informations, avec votre code de suivi ou en nous contactant."))}>
+              {voc("Insérer le modèle de clause")}
+            </Button>
+          </Group>
+        )}
         {modifiable && (
           <Group justify="flex-end">
             <Button onClick={sauver} loading={enregistrer.isPending}>{voc("Enregistrer")}</Button>

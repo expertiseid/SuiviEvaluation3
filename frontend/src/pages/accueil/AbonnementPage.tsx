@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Alert, Badge, Button, Card, Container, Group, List, NumberInput, SegmentedControl, Select, SimpleGrid, Stack, Text, Textarea, ThemeIcon, Title } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { CircleCheck, CreditCard, Handshake, HardDrive, Lock, Rocket, Server } from "lucide-react";
+import { CircleCheck, CreditCard, Gift, Handshake, HardDrive, Lock, Rocket, Server } from "lucide-react";
 import { type DemandeAbonnement, choisirOffre, payerOffre } from "../../api/identite";
 import { messageErreurApi } from "../../utils/erreurs";
 import { langue } from "../../utils/i18n";
@@ -18,6 +18,12 @@ const PETITE = (go: number, code: string, prix: string) => ({
 });
 
 const OFFRES = [
+  // Essai gratuit : espace créé aussitôt, sans paiement ; une seule fois par adresse courriel.
+  { code: "ESSAI", icone: Gift, nom: () => voc("Essai gratuit"), pour: () => voc("Découvrez la plateforme pendant 1 mois, sans payer"),
+    prix: () => voc("Gratuit pendant 1 mois"), points: () => [
+      voc("100 Mo de stockage pour vos données"), voc("Tous les modules de la plateforme"), voc("Un seul essai par adresse courriel"),
+      voc("Ensuite, choisissez une offre : vos données sont conservées"),
+    ] },
   PETITE(25, "STANDARD_25", "34 $"),
   PETITE(50, "STANDARD_50", "52 $"),
   { code: "STANDARD", icone: Rocket, nom: () => voc("Standard"), pour: () => voc("Tout ce qu'il faut pour suivre vos projets"),
@@ -153,6 +159,11 @@ export function AbonnementPage() {
               <Text size="sm">{voc("Connectez-vous avec l'adresse courriel et le mot de passe choisis à l'inscription.")}</Text>
               <Button mt="sm" component={Link} to="/login">{voc("Se connecter")}</Button>
             </Alert>
+          ) : demande.offre === "ESSAI" ? (
+            <Alert color="teal" icon={<Gift size={20} />} title={voc("Votre essai gratuit commence")}>
+              <Text size="sm">{voc("Votre espace est en cours de création. Dans quelques minutes, vous recevrez un courriel : connectez-vous alors avec votre adresse courriel et le mot de passe choisi à l'inscription.")}</Text>
+              <Button mt="sm" component={Link} to="/login">{voc("Page de connexion")}</Button>
+            </Alert>
           ) : offreChoisie ? (
             <Alert color="teal" icon={<CircleCheck size={20} />} title={voc`Offre ${offreChoisie.nom()} choisie`}>
               {voc("Merci ! Expertise-ID a reçu votre demande et vous contactera rapidement pour finaliser l'abonnement et activer votre espace. Vous pourrez alors vous connecter avec votre adresse courriel.")}
@@ -160,7 +171,7 @@ export function AbonnementPage() {
             </Alert>
           ) : (
             <>
-              <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
+              <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
                 {OFFRES.map(({ code, icone: Icone, nom, pour, prix, points }) => {
                   const actif = choix === code;
                   return (
@@ -222,7 +233,7 @@ export function AbonnementPage() {
                   )}
                   <Textarea label={voc("Précisions pour Expertise-ID (facultatif)")} autosize minRows={2} value={message} onChange={(e) => setMessage(e.currentTarget.value)} />
                   <Group justify="flex-end">
-                    <Button size="md" onClick={valider} loading={envoi} disabled={!choix}>{!enLigne ? voc("Envoyer ma demande d'abonnement") : carte ? voc("Continuer avec la carte bancaire") : voc("Payer et créer mon espace")}</Button>
+                    <Button size="md" onClick={valider} loading={envoi} disabled={!choix}>{choix === "ESSAI" ? voc("Commencer mon essai gratuit") : !enLigne ? voc("Envoyer ma demande d'abonnement") : carte ? voc("Continuer avec la carte bancaire") : voc("Payer et créer mon espace")}</Button>
                   </Group>
                 </Stack>
               </Card>

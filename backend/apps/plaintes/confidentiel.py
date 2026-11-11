@@ -20,6 +20,9 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.accounts.constants import ROLE_ADMIN
+from apps.core.audit import A as AUDIT
+from apps.core.audit import auditer
+from apps.core.effacement import effacement_definitif
 from apps.core.vocabulaire import v
 
 from .models import ActionDossier, Circuit, Dossier, Mecanisme, Prestataire, Referencement, StatutDossier
@@ -183,6 +186,37 @@ def suspendre(dossier, auteur, donnees):
     return dossier
 
 
+RAISONS_EFFACEMENT = {
+    "DEMANDE_PERSONNE": "Demande de la personne concernée (droit à l'effacement)",
+    "ERREUR_SAISIE": "Erreur de saisie ou doublon",
+    "AUTRE": "Autre motif légitime",
+}
+
+
+def effacer(dossier, auteur, donnees):
+    """
+    Effacement définitif d'un dossier (droit à l'effacement, erreur de saisie) : réservé à l'Administrateur,
+    confirmé en recopiant le numéro, impossible sous suspension légale. Contrairement à l'anonymisation,
+    rien n'est gardé, pas même pour les statistiques : dossier, échanges, pièces jointes et historique.
+    Le journal d'audit garde le numéro, l'auteur et la raison (choisie dans une liste : jamais de texte libre).
+    """
+    _reserve_admin(auteur, v("L'effacement d'un dossier est réservé à l'Administrateur."))
+    if dossier.suspension_legale:
+        raise ValidationError({"detail": v("Ce dossier fait l'objet d'une suspension légale : il ne peut pas être effacé.")})
+    erreurs = {}
+    if donnees.get("raison") not in RAISONS_EFFACEMENT:
+        erreurs["raison"] = v("Choisissez la raison de l'effacement.")
+    if (donnees.get("numero") or "").strip().upper() != dossier.numero.upper():
+        erreurs["numero"] = v("Recopiez exactement le numéro du dossier pour confirmer.")
+    if erreurs:
+        raise ValidationError(erreurs)
+    numero = dossier.numero
+    with effacement_definitif():
+        dossier.delete()
+        auditer(auteur, AUDIT.SUPPRESSION, numero, module="plaintes", raison=donnees["raison"])
+    return numero
+
+
 def fin_de_conservation(dossier, mecanisme=None):
     """Date à partir de laquelle le contenu d'un dossier clôturé peut être supprimé."""
     mecanisme = mecanisme or Mecanisme.courant()
@@ -218,6 +252,11 @@ def anonymiser(dossier, auteur, donnees):
         raise ValidationError({"detail": v("Seul un dossier clôturé peut être anonymisé.")})
     if donnees.get("confirmation") is not True:
         raise ValidationError({"confirmation": v("Confirmez l'anonymisation : elle est irréversible.")})
+    return _effacer_contenu(dossier, auteur)
+
+
+def _effacer_contenu(dossier, auteur):
+    """Anonymisation proprement dite (vérifications faites par l'appelant)."""
     efface = v("[contenu supprimé à l'échéance de conservation]")
     for champ in ("lieu", "nom", "telephone", "courriel", "mis_en_cause_libre", "decision", "motif_cloture",
                   "raison_sans_retour", "motif_suspension"):
@@ -236,3 +275,18 @@ def anonymiser(dossier, auteur, donnees):
     dossier.history.all().delete()  # copies de l'historique : le contenu ne doit survivre nulle part
     ActionDossier.objects.create(dossier=dossier, type=A.ANONYMISATION, auteur=auteur)
     return dossier
+
+
+def anonymiser_automatiquement(aujourdhui=None):
+    """
+    Option « anonymisation automatique » du mécanisme : chaque jour, les dossiers clôturés dont la durée de
+    conservation est écoulée sont anonymisés sans intervention (jamais sous suspension légale). Renvoie leur nombre.
+    """
+    if not Mecanisme.courant().anonymisation_automatique:
+        return 0
+    dossiers = a_anonymiser(aujourdhui=aujourdhui)
+    for dossier in dossiers:
+        with transaction.atomic():
+            _effacer_contenu(dossier, None)
+            auditer(None, AUDIT.DOSSIER, dossier.numero, module="plaintes", operation="anonymisation automatique")
+    return len(dossiers)

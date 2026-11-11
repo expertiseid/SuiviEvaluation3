@@ -1,18 +1,24 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from . import console, site
+from . import console, newsletter, site
 
 router = DefaultRouter()
 # Site vitrine, géré dans la console Expertise-ID.
 router.register("console/site/actualites", site.ActualiteConsoleViewSet, basename="console-site-actualite")
 router.register("console/site/partenaires", site.PartenaireConsoleViewSet, basename="console-site-partenaire")
+router.register("console/site/newsletter/abonnes", newsletter.AbonneConsoleViewSet, basename="console-newsletter-abonne")
+router.register("console/site/newsletter/envois", newsletter.EnvoiConsoleViewSet, basename="console-newsletter-envoi")
 
 urlpatterns = router.urls + [
     # Site vitrine : lecture publique (actualités publiées, partenaires visibles, leurs images).
     path("public/site/actualites/", site.actualites_publiques, name="site-actualites"),
     path("public/site/actualites/<int:pk>/", site.actualites_publiques, name="site-actualite"),
     path("public/site/partenaires/", site.partenaires_publics, name="site-partenaires"),
+    # Newsletter (apps.organisations.newsletter) : inscription, confirmation, désinscription.
+    path("public/site/newsletter/", newsletter.inscription, name="newsletter-inscription"),
+    path("public/site/newsletter/confirmer/", newsletter.confirmer, name="newsletter-confirmer"),
+    path("public/site/newsletter/desinscrire/", newsletter.desinscrire, name="newsletter-desinscrire"),
     path("public/site/images/<str:type_>/<int:pk>/", site.image_publique, name="site-image"),
     # Console Expertise-ID (adresse principale, opérateurs de la plateforme).
     path("console/organisations/", console.organisations, name="console-organisations"),

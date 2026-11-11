@@ -26,7 +26,7 @@ def reglages(settings):
     cache.clear()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(databases=["default", "central"])  # tarifs : offre la plus achetée (base centrale)
 def test_inscription_puis_abonnement_requis():
     client = APIClient()
     assert client.post("/api/v1/public/inscription/", {**PROFIL, "conditions": False}, format="json").status_code == 400

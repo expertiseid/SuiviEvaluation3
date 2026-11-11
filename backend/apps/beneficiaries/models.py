@@ -99,6 +99,13 @@ class Beneficiaire(TimestampedModel):
     )
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    consentement = models.BooleanField(
+        null=True, blank=True, help_text="Accord de la personne pour l'enregistrement de ses données ; vide : non renseigné.",
+    )
+    date_consentement = models.DateField(null=True, blank=True)
+    date_anonymisation = models.DateField(
+        null=True, blank=True, help_text="Identité effacée à l'échéance de conservation de ses projets (apps.core.conservation).",
+    )
     statuts_particuliers = models.ManyToManyField(StatutParticulier, blank=True, related_name="beneficiaires")
     types_activite = models.ManyToManyField(
         TypeActiviteBeneficiaire,

@@ -21,6 +21,8 @@ PUBLIQUES_PRINCIPALES = ("/api/v1/identite/", "/api/v1/traductions/", "/api/v1/p
                          "/api/v1/public/inscription/offre/", "/api/v1/public/demo/", "/admin/", "/api/schema/", "/api/docs/",
                          # Connexion (courriel et mot de passe, puis code), opérateurs Expertise-ID et console.
                          "/api/v1/auth/", "/api/v1/console/", "/api/v1/utilisateurs/me/",
+                         # Mot de passe oublié (le lien envoyé par courriel désigne lui-même l'organisation).
+                         "/api/v1/public/mot-de-passe-oublie/",
                          # Site vitrine : actualités et partenaires (base centrale).
                          "/api/v1/public/site/")
 RENOUVELLEMENT = "/api/v1/auth/token/refresh/"
@@ -85,8 +87,10 @@ class OrganisationMiddleware:
             return JsonResponse({"detail": "L'abonnement de cette organisation est suspendu. Contactez Expertise-ID.",
                                  "code": "organisation_suspendue"}, status=403)
         if abonnement.bloque(org) and not request.path.startswith(AUTORISEES_SI_BLOQUE):
+            # essai : session fermée par l'interface (la plateforme ne s'ouvre plus après l'essai gratuit).
             return JsonResponse({"detail": "L'abonnement de votre organisation est terminé : l'accès est bloqué jusqu'au "
-                                           "renouvellement, depuis la page Abonnement.", "code": "abonnement_expire"}, status=403)
+                                           "renouvellement, depuis la page Abonnement.", "code": "abonnement_expire",
+                                 "essai": org.offre == abonnement.ESSAI}, status=403)
         request.organisation = org
         with contexte.dans_organisation(org):
             return self.get_response(request)

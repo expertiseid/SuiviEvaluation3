@@ -37,14 +37,15 @@ def _indicateur(indicateur, realises):
     }
 
 
-def construire_cadre_logique(projet) -> dict:
+def construire_cadre_logique(projet, masquees=frozenset()) -> dict:
     from apps.indicators.models import Indicateur, ValeurIndicateur
     from apps.projects.models import Activite, NiveauActivite
     from apps.projects.taux import ArbreTaux
 
-    activites = list(Activite.objects.filter(projet=projet).order_by("id"))
+    # Éléments masqués à l'utilisateur (apps.core.masquage) et leurs indicateurs : absents.
+    activites = list(Activite.objects.filter(projet=projet).exclude(id__in=masquees).order_by("id"))
     indicateurs = list(Indicateur.objects.filter(projet=projet)) + list(
-        Indicateur.objects.filter(activite__projet=projet).order_by("id")
+        Indicateur.objects.filter(activite__projet=projet).exclude(activite_id__in=masquees).order_by("id")
     )
     # Saisies approuvées uniquement (manager par défaut).
     realises = dict(

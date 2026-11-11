@@ -26,6 +26,7 @@ from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.core import inactivite
 from apps.core.audit import A, auditer
 from apps.organisations.contexte import actif as multi_organisations
 from apps.organisations.contexte import identifiant as organisation_courante
@@ -60,6 +61,12 @@ class JWTAvecDoubleFacteur(JWTAuthentication):
             # « code » dans la réponse : l'interface renvoie alors à l'écran de connexion.
             raise AuthenticationFailed({"detail": v("Double authentification requise : reconnectez-vous."),
                                         "code": "double_authentification_requise"})
+        if resultat is not None:
+            # Session restée inactive trop longtemps (apps.core.inactivite) : refusée même si le jeton est valide.
+            if inactivite.inactif(resultat[0]):
+                raise AuthenticationFailed({"detail": v("Session fermée après une période d'inactivité : reconnectez-vous."),
+                                            "code": "session_inactive"})
+            inactivite.noter(resultat[0])
         return resultat
 
 
@@ -67,6 +74,8 @@ def jetons(utilisateur, **marques) -> dict:
     refresh = RefreshToken.for_user(utilisateur)
     refresh[MARQUE] = True  # recopié dans les jetons d'accès, et conservé à chaque renouvellement
     refresh["org"] = organisation_courante()  # espace qui a délivré le jeton
+    refresh[inactivite.MARQUE] = inactivite.minutes()  # minuteur d'avertissement de l'interface
+    inactivite.noter(utilisateur, forcer=True)
     for cle, valeur in marques.items():  # ex : demo=True (apps.accounts.demo)
         refresh[cle] = valeur
     return {"access": str(refresh.access_token), "refresh": str(refresh)}

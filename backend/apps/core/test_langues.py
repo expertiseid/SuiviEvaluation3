@@ -10,7 +10,7 @@ from apps.accounts.models import User
 def test_langues():
     anonyme = APIClient()
     r = anonyme.get("/api/v1/traductions/", {"langue": "en"})
-    assert r.status_code == 200 and r.data["langue_defaut"] == "fr" and {l["code"] for l in r.data["langues"]} == {"fr", "en", "ar", "es", "de"}
+    assert r.status_code == 200 and r.data["langue_defaut"] == "fr" and {l["code"] for l in r.data["langues"]} == {"fr", "en", "ar", "es", "de", "it"}
 
     admin = APIClient()
     admin.force_authenticate(User.objects.create_user(username="adm_lang", password="x", role=ROLE_ADMIN))

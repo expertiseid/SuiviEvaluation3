@@ -117,6 +117,43 @@ def connexion_renvoyer(request):
         return Response(double_auth.renvoyer(jeton))
 
 
+# --- Mot de passe oublié (apps.accounts.mot_de_passe) ---------------------------------------------
+
+class LimiteMotDePasse(AnonRateThrottle):
+    rate = "10/hour"
+
+
+def _mot_de_passe(vue):
+    return api_view(["POST"])(authentication_classes([])(permission_classes([AllowAny])(throttle_classes([LimiteMotDePasse])(vue))))
+
+
+@_mot_de_passe
+def mot_de_passe_oublie(request):
+    """{courriel, langue?} : envoie le lien si un compte porte cette adresse ; même réponse dans tous les cas."""
+    from . import mot_de_passe
+
+    mot_de_passe.demander(request.data.get("courriel", ""), str(request.data.get("langue", ""))[:5])
+    return Response({"detail": v("Si un compte existe pour cette adresse, un lien pour choisir un nouveau mot de passe "
+                                 "vient d'y être envoyé. Il est valable 1 heure.")})
+
+
+@_mot_de_passe
+def mot_de_passe_verifier(request):
+    """{jeton} : le lien est-il encore valable ? (adresse masquée du compte)"""
+    from . import mot_de_passe
+
+    return Response(mot_de_passe.verifier(request.data.get("jeton", "")))
+
+
+@_mot_de_passe
+def mot_de_passe_changer(request):
+    """{jeton, mot_de_passe} : enregistre le nouveau mot de passe ; le lien ne sert plus."""
+    from . import mot_de_passe
+
+    mot_de_passe.changer(request.data.get("jeton", ""), request.data.get("mot_de_passe", ""))
+    return Response({"detail": v("Votre mot de passe a été changé. Vous pouvez vous connecter.")})
+
+
 # --- Inscription d'une organisation (page d'accueil) -----------------------------------------------
 
 class LimiteInscription(AnonRateThrottle):

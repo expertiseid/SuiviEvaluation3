@@ -27,13 +27,16 @@ APERCU = {"application/pdf", "image/jpeg", "image/png", "image/gif", "image/webp
 def documents_visibles(user):
     from apps.projects.queryset_filters import visible_projets_ids
 
+    from apps.core.masquage import activites_masquees
+
     ids = visible_projets_ids(user)
+    masquees = activites_masquees(user)  # documents rattachés à un élément masqué à cet utilisateur : exclus
     return Document.objects.filter(
         Q(projet__isnull=True, activite__isnull=True, sous_activite__isnull=True)
         | Q(projet__id__in=ids)
         | Q(activite__projet__id__in=ids)
         | Q(sous_activite__activite__projet__id__in=ids)
-    )
+    ).exclude(Q(activite_id__in=masquees) | Q(sous_activite__activite_id__in=masquees))
 
 
 def adresse(request, version):

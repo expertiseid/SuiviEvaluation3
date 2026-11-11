@@ -220,7 +220,11 @@ def dashboard_echeances(request):
     l'échéance approche — alimente le bandeau défilant du tableau de bord.
     """
     ids = list(visible_projets_ids(request.user))
-    return Response(lister_echeances(ids))
+    from apps.core.masquage import activites_masquees
+
+    masquees = activites_masquees(request.user)  # échéances d'éléments masqués à cet utilisateur : exclues
+    return Response([e for e in lister_echeances(ids) if not (
+        (e["type"] == "ACTIVITE" and e["id"] in masquees) or (e["type"] == "SOUS_ACTIVITE" and e.get("activite_id") in masquees))])
 
 
 @api_view(["GET"])

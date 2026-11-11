@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AppLayout } from "./layouts/AppLayout";
 import { RequireAuth } from "./auth/RequireAuth";
 import { LoginPage } from "./auth/LoginPage";
+import { NouveauMotDePassePage } from "./auth/NouveauMotDePassePage";
 import { AbonnementPage } from "./pages/accueil/AbonnementPage";
 import { MonAbonnementPage } from "./pages/abonnement/MonAbonnementPage";
 import { AccueilPage } from "./pages/accueil/AccueilPage";
@@ -48,6 +49,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/nouveau-mot-de-passe" element={<NouveauMotDePassePage />} />
       {/* Connexion à part des opérateurs Expertise-ID (console de la plateforme multi-organisations). */}
       <Route path="/expertise-id" element={<LoginPage operateur />} />
       {/* Vitrine publique : accueil, création du profil d'une organisation, abonnement, à propos. */}

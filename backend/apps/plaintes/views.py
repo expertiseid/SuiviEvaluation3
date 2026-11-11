@@ -469,6 +469,12 @@ class DossierViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
         return self._agir(confidentiel.anonymiser, request.data)
 
     @action(detail=True, methods=["post"])
+    def effacer(self, request, pk=None):
+        """Effacement définitif (droit à l'effacement) : le dossier n'existe plus après."""
+        numero = confidentiel.effacer(self.get_object(), request.user, request.data)
+        return Response({"numero": numero, "efface": True})
+
+    @action(detail=True, methods=["post"])
     @dans_la_langue_demandee
     def exporter(self, request, pk=None):
         """Fiche PDF en filigrane ; motif exigé pour un dossier confidentiel ; export tracé au journal."""

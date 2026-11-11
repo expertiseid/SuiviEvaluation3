@@ -105,8 +105,12 @@ def creer(nom: str, sous_domaine: str, courriel: str = "", offre: str = "", mode
 
 
 def activer(org: Organisation):
+    from . import quota
+
     org.statut = Organisation.Statut.ACTIVE
     org.active_le = org.active_le or timezone.now()
+    if org.base_vide is None:  # base neuve : sa taille ne sera pas comptée dans l'espace utilisé
+        org.base_vide = quota._taille_base(org) or None
     org.save(using="central")
     return org
 

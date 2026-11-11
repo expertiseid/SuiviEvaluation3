@@ -96,6 +96,10 @@ def lire_envoi(request):
     return request.data, []
 
 
+# Phrase d'accord du formulaire public quand l'organisation n'a pas rédigé de clause de consentement.
+CONSENTEMENT_PAR_DEFAUT = "J'accepte que les informations de ce formulaire soient utilisées pour traiter mon retour."
+
+
 @transaction.atomic
 def recevoir(donnees: dict, canal: str, saisi_par=None, public: bool = False, fichiers=None):
     """
@@ -195,6 +199,9 @@ def recevoir(donnees: dict, canal: str, saisi_par=None, public: bool = False, fi
         courriel=courriel,
         mode_reponse=mode_reponse,
         consentement=consentement,
+        # Preuve du consentement : le texte exact accepté, et quand.
+        consentement_texte=(mecanisme.texte_consentement or CONSENTEMENT_PAR_DEFAUT) if consentement else "",
+        consentement_le=timezone.now() if consentement else None,
         langue=(donnees.get("langue") or "")[:5],
         saisi_par=saisi_par,
     )

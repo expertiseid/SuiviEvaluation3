@@ -151,6 +151,16 @@ export function BeneficiaireDetailPage() {
         <Stack gap={4}>
           <Text size="sm"><strong>{voc("N° pièce d'identité :")}</strong> {beneficiaire.numero_piece_identite || "—"} {beneficiaire.type_piece && `(${beneficiaire.type_piece})`}</Text>
           <Text size="sm">
+            <strong>{voc("Consentement :")}</strong>{" "}
+            {beneficiaire.consentement == null ? voc("Non renseigné") : beneficiaire.consentement ? voc("Oui") : voc("Non")}
+            {beneficiaire.consentement != null && beneficiaire.date_consentement && ` (${beneficiaire.date_consentement.split("-").reverse().join("/")})`}
+          </Text>
+          {beneficiaire.date_anonymisation && (
+            <Badge color="gray" variant="light">
+              {voc`Identité effacée le ${beneficiaire.date_anonymisation.split("-").reverse().join("/")} (fin de la durée de conservation)`}
+            </Badge>
+          )}
+          <Text size="sm">
             <strong>{voc("Localisation :")}</strong>{" "}
             {PAYS_MONDE.find((p) => p.code === beneficiaire.pays)?.nom ?? (beneficiaire.pays || "—")}
             {beneficiaire.zone_nom && ` · ${beneficiaire.zone_nom}`}

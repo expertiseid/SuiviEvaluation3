@@ -13,3 +13,7 @@ add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'nonce
 add_header X-Frame-Options "DENY" always;
 add_header X-Content-Type-Options "nosniff" always;
 add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+# Fonctions du navigateur : seules la position (carte, fiche bénéficiaire) et le plein écran (carte) servent.
+add_header Permissions-Policy "camera=(), microphone=(), geolocation=(self), fullscreen=(self), payment=(), usb=(), accelerometer=(), gyroscope=(), magnetometer=()" always;
+# Une page d'un autre site ouverte depuis la plateforme ne peut pas agir sur elle (et inversement).
+add_header Cross-Origin-Opener-Policy "same-origin" always;

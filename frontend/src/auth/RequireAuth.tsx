@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { Center, Loader } from "@mantine/core";
 import { useIdentiteOrganisation } from "../api/identite";
+import { surveillerInactivite } from "./inactivite";
 import { useAuth } from "./useAuth";
 import type { Role } from "../types";
 
@@ -9,6 +10,10 @@ export function RequireAuth({ children, roles }: { children: ReactNode; roles?: 
   const { user, loading } = useAuth();
   const { pathname } = useLocation();
   const { data: plateforme, isLoading: chargementPlateforme } = useIdentiteOrganisation();
+  // Session ouverte : déconnexion automatique après une période d'inactivité.
+  useEffect(() => {
+    if (user) surveillerInactivite();
+  }, [user]);
 
   if (loading || chargementPlateforme) {
     return (

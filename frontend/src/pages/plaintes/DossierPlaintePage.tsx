@@ -25,11 +25,12 @@ import {
   Siren,
   StickyNote,
   Tags,
+  Trash2,
   UserCheck,
   UserX,
   Wrench,
 } from "lucide-react";
-import { Alert, Anchor, Badge, Button, Card, Grid, Group, Loader, SimpleGrid, Stack, Text, Timeline, Title } from "@mantine/core";
+import { Alert, Anchor, Badge, Button, Card, Grid, Group, Loader, SimpleGrid, Stack, Text, Timeline, Title, Tooltip } from "@mantine/core";
 import {
   type ActionDossier,
   type DossierDetail,
@@ -64,6 +65,7 @@ import {
   NoterDossier,
   ProlongerDossier,
   AnonymiserDossier,
+  EffacerDossier,
   AssistanceDossier,
   ExporterDossier,
   EnvoyerMessage,
@@ -203,7 +205,7 @@ function Journal({ actions }: { actions: ActionDossier[] }) {
 type Fenetre =
   | "classer" | "affecter" | "etape" | "noter" | "communiquer" | "decider" | "cloturer" | "rouvrir" | "recours" | "recuser" | "lier"
   | "prolonger" | "signaler" | "lever" | "mettre_en_cause" | "assistance" | "suspendre" | "anonymiser" | "exporter" | "message" | "plaignant"
-  | null;
+  | "effacer" | null;
 
 /** Barre d'actions : seules les opérations possibles dans l'état du dossier sont proposées. */
 function Actions({ dossier, ouvrir }: { dossier: DossierDetail; ouvrir: (f: Fenetre) => void }) {
@@ -233,6 +235,7 @@ function Actions({ dossier, ouvrir }: { dossier: DossierDetail; ouvrir: (f: Fene
       {dossier.sensible && dossier.habilite && bouton("lever", voc("Lever la sensibilité"), <ShieldCheck size={14} />, { color: "grape", variant: "subtle" })}
       {user?.role === "ADMIN" && bouton("suspendre", dossier.suspension_legale ? voc("Lever la suspension légale") : voc("Suspension légale"), <Landmark size={14} />, { color: "orange", variant: "subtle" })}
       {user?.role === "ADMIN" && clos && !dossier.suspension_legale && !dossier.anonymise && bouton("anonymiser", voc("Anonymiser"), <Eraser size={14} />, { color: "red", variant: "subtle" })}
+      {user?.role === "ADMIN" && !dossier.suspension_legale && bouton("effacer", voc("Effacer définitivement"), <Trash2 size={14} />, { color: "red", variant: "subtle" })}
     </Group>
   );
 }
@@ -376,7 +379,14 @@ export function DossierPlaintePage() {
                   </SimpleGrid>
                 )}
                 <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-                  <Ligne libelle={voc("Consentement")}>{dossier.consentement ? voc("Oui") : voc("Non")}</Ligne>
+                  <Ligne libelle={voc("Consentement")}>
+                    {dossier.consentement ? voc("Oui") : voc("Non")}
+                    {dossier.consentement_le && (
+                      <Tooltip label={dossier.consentement_texte} multiline w={360} disabled={!dossier.consentement_texte}>
+                        <Text span size="xs" c="dimmed"> · {voc("le")} {dateLisible(dossier.consentement_le.slice(0, 10))}</Text>
+                      </Tooltip>
+                    )}
+                  </Ligne>
                   <Ligne libelle={voc("Saisi par")}>
                     {dossier.saisi_par_nom ?? voc("Le plaignant (formulaire public)")}
                     {dossier.recueilli_directement === false && ` — ${voc("non recueilli directement")}`}
@@ -489,6 +499,7 @@ export function DossierPlaintePage() {
       {fenetre === "assistance" && <AssistanceDossier dossier={dossier} onClose={fermer} />}
       {fenetre === "suspendre" && <SuspendreDossier dossier={dossier} onClose={fermer} />}
       {fenetre === "anonymiser" && <AnonymiserDossier dossier={dossier} onClose={fermer} />}
+      {fenetre === "effacer" && <EffacerDossier dossier={dossier} onClose={fermer} />}
       {fenetre === "plaignant" && <ModifierPlaignant dossier={dossier} onClose={fermer} />}
       {fenetre === "lever" && (
         <MotifDossier dossier={dossier} operation="lever-sensibilite" titre={voc("Lever la sensibilité")} onClose={fermer} libelleBouton={voc("Lever la sensibilité")} couleur="grape"

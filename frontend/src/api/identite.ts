@@ -16,6 +16,8 @@ export interface IdentiteOrganisation {
   inscriptions: boolean;
   /** Adresse de contact d'Expertise-ID (abonnements). */
   contact: string;
+  /** Adresse du site vitrine (pages des conditions d'utilisation, de la confidentialité et des cookies). */
+  url_site: string;
   /** Plateforme multi-organisations : une adresse unique, une base par organisation. */
   multi_organisations: boolean;
   /** Organisation du compte connecté (ou de la page publique), sinon null. */

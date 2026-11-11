@@ -185,6 +185,10 @@ class Projet(TimestampedModel):
         help_text="Date fixe à laquelle une alerte de rappel est déclenchée pour ce projet, indépendamment "
         "du seuil de jours avant l'échéance (ex : pour un rapport bailleur à une date précise).",
     )
+    conservation_beneficiaires_mois = models.PositiveIntegerField(
+        null=True, blank=True, help_text="Mois après la fin du projet au terme desquels l'identité de ses bénéficiaires "
+        "est effacée (apps.core.conservation) ; vide : conservée.",
+    )
     statut = models.CharField(max_length=20, choices=Statut.choices, default=Statut.EN_PREPARATION)
     type_mise_en_oeuvre = models.CharField(
         max_length=20, choices=TypeMiseEnOeuvre.choices, default=TypeMiseEnOeuvre.DIRECT
@@ -324,6 +328,11 @@ class Activite(TimestampedModel):
     )
     code_activite = models.CharField(
         max_length=30, blank=True, help_text="Codification interne (ex : AI1.1, AI1.1.2)."
+    )
+    masquee_pour = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="activites_masquees",
+        help_text="Utilisateurs qui ne voient ni cet élément ni ce qui est en dessous (apps.core.masquage) ; "
+        "réglé dans la fiche de l'utilisateur. Les totaux du projet restent complets.",
     )
     libelle = models.CharField(max_length=300)
     statut = models.CharField(max_length=20, choices=Statut.choices, default=Statut.NON_REALISEE)

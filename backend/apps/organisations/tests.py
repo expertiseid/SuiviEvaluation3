@@ -534,3 +534,142 @@ def test_echeance_et_changement_d_offre(deux_organisations, monkeypatch, setting
     assert admin.get("/api/v1/projets/").status_code == 200
     Organisation.objects.using("central").filter(pk=org_a.pk).update(
         offre="", stockage_go=None, abonnement_fin=None, abonnement_prix_mois=None, abonnement_alerte=0)
+
+
+def test_essai_gratuit_echeance(deux_organisations, monkeypatch, settings):
+    """Essai : 1 mois, 100 Mo, pas de grâce ; ne se renouvelle pas ; passer à une offre payante ne déduit rien."""
+    from datetime import timedelta
+
+    from django.core import mail
+    from django.core.cache import cache
+
+    from apps.notifications.models import Notification
+
+    from . import abonnement, paiement, quota
+    from .test_paiement import CinetPaySimule
+
+    settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    settings.COURRIEL_ABONNEMENTS = "abonnements@expertise-id.com"
+    settings.CINETPAY_API_KEY, settings.CINETPAY_API_PASSWORD = "sk_test_cle", "mot-de-passe"
+    settings.ABONNEMENT_PRIX_25GO = 20000
+    simule = CinetPaySimule()
+    monkeypatch.setattr(paiement, "_appel", simule)
+    cache.clear()
+    org_a, _ = deux_organisations
+    jour = abonnement.aujourd_hui()
+    org = Organisation.objects.using("central").get(pk=org_a.pk)
+    org.offre, org.stockage_go = "ESSAI", None
+    org.save(using="central")
+    abonnement.periode_essai(org)
+    org.refresh_from_db()
+    assert (org.abonnement_fin, org.abonnement_prix_mois) == (abonnement.ajouter_mois(jour, 1), 0)
+    assert quota.lisible(quota.limite_go(org)) == "100 Mo"
+    admin = _client(org_a, _admin(org_a))
+    page = admin.get("/api/v1/abonnement/").data
+    assert page["essai"] is True and page["renouvelable"] is False and page["grace"] == 0
+    assert admin.get("/api/v1/abonnement/devis/", {"offre": "ESSAI", "mois": 1}).status_code == 400
+    assert admin.post("/api/v1/stockage/achat/", {"tranches": 1, "mois": 1}, format="json").status_code == 400
+
+    # 3 jours avant la fin : rappel propre à l'essai.
+    Organisation.objects.using("central").filter(pk=org_a.pk).update(abonnement_fin=jour + timedelta(days=3), abonnement_alerte=0)
+    with contexte.dans_organisation(org_a):
+        abonnement.alerter()
+        assert list(Notification.objects.filter(type="ABONNEMENT").values_list("titre", flat=True)) == ["Votre essai gratuit se termine bientôt"]
+        Notification.objects.filter(type="ABONNEMENT").delete()
+    # Le lendemain de la fin : bloqué aussitôt (pas de grâce), sauf la page Abonnement.
+    Organisation.objects.using("central").filter(pk=org_a.pk).update(abonnement_fin=jour - timedelta(days=1))
+    refus = admin.get("/api/v1/projets/").json()
+    assert refus["code"] == "abonnement_expire" and refus["essai"] is True
+    assert admin.get("/api/v1/abonnement/").data["statut"] == "BLOQUE"
+    # La plateforme ne s'ouvre plus : connexion refusée, sauf pour s'abonner (bouton du site) ; mot de passe vérifié d'abord.
+    identifiants = {"courriel": "admin@essai-iso-a.org", "password": "Un-mot-de-passe-solide-1"}
+    connexion = APIClient().post("/api/v1/auth/token/", identifiants, format="json")
+    assert connexion.status_code == 403 and connexion.data["code"] == "essai_termine"
+    assert APIClient().post("/api/v1/auth/token/", {**identifiants, "password": "faux"}, format="json").status_code == 401
+    assert APIClient().post("/api/v1/auth/token/", {**identifiants, "abonnement": True}, format="json").data["double_authentification"] == "code"
+    with contexte.dans_organisation(org_a):
+        abonnement.alerter()
+        Notification.objects.filter(type="ABONNEMENT").delete()
+    assert mail.outbox[-1].subject == f"Essai gratuit terminé : {org_a.nom}"
+    # Offre payante : prix entier (l'essai n'a rien coûté), puis accès rétabli avec le stockage de l'offre.
+    devis = admin.get("/api/v1/abonnement/devis/", {"offre": "STANDARD_25", "mois": 12}).data
+    assert (devis["deduction"], devis["a_payer"], devis["changement"]) == (0, 240000, True)
+    ref = admin.post("/api/v1/abonnement/payer/", {"offre": "STANDARD_25", "mois": 12}, format="json").data["paiement"]
+    simule.statut = "SUCCESS"
+    assert admin.get(f"/api/v1/abonnement/paiement/{ref}/").data["statut"] == "PAYE"
+    org.refresh_from_db()
+    assert (org.offre, org.stockage_go, quota.limite_go(org)) == ("STANDARD_25", None, 25)
+    assert admin.get("/api/v1/projets/").status_code == 200
+    Organisation.objects.using("central").filter(pk=org_a.pk).update(
+        offre="", stockage_go=None, abonnement_fin=None, abonnement_prix_mois=None, abonnement_alerte=0)
+
+
+def test_mot_de_passe_oublie(deux_organisations, settings):
+    """Lien par courriel, dans l'espace du compte ; une seule fois ; réponse identique pour une adresse inconnue."""
+    import re
+
+    from django.core import mail
+    from django.core.cache import cache
+
+    from apps.accounts.models import User
+
+    settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    cache.clear()
+    org_a, org_b = deux_organisations
+    client = APIClient()
+    inconnue = client.post("/api/v1/public/mot-de-passe-oublie/", {"courriel": "personne@nulle-part.bf"})
+    assert inconnue.status_code == 200 and not mail.outbox
+    connue = client.post("/api/v1/public/mot-de-passe-oublie/", {"courriel": "Admin@essai-iso-b.org"})
+    assert connue.data == inconnue.data and mail.outbox[-1].to == ["admin@essai-iso-b.org"]
+    jeton = re.search(r"jeton=(\S+)", mail.outbox[-1].body).group(1)
+    assert jeton.startswith("essai-iso-b~")
+    # Préfixe d'un autre espace : refusé.
+    assert client.post("/api/v1/public/mot-de-passe-oublie/verifier/", {"jeton": jeton.replace("essai-iso-b~", "essai-iso-a~")}).status_code == 400
+    assert client.post("/api/v1/public/mot-de-passe-oublie/verifier/", {"jeton": jeton}).data["compte"] == "ad•••@essai-iso-b.org"
+    trop_court = client.post("/api/v1/public/mot-de-passe-oublie/changer/", {"jeton": jeton, "mot_de_passe": "court"})
+    assert trop_court.status_code == 400 and "mot_de_passe" in trop_court.data
+    nouveau = "Nouveau-mot-de-passe-9"
+    assert client.post("/api/v1/public/mot-de-passe-oublie/changer/", {"jeton": jeton, "mot_de_passe": nouveau}).status_code == 200
+    # Le lien ne sert qu'une fois ; le nouveau mot de passe ouvre l'étape du code.
+    assert client.post("/api/v1/public/mot-de-passe-oublie/changer/", {"jeton": jeton, "mot_de_passe": "Encore-un-autre-7"}).status_code == 400
+    assert client.post("/api/v1/auth/token/", {"courriel": "admin@essai-iso-b.org", "password": nouveau}).data["jeton"]
+    with contexte.dans_organisation(org_b):
+        admin = User.objects.get(username="admin")
+        admin.set_password("Un-mot-de-passe-solide-1")  # remis pour les autres tests
+        admin.save()
+
+
+def test_base_vide_non_comptee(deux_organisations, settings, monkeypatch):
+    """L'espace utilisé ne compte pas la base à vide (mesurée à l'activation), seulement ce qui s'y ajoute."""
+    from . import gestion, quota
+
+    monkeypatch.setattr(quota, "_taille_dossier", lambda chemin: 0)  # fichiers laissés par d'autres tests
+    org_a, _ = deux_organisations
+    org = Organisation.objects.using("central").get(pk=org_a.pk)
+    taille = quota._taille_base(org)
+    org.base_vide = None
+    gestion.activer(org)
+    assert org.base_vide == taille and quota._mesurer(org) == 0
+    # Espace ouvert avant la mesure : la taille par défaut d'une base neuve est retirée.
+    org.base_vide = None
+    settings.STOCKAGE_BASE_VIDE = taille - 1000
+    assert quota._mesurer(org) == 1000
+    Organisation.objects.using("central").filter(pk=org.pk).update(base_vide=None)
+
+
+def test_espace_remesure_apres_suppression(deux_organisations, settings, tmp_path):
+    """Un fichier effacé libère l'espace affiché aussitôt (pas seulement au bout de 10 minutes)."""
+    from django.core.files.base import ContentFile
+
+    from . import quota
+    from .stockage import StockageOrganisation
+
+    settings.MEDIA_ROOT = tmp_path
+    org_a, _ = deux_organisations
+    with contexte.dans_organisation(org_a):
+        stockage = StockageOrganisation()
+        avant = quota.utilise(org_a)
+        nom = stockage.save("essai/video.bin", ContentFile(b"x" * 50000))
+        assert quota.utilise(org_a) == avant + 50000
+        stockage.delete(nom)
+        assert quota.utilise(org_a) == quota._mesurer(org_a) < avant + 50000

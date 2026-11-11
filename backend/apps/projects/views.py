@@ -41,6 +41,8 @@ from .models import (
     SousActivite,
     TauxManuel,
 )
+from apps.core.masquage import activites_masquees
+
 from .queryset_filters import visible_projets_ids
 from .serializers import (
     ActiviteSerializer,
@@ -164,9 +166,10 @@ class ProjetViewSet(viewsets.ModelViewSet):
             response["Content-Disposition"] = f"attachment; filename={nom}_{projet.code}.{'pdf' if pdf_ else 'xlsx'}"
             return response
 
+        masquees = activites_masquees(request.user)
         if contenu == "canevas":
-            return reponse(export.exporter_canevas(projet), "canevas_planification", False)
-        lignes, attributs = export.lignes_planification(projet)
+            return reponse(export.exporter_canevas(projet, masquees), "canevas_planification", False)
+        lignes, attributs = export.lignes_planification(projet, masquees)
         if contenu == "simple":
             octets = export.exporter_simple_pdf(projet, lignes) if pdf else export.exporter_simple_excel(projet, lignes)
             return reponse(octets, "structure_planification", pdf)
@@ -306,7 +309,9 @@ class ActiviteViewSet(DemandeApprobationMixin, viewsets.ModelViewSet):
     CHAMPS_SURVEILLES = ("date_debut", "date_fin", "budget_alloue", "quantite_prevue", "statut")
 
     def get_queryset(self):
-        return Activite.objects.filter(projet__id__in=visible_projets_ids(self.request.user))
+        # Éléments masqués à cet utilisateur (apps.core.masquage) : ni eux ni ce qui est en dessous.
+        return Activite.objects.filter(projet__id__in=visible_projets_ids(self.request.user)).exclude(
+            id__in=activites_masquees(self.request.user))
 
     def perform_destroy(self, instance):
         supprimer_activite_cascade(instance)
@@ -332,7 +337,7 @@ class ActiviteViewSet(DemandeApprobationMixin, viewsets.ModelViewSet):
         parent, libellé), non paginée : de quoi reconstruire les chemins dans un sélecteur sans
         charger la planification complète de chaque projet.
         """
-        lignes = self.get_queryset().order_by("id").values("id", "projet", "activite_parent", "libelle")
+        lignes = self.get_queryset().order_by("id").values("id", "projet", "projet__nom", "activite_parent", "libelle", "code_activite")
         return Response(list(lignes))
 
     @action(detail=True, methods=["post"])
@@ -393,7 +398,8 @@ class SousActiviteViewSet(DemandeApprobationMixin, viewsets.ModelViewSet):
     filterset_fields = ("activite", "statut")
 
     def get_queryset(self):
-        return SousActivite.objects.filter(activite__projet__id__in=visible_projets_ids(self.request.user))
+        return SousActivite.objects.filter(activite__projet__id__in=visible_projets_ids(self.request.user)).exclude(
+            activite_id__in=activites_masquees(self.request.user))
 
     def perform_destroy(self, instance):
         supprimer_sous_activite_cascade(instance)
@@ -433,7 +439,8 @@ class JalonLivrableViewSet(viewsets.ModelViewSet):
     filterset_fields = ("activite", "type")
 
     def get_queryset(self):
-        return JalonLivrable.objects.filter(activite__projet__id__in=visible_projets_ids(self.request.user))
+        return JalonLivrable.objects.filter(activite__projet__id__in=visible_projets_ids(self.request.user)).exclude(
+            activite_id__in=activites_masquees(self.request.user))
 
     def _validation(self, serializer):
         # La validation d'un livrable garde son auteur et sa date ; la retirer les efface.
@@ -459,7 +466,8 @@ class TauxManuelViewSet(SuppressionAtomiqueMixin, viewsets.ModelViewSet):
     filterset_fields = ("activite",)
 
     def get_queryset(self):
-        return TauxManuel.tous.filter(activite__projet__id__in=visible_projets_ids(self.request.user))
+        return TauxManuel.tous.filter(activite__projet__id__in=visible_projets_ids(self.request.user)).exclude(
+            activite_id__in=activites_masquees(self.request.user))
 
     def perform_create(self, serializer):
         serializer.save(saisi_par=self.request.user)

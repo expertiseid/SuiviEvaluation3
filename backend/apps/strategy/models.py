@@ -197,6 +197,10 @@ class ElementStrategique(TimestampedModel):
     code = models.CharField(max_length=50, blank=True)
     nom = models.CharField(max_length=300)
     description = models.TextField(blank=True)
+    masque_pour = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="elements_masques",
+        help_text="Utilisateurs qui ne voient ni cet élément ni ce qui est en dessous (apps.core.masquage).",
+    )
     parents_secondaires = models.ManyToManyField(
         "self", symmetrical=False, blank=True, related_name="enfants_secondaires",
         help_text="Autres éléments du niveau supérieur auxquels celui-ci contribue aussi. Seul element_parent "

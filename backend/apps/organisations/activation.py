@@ -34,14 +34,23 @@ def creer_espace(demande, zones=True):
         from . import abonnement
 
         abonnement.premiere_periode(org, paye)
+    essai = demande.offre == DemandeInscription.Offre.ESSAI
+    if essai:
+        from . import abonnement
+
+        abonnement.periode_essai(org)
     demande.statut = DemandeInscription.Statut.ACTIVEE
     demande.erreur_activation = ""
     demande.save(using="central", update_fields=["statut", "erreur_activation"])
     # Offre Partenariat : validée par Expertise-ID, le courriel le dit ; offre payée en ligne : espace prêt.
     partenariat = demande.offre == DemandeInscription.Offre.PARTENARIAT
-    sujet = f"Votre partenariat est validé : l'espace de {org.nom} est prêt" if partenariat else f"Votre espace est prêt : {org.nom}"
+    sujet = (f"Votre partenariat est validé : l'espace de {org.nom} est prêt" if partenariat
+             else f"Votre essai gratuit commence : l'espace de {org.nom} est prêt" if essai else f"Votre espace est prêt : {org.nom}")
     debut = (f"Expertise-ID a validé votre demande de partenariat. L'espace de {org.nom} sur la plateforme "
              "Expertise-ID Monitora est ouvert et prêt.") if partenariat else (
+        f"L'espace d'essai de {org.nom} sur la plateforme Expertise-ID Monitora est prêt. Il est gratuit jusqu'au "
+        f"{org.abonnement_fin:%d/%m/%Y}, avec 100 Mo de stockage. Ensuite, l'accès est bloqué jusqu'au choix d'une offre "
+        "(page Abonnement de la plateforme) : vos données sont conservées.") if essai else (
         f"L'espace de {org.nom} sur la plateforme Expertise-ID Monitora est prêt.")
     send_mail(
         sujet,

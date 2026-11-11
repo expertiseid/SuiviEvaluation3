@@ -60,6 +60,11 @@ MODELES = {
                "مرحبًا {nom}،\n\nلقد استلمنا ملاحظتك المسجلة تحت الرقم {numero} بتاريخ {date_reception}. "
                "ستُعالَج ضمن الآجال المعلنة.\n\nيمكنك متابعة تقدمها برمز المتابعة: {lien_suivi}\n\n{signature}",
                "{mecanisme}: استلمنا ملاحظتك {numero}. تابعها برمزك: {lien_suivi}"),
+        "it": ("La sua segnalazione {numero} è stata ricevuta",
+               "Gentile {nom},\n\nabbiamo ricevuto la sua segnalazione, registrata con il numero {numero} il {date_reception}. "
+               "Sarà trattata entro i tempi indicati.\n\nPuò seguirne l'avanzamento con il suo codice di monitoraggio: "
+               "{lien_suivi}\n\n{signature}",
+               "{mecanisme}: la sua segnalazione {numero} è stata ricevuta. Segua l'avanzamento con il suo codice: {lien_suivi}"),
     },
     "PRISE_EN_CHARGE": {
         "fr": ("Votre retour {numero} est en cours de traitement",
@@ -81,6 +86,10 @@ MODELES = {
         "ar": ("ملاحظتك {numero} قيد المعالجة",
                "مرحبًا {nom}،\n\nيتكفّل فريقنا بملاحظتك {numero}. سنعود إليك بمجرد أن يصبح الرد جاهزًا.\n\n{signature}",
                "{mecanisme}: ملاحظتك {numero} قيد المعالجة."),
+        "it": ("La sua segnalazione {numero} è in fase di trattamento",
+               "Gentile {nom},\n\nla sua segnalazione {numero} è stata presa in carico dal nostro team. La ricontatteremo "
+               "non appena una risposta sarà pronta.\n\n{signature}",
+               "{mecanisme}: la sua segnalazione {numero} è in fase di trattamento."),
     },
     "DEMANDE_COMPLEMENT": {
         "fr": ("Votre retour {numero} : un complément d'information est nécessaire",
@@ -105,6 +114,10 @@ MODELES = {
                "مرحبًا {nom}،\n\nلمعالجة ملاحظتك {numero}، نحتاج إلى بعض المعلومات الإضافية. سيتصل بك أحد أعضاء "
                "فريقنا؛ ويمكنك أيضًا الرد على هذه الرسالة.\n\n{signature}",
                "{mecanisme}: لمعالجة ملاحظتك {numero} نحتاج إلى معلومات إضافية. سنتصل بك."),
+        "it": ("La sua segnalazione {numero}: servono informazioni aggiuntive",
+               "Gentile {nom},\n\nper trattare la sua segnalazione {numero} abbiamo bisogno di alcune informazioni "
+               "aggiuntive. Un membro del nostro team la contatterà; può anche rispondere a questo messaggio.\n\n{signature}",
+               "{mecanisme}: per trattare la sua segnalazione {numero} ci servono informazioni aggiuntive. La contatteremo."),
     },
     "DECISION": {
         "fr": ("Réponse à votre retour {numero}",
@@ -127,6 +140,10 @@ MODELES = {
                "مرحبًا {nom}،\n\nإليك الرد على ملاحظتك {numero}:\n\n{decision}\n\nإن لم يناسبك هذا الرد، يمكنك "
                "الاعتراض عليه بالتواصل معنا مجددًا.\n\n{signature}",
                "{mecanisme}: الرد على ملاحظتك {numero}. {decision}"),
+        "it": ("Risposta alla sua segnalazione {numero}",
+               "Gentile {nom},\n\necco la risposta alla sua segnalazione {numero}:\n\n{decision}\n\nSe questa risposta "
+               "non la soddisfa, può contestarla ricontattandoci.\n\n{signature}",
+               "{mecanisme}: risposta alla sua segnalazione {numero}. {decision}"),
     },
     "CLOTURE": {
         "fr": ("Votre retour {numero} est clôturé",
@@ -148,6 +165,10 @@ MODELES = {
         "ar": ("أُغلقت ملاحظتك {numero}",
                "مرحبًا {nom}،\n\nأُغلقت ملاحظتك {numero}. شكرًا لمشاركتها معنا: فهي تساعدنا على تحسين عملنا.\n\n{signature}",
                "{mecanisme}: أُغلقت ملاحظتك {numero}. شكرًا لثقتك."),
+        "it": ("La sua segnalazione {numero} è chiusa",
+               "Gentile {nom},\n\nla sua segnalazione {numero} è ora chiusa. Grazie per averci scritto: il suo riscontro "
+               "ci aiuta a migliorare le nostre attività.\n\n{signature}",
+               "{mecanisme}: la sua segnalazione {numero} è chiusa. Grazie per la fiducia."),
     },
     "SATISFACTION": {
         "fr": ("Votre avis sur le traitement de votre retour {numero}",
@@ -170,6 +191,10 @@ MODELES = {
                "مرحبًا {nom}،\n\nهل أنت راضٍ عن طريقة معالجة ملاحظتك {numero}؟ أجب على هذه الرسالة بنعم أو لا؛ "
                "ويمكنك إضافة تعليق.\n\n{signature}",
                "{mecanisme}: هل أنت راضٍ عن معالجة ملاحظتك {numero}؟ أجب بنعم أو لا."),
+        "it": ("La sua opinione sul trattamento della segnalazione {numero}",
+               "Gentile {nom},\n\nè soddisfatto/a di come è stata trattata la sua segnalazione {numero}? Risponda "
+               "semplicemente a questo messaggio con SÌ o NO; può aggiungere un commento.\n\n{signature}",
+               "{mecanisme}: è soddisfatto/a del trattamento della sua segnalazione {numero}? Risponda SÌ o NO."),
     },
 }
 
@@ -180,6 +205,7 @@ DECISION_CONFIDENTIELLE = {
     "es": "Un miembro de nuestro equipo le comunicará la respuesta de forma confidencial.",
     "de": "Ein Teammitglied wird Ihnen die Antwort vertraulich mitteilen.",
     "ar": "سيُبلغك أحد أعضاء فريقنا بالرد بسرية.",
+    "it": "Un membro del nostro team le comunicherà la risposta in modo riservato.",
 }
 
 
