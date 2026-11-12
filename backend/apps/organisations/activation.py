@@ -22,7 +22,7 @@ def creer_espace(demande, zones=True):
     """Crée et ouvre l'espace de la demande ; renvoie l'organisation (appel synchrone)."""
     from apps.accounts.models import DemandeInscription
 
-    org = gestion.creer(demande.organisation, demande.sous_domaine, courriel=demande.courriel, offre=demande.offre, zones=zones)
+    org = gestion.creer(demande.organisation, demande.sous_domaine, courriel=demande.courriel, offre=demande.offre)
     gestion.creer_administrateur(org, demande.identifiant, demande.courriel, empreinte=demande.mot_de_passe, nom=demande.contact_nom)
     gestion.activer(org)
     # Abonnement payé en ligne : son échéance commence le jour du paiement (abonnement.py).
@@ -60,6 +60,16 @@ def creer_espace(demande, zones=True):
         "courriel.\n\nExpertise-ID",
         getattr(settings, "DEFAULT_FROM_EMAIL", None), [demande.courriel], fail_silently=True,
     )
+    # Zones administratives du pays de l'organisation (apps.geo.services.installation) : après l'ouverture de
+    # l'espace, pour ne pas retarder le courriel ; un échec (source injoignable) n'empêche rien, elles s'ajoutent
+    # ensuite depuis la page Zones administratives.
+    if zones:
+        from apps.geo.services.installation import code_pays, installer_pays
+
+        pays = code_pays(demande.pays)
+        if pays:
+            with contexte.dans_organisation(org):
+                installer_pays(pays)
     return org
 
 

@@ -209,3 +209,8 @@ function paysTraduits(): { code: string; nom: string }[] {
 }
 
 export const PAYS_MONDE = paysTraduits();
+
+/** Nom d'un pays dans la langue de l'interface (le code s'il est inconnu). */
+export function nomPays(code: string): string {
+  return PAYS_MONDE.find((p) => p.code === code)?.nom ?? code;
+}

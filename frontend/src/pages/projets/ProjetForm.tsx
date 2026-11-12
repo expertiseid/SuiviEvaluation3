@@ -20,7 +20,8 @@ import { BailleursMontants } from "./BailleursMontants";
 import { type LigneBailleur, nouvelleLigneBailleur, totalBailleurs } from "./lignesBailleurs";
 import { useEnregistrerPartiePrenante, usePartiesPrenantes, useStructures, useTousPartenaires } from "../../api/organisation";
 import { optionsStructures } from "../../utils/organisation";
-import { useNiveauxAdministratifs, useZones } from "../../api/geo";
+import { useInstallerPays, useNiveauxAdministratifs, useZones } from "../../api/geo";
+import { EtatInstallationZones } from "../../components/common/InstallationZones";
 import { useCadresStrategiques, useElementsStrategiques, useTypesDocuments } from "../../api/strategy";
 import { rangMaillon } from "../../utils/chaineDocuments";
 import {
@@ -154,6 +155,7 @@ export function ProjetForm({ projet, onDone }: { projet?: ProjetResume; onDone: 
   const [paysZoneActif, setPaysZoneActif] = useState<string | null>(projet?.pays[0] ?? null);
   const { data: niveauxPaysZone } = useNiveauxAdministratifs(paysZoneActif);
   const { data: zonesPaysActif } = useZones({ pays: paysZoneActif ?? undefined });
+  const installerPays = useInstallerPays();
 
   useEffect(() => {
     if (!enEdition || zonesInitialisees || !zones) return;
@@ -603,6 +605,9 @@ export function ProjetForm({ projet, onDone }: { projet?: ProjetResume; onDone: 
                   value={field.value ?? []}
                   onChange={(v) => {
                     field.onChange(v);
+                    // Pays sans zones administratives : elles s'installent tout de suite, sans paramétrage.
+                    const nouveaux = v.filter((code) => !(field.value ?? []).includes(code));
+                    if (nouveaux.length) installerPays.mutate(nouveaux);
                     if (!paysZoneActif || !v.includes(paysZoneActif)) {
                       setPaysZoneActif(v[0] ?? null);
                       setZoneCascade(ZONE_CASCADE_VIDE);
@@ -613,6 +618,7 @@ export function ProjetForm({ projet, onDone }: { projet?: ProjetResume; onDone: 
                 />
               )}
             />
+            <EtatInstallationZones pays={watch("pays") ?? []} />
 
             <div>
               <Text size="sm" fw={500} mb={4}>{voc("Zones d'intervention")}</Text>

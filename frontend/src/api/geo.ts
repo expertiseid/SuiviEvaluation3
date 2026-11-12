@@ -250,3 +250,39 @@ export function useSyntheseCarte(pays: string | undefined, niveau: number, proje
     placeholderData: (precedent) => precedent,
   });
 }
+
+/** Zones administratives d'un pays installées automatiquement (apps/geo/services/installation.py). */
+export interface PaysZones {
+  pays: string;
+  zones: number;
+  statut: "EN_COURS" | "TERMINE" | "ECHEC";
+  message: string;
+}
+
+/** Pays de l'organisation et état de leurs zones ; se rafraîchit tant qu'une installation est en cours. */
+export function usePaysZones() {
+  const queryClient = useQueryClient();
+  return useQuery({
+    queryKey: ["pays-zones"],
+    queryFn: async () => {
+      const donnees = (await apiClient.get<PaysZones[]>("/pays-zones/")).data;
+      // Installation terminée depuis la dernière lecture : zones et niveaux à recharger.
+      const avant = queryClient.getQueryData<PaysZones[]>(["pays-zones"]) ?? [];
+      if (donnees.some((p) => p.statut !== "EN_COURS" && avant.find((a) => a.pays === p.pays)?.statut === "EN_COURS")) {
+        void queryClient.invalidateQueries({ queryKey: ["zones"] });
+        void queryClient.invalidateQueries({ queryKey: ["niveaux-administratifs"] });
+      }
+      return donnees;
+    },
+    refetchInterval: (requete) => (requete.state.data?.some((p) => p.statut === "EN_COURS") ? 3000 : false),
+  });
+}
+
+/** Installe (en arrière-plan) les zones des pays qui n'en ont pas encore. */
+export function useInstallerPays() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (pays: string[]) => (await apiClient.post<PaysZones[]>("/pays-zones/", { pays })).data,
+    onSuccess: (donnees) => queryClient.setQueryData(["pays-zones"], donnees),
+  });
+}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -21,6 +21,7 @@ import {
   Collapse,
   Group,
   Modal,
+  MultiSelect,
   NumberInput,
   Select,
   Stack,
@@ -40,12 +41,15 @@ import {
   useUpdateNiveauAdministratif,
   useUpdateZone,
   useZones,
+  useInstallerPays,
+  usePaysZones,
 } from "../../api/geo";
 import { BoutonModeEdition } from "../../components/common/BoutonModeEdition";
 import { EmptyState } from "../../components/common/EmptyState";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
 import { correspond } from "../../utils/recherche";
-import { PAYS_MONDE } from "../../utils/pays";
+import { EtatInstallationZones } from "../../components/common/InstallationZones";
+import { nomPays, PAYS_MONDE } from "../../utils/pays";
 import type { NiveauAdministratif, Zone } from "../../types";
 import { TitreRubrique } from "../../components/common/TitreRubrique";
 import { voc } from "../../utils/vocabulaire";
@@ -635,8 +639,65 @@ function Arborescence({
 
 // ================== Page ==================
 
+/** Pays de l'organisation : leurs zones s'installent automatiquement, et restent modifiables. */
+function PaysOrganisation({ pays, choisir, afficher }: {
+  pays: string | null; choisir: (code: string) => void; afficher: (code: string) => void;
+}) {
+  const { data: paysOrganisation = [] } = usePaysZones();
+  const installer = useInstallerPays();
+  const [ajout, setAjout] = useState<string[]>([]);
+  const presents = new Set(paysOrganisation.map((p) => p.pays));
+  return (
+    <Card withBorder padding="md" radius="md">
+      <Stack gap="xs">
+        <Text fw={600}>{voc("Pays de l'organisation")}</Text>
+        <Text size="sm" c="dimmed">
+          {voc("Les zones administratives de chaque pays ajouté s'installent automatiquement (régions, provinces, districts…). Vous pouvez ensuite les modifier librement.")}
+        </Text>
+        <Group gap="xs">
+          {paysOrganisation.map((p) => (
+            <Badge key={p.pays} size="lg" tt="none" style={{ cursor: "pointer" }} onClick={() => choisir(p.pays)}
+              color={p.statut === "ECHEC" ? "orange" : "teal"} variant={p.pays === pays ? "filled" : "light"}>
+              {nomPays(p.pays)} · {p.statut === "EN_COURS" ? voc("installation…") : p.statut === "ECHEC" ? voc("à saisir") : voc`${p.zones} zones`}
+            </Badge>
+          ))}
+        </Group>
+        <Group align="flex-end" gap="xs">
+          <MultiSelect
+            label={voc("Ajouter des pays")}
+            placeholder={voc("Rechercher un ou plusieurs pays…")}
+            data={PAYS_MONDE.filter((p) => !presents.has(p.code)).map((p) => ({ value: p.code, label: p.nom }))}
+            value={ajout}
+            onChange={setAjout}
+            searchable
+            clearable
+            maw={460}
+            style={{ flex: 1 }}
+          />
+          <Button disabled={!ajout.length} loading={installer.isPending}
+            onClick={() => { installer.mutate(ajout); afficher(ajout[0]); setAjout([]); }}>
+            {voc("Ajouter")}
+          </Button>
+        </Group>
+        <EtatInstallationZones pays={[...presents]} />
+      </Stack>
+    </Card>
+  );
+}
+
 export function ZonesAdministrativesPage() {
-  const [pays, setPays] = useState<string | null>("BF");
+  const { data: paysOrganisation } = usePaysZones();
+  const installerPays = useInstallerPays();
+  const [pays, setPays] = useState<string | null>(null);
+  // Premier affichage : le premier pays de l'organisation (le Burkina Faso s'il n'y en a aucun).
+  useEffect(() => {
+    if (pays === null && paysOrganisation) setPays(paysOrganisation[0]?.pays ?? "BF");
+  }, [pays, paysOrganisation]);
+  // Pays choisi sans zones : elles s'installent tout de suite, sans paramétrage.
+  const choisirPays = (code: string | null) => {
+    setPays(code);
+    if (code && !paysOrganisation?.some((p) => p.pays === code)) installerPays.mutate([code]);
+  };
   const [editionActive, setEditionActive] = useState(false);
   const { data: niveaux, isLoading: chargementNiveaux } = useNiveauxAdministratifs(pays);
   const { data: zones, isLoading: chargementZones } = useZones({ pays: pays ?? undefined });
@@ -655,12 +716,14 @@ export function ZonesAdministrativesPage() {
             label={voc("Pays")}
             data={PAYS_MONDE.map((p) => ({ value: p.code, label: p.nom }))}
             value={pays}
-            onChange={setPays}
+            onChange={choisirPays}
             searchable
             maw={260}
           />
         </Group>
       </Group>
+
+      <PaysOrganisation pays={pays} choisir={choisirPays} afficher={setPays} />
 
       {!pays ? (
         <Card withBorder padding="md" radius="md">
@@ -675,7 +738,7 @@ export function ZonesAdministrativesPage() {
               {voc("Configuration des niveaux")}
             </Tabs.Tab>
             <Tabs.Tab value="arborescence" leftSection={<ListTree size={15} />}>
-              Arborescence &amp; saisie
+              {voc("Arborescence & saisie")}
             </Tabs.Tab>
           </Tabs.List>
 

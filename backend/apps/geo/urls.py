@@ -10,6 +10,7 @@ from .views import (
     couche_carte,
     limites_administratives,
     localites,
+    pays_zones,
 )
 
 router = DefaultRouter()
@@ -21,5 +22,6 @@ urlpatterns = router.urls + [
     path("limites-administratives/", limites_administratives, name="limites-administratives"),
     path("couches-carte/", couche_carte, name="couches-carte"),
     path("localites/", localites, name="localites"),
+    path("pays-zones/", pays_zones, name="pays-zones"),
     path("carte/synthese/", carte_synthese, name="carte-synthese"),
 ]

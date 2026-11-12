@@ -22,10 +22,52 @@ class LimitesIndisponibles(Exception):
     pass
 
 
+# Téléchargements sortants (sécurité) : seulement en HTTPS, seulement depuis les adresses officielles de
+# geoBoundaries (son API, puis le dépôt GitHub qui héberge les fichiers), redirections comprises ; jamais vers
+# une adresse du réseau interne ; 60 Mo au plus (les plus gros pays font quelques Mo).
+HOTES_AUTORISES = {"www.geoboundaries.org", "geoboundaries.org", "github.com", "media.githubusercontent.com",
+                   "raw.githubusercontent.com"}
+TAILLE_MAX = 60 * 1024 * 1024
+
+
+def _adresse_autorisee(url: str) -> bool:
+    import ipaddress
+    import socket
+    from urllib.parse import urlsplit
+
+    morceaux = urlsplit(url or "")
+    hote = (morceaux.hostname or "").lower()
+    if morceaux.scheme != "https" or hote not in HOTES_AUTORISES or morceaux.port not in (None, 443):
+        return False
+    try:
+        adresses = {info[4][0] for info in socket.getaddrinfo(hote, 443, proto=socket.IPPROTO_TCP)}
+    except OSError:
+        return False
+    return all(ipaddress.ip_address(a).is_global for a in adresses)
+
+
+class _RedirectionControlee(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not _adresse_autorisee(newurl):
+            raise LimitesIndisponibles(f"Redirection refusée vers une adresse non autorisée ({newurl[:120]}).")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_OUVREUR = urllib.request.build_opener(_RedirectionControlee)
+
+
 def _lire_json(url, delai=30):
+    if not _adresse_autorisee(url):
+        raise LimitesIndisponibles(f"Adresse de téléchargement non autorisée ({str(url)[:120]}).")
     requete = urllib.request.Request(url, headers={"User-Agent": "plateforme-suivi-evaluation"})
-    with urllib.request.urlopen(requete, timeout=delai) as reponse:
-        return json.loads(reponse.read().decode("utf-8"))
+    with _OUVREUR.open(requete, timeout=delai) as reponse:
+        longueur = reponse.headers.get("Content-Length")
+        if longueur and longueur.isdigit() and int(longueur) > TAILLE_MAX:
+            raise LimitesIndisponibles("Fichier de limites trop volumineux : refusé.")
+        contenu = reponse.read(TAILLE_MAX + 1)
+    if len(contenu) > TAILLE_MAX:
+        raise LimitesIndisponibles("Fichier de limites trop volumineux : refusé.")
+    return json.loads(contenu.decode("utf-8"))
 
 
 def normaliser_nom(nom: str) -> str:

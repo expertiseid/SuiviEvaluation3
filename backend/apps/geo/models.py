@@ -199,3 +199,25 @@ class CoucheImportee(TimestampedModel):
 
     def __str__(self):
         return self.nom
+
+
+class InstallationZones(models.Model):
+    """
+    Zones administratives d'un pays installées automatiquement (apps.geo.services.installation) : une ligne par
+    pays, pour suivre l'installation (en cours, terminée, échec) et l'afficher sur la plateforme.
+    """
+
+    class Statut(models.TextChoices):
+        EN_COURS = "EN_COURS", "En cours"
+        TERMINE = "TERMINE", "Terminée"
+        ECHEC = "ECHEC", "Échec"
+
+    pays = models.CharField(max_length=2, unique=True)
+    statut = models.CharField(max_length=10, choices=Statut.choices, default=Statut.EN_COURS)
+    zones = models.PositiveIntegerField(default=0)
+    message = models.CharField(max_length=500, blank=True)
+    source = models.CharField(max_length=40, blank=True, help_text="« geoBoundaries » ou « référentiel national ».")
+    maj = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("pays",)

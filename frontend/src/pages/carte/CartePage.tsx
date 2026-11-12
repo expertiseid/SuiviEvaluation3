@@ -7,7 +7,6 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useCarteBeneficiaires, useChoixProjetsVariables, type FicheCarte } from "../../api/beneficiaries";
 import {
-  useCoucheCarte,
   useCouchesImportees,
   useGeojsonCouche,
   useLimitesAdministratives,
@@ -31,13 +30,12 @@ import { OutilsCarte } from "./OutilsCarte";
 import { locale, traduireDonnee } from "../../utils/i18n";
 const CENTRE_PAR_DEFAUT: [number, number] = [12.3, -1.6]; // Burkina Faso
 
-type Couche = "points" | "regions" | "provinces" | "communes" | "routes" | "villages" | "noms" | "beneficiaires";
+type Couche = "points" | "regions" | "provinces" | "communes" | "villages" | "noms" | "beneficiaires";
 const COUCHES: { value: Couche; label: string }[] = [
   { value: "points", label: voc("Bénéficiaires") },
   { value: "regions", label: voc("Régions") },
   { value: "provinces", label: voc("Provinces") },
   { value: "communes", label: voc("Communes") },
-  { value: "routes", label: voc("Routes") },
   { value: "villages", label: voc("Villes et villages") },
   { value: "noms", label: voc("Noms") },
   { value: "beneficiaires", label: voc("Noms des bénéficiaires") },
@@ -68,11 +66,6 @@ const STYLE_LIMITES: Record<number, L.PathOptions> = {
   1: { color: "#1f2937", weight: 2.2, fillOpacity: 0.02 },
   2: { color: "#4b5563", weight: 1.3, fillOpacity: 0, dashArray: "5 4" },
   3: { color: "#9ca3af", weight: 0.8, fillOpacity: 0, dashArray: "2 3" },
-};
-const STYLE_ROUTES: Record<string, { color: string; weight: number; libelle: string }> = {
-  NATIONALE: { color: "#dc2626", weight: 2.6, libelle: voc("Nationale") },
-  REGIONALE: { color: "#ea580c", weight: 1.8, libelle: voc("Régionale") },
-  DEPARTEMENTALE: { color: "#ca8a04", weight: 1.2, libelle: voc("Départementale") },
 };
 // Noms affichés selon le zoom, pour ne pas surcharger la carte.
 const ZOOM_NOMS: Record<number, [number, number]> = { 1: [0, 9], 2: [8, 11], 3: [9, 30] };
@@ -139,25 +132,6 @@ function Limites({ pays, niveau, zoom, noms }: { pays: string | undefined; nivea
           ) : null,
         )}
     </>
-  );
-}
-
-function Routes({ pays }: { pays: string | undefined }) {
-  const { data } = useCoucheCarte(pays, "routes", true);
-  if (!data) return null;
-  return (
-    <GeoJSON
-      key={`routes-${pays}`}
-      data={data.geojson}
-      style={(f) => {
-        const s = STYLE_ROUTES[f?.properties?.classe] ?? STYLE_ROUTES.DEPARTEMENTALE;
-        return { color: s.color, weight: s.weight, opacity: 0.85 };
-      }}
-      onEachFeature={(f, couche) => {
-        const s = STYLE_ROUTES[f.properties?.classe];
-        if (f.properties?.nom || s) couche.bindTooltip(echapper(`${f.properties?.nom || "Route"}${s ? ` — ${s.libelle.toLowerCase()}` : ""}`), { sticky: true });
-      }}
-    />
   );
 }
 
@@ -251,7 +225,8 @@ export function CartePage() {
   const [niveauZone, setNiveauZone] = useState("1");
   const { data: couchesImportees = [] } = useCouchesImportees();
   const { peutEcrire } = useAccesModules();
-  const [couches, setCouches] = useState<Couche[]>(["points", "regions", "provinces", "routes", "villages", "noms"]);
+  // Aucune couche affichée à l'ouverture : on choisit soi-même celles à voir.
+  const [couches, setCouches] = useState<Couche[]>([]);
   const [fond, setFond] = useState<string | null>(null);
   const [vue, setVue] = useState<{ zoom: number; bbox: string | null }>({ zoom: 6, bbox: null });
   const { data: projets = [] } = useChoixProjetsVariables(true);
@@ -266,7 +241,6 @@ export function CartePage() {
     return [...groupes.entries()].map(([group, items]) => ({ group, items: items.sort((a, b) => a.label.localeCompare(b.label)) }));
   }, [zones]);
   const { data: regions, isError: limitesIndisponibles } = useLimitesAdministratives(pays, 1);
-  const { data: routes } = useCoucheCarte(pays, "routes", couches.includes("routes"));
   const active = (c: Couche) => couches.includes(c);
   // Par défaut : fond neutre si une base nationale (avec ses noms) est importée, sinon OpenStreetMap.
   const fondChoisi = fond ?? (regions && regions.source !== "geoBoundaries" ? "neutre" : "osm");
@@ -400,7 +374,7 @@ export function CartePage() {
           data={[
             {
               group: voc("Couches de base"),
-              items: COUCHES.filter((c) => c.value !== "routes" || routes !== undefined || active("routes")),
+              items: COUCHES,
             },
             ...(couchesImportees.length
               ? [{ group: voc("Couches importées"), items: couchesImportees.map((c) => ({ value: `import:${c.id}`, label: c.nom })) }]
@@ -488,7 +462,6 @@ export function CartePage() {
             {active("communes") && <Limites pays={pays} niveau={3} zoom={vue.zoom} noms={nomsNiveau(3)} />}
             {active("provinces") && <Limites pays={pays} niveau={2} zoom={vue.zoom} noms={nomsNiveau(2)} />}
             {active("regions") && <Limites pays={pays} niveau={1} zoom={vue.zoom} noms={nomsNiveau(1)} />}
-            {active("routes") && <Routes pays={pays} />}
             {active("villages") && <Villages pays={pays} bbox={vue.bbox} zoom={vue.zoom} noms={noms} />}
             {contourZone && (
               <GeoJSON key={`zone-${data?.zone_filtre?.ids.join("-")}`} data={contourZone as GeoJSON.Geometry} style={{ color: "#0c8a5f", weight: 3, fillColor: "#12b886", fillOpacity: 0.06 }} interactive={false} />
@@ -542,13 +515,6 @@ export function CartePage() {
         </Stack>
       )}
       <Group gap="md">
-        {active("routes") && routes &&
-          Object.values(STYLE_ROUTES).map((s) => (
-            <Group key={s.libelle} gap={6}>
-              <div style={{ width: 22, height: s.weight + 1, background: s.color, borderRadius: 2 }} />
-              <Text size="xs" c="dimmed">{voc("Route")} {s.libelle.toLowerCase()}</Text>
-            </Group>
-          ))}
         {active("villages") && vue.zoom < ZOOM_VILLAGES && (
           <Text size="xs" c="dimmed">{voc("Zoomer pour voir les villes et villages.")}</Text>
         )}

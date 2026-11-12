@@ -148,7 +148,6 @@ const COUCHES_FOND = [
   { value: "regions", label: voc("Régions") },
   { value: "provinces", label: voc("Provinces") },
   { value: "communes", label: voc("Communes") },
-  { value: "routes", label: voc("Routes") },
   { value: "villages", label: voc("Villes et villages") },
   { value: "noms", label: voc("Noms") },
   { value: "beneficiaires", label: voc("Noms des bénéficiaires (GPS)") },

@@ -156,3 +156,29 @@ def carte_synthese(request):
     )
     donnees["indicateurs"] = INDICATEURS
     return Response(donnees)
+
+
+@api_view(["GET", "POST"])
+def pays_zones(request):
+    """
+    Pays de l'organisation et leurs zones administratives (apps.geo.services.installation).
+    GET : pays installés ou en cours, avec leur nombre de zones. POST {pays: [codes]} : installe, en arrière-plan,
+    les zones des pays qui n'en ont pas encore.
+    """
+    from django.db.models import Count
+
+    from .models import InstallationZones
+    from .services.installation import installer_en_arriere_plan
+
+    if request.method == "POST":
+        liste = request.data.get("pays") or []
+        installer_en_arriere_plan([p for p in liste if isinstance(p, str)][:20])
+    comptes = dict(Zone.objects.values_list("niveau_administratif__pays").annotate(n=Count("id")))
+    suivis = {s.pays: s for s in InstallationZones.objects.all()}
+    pays = sorted(set(comptes) | set(suivis) | set(NiveauAdministratif.objects.values_list("pays", flat=True)))
+    return Response([{
+        "pays": code,
+        "zones": comptes.get(code, 0),
+        "statut": suivis[code].statut if code in suivis else InstallationZones.Statut.TERMINE,
+        "message": suivis[code].message if code in suivis else "",
+    } for code in pays])

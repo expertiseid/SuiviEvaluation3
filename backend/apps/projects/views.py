@@ -125,6 +125,19 @@ class ProjetViewSet(viewsets.ModelViewSet):
                 if champ in serializer.validated_data and serializer.validated_data[champ] != getattr(serializer.instance, champ):
                     raise PermissionDenied("Seul un administrateur peut régler l'ouverture de la saisie et les approbations du projet.")
         super().perform_update(serializer)
+        self._installer_zones(serializer.instance)
+
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        self._installer_zones(serializer.instance)
+
+    @staticmethod
+    def _installer_zones(projet):
+        """Pays du projet sans zones administratives : elles s'installent toutes seules (apps.geo.services.installation)."""
+        from apps.geo.services.installation import installer_en_arriere_plan
+
+        if projet is not None and getattr(projet, "pays", None):
+            installer_en_arriere_plan(projet.pays)
 
     def perform_destroy(self, instance):
         supprimer_projet_cascade(instance)

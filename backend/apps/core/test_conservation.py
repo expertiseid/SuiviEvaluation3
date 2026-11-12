@@ -40,3 +40,18 @@ def test_anonymisation_a_l_echeance():
         b.refresh_from_db()
         assert b.date_anonymisation is None and b.nom != "Anonyme"
     assert conservation.appliquer(aujourdhui) == 0  # une seule fois
+
+
+@pytest.mark.django_db
+def test_duree_reglee_depuis_la_fiche_projet():
+    from rest_framework.test import APIClient
+
+    from apps.accounts.constants import ROLE_ADMIN
+    from apps.accounts.models import User
+
+    projet = _projet("FICHE", "2026-12-31", None)
+    client = APIClient()
+    client.force_authenticate(User.objects.create_user(username="adm_conserv", password="x", role=ROLE_ADMIN))
+    assert client.patch(f"/api/v1/projets/{projet.pk}/", {"conservation_beneficiaires_mois": 24}, format="json").status_code == 200
+    projet.refresh_from_db()
+    assert projet.conservation_beneficiaires_mois == 24

@@ -3763,5 +3763,15 @@
  "Tous les utilisateurs de l'organisation sont déconnectés après cette durée sans activité, avec un avertissement une minute avant. Entre 5 et 480 minutes ; 30 par défaut.": "All users of the organisation are signed out after this period without activity, with a warning one minute before. Between 5 and 480 minutes; 30 by default.",
  "Indiquez une durée entre 5 et 480 minutes.": "Enter a duration between 5 and 480 minutes.",
  "Propre à ce compte, entre 5 et 480 minutes. Laisser vide pour suivre le réglage de l'organisation ({0} min).": "Specific to this account, between 5 and 480 minutes. Leave empty to follow the organisation's setting ({0} min).",
- "Réglage de l'organisation : {0} min": "Organisation setting: {0} min"
+ "Réglage de l'organisation : {0} min": "Organisation setting: {0} min",
+ "{0} zones": "{0} areas",
+ "à saisir": "to be entered",
+ "Ajouter des pays": "Add countries",
+ "Arborescence & saisie": "Tree & entry",
+ "installation…": "installing…",
+ "Les zones administratives de chaque pays ajouté s'installent automatiquement (régions, provinces, districts…). Vous pouvez ensuite les modifier librement.": "The administrative areas of each country you add are installed automatically (regions, provinces, districts…). You can then edit them freely.",
+ "Les zones de {0} n'ont pas pu être installées automatiquement (source indisponible pour ce pays). Vous pouvez réessayer, ou les saisir sur la page Zones administratives.": "The areas of {0} could not be installed automatically (source unavailable for this country). You can try again, or enter them on the Administrative areas page.",
+ "Pays de l'organisation": "Organisation's countries",
+ "Réessayer": "Try again",
+ "Zones administratives en cours d'installation : {0}. Elles apparaîtront d'elles-mêmes dans un instant.": "Administrative areas being installed: {0}. They will appear by themselves in a moment."
 }

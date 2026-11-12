@@ -185,6 +185,9 @@ URL_DEMO = env("URL_DEMO", default="")
 DEMO_OUVERTE = env.bool("DEMO_OUVERTE", default=False)
 # Page d'accueil : une organisation peut demander à créer son profil (puis s'abonner).
 INSCRIPTIONS_OUVERTES = env.bool("INSCRIPTIONS_OUVERTES", default=True)
+# Zones administratives installées automatiquement selon le pays (apps/geo/services/installation.py) :
+# « arriere-plan » (par défaut), « synchrone » ou « desactivee ».
+ZONES_INSTALLATION = env("ZONES_INSTALLATION", default="arriere-plan")
 # Adresse(s) d'Expertise-ID prévenues des inscriptions, paiements et demandes de paiement par carte
 # (plusieurs adresses séparées par des virgules ; la première est montrée aux clients comme contact).
 COURRIEL_ABONNEMENTS = env("COURRIEL_ABONNEMENTS", default="")

@@ -54,7 +54,7 @@ def a_anonymiser(aujourdhui=None):
             .exclude(participations__projet__in=autres).distinct())
 
 
-def anonymiser_beneficiaire(beneficiaire):
+def anonymiser_beneficiaire(beneficiaire, aujourdhui=None):
     from apps.beneficiaries.models import SignalementDoublon, VariableBeneficiaire
 
     textes = {str(pk) for pk in VariableBeneficiaire.objects.filter(type=VariableBeneficiaire.Type.TEXTE).values_list("pk", flat=True)}
@@ -65,7 +65,7 @@ def anonymiser_beneficiaire(beneficiaire):
         if beneficiaire.date_naissance:
             beneficiaire.date_naissance = beneficiaire.date_naissance.replace(month=7, day=1)
         beneficiaire.reponses = {cle: valeur for cle, valeur in (beneficiaire.reponses or {}).items() if cle not in textes}
-        beneficiaire.date_anonymisation = timezone.localdate()
+        beneficiaire.date_anonymisation = aujourdhui or timezone.localdate()
         beneficiaire.save()
         SignalementDoublon.objects.filter(Q(beneficiaire_1=beneficiaire) | Q(beneficiaire_2=beneficiaire)).delete()
         beneficiaire.history.all().delete()  # l'identité ne doit survivre dans aucune copie
@@ -75,7 +75,7 @@ def appliquer(aujourdhui=None) -> int:
     """Anonymise les bénéficiaires dont la durée de conservation est écoulée ; renvoie leur nombre."""
     nombre = 0
     for beneficiaire in a_anonymiser(aujourdhui):
-        anonymiser_beneficiaire(beneficiaire)
+        anonymiser_beneficiaire(beneficiaire, aujourdhui)
         nombre += 1
     if nombre:
         auditer(None, A.SUPPRESSION, f"Bénéficiaires anonymisés à l'échéance de conservation : {nombre}",

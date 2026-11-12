@@ -3763,5 +3763,15 @@
  "Tous les utilisateurs de l'organisation sont déconnectés après cette durée sans activité, avec un avertissement une minute avant. Entre 5 et 480 minutes ; 30 par défaut.": "يُسجَّل خروج جميع مستخدمي المؤسسة بعد هذه المدة دون نشاط، مع تنبيه قبل دقيقة واحدة. بين 5 و480 دقيقة؛ 30 افتراضيًا.",
  "Indiquez une durée entre 5 et 480 minutes.": "حدّد مدة بين 5 و480 دقيقة.",
  "Propre à ce compte, entre 5 et 480 minutes. Laisser vide pour suivre le réglage de l'organisation ({0} min).": "خاص بهذا الحساب، بين 5 و480 دقيقة. اتركه فارغًا لاتباع إعداد المؤسسة ({0} دقيقة).",
- "Réglage de l'organisation : {0} min": "إعداد المؤسسة: {0} دقيقة"
+ "Réglage de l'organisation : {0} min": "إعداد المؤسسة: {0} دقيقة",
+ "{0} zones": "{0} منطقة",
+ "à saisir": "يجب إدخالها",
+ "Ajouter des pays": "إضافة دول",
+ "Arborescence & saisie": "الهيكل والإدخال",
+ "installation…": "جارٍ التثبيت…",
+ "Les zones administratives de chaque pays ajouté s'installent automatiquement (régions, provinces, districts…). Vous pouvez ensuite les modifier librement.": "تُثبَّت المناطق الإدارية لكل دولة مضافة تلقائيًا (الأقاليم والمقاطعات والدوائر…). ويمكنك بعد ذلك تعديلها بحرية.",
+ "Les zones de {0} n'ont pas pu être installées automatiquement (source indisponible pour ce pays). Vous pouvez réessayer, ou les saisir sur la page Zones administratives.": "تعذّر تثبيت مناطق {0} تلقائيًا (المصدر غير متاح لهذه الدولة). يمكنك إعادة المحاولة أو إدخالها في صفحة المناطق الإدارية.",
+ "Pays de l'organisation": "دول المؤسسة",
+ "Réessayer": "إعادة المحاولة",
+ "Zones administratives en cours d'installation : {0}. Elles apparaîtront d'elles-mêmes dans un instant.": "جارٍ تثبيت المناطق الإدارية: {0}. ستظهر تلقائيًا بعد لحظات."
 }

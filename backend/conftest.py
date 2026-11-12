@@ -9,3 +9,6 @@ def _organisation_unique(settings):
     settings.MODE_DEMO = False
     # Démonstration ouverte pour les tests qui l'utilisent ; test_demo_fermee vérifie la fermeture.
     settings.DEMO_OUVERTE = True
+    # Zones administratives des pays : jamais de téléchargement ni de tâche parallèle pendant les tests
+    # (apps/geo/test_installation.py les active elles-mêmes, en mode synchrone).
+    settings.ZONES_INSTALLATION = "desactivee"

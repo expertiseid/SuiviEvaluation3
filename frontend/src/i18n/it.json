@@ -3763,5 +3763,15 @@
  "Tous les utilisateurs de l'organisation sont déconnectés après cette durée sans activité, avec un avertissement une minute avant. Entre 5 et 480 minutes ; 30 par défaut.": "Tutti gli utenti dell'organizzazione vengono disconnessi dopo questo tempo senza attività, con un avviso un minuto prima. Tra 5 e 480 minuti; 30 per impostazione predefinita.",
  "Indiquez une durée entre 5 et 480 minutes.": "Indica una durata tra 5 e 480 minuti.",
  "Propre à ce compte, entre 5 et 480 minutes. Laisser vide pour suivre le réglage de l'organisation ({0} min).": "Specifico per questo account, tra 5 e 480 minuti. Lascia vuoto per seguire l'impostazione dell'organizzazione ({0} min).",
- "Réglage de l'organisation : {0} min": "Impostazione dell'organizzazione: {0} min"
+ "Réglage de l'organisation : {0} min": "Impostazione dell'organizzazione: {0} min",
+ "{0} zones": "{0} zone",
+ "à saisir": "da inserire",
+ "Ajouter des pays": "Aggiungi paesi",
+ "Arborescence & saisie": "Struttura e inserimento",
+ "installation…": "installazione…",
+ "Les zones administratives de chaque pays ajouté s'installent automatiquement (régions, provinces, districts…). Vous pouvez ensuite les modifier librement.": "Le zone amministrative di ogni paese aggiunto vengono installate automaticamente (regioni, province, distretti…). Potrai poi modificarle liberamente.",
+ "Les zones de {0} n'ont pas pu être installées automatiquement (source indisponible pour ce pays). Vous pouvez réessayer, ou les saisir sur la page Zones administratives.": "Non è stato possibile installare automaticamente le zone di {0} (fonte non disponibile per questo paese). Puoi riprovare o inserirle nella pagina Zone amministrative.",
+ "Pays de l'organisation": "Paesi dell'organizzazione",
+ "Réessayer": "Riprova",
+ "Zones administratives en cours d'installation : {0}. Elles apparaîtront d'elles-mêmes dans un instant.": "Zone amministrative in installazione: {0}. Compariranno da sole tra un istante."
 }

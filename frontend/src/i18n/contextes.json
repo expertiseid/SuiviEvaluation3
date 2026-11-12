@@ -541,6 +541,9 @@
  "{0} utilisés sur {1}": [
   "components/common/FenetreStockagePlein.tsx"
  ],
+ "{0} zones": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
  "{0}{1} » existe déjà — import annulé.": [
   "serveur"
  ],
@@ -721,6 +724,9 @@
   "layouts/AppLayout.tsx",
   "pages/accueil/AProposPage.tsx",
   "pages/accueil/CadreVitrine.tsx"
+ ],
+ "à saisir": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
  ],
  "À surveiller": [
   "pages/plaintes/ElementsTableau.tsx"
@@ -1085,6 +1091,9 @@
  "Ajouter des fichiers": [
   "pages/plaintes/PiecesJointesDossier.tsx"
  ],
+ "Ajouter des pays": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
  "Ajouter des pièces jointes": [
   "pages/plaintes/PiecesJointesDossier.tsx"
  ],
@@ -1334,6 +1343,9 @@
  "Arborescence": [
   "pages/geo/ZonesAdministrativesPage.tsx",
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Arborescence & saisie": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
  ],
  "Arbre": [
   "pages/projets/PlanificationPeriodeTab.tsx",
@@ -3897,9 +3909,6 @@
  "Démonstration : vos choix s'appliquent pendant votre visite, sans être enregistrés.": [
   "components/dashboard/PersonnalisationModal.tsx"
  ],
- "Départementale": [
-  "pages/carte/CartePage.tsx"
- ],
  "dépassée": [
   "pages/projets/RisquesTab.tsx"
  ],
@@ -6192,6 +6201,9 @@
  "Insérer le modèle de clause": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
+ "installation…": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
  "Installer le référentiel des zones du Burkina Faso (régions et provinces)": [
   "pages/console/ConsolePage.tsx"
  ],
@@ -6957,6 +6969,12 @@
  "les variables d'autres projets": [
   "pages/beneficiaires/ChampsVariables.tsx"
  ],
+ "Les zones administratives de chaque pays ajouté s'installent automatiquement (régions, provinces, districts…). Vous pouvez ensuite les modifier librement.": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Les zones de {0} n'ont pas pu être installées automatiquement (source indisponible pour ce pays). Vous pouvez réessayer, ou les saisir sur la page Zones administratives.": [
+  "components/common/InstallationZones.tsx"
+ ],
  "Les zones sont colorées selon le premier indicateur choisi ; les autres sont écrits sur chaque zone.": [
   "pages/carte/CartePage.tsx"
  ],
@@ -7669,9 +7687,6 @@
  ],
  "NA": [
   "pages/beneficiaires/BeneficiaireDetailPage.tsx"
- ],
- "Nationale": [
-  "pages/carte/CartePage.tsx"
  ],
  "Nature": [
   "pages/projets/RisquesTab.tsx"
@@ -8643,6 +8658,9 @@
   "pages/strategie/DocumentModal.tsx",
   "pages/strategie/FicheDocument.tsx"
  ],
+ "Pays de l'organisation": [
+  "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
  "Pays de la zone à ajouter": [
   "pages/projets/ProjetForm.tsx",
   "pages/strategie/DocumentModal.tsx"
@@ -9517,6 +9535,7 @@
   "pages/suivi/SuiviProjetDashboard.tsx"
  ],
  "Rechercher un ou plusieurs pays…": [
+  "pages/geo/ZonesAdministrativesPage.tsx",
   "pages/projets/ProjetForm.tsx",
   "pages/strategie/DocumentModal.tsx"
  ],
@@ -9622,6 +9641,9 @@
  "Réellement occupé": [
   "pages/console/Supervision.tsx"
  ],
+ "Réessayer": [
+  "components/common/InstallationZones.tsx"
+ ],
  "Réévaluation enregistrée": [
   "pages/projets/RisquesTab.tsx"
  ],
@@ -9656,9 +9678,6 @@
  ],
  "Région": [
   "pages/carte/FenetresCarte.tsx"
- ],
- "Régionale": [
-  "pages/carte/CartePage.tsx"
  ],
  "Régions": [
   "pages/carte/CartePage.tsx",
@@ -10048,13 +10067,6 @@
  "Rôles": [
   "pages/plaintes/CircuitsPlaintes.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
- ],
- "Route": [
-  "pages/carte/CartePage.tsx"
- ],
- "Routes": [
-  "pages/carte/CartePage.tsx",
-  "pages/carte/FenetresCarte.tsx"
  ],
  "Rouvrir": [
   "pages/plaintes/DossierPlaintePage.tsx"
@@ -12057,6 +12069,9 @@
   "pages/geo/ZonesAdministrativesPage.tsx",
   "pages/langues/LanguesPage.tsx",
   "utils/modules.ts"
+ ],
+ "Zones administratives en cours d'installation : {0}. Elles apparaîtront d'elles-mêmes dans un instant.": [
+  "components/common/InstallationZones.tsx"
  ],
  "Zones d'intervention": [
   "pages/projets/ProjetForm.tsx",
