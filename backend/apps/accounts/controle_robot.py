@@ -1,5 +1,6 @@
 """
-Contrôle « Je ne suis pas un robot » (Google reCAPTCHA v2, case à cocher) du formulaire d'inscription.
+Contrôle « Je ne suis pas un robot » (Google reCAPTCHA v2, case à cocher) de l'inscription : création du
+profil, puis choix de l'offre et paiement.
 
 Actif seulement si les deux clés sont réglées (RECAPTCHA_CLE_SITE, RECAPTCHA_CLE_SECRETE, à créer sur
 https://www.google.com/recaptcha/admin pour le domaine du site) ; sinon, le champ piège et la limite

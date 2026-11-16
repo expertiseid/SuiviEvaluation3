@@ -88,15 +88,24 @@ export interface DemandeAbonnement {
     formation?: Record<string, number> };
 }
 
-export const creerProfil = async (profil: ProfilOrganisation & { site_web: string }) =>
+export const creerProfil = async (profil: ProfilOrganisation & { site_web: string; recaptcha: string }) =>
   (await apiClient.post<DemandeAbonnement>("/public/inscription/", profil)).data;
-export const choisirOffre = async (reference: string, offre: string, message: string,
+export const choisirOffre = async (reference: string, offre: string, message: string, recaptcha: string,
   carte?: { mois: number; tranches: number }) =>
   (await apiClient.post<DemandeAbonnement>("/public/inscription/offre/",
-    { reference, offre, message, ...(carte ? { moyen: "carte", ...carte } : {}) })).data;
+    { reference, offre, message, recaptcha, ...(carte ? { moyen: "carte", ...carte } : {}) })).data;
 /** Offre payée en ligne : renvoie le lien vers la page de paiement de CinetPay (l'espace est créé une fois payé). */
-export const payerOffre = async (demande: { reference: string; offre: string; mois: number; tranches: number; message: string; langue: string }) =>
+export const payerOffre = async (demande: { reference: string; offre: string; mois: number; tranches: number; message: string; langue: string; recaptcha: string }) =>
   (await apiClient.post<{ lien: string; paiement: string; montant: number; devise: string }>("/public/inscription/paiement/", demande)).data;
+
+/** Clé publique du contrôle anti-robot de l'inscription ; vide : pas de contrôle (apps.accounts.controle_robot). */
+export function useCleRobot() {
+  return useQuery({
+    queryKey: ["controle-robot"],
+    queryFn: async () => (await apiClient.get<{ recaptcha: string }>("/public/inscription/controle/")).data.recaptcha,
+    staleTime: Infinity,
+  });
+}
 
 export const connexionDemo = async () => (await apiClient.post<JetonsConnexion>("/public/demo/")).data;
 

@@ -13,14 +13,16 @@ const jetonDeveloppement = randomBytes(18).toString("base64url")
 
 // Fonds de carte autorisés : OpenStreetMap et Esri (satellite, neutre).
 const CARTES = "https://a.tile.openstreetmap.org https://b.tile.openstreetmap.org https://c.tile.openstreetmap.org https://server.arcgisonline.com"
+// Case « Je ne suis pas un robot » (Google reCAPTCHA) des pages Inscription et Abonnement.
+const ROBOT = "https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/"
 const politique = (jeton: string) => [
   "default-src 'self'",
-  `script-src 'self' 'nonce-${jeton}'`,
+  `script-src 'self' 'nonce-${jeton}' ${ROBOT}`,
   `style-src 'self' 'nonce-${jeton}'`,
   `img-src 'self' data: blob: ${CARTES}`,
   "font-src 'self' data:",
-  `connect-src 'self' ${CARTES}`,
-  "frame-src 'self' blob:",
+  `connect-src 'self' ${CARTES} https://www.google.com/recaptcha/`,
+  "frame-src 'self' blob: https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/",
   "worker-src 'self' blob:",
   "frame-ancestors 'none'",
   "base-uri 'self'",

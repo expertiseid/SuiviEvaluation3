@@ -189,9 +189,11 @@ def inscription_controle(request):
 
 @_public
 def inscription_offre(request):
-    """{reference, offre, message, moyen?, mois?, tranches?} : offre transmise à Expertise-ID (Partenariat, ou carte bancaire)."""
+    """{reference, offre, message, moyen?, mois?, tranches?, recaptcha} : offre transmise à Expertise-ID (Partenariat, ou carte bancaire)."""
     from . import inscriptions
+    from .controle_robot import verifier
 
+    verifier(request.data.get("recaptcha"), request.META.get("REMOTE_ADDR"))
     demande = inscriptions.demande_du_jeton(request.data.get("reference"))
     return Response(inscriptions.resume(inscriptions.choisir_offre(
         demande, request.data.get("offre"), request.data.get("message") or "", request.data.get("moyen") or "",
@@ -207,11 +209,13 @@ class LimiteEtatPaiement(AnonRateThrottle):
 
 @_public
 def inscription_paiement(request):
-    """{reference, offre, mois, tranches, message, langue} : renvoie le lien vers la page de paiement de CinetPay."""
+    """{reference, offre, mois, tranches, message, langue, recaptcha} : renvoie le lien vers la page de paiement de CinetPay."""
     from apps.organisations import paiement
 
     from . import inscriptions
+    from .controle_robot import verifier
 
+    verifier(request.data.get("recaptcha"), request.META.get("REMOTE_ADDR"))
     demande = inscriptions.demande_du_jeton(request.data.get("reference"))
     suite = paiement.creer(demande, request.data.get("offre"), request.data.get("mois") or 1, request.data.get("tranches") or 0,
                            request.data.get("message") or "", request.data.get("langue") or "fr")

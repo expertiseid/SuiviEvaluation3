@@ -51,7 +51,13 @@ def demander(courriel, langue=""):
     from apps.organisations.models import Organisation
 
     org = comptes.organisation_du_courriel(courriel)
-    if org is None or org.statut != Organisation.Statut.ACTIVE:
+    if org is None:
+        # Opérateur Expertise-ID (console) : compte « superutilisateur » de la base centrale, lien « ~uid.jeton ».
+        operateur = _compte(courriel)
+        if operateur is not None and operateur.is_superuser:
+            _envoyer(operateur, "~", langue)
+        return
+    if org.statut != Organisation.Statut.ACTIVE:
         return
     with contexte.dans_organisation(org):
         utilisateur = _compte(courriel)
@@ -80,23 +86,26 @@ def _envoyer(utilisateur, prefixe, langue):
 
 @contextmanager
 def _espace_du_lien(jeton):
-    """Se place dans l'espace de l'organisation du lien ; rend « uid.jeton »."""
+    """Se place dans l'espace de l'organisation du lien ; rend (« uid.jeton », lien d'opérateur de la console ?)."""
     from apps.organisations.models import Organisation
 
     sous_domaine, separateur, reste = (jeton or "").partition("~")
     if not separateur:
         if contexte.actif():
             raise ValidationError({"detail": v(LIEN_INVALIDE)})
-        yield jeton or ""
+        yield jeton or "", False
+        return
+    if not sous_domaine and contexte.actif():
+        yield reste, True  # opérateur Expertise-ID : base centrale
         return
     org = Organisation.objects.using("central").filter(sous_domaine=sous_domaine, statut=Organisation.Statut.ACTIVE).first()
     if org is None or not contexte.actif():
         raise ValidationError({"detail": v(LIEN_INVALIDE)})
     with contexte.dans_organisation(org):
-        yield reste
+        yield reste, False
 
 
-def _utilisateur(jeton):
+def _utilisateur(jeton, operateur=False):
     from .models import User
 
     uid, _, signature = jeton.partition(".")
@@ -104,7 +113,10 @@ def _utilisateur(jeton):
         pk = int(force_str(urlsafe_base64_decode(uid)))
     except (TypeError, ValueError, OverflowError):
         pk = None
-    utilisateur = User.objects.filter(pk=pk, is_active=True).first() if pk else None
+    comptes = User.objects.filter(pk=pk, is_active=True)
+    if operateur:
+        comptes = comptes.filter(is_superuser=True)
+    utilisateur = comptes.first() if pk else None
     if utilisateur is None or not default_token_generator.check_token(utilisateur, signature):
         raise ValidationError({"detail": v(LIEN_INVALIDE)})
     return utilisateur
@@ -114,13 +126,13 @@ def verifier(jeton):
     """Lien encore valable ? Rend l'adresse (masquée) du compte, pour la page."""
     from .double_auth import adresse_masquee
 
-    with _espace_du_lien(jeton) as reste:
-        return {"compte": adresse_masquee(_utilisateur(reste).email)}
+    with _espace_du_lien(jeton) as (reste, operateur):
+        return {"compte": adresse_masquee(_utilisateur(reste, operateur).email)}
 
 
 def changer(jeton, mot_de_passe):
-    with _espace_du_lien(jeton) as reste:
-        utilisateur = _utilisateur(reste)
+    with _espace_du_lien(jeton) as (reste, operateur):
+        utilisateur = _utilisateur(reste, operateur)
         try:
             validate_password(mot_de_passe or "", utilisateur)
         except ErreurDjango as erreur:

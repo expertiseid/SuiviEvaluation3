@@ -49,3 +49,17 @@ def test_avec_cles_la_case_est_exigee_et_verifiee(settings):
         assert client.post(URL, {**PROFIL, "recaptcha": "jeton"}, format="json").status_code == 201
         envoye = appel.call_args.args[1].decode()
         assert "secret=cle-secrete" in envoye and "response=jeton" in envoye
+
+
+@pytest.mark.django_db(databases=["default", "central"])
+def test_choix_de_l_offre_et_paiement_exigent_aussi_la_case(settings):
+    client = APIClient()
+    reference = client.post(URL, PROFIL, format="json").data["reference"]  # profil créé avant l'activation du contrôle
+    settings.RECAPTCHA_CLE_SITE = "cle-publique"
+    settings.RECAPTCHA_CLE_SECRETE = "cle-secrete"
+    choix = {"reference": reference, "offre": "STANDARD", "moyen": "carte", "mois": 12}
+    for adresse in (URL + "offre/", URL + "paiement/"):
+        refus = client.post(adresse, choix, format="json")
+        assert refus.status_code == 400 and "robot" in str(refus.data)
+    with _google(True):
+        assert client.post(URL + "offre/", {**choix, "recaptcha": "jeton"}, format="json").status_code == 200

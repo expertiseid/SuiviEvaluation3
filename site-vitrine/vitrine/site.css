@@ -39,6 +39,7 @@ p { margin: 0 0 1em; }
 .bouton:hover { transform: translateY(-2px); }
 .bouton-plein { background: var(--safran); color: var(--encre); box-shadow: 0 10px 24px -10px rgba(244, 183, 64, 0.8); }
 .bouton-plein:hover { background: #ffc552; }
+.bouton:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
 .bouton-contour { border-color: currentColor; color: var(--encre); background: transparent; }
 .sombre .bouton-contour { color: #fff; }
 .bouton-sombre { background: var(--encre); color: #fff; }

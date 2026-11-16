@@ -111,26 +111,49 @@
   document.addEventListener("langue-site", remplirPays);
 
   // Contrôle « Je ne suis pas un robot » (Google reCAPTCHA) : affiché seulement si la plateforme a
-  // une clé ; le serveur refuse alors l'inscription sans la case cochée.
-  var robot = { cle: "", widget: null };
+  // une clé ; le serveur refuse alors, sans la case cochée, la création du profil (étape 1) comme le
+  // choix de l'offre et le paiement (étape 2), chacune ayant sa propre case.
+  var robot = { cle: "", widget: null, widget2: null };
   envoyer("/public/inscription/controle/").then(function (r) {
     if (!r || !r.recaptcha) return;
     robot.cle = r.recaptcha;
     document.getElementById("bloc-robot").hidden = false;
+    document.getElementById("bloc-robot-2").hidden = false;
     window.monitoraRecaptcha = function () {
       robot.widget = window.grecaptcha.render("recaptcha", { sitekey: robot.cle });
+      robot.widget2 = window.grecaptcha.render("recaptcha-2", { sitekey: robot.cle });
     };
     var script = document.createElement("script");
     script.src = "https://www.google.com/recaptcha/api.js?onload=monitoraRecaptcha&render=explicit&hl=" +
       encodeURIComponent(document.documentElement.lang || "fr");
     script.async = true;
+    // Script de Google bloqué (bloqueur de publicité, réseau filtré) : la case ne peut pas s'afficher.
+    function signalerBlocage() {
+      if (robot.widget !== null) return;
+      ["recaptcha", "recaptcha-2"].forEach(function (id) {
+        var p = document.createElement("span");
+        p.className = "erreur";
+        p.textContent = T("La case « Je ne suis pas un robot » n'a pas pu s'afficher. Désactivez le bloqueur de publicité pour ce site ou vérifiez votre connexion, puis rechargez la page.");
+        document.getElementById(id).appendChild(p);
+      });
+    }
+    script.onerror = signalerBlocage;
+    window.setTimeout(signalerBlocage, 10000);
     document.head.appendChild(script);
   }).catch(function () { /* pas de contrôle si la clé n'a pas pu être lue */ });
-  function jetonRobot() {
-    return robot.widget !== null && window.grecaptcha ? window.grecaptcha.getResponse(robot.widget) : "";
+  function jetonRobot(widget) {
+    return widget !== null && window.grecaptcha ? window.grecaptcha.getResponse(widget) : "";
+  }
+  // Une case cochée ne sert qu'une fois : il faut la cocher de nouveau après un refus.
+  function remettreRobot(widget) {
+    if (widget !== null && window.grecaptcha) window.grecaptcha.reset(widget);
   }
 
-  // Étape 1 : profil.
+  // Étape 1 : profil. Bouton grisé tant que les conditions ne sont pas acceptées.
+  var caseConditions = document.getElementById("conditions");
+  function etatBouton1() { document.getElementById("bouton-1").disabled = !caseConditions.checked; }
+  caseConditions.addEventListener("change", etatBouton1);
+  etatBouton1();
   form1.addEventListener("submit", function (ev) {
     ev.preventDefault();
     effacerErreurs(form1);
@@ -149,7 +172,7 @@
     });
     if (d.mot_de_passe && d.mot_de_passe !== document.getElementById("confirmation").value) locales.confirmation = "Les deux mots de passe ne sont pas identiques.";
     if (!d.conditions) locales.conditions = "Votre accord est nécessaire pour créer le profil.";
-    d.recaptcha = jetonRobot();
+    d.recaptcha = jetonRobot(robot.widget);
     if (robot.cle && !d.recaptcha) locales.recaptcha = "Cochez la case « Je ne suis pas un robot ».";
     if (Object.keys(locales).length) { afficherErreurs(form1, locales, "Complétez les champs signalés."); return; }
 
@@ -160,10 +183,10 @@
       montrerEtape2(resume.organisation);
     }).catch(function (e) {
       afficherErreurs(form1, erreurReseau(e), "Certaines informations sont à corriger.");
-      // Une case cochée ne sert qu'une fois : il faut la cocher de nouveau après un refus.
-      if (robot.widget !== null && window.grecaptcha) window.grecaptcha.reset(robot.widget);
+      remettreRobot(robot.widget);
     }).finally(function () {
-      bouton.disabled = false; bouton.textContent = T("Continuer vers le choix de l'offre");
+      bouton.textContent = T("Continuer vers le choix de l'offre");
+      etatBouton1();
     });
   });
 
@@ -239,6 +262,8 @@
     var enCours = lire(CLE);
     if (!enCours) { etape(1); return; }
     if (!choix) { afficherErreurs(form2, {}, "Choisissez une offre."); return; }
+    var jeton = jetonRobot(robot.widget2);
+    if (robot.cle && !jeton) { afficherErreurs(form2, { "recaptcha-2": "Cochez la case « Je ne suis pas un robot »." }); return; }
     var bouton = document.getElementById("bouton-2");
     bouton.disabled = true; bouton.textContent = T("Envoi en cours…");
     if (enLigne() && parCarte()) {
@@ -246,8 +271,10 @@
       envoyer("/public/inscription/offre/", {
         reference: enCours.reference, offre: choix.value, moyen: "carte", mois: parseInt(document.getElementById("duree").value, 10),
         tranches: choix.value === "STOCKAGE_PLUS" ? tranches() : 0, message: document.getElementById("message-offre").value,
+        recaptcha: jeton,
       }).then(function () { fin("fin-carte"); }).catch(function (e) {
         afficherErreurs(form2, erreurReseau(e), "L'offre n'a pas pu être enregistrée.");
+        remettreRobot(robot.widget2);
       }).finally(function () { bouton.disabled = false; afficherTarifs(); });
       return;
     }
@@ -255,23 +282,25 @@
       envoyer("/public/inscription/paiement/", {
         reference: enCours.reference, offre: choix.value, mois: parseInt(document.getElementById("duree").value, 10),
         tranches: choix.value === "STOCKAGE_PLUS" ? tranches() : 0, message: document.getElementById("message-offre").value,
-        langue: document.documentElement.lang || "fr",
+        langue: document.documentElement.lang || "fr", recaptcha: jeton,
       }).then(function (suite) {
         // Lien renvoyé par CinetPay : sa page de paiement, qui ramène ensuite ici (?paiement=…).
         if (!/^https:\/\/[a-z0-9.-]*cinetpay\.(net|co|com)\//.test(suite.lien || "")) throw { corps: {} };
         window.location.assign(suite.lien);
       }).catch(function (e) {
         afficherErreurs(form2, erreurReseau(e), "Le paiement n'a pas pu être préparé. Réessayez dans un moment.");
+        remettreRobot(robot.widget2);
         bouton.disabled = false; afficherTarifs();
       });
       return;
     }
-    envoyer("/public/inscription/offre/", { reference: enCours.reference, offre: choix.value, message: document.getElementById("message-offre").value })
+    envoyer("/public/inscription/offre/", { reference: enCours.reference, offre: choix.value, message: document.getElementById("message-offre").value, recaptcha: jeton })
       .then(function () {
         try { sessionStorage.removeItem(CLE); } catch (e) { /* rien */ }
         fin(choix.value === "ESSAI" ? "fin-essai" : "fin-demande");
       }).catch(function (e) {
         afficherErreurs(form2, erreurReseau(e), "L'offre n'a pas pu être enregistrée.");
+        remettreRobot(robot.widget2);
       }).finally(function () {
         bouton.disabled = false; afficherTarifs();
       });

@@ -1756,6 +1756,7 @@
  "L'élément principal n'a pas à être repris dans les autres liens.": "The main item does not need to be repeated in the other links.",
  "L'élément « {0} » n'appartient pas à « {1} ».": "Item “{0}” does not belong to “{1}”.",
  "La carte n'a pas pu être générée (réessayez dans un instant).": "The map could not be generated (try again in a moment).",
+ "La case « Je ne suis pas un robot » n'a pas pu s'afficher. Désactivez le bloqueur de publicité pour ce site ou vérifiez votre connexion, puis rechargez la page.": "The « I'm not a robot » box could not be displayed. Turn off the ad blocker for this site or check your connection, then reload the page.",
  "La catégorie du dossier est sensible : reclassez-le d'abord dans une catégorie ordinaire.": "The case's category is sensitive: first reclassify it in an ordinary category.",
  "La console Expertise-ID n'est disponible que sur l'adresse principale de la plateforme multi-organisations.": "The Expertise-ID console is only available at the main address of the multi-organisation platform.",
  "La console Expertise-ID n'est disponible que sur la plateforme multi-organisations.": "The Expertise-ID console is only available on the multi-organisation platform.",

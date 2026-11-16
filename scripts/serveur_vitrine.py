@@ -22,7 +22,7 @@ class Gestionnaire(SimpleHTTPRequestHandler):
             "Content-Security-Policy",
             "default-src 'self'; script-src 'self' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; "
             "frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; style-src 'self'; font-src 'self'; "
-            f"img-src 'self' data: {api} {plateforme}; media-src 'self' {plateforme}; connect-src 'self' {api} {plateforme}; "
+            f"img-src 'self' data: {api} {plateforme}; media-src 'self' {plateforme}; connect-src 'self' {api} {plateforme} https://www.google.com/recaptcha/; "
             "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'",
         )
         self.send_header("X-Frame-Options", "DENY")

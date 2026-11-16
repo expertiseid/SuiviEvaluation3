@@ -18,6 +18,8 @@ const LONGUEUR_MIN = 8;
 export function NouveauMotDePassePage() {
   const [params] = useSearchParams();
   const jeton = params.get("jeton") ?? "";
+  // Lien « ~uid.jeton » : opérateur Expertise-ID, qui se connecte sur sa page à part.
+  const connexion = jeton.startsWith("~") ? "/expertise-id" : "/login";
   const lien = useQuery({
     queryKey: ["lien-mot-de-passe", jeton],
     queryFn: () => verifierLienMotDePasse(jeton),
@@ -62,7 +64,7 @@ export function NouveauMotDePassePage() {
             {fait ? (
               <Stack gap="sm">
                 <Alert color="teal" icon={<CircleCheck size={18} />}>{voc("Votre mot de passe a été changé. Vous pouvez vous connecter.")}</Alert>
-                <Button component={Link} to="/login" fullWidth>{voc("Se connecter")}</Button>
+                <Button component={Link} to={connexion} fullWidth>{voc("Se connecter")}</Button>
               </Stack>
             ) : invalide ? (
               <Stack gap="sm">
@@ -71,7 +73,7 @@ export function NouveauMotDePassePage() {
                     ? messageErreurApi(lien.error, "Ce lien n'est plus valable : il a déjà servi ou a expiré. Demandez-en un nouveau.")
                     : voc("Ce lien n'est plus valable : il a déjà servi ou a expiré. Demandez-en un nouveau.")}
                 </Alert>
-                <Button component={Link} to="/login" variant="light" fullWidth>{voc("Revenir à la connexion")}</Button>
+                <Button component={Link} to={connexion} variant="light" fullWidth>{voc("Revenir à la connexion")}</Button>
               </Stack>
             ) : lien.isLoading ? (
               <Center py="md"><Loader size="sm" /></Center>
@@ -86,7 +88,7 @@ export function NouveauMotDePassePage() {
                   <PasswordInput label={voc("Confirmer le mot de passe")} autoComplete="new-password" value={confirmation} required
                     onChange={(e) => setConfirmation(e.currentTarget.value)} />
                   <Button type="submit" loading={envoi} fullWidth mt="sm">{voc("Enregistrer le mot de passe")}</Button>
-                  <Anchor component={Link} to="/login" size="sm" ta="center">{voc("Revenir à la connexion")}</Anchor>
+                  <Anchor component={Link} to={connexion} size="sm" ta="center">{voc("Revenir à la connexion")}</Anchor>
                 </Stack>
               </form>
             )}

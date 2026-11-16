@@ -3,12 +3,13 @@ import { Link, useLocation } from "react-router-dom";
 import { Alert, Badge, Button, Card, Container, Group, List, NumberInput, SegmentedControl, Select, SimpleGrid, Stack, Text, Textarea, ThemeIcon, Title } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { CircleCheck, CreditCard, Gift, Handshake, Lock, Rocket, Server } from "lucide-react";
-import { type DemandeAbonnement, choisirOffre, payerOffre } from "../../api/identite";
+import { type DemandeAbonnement, choisirOffre, payerOffre, useCleRobot } from "../../api/identite";
 import { messageErreurApi } from "../../utils/erreurs";
 import { langue } from "../../utils/i18n";
 import { voc } from "../../utils/vocabulaire";
 import { CadreVitrine } from "./CadreVitrine";
 import { CLE_ABONNEMENT } from "./InscriptionPage";
+import { CaseRobot } from "../../components/common/CaseRobot";
 
 const PETITE = (go: number, code: string, prix: string) => ({
   code, icone: Rocket, nom: () => voc`Standard ${go} Go`, pour: () => voc`Toute l'offre Standard, avec ${go} Go de stockage`,
@@ -55,6 +56,11 @@ export function AbonnementPage() {
   // Mobile money (FCFA) : payé en ligne. Carte bancaire (dollars) : Expertise-ID finalise le paiement avec le client.
   const [moyen, setMoyen] = useState<"mobile" | "carte">("mobile");
   const [carteEnvoyee, setCarteEnvoyee] = useState(false);
+  // Case « Je ne suis pas un robot » avant de payer ou d'envoyer la demande ; neuve après chaque refus.
+  const { data: cleRobot = "" } = useCleRobot();
+  const [jetonRobot, setJetonRobot] = useState("");
+  const [caseRobot, setCaseRobot] = useState(0);
+  const [erreurRobot, setErreurRobot] = useState("");
 
   // Offres Standard : payées en ligne (CinetPay), l'espace est créé aussitôt. Partenariat : demande à Expertise-ID.
   const tarifs = demande?.tarifs?.paiement ? demande.tarifs : null;
@@ -79,13 +85,19 @@ export function AbonnementPage() {
 
   const valider = async () => {
     if (!demande || !choix) return;
+    if (cleRobot && !jetonRobot) {
+      setErreurRobot(voc("Cochez la case « Je ne suis pas un robot »."));
+      return;
+    }
+    setErreurRobot("");
     setEnvoi(true);
     if (enLigne && carte) {
       try {
-        await choisirOffre(demande.reference, choix, message, { mois: Number(mois), tranches: n });
+        await choisirOffre(demande.reference, choix, message, jetonRobot, { mois: Number(mois), tranches: n });
         setCarteEnvoyee(true);
       } catch (error) {
         notifications.show({ color: "red", message: messageErreurApi(error, voc("L'envoi n'a pas abouti. Réessayez.")) });
+        setCaseRobot((x) => x + 1);
       } finally {
         setEnvoi(false);
       }
@@ -94,22 +106,24 @@ export function AbonnementPage() {
     if (enLigne) {
       try {
         const { lien } = await payerOffre({ reference: demande.reference, offre: choix, mois: Number(mois),
-          tranches: choix === "STOCKAGE_PLUS" ? tranches : 0, message, langue: langue() });
+          tranches: choix === "STOCKAGE_PLUS" ? tranches : 0, message, langue: langue(), recaptcha: jetonRobot });
         // Page de paiement de CinetPay, qui ramène ensuite sur le site (confirmation et création de l'espace).
         if (!/^https:\/\/[a-z0-9.-]*cinetpay\.(net|co|com)\//.test(lien)) throw new Error("lien");
         window.location.assign(lien);
       } catch (error) {
         notifications.show({ color: "red", message: messageErreurApi(error, voc("Le paiement n'a pas pu être préparé. Réessayez dans un moment.")) });
+        setCaseRobot((x) => x + 1);
         setEnvoi(false);
       }
       return;
     }
     try {
-      const suite = await choisirOffre(demande.reference, choix, message);
+      const suite = await choisirOffre(demande.reference, choix, message, jetonRobot);
       setDemande(suite);
       try { sessionStorage.setItem(CLE_ABONNEMENT, JSON.stringify(suite)); } catch { /* navigation privée */ }
     } catch (error) {
       notifications.show({ color: "red", message: messageErreurApi(error, voc("L'envoi n'a pas abouti. Réessayez.")) });
+      setCaseRobot((x) => x + 1);
     } finally {
       setEnvoi(false);
     }
@@ -232,6 +246,7 @@ export function AbonnementPage() {
                     </>
                   )}
                   <Textarea label={voc("Précisions pour Expertise-ID (facultatif)")} autosize minRows={2} value={message} onChange={(e) => setMessage(e.currentTarget.value)} />
+                  {cleRobot && <CaseRobot key={caseRobot} cle={cleRobot} onJeton={setJetonRobot} error={erreurRobot} />}
                   <Group justify="flex-end">
                     <Button size="md" onClick={valider} loading={envoi} disabled={!choix}>{choix === "ESSAI" ? voc("Commencer mon essai gratuit") : !enLigne ? voc("Envoyer ma demande d'abonnement") : carte ? voc("Continuer avec la carte bancaire") : voc("Payer et créer mon espace")}</Button>
                   </Group>

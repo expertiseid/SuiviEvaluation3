@@ -639,6 +639,44 @@ def test_mot_de_passe_oublie(deux_organisations, settings):
         admin.save()
 
 
+def test_mot_de_passe_oublie_operateur_console(deux_organisations, settings):
+    """Opérateur Expertise-ID (base centrale) : le lien arrive aussi ; un compte ordinaire de la base centrale, non."""
+    import re
+
+    from django.core import mail
+    from django.core.cache import cache
+
+    from apps.accounts.models import User
+
+    settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    cache.clear()
+    operateur = User.objects.create_superuser(username="op_oubli", password="Ancien-mot-de-passe-3",
+                                              email="op-oubli@expertise-id.com", role="ADMIN")
+    simple = User.objects.create_user(username="simple_central", password="Ancien-mot-de-passe-3",
+                                      email="simple@expertise-id.com", role="ADMIN")
+    client = APIClient()
+    client.post("/api/v1/public/mot-de-passe-oublie/", {"courriel": "simple@expertise-id.com"})
+    assert not mail.outbox
+    client.post("/api/v1/public/mot-de-passe-oublie/", {"courriel": "Op-Oubli@expertise-id.com"})
+    assert mail.outbox[-1].to == ["op-oubli@expertise-id.com"]
+    jeton = re.search(r"jeton=(\S+)", mail.outbox[-1].body).group(1)
+    assert jeton.startswith("~")
+    # Le jeton d'un compte central ordinaire ne passerait pas.
+    from django.contrib.auth.tokens import default_token_generator
+    from django.utils.encoding import force_bytes
+    from django.utils.http import urlsafe_base64_encode
+
+    faux = f"~{urlsafe_base64_encode(force_bytes(simple.pk))}.{default_token_generator.make_token(simple)}"
+    assert client.post("/api/v1/public/mot-de-passe-oublie/verifier/", {"jeton": faux}).status_code == 400
+    assert client.post("/api/v1/public/mot-de-passe-oublie/verifier/", {"jeton": jeton}).data["compte"] .endswith("@expertise-id.com")
+    nouveau = "Nouveau-mot-de-passe-9"
+    assert client.post("/api/v1/public/mot-de-passe-oublie/changer/", {"jeton": jeton, "mot_de_passe": nouveau}).status_code == 200
+    etape = client.post("/api/v1/auth/token/", {"courriel": "op-oubli@expertise-id.com", "password": nouveau, "console": True},
+                        format="json").data
+    assert etape["jeton"].startswith("~")
+    User.objects.filter(pk__in=[operateur.pk, simple.pk]).delete()
+
+
 def test_base_vide_non_comptee(deux_organisations, settings, monkeypatch):
     """L'espace utilisé ne compte pas la base à vide (mesurée à l'activation), seulement ce qui s'y ajoute."""
     from . import gestion, quota

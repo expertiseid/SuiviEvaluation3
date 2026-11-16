@@ -2,12 +2,13 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Alert, Anchor, Button, Card, Checkbox, Container, Divider, Group, PasswordInput, Select, SimpleGrid, Stack, Text, Textarea, TextInput, Title } from "@mantine/core";
 import { Building2, KeyRound, UserRound } from "lucide-react";
-import { type ProfilOrganisation, creerProfil } from "../../api/identite";
+import { type ProfilOrganisation, creerProfil, useCleRobot } from "../../api/identite";
 import { messageErreurApi } from "../../utils/erreurs";
 import { voc } from "../../utils/vocabulaire";
 import { erreursParChamp } from "../plaintes/saisieRetour";
 import { CadreVitrine } from "./CadreVitrine";
 import { LiensLegaux } from "../../components/common/Logos";
+import { CaseRobot } from "../../components/common/CaseRobot";
 
 // Valeur enregistrée en français ; libellé traduit à l'affichage.
 const TYPES = () => [
@@ -43,6 +44,10 @@ export function InscriptionPage() {
   const [piege, setPiege] = useState("");
   const [erreurs, setErreurs] = useState<Record<string, string>>({});
   const [envoi, setEnvoi] = useState(false);
+  // Case « Je ne suis pas un robot » (si la plateforme a une clé) ; neuve après chaque refus du serveur.
+  const { data: cleRobot = "" } = useCleRobot();
+  const [jetonRobot, setJetonRobot] = useState("");
+  const [caseRobot, setCaseRobot] = useState(0);
   const changer = (x: Partial<ProfilOrganisation>) => setV((a) => ({ ...a, ...x }));
   const champ = (cle: keyof ProfilOrganisation) => ({
     value: String(v[cle] ?? ""),
@@ -56,14 +61,19 @@ export function InscriptionPage() {
       setErreurs({ confirmation: voc("Les deux mots de passe ne sont pas identiques.") });
       return;
     }
+    if (cleRobot && !jetonRobot) {
+      setErreurs({ recaptcha: voc("Cochez la case « Je ne suis pas un robot ».") });
+      return;
+    }
     setEnvoi(true);
     try {
-      const demande = await creerProfil({ ...v, site_web: piege });
+      const demande = await creerProfil({ ...v, site_web: piege, recaptcha: jetonRobot });
       try { sessionStorage.setItem(CLE_ABONNEMENT, JSON.stringify(demande)); } catch { /* navigation privée */ }
       navigate("/abonnement", { state: demande });
     } catch (error) {
       const parChamp = erreursParChamp(error);
       setErreurs(Object.keys(parChamp).length ? parChamp : { detail: messageErreurApi(error, voc("L'envoi n'a pas abouti. Réessayez.")) });
+      setCaseRobot((n) => n + 1);
       window.scrollTo(0, 0);
     } finally {
       setEnvoi(false);
@@ -119,10 +129,11 @@ export function InscriptionPage() {
                 style={{ display: "none" }} />
               <Checkbox checked={v.conditions} onChange={(e) => changer({ conditions: e.currentTarget.checked })} error={erreurs.conditions}
                 label={voc("J'accepte les conditions d'utilisation et la politique de confidentialité de la plateforme, et qu'Expertise-ID utilise ces informations pour me contacter et activer l'espace de mon organisation.")} />
+              {cleRobot && <CaseRobot key={caseRobot} cle={cleRobot} onJeton={setJetonRobot} error={erreurs.recaptcha} />}
               <LiensLegaux />
               <Group justify="space-between">
                 <Anchor component={Link} to="/login" size="sm">{voc("J'ai déjà un compte")}</Anchor>
-                <Button size="md" onClick={envoyer} loading={envoi}>{voc("Créer le profil")}</Button>
+                <Button size="md" onClick={envoyer} loading={envoi} disabled={!v.conditions || (!!cleRobot && !jetonRobot)}>{voc("Créer le profil")}</Button>
               </Group>
             </Stack>
           </Card>
