@@ -87,7 +87,7 @@ export function TableauHierarchique<T>({
               {cases.map((c, j) => {
                 if (c === "couverte" || c === undefined) return null;
                 if (c.element === null) {
-                  return <Table.Td key={j} rowSpan={c.lignes} colSpan={c.colonnes} bg="gray.0" />;
+                  return <Table.Td key={j} rowSpan={c.lignes} colSpan={"colonnes" in c ? c.colonnes : undefined} bg="gray.0" />;
                 }
                 return (
                   <Table.Td

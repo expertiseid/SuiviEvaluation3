@@ -56,11 +56,11 @@ function Boite({ structure, niveau, nbEnfants, replie, basculer, ouvrir, actions
           <Group justify="space-between" wrap="nowrap" gap={4} align="flex-start">
             <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
               <Icone size={16} color={`var(--mantine-color-${couleur}-7)`} style={{ flexShrink: 0 }} />
-              <Text fw={700} size="sm" truncate>{structure.code || structure.nom}</Text>
+              <Text fw={700} size="sm" truncate>{structure.sigle || structure.nom}</Text>
             </Group>
             <MenuActions structure={structure} racine={niveau === 0} {...actions} />
           </Group>
-          {structure.code && <Text size="sm" lineClamp={2} lh={1.3}>{structure.nom}</Text>}
+          {structure.sigle && <Text size="sm" lineClamp={2} lh={1.3}>{structure.nom}</Text>}
           {structure.responsable && <Text size="xs" c="dimmed" lineClamp={1}>{structure.responsable}</Text>}
           <Group gap={6} justify="space-between" wrap="nowrap">
             {structure.type ? <Badge variant="light" color={couleur} size="xs">{structure.type}</Badge> : <span />}

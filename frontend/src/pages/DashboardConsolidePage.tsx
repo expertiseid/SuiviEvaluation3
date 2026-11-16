@@ -231,7 +231,7 @@ export function DashboardConsolidePage() {
       {isLoading || !data ? (
         <Text c="dimmed">{voc("Chargement…")}</Text>
       ) : (
-        <Grid gutter="md" style={{ opacity: isFetching ? 0.6 : 1, transition: "opacity 150ms" }}>
+        <Grid gap="md" style={{ opacity: isFetching ? 0.6 : 1, transition: "opacity 150ms" }}>
           {visibles.length === 0 && (
             <Grid.Col span={12}>
               <Vide
@@ -406,7 +406,7 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
       cle: "cibles", titre: voc("Cibles des projets (par sexe et par statut)"), groupe: voc("Bénéficiaires"), largeur: 12,
       graphique: graphique(4, "colonnes"),
       rendu: (type) => (
-        <Grid gutter="lg">
+        <Grid gap="lg">
           <Grid.Col span={{ base: 12, lg: 4 }}>
             <Text fw={600} mb="xs">{voc("Cible totale :")} {cibles.totale.toLocaleString(locale())} {voc("personnes")}</Text>
             <CamembertChart

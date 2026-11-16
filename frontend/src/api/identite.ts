@@ -74,7 +74,7 @@ export interface DemandeAbonnement {
   reference: string;
   organisation: string;
   statut: "ABONNEMENT_REQUIS" | "OFFRE_CHOISIE" | "EN_ACTIVATION" | "ACTIVEE" | "REFUSEE";
-  offre: "" | "STANDARD_25" | "STANDARD_50" | "STANDARD" | "STOCKAGE_PLUS" | "PARTENARIAT";
+  offre: "" | "ESSAI" | "STANDARD_25" | "STANDARD_50" | "STANDARD" | "STOCKAGE_PLUS" | "PARTENARIAT";
   contact: string;
   /** Organisation activée (plateforme multi-organisations) : page de connexion. */
   espace: string;

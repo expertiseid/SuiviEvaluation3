@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Alert, Badge, Button, Card, Container, Group, List, NumberInput, SegmentedControl, Select, SimpleGrid, Stack, Text, Textarea, ThemeIcon, Title } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { CircleCheck, CreditCard, Gift, Handshake, HardDrive, Lock, Rocket, Server } from "lucide-react";
+import { CircleCheck, CreditCard, Gift, Handshake, Lock, Rocket, Server } from "lucide-react";
 import { type DemandeAbonnement, choisirOffre, payerOffre } from "../../api/identite";
 import { messageErreurApi } from "../../utils/erreurs";
 import { langue } from "../../utils/i18n";

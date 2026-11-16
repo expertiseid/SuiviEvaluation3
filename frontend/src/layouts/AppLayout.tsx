@@ -400,7 +400,7 @@ export function AppLayout() {
                 toutes les pages ; l'Administrateur y accède d'un clic, et est invité à l'ajouter s'il manque. */}
             {identite?.logo ? (
               <Tooltip label={voc("Changer le logo")} disabled={user?.role !== "ADMIN"}>
-                <Box component={user?.role === "ADMIN" ? Link : "div"} to="/organisation?onglet=identite"
+                <Box component={(user?.role === "ADMIN" ? Link : "div") as typeof Link} to="/organisation?onglet=identite"
                   bg="white" px={8} py={3} ms={{ base: 0, sm: "sm" }}
                   style={{ borderRadius: 8, display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                   <Image src={identite.logo} h={{ base: 28, sm: 38 }} w="auto" maw={160} fit="contain" alt={identite.nom || voc("Logo de l'organisation")} />

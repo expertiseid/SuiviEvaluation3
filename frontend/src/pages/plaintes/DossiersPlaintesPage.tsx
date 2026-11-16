@@ -271,7 +271,7 @@ export function DossiersPlaintesPage() {
           <Anchor component={Link} to="/plaintes/parametrage" size="sm">{voc("Ouvrir le paramétrage")}</Anchor>
         </Alert>
       )}
-      <Grid gutter="md">
+      <Grid gap="md">
         {/* Vues : colonne sur grand écran, liste déroulante sur téléphone. */}
         <Grid.Col span={{ base: 12, md: 3, xl: 2 }}>
           <Select hiddenFrom="md" label={voc("Vue")} allowDeselect={false} value={vueCourante} onChange={(v) => v && choisirVue(v)}

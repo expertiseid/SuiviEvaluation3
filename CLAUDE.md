@@ -101,7 +101,7 @@ docker compose up -d
 
   ```bash
   cd frontend
-  npx tsc --noEmit -p .
+  npx tsc --noEmit -p tsconfig.app.json   # pas « -p . » : tsconfig.json n'a aucun fichier, il ne vérifierait rien
   npx oxlint src
   npx vite build
   ```
