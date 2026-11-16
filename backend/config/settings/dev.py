@@ -17,3 +17,6 @@ if not REDIS_URL and "pytest" not in sys.modules:  # noqa: F405
     CACHES = {"default": {**CACHES["default"],  # noqa: F405
                           "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
                           "LOCATION": "/tmp/suivi-evaluation-cache"}}
+
+# Poste de développement : couches cartographiques intégrées disponibles pour les essais.
+CARTE_COUCHES_INTEGREES = env.bool("CARTE_COUCHES_INTEGREES", default=True)  # noqa: F405

@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppLayout } from "./layouts/AppLayout";
 import { RequireAuth } from "./auth/RequireAuth";
+import { ACCUEIL_APP } from "./utils/accueil";
 import { LoginPage } from "./auth/LoginPage";
 import { NouveauMotDePassePage } from "./auth/NouveauMotDePassePage";
 import { AbonnementPage } from "./pages/accueil/AbonnementPage";
@@ -75,7 +76,8 @@ export default function App() {
           </RequireAuth>
         }
       >
-        <Route path="/" element={<DashboardConsolidePage />} />
+        <Route path="/" element={<Navigate to={ACCUEIL_APP} replace />} />
+        <Route path={ACCUEIL_APP} element={<DashboardConsolidePage />} />
         <Route path="/projets" element={<ProjetsListPage />} />
         <Route path="/projets/:id" element={<ProjetDetailPage />} />
         <Route path="/indicateurs" element={<IndicateursListPage />} />

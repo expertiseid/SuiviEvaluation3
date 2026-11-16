@@ -169,9 +169,22 @@ def inscription(request):
     """Création du profil d'une organisation ; renvoie la référence pour la page d'abonnement."""
     from . import inscriptions
 
+    from .controle_robot import verifier
+
     if request.data.get("site_web"):  # champ piège, invisible pour une personne
         raise ValidationError({"detail": "Envoi refusé."})
+    verifier(request.data.get("recaptcha"), request.META.get("REMOTE_ADDR"))
     return Response(inscriptions.resume(inscriptions.creer(request.data)), status=201)
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def inscription_controle(request):
+    """Clé publique du contrôle anti-robot du formulaire d'inscription (vide : pas de contrôle)."""
+    from .controle_robot import cle_site
+
+    return Response({"recaptcha": cle_site()})
 
 
 @_public

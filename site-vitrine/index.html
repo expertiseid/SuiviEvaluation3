@@ -285,6 +285,7 @@
         <details><summary>Faut-il installer quelque chose ?</summary><p>Non. La plateforme s'utilise dans le navigateur, sur ordinateur, tablette ou téléphone. Chacun se connecte avec son adresse courriel et son mot de passe.</p></details>
         <details><summary>Nos données sont-elles visibles par d'autres organisations ?</summary><p>Jamais. Chaque organisation a sa propre base de données ; ses utilisateurs ne voient que leur espace.</p></details>
         <details><summary>Peut-on reprendre nos fichiers Excel existants ?</summary><p>Oui. Un modèle Excel unique permet d'importer d'un coup le cadre stratégique, les projets, la planification, les indicateurs et les bénéficiaires ; chaque partie peut aussi être importée séparément.</p></details>
+        <details><summary>Peut-on relier notre logiciel de comptabilité ou de ressources humaines ?</summary><p>Oui, c'est possible. Les dépenses enregistrées dans votre logiciel de comptabilité (Sage, TOMPRO, Odoo, QuickBooks…) peuvent alimenter le budget réalisé de chaque activité, sans double saisie : par import de fichier, ou par connexion automatique quand le logiciel le permet. Pour les ressources humaines, seuls des totaux par projet sont transmis, jamais les données individuelles des employés. <a href="contact.html">Contactez-nous</a> pour étudier votre cas.</p></details>
         <details><summary>Dans quelles langues ?</summary><p>Français, anglais, arabe, espagnol, allemand et italien : chaque utilisateur choisit la sienne.</p></details>
         <details><summary>Comment sont protégées nos données ?</summary><p>Par défaut, vos données sont hébergées en Allemagne, et chaque organisation a sa propre base de données ; vous pouvez aussi les placer sur le serveur de votre choix. Une fois l'emplacement de vos données choisi, notre équipe commerciale vous envoie notre accord de traitement des données (ATD) standard pour signature. Pour tout savoir, consultez la page <a href="securite.html">Sécurité des données</a>.</p></details>
         <details><summary>Comment se passe la connexion ?</summary><p>Avec votre adresse courriel et votre mot de passe, puis un code à six chiffres envoyé à votre adresse courriel à chaque connexion. Chaque compte doit donc avoir une adresse courriel valide.</p></details>
@@ -323,7 +324,7 @@
     </div>
     <div class="newsletter-pied">
       <div><h4>Newsletter</h4><p>Les nouveautés de la plateforme, les formations et les conseils d'Expertise-ID, dans votre boîte courriel.</p></div>
-      <form class="form-newsletter" novalidate>
+      <form class="form-newsletter" method="post" novalidate>
         <div class="ligne-newsletter"><input type="email" name="courriel" required autocomplete="email" placeholder="Votre adresse courriel" aria-label="Votre adresse courriel"><button class="bouton bouton-plein" type="submit">S'inscrire</button></div>
         <label class="case-newsletter"><input type="checkbox" name="accord"> <span>J'accepte de recevoir la newsletter ; je peux me désinscrire à tout moment.</span></label>
         <input type="text" name="site_web" class="piege" tabindex="-1" autocomplete="off" aria-hidden="true">
@@ -334,7 +335,7 @@
     <div class="bas"><span>© <span id="annee">2026</span> Expertise-ID</span><span>Fait pour les organisations de développement</span></div>
   </div>
 </footer>
-<script src="vitrine/traductions.js?v=20261112m"></script>
+<script src="vitrine/traductions.js?v=20261113a"></script>
 <script src="vitrine/langues.js?v=20261111a"></script>
 <script src="vitrine/site.js?v=20261111b"></script>
 </body>

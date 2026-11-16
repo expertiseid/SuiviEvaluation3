@@ -276,7 +276,12 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
         etendue = p.get("etendue", "pays")
         if sortie not in ("pdf", "png") or papier not in PAPIERS or orientation not in ("auto", "portrait", "paysage") or fond not in FONDS:
             raise ValidationError({"detail": "Paramètres invalides (sortie, papier, orientation ou fond)."})
-        couches = {c: True for c in p.get("couches", "points,regions,provinces,routes,noms").split(",") if c in COUCHES}
+        from apps.geo.services.couches import couches_integrees
+
+        integrees = couches_integrees()
+        # Sans couches intégrées (clients) : seulement les bénéficiaires et les couches importées.
+        couches = {c: True for c in p.get("couches", "points,regions,provinces,routes,noms").split(",")
+                   if c in COUCHES and (integrees or c in ("points", "beneficiaires"))}
         ids = [i for i in p.get("importees", "").split(",") if i.isdigit()]
         couches["importees"] = list(CoucheImportee.objects.filter(id__in=ids))
         from apps.geo.services.synthese import COURTS, INDICATEURS, ids_parametre, synthese_par_zone
@@ -292,7 +297,7 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
         elif projets:
             donnees["projet_nom"] = ", ".join(x.code for x in projets)
         par_zone = None
-        indicateurs = [i for i in p.get("par_zone", "").split(",") if i]
+        indicateurs = [i for i in p.get("par_zone", "").split(",") if i] if integrees else []
         if indicateurs:
             if any(i not in INDICATEURS for i in indicateurs):
                 raise ValidationError({"detail": "Indicateur par zone inconnu."})
@@ -309,7 +314,7 @@ class BeneficiaireViewSet(viewsets.ModelViewSet):
         try:
             contenu = rendre_carte(donnees, couches, papier=papier, orientation=orientation, sortie=sortie, titre_portee=portee, fond=fond,
                                    par_zone=par_zone, etendue=etendue,
-                                   titre=(p.get("titre") or "").strip()[:120], sous_titre=(p.get("sous_titre") or "").strip()[:200])
+                                   titre=(p.get("titre") or "").strip()[:120], sous_titre=(p.get("sous_titre") or "").strip()[:200], limites_integrees=integrees)
         except ValueError as exc:
             raise ValidationError({"detail": str(exc)})
         finally:

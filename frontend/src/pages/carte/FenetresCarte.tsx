@@ -22,6 +22,7 @@ import {
 import { notifications } from "@mantine/notifications";
 import { telechargerCarteImprimable, type OptionsCarteImprimable } from "../../api/beneficiaries";
 import { useImporterCouche, useModifierCouche, useSupprimerCouche, type CoucheImportee } from "../../api/geo";
+import { useIdentiteOrganisation } from "../../api/identite";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
 import { messageErreurApi } from "../../utils/erreurs";
 
@@ -185,6 +186,9 @@ export function TelechargerCarteModal({ options, couchesImportees, onClose }: {
   couchesImportees: CoucheImportee[];
   onClose: () => void;
 }) {
+  // Sans couches intégrées (clients) : ni limites, ni villes et villages, ni carte par zone.
+  const integrees = !!useIdentiteOrganisation().data?.carte_couches_integrees;
+  const couchesFond = integrees ? COUCHES_FOND : COUCHES_FOND.filter((c) => c.value === "points" || c.value === "beneficiaires");
   const [papier, setPapier] = useState<OptionsCarteImprimable["papier"]>("A3");
   const [orientation, setOrientation] = useState<OptionsCarteImprimable["orientation"]>("auto");
   const [sortie, setSortie] = useState<OptionsCarteImprimable["sortie"]>("pdf");
@@ -192,7 +196,7 @@ export function TelechargerCarteModal({ options, couchesImportees, onClose }: {
   const [fond, setFond] = useState(options.fond);
   const [parZone, setParZone] = useState(options.parZone);
   const [niveauZone, setNiveauZone] = useState(String(options.niveauZone));
-  const [etendue, setEtendue] = useState<OptionsCarteImprimable["etendue"]>("pays");
+  const [etendue, setEtendue] = useState<OptionsCarteImprimable["etendue"]>(integrees ? "pays" : "beneficiaires");
   const [titre, setTitre] = useState("");
   const [sousTitre, setSousTitre] = useState("");
   const [tente, setTente] = useState(false);
@@ -260,7 +264,7 @@ export function TelechargerCarteModal({ options, couchesImportees, onClose }: {
         <Bloc titre={voc("Contenu")}>
           <Stack gap="sm">
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-              <MultiSelect
+              {integrees && <MultiSelect
                 label={voc("Indicateurs par zone")}
                 description={voc("Le premier colorie les zones ; tous sont écrits sur chaque zone et dans le tableau.")}
                 placeholder={parZone.length ? "" : voc("Rien (carte des bénéficiaires)")}
@@ -271,7 +275,7 @@ export function TelechargerCarteModal({ options, couchesImportees, onClose }: {
                 searchable
                 maxDropdownHeight={320}
                 comboboxProps={{ zIndex: 1000 }}
-              />
+              />}
               {parZone.length > 0 ? (
                 <Reglage label={voc("Par")}>
                   <SegmentedControl fullWidth value={niveauZone} onChange={setNiveauZone}
@@ -281,7 +285,7 @@ export function TelechargerCarteModal({ options, couchesImportees, onClose }: {
                 <Reglage label={voc("Étendue")}>
                   <Text size="sm" c="dimmed" mt={6}>{voc("Étendue : la zone choisie dans le filtre.")}</Text>
                 </Reglage>
-              ) : (
+              ) : !integrees ? null : (
                 <Reglage label={voc("Étendue")}>
                   <SegmentedControl fullWidth value={etendue} onChange={(v) => setEtendue(v as OptionsCarteImprimable["etendue"])}
                     data={[{ value: "pays", label: voc("Tout le pays") }, { value: "beneficiaires", label: voc("Autour des bénéficiaires") }]} />
@@ -297,7 +301,7 @@ export function TelechargerCarteModal({ options, couchesImportees, onClose }: {
         <Bloc titre={voc("Couches")}>
           <Checkbox.Group value={couches} onChange={setCouches}>
             <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm" verticalSpacing="xs">
-              {COUCHES_FOND.map((c) => <Checkbox key={c.value} value={c.value} label={c.label} />)}
+              {couchesFond.map((c) => <Checkbox key={c.value} value={c.value} label={c.label} />)}
             </SimpleGrid>
           </Checkbox.Group>
           {couchesImportees.length > 0 && (

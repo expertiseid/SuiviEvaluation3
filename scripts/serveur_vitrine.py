@@ -20,7 +20,8 @@ class Gestionnaire(SimpleHTTPRequestHandler):
         api, plateforme = f"http://{hote}:8093", f"http://{hote}:5192"
         self.send_header(
             "Content-Security-Policy",
-            "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; "
+            "default-src 'self'; script-src 'self' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; "
+            "frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; style-src 'self'; font-src 'self'; "
             f"img-src 'self' data: {api} {plateforme}; media-src 'self' {plateforme}; connect-src 'self' {api} {plateforme}; "
             "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'",
         )

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Check, FileDown, Layers, Upload } from "lucide-react";
 import { Alert, Badge, Button, Card, Chip, Group, MultiSelect, SegmentedControl, SimpleGrid, Stack, Text } from "@mantine/core";
@@ -6,6 +6,7 @@ import { CircleMarker, GeoJSON, MapContainer, Marker, Popup, TileLayer, Tooltip,
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useCarteBeneficiaires, useChoixProjetsVariables, type FicheCarte } from "../../api/beneficiaries";
+import { useIdentiteOrganisation } from "../../api/identite";
 import {
   useCouchesImportees,
   useGeojsonCouche,
@@ -27,8 +28,15 @@ import { FiltresTableauDeBord } from "../../components/dashboard/FiltresTableauD
 import { FILTRES_PAR_DEFAUT, versParametres, type EtatFiltres } from "../../utils/filtresTableauDeBord";
 import { OutilsCarte } from "./OutilsCarte";
 
+
+const CLE_TAILLE_TEXTE = "carte_taille_texte";
+const TAILLES_TEXTE: [string, string][] = [["1", voc("Normal")], ["1.3", voc("Grand")], ["1.6", voc("Très grand")], ["2", voc("Énorme")]];
 import { locale, traduireDonnee } from "../../utils/i18n";
 const CENTRE_PAR_DEFAUT: [number, number] = [12.3, -1.6]; // Burkina Faso
+// Sans couches intégrées (clients) : la carte s'ouvre sur le monde entier.
+const CENTRE_MONDE: [number, number] = [15, 10];
+// Couches disponibles sans couches intégrées : les bénéficiaires de l'organisation (et ses couches importées).
+const COUCHES_PROPRES: Couche[] = ["points", "beneficiaires"];
 
 type Couche = "points" | "regions" | "provinces" | "communes" | "villages" | "noms" | "beneficiaires";
 const COUCHES: { value: Couche; label: string }[] = [
@@ -223,6 +231,14 @@ export function CartePage() {
   const [parZone, setParZone] = useState<IndicateurZone[]>([]);
   const parZoneActif = parZone.length > 0;
   const [niveauZone, setNiveauZone] = useState("1");
+  // Taille du texte écrit sur la carte (valeurs des indicateurs, noms) : retenue par ce navigateur.
+  const [tailleTexte, setTailleTexte] = useState(() => {
+    try { return localStorage.getItem(CLE_TAILLE_TEXTE) ?? "1"; } catch { return "1"; }
+  });
+  const choisirTailleTexte = (valeur: string) => {
+    setTailleTexte(valeur);
+    try { localStorage.setItem(CLE_TAILLE_TEXTE, valeur); } catch { /* navigation privée */ }
+  };
   const { data: couchesImportees = [] } = useCouchesImportees();
   const { peutEcrire } = useAccesModules();
   // Aucune couche affichée à l'ouverture : on choisit soi-même celles à voir.
@@ -240,7 +256,10 @@ export function CartePage() {
     zones.forEach((z) => groupes.set(traduireDonnee(z.niveau_administratif_nom), [...(groupes.get(traduireDonnee(z.niveau_administratif_nom)) ?? []), { value: String(z.id), label: z.nom }]));
     return [...groupes.entries()].map(([group, items]) => ({ group, items: items.sort((a, b) => a.label.localeCompare(b.label)) }));
   }, [zones]);
-  const { data: regions, isError: limitesIndisponibles } = useLimitesAdministratives(pays, 1);
+  const { data: plateforme } = useIdentiteOrganisation();
+  // Couches intégrées (limites, villes et villages) : non pour les clients, qui importent les leurs.
+  const integrees = !!plateforme?.carte_couches_integrees;
+  const { data: regions, isError: limitesIndisponibles } = useLimitesAdministratives(integrees ? pays : undefined, 1);
   const active = (c: Couche) => couches.includes(c);
   // Par défaut : fond neutre si une base nationale (avec ses noms) est importée, sinon OpenStreetMap.
   const fondChoisi = fond ?? (regions && regions.source !== "geoBoundaries" ? "neutre" : "osm");
@@ -374,7 +393,7 @@ export function CartePage() {
           data={[
             {
               group: voc("Couches de base"),
-              items: COUCHES,
+              items: integrees ? COUCHES : COUCHES.filter((c) => COUCHES_PROPRES.includes(c.value)),
             },
             ...(couchesImportees.length
               ? [{ group: voc("Couches importées"), items: couchesImportees.map((c) => ({ value: `import:${c.id}`, label: c.nom })) }]
@@ -399,7 +418,7 @@ export function CartePage() {
           <Button size="compact-xs" variant="subtle" leftSection={<Layers size={12} />} onClick={() => setFenetre("gerer")}>{voc("Gérer")}</Button>
         )}
       </Group>
-      <Group gap="xs">
+      {integrees && <Group gap="xs">
         <Text size="sm" fw={500}>{voc("Par zone :")}</Text>
         <MultiSelect
           size="xs"
@@ -427,6 +446,15 @@ export function CartePage() {
             data={[{ value: "1", label: voc("Régions") }, { value: "2", label: voc("Provinces") }, { value: "3", label: voc("Communes") }]}
           />
         )}
+      </Group>}
+      <Group gap="xs">
+        <Text size="sm" fw={500}>{voc("Taille du texte :")}</Text>
+        <SegmentedControl
+          size="xs"
+          value={tailleTexte}
+          onChange={choisirTailleTexte}
+          data={TAILLES_TEXTE.map(([value, label]) => ({ value, label }))}
+        />
       </Group>
       <Group gap="xs">
         <Text size="sm" fw={500}>{voc("Fond :")}</Text>
@@ -440,13 +468,14 @@ export function CartePage() {
       </Group>
 
       {/* « isolate » : les calques Leaflet (z-index 400+) restent sous les fenêtres et menus. */}
-      <Card ref={setEncadre} className="encadre-carte" withBorder padding={0} radius="md" style={{ overflow: "hidden", isolation: "isolate" }}>
+      <Card ref={setEncadre} className="encadre-carte" withBorder padding={0} radius="md"
+        style={{ overflow: "hidden", isolation: "isolate", "--echelle-texte": tailleTexte } as CSSProperties}>
         {isLoading ? (
           <Text p="md">{voc("Chargement…")}</Text>
         ) : (
           <MapContainer
-            key={JSON.stringify(cadre)}
-            {...(cadre ? { bounds: cadre } : { center: CENTRE_PAR_DEFAUT, zoom: 6 })}
+            key={integrees ? JSON.stringify(cadre) : "monde"}
+            {...(!integrees ? { center: CENTRE_MONDE, zoom: 2 } : cadre ? { bounds: cadre } : { center: CENTRE_PAR_DEFAUT, zoom: 6 })}
             style={{ height: "min(600px, 70vh)", width: "100%" }}
             scrollWheelZoom
             preferCanvas

@@ -5,7 +5,11 @@
 set -euo pipefail
 NOM="${1:?Nom du réglage manquant (ex. CINETPAY_API_PASSWORD)}"
 cd "$(dirname "$0")"
-grep -q "^$NOM=" .env.prod || { echo "Réglage $NOM absent de .env.prod : rien n'a été changé."; exit 1; }
+case "$NOM" in
+  *[!A-Z0-9_]* | "") echo "Nom de réglage invalide : $NOM"; exit 1 ;;
+esac
+# Réglage nouveau (ex. RECAPTCHA_CLE_SECRETE) : ajouté, vide, puis rempli comme les autres.
+grep -q "^$NOM=" .env.prod || { echo "Réglage $NOM absent de .env.prod : il est ajouté."; echo "$NOM=" >> .env.prod; }
 
 read -r -s -p "Nouvelle valeur de $NOM (rien ne s'affiche, c'est normal) : " VALEUR; echo
 read -r -s -p "Encore une fois : " ENCORE; echo

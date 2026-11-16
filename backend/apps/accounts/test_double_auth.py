@@ -22,6 +22,8 @@ MOI = "/api/v1/utilisateurs/me/"
 @pytest.fixture(autouse=True)
 def courriel_de_test(settings):
     settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    # Code exigé ici même sur un poste où il est désactivé (DOUBLE_AUTH_OBLIGATOIRE=False dans .env).
+    settings.DOUBLE_AUTH_OBLIGATOIRE = True
 
 
 @pytest.fixture

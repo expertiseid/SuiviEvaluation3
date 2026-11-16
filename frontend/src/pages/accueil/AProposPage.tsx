@@ -5,6 +5,7 @@ import { useIdentiteOrganisation } from "../../api/identite";
 import { useAuth } from "../../auth/useAuth";
 import { LogoComplet } from "../../components/common/Logos";
 import { voc } from "../../utils/vocabulaire";
+import { ACCUEIL_APP } from "../../utils/accueil";
 import { CadreVitrine } from "./CadreVitrine";
 
 function Contenu() {
@@ -64,7 +65,7 @@ export function AProposPage() {
       <Box bg="gray.0" mih="100vh" py="lg">
         <Container size="lg">
           <Stack gap="md">
-            <Button component={Link} to="/" variant="subtle" leftSection={<ArrowLeft size={16} />} w="fit-content">{voc("Retour à la plateforme")}</Button>
+            <Button component={Link} to={ACCUEIL_APP} variant="subtle" leftSection={<ArrowLeft size={16} />} w="fit-content">{voc("Retour à la plateforme")}</Button>
             <Contenu />
           </Stack>
         </Container>

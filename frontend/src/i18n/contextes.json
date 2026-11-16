@@ -313,6 +313,9 @@
  "{0} caractères maximum par terme.": [
   "serveur"
  ],
+ "{0} compte(s) ajouté(s) désactivé(s) : activez-les dans Utilisateurs si besoin.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "{0} créé(s), {1} mis à jour": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
@@ -617,6 +620,9 @@
  "1 mois": [
   "pages/accueil/AbonnementPage.tsx"
  ],
+ "1. Cadres stratégiques (avec leurs programmes)": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "1. Télécharge le canevas : la planification du projet et ses indicateurs y sont déjà, il ne reste que les objectifs de la période à saisir (colonnes bleues). 2. Complète-le hors ligne. 3. Réimporte-le : un aperçu montre les objectifs ajoutés ou modifiés, et les cellules en erreur, avant tout enregistrement.": [
   "pages/projets/PlanificationPeriodeTab.tsx"
  ],
@@ -634,6 +640,12 @@
  ],
  "2 ans (24 mois)": [
   "pages/accueil/AbonnementPage.tsx"
+ ],
+ "2. Projets": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
+ "2. Projets de ces cadres": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "21 à 50 projets": [
   "pages/accueil/InscriptionPage.tsx"
@@ -1078,11 +1090,17 @@
   "pages/geo/ZonesAdministrativesPage.tsx",
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
  ],
+ "Ajouter à ce qui existe (recommandé)": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "Ajouter à l'équipe": [
   "pages/projets/EquipeTab.tsx"
  ],
  "Ajouter ce partenaire": [
   "pages/projets/ProjetForm.tsx"
+ ],
+ "Ajouter ces données à la plateforme": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "Ajouter cette zone": [
   "pages/projets/ProjetForm.tsx",
@@ -1210,6 +1228,9 @@
  "Alerter avant l'échéance (jours)": [
   "pages/parametres/ParametresAlertePage.tsx"
  ],
+ "Alloué": [
+  "utils/carteParZone.ts"
+ ],
  "Alloué aux activités": [
   "pages/DashboardConsolidePage.tsx"
  ],
@@ -1252,6 +1273,7 @@
   "pages/console/Newsletter.tsx",
   "pages/console/SiteVitrine.tsx",
   "pages/langues/LanguesPage.tsx",
+  "pages/organisation/SauvegardeTransfert.tsx",
   "pages/plaintes/ActionsCorrectivesPage.tsx",
   "pages/plaintes/DonneesPersonnellesPlaintes.tsx",
   "pages/plaintes/HabilitationsPlaintes.tsx",
@@ -1339,6 +1361,12 @@
  ],
  "après déduction de {0}": [
   "pages/abonnement/MonAbonnementPage.tsx"
+ ],
+ "Après le téléchargement, ces éléments seront supprimés définitivement de cet espace, avec tout ce qui leur appartient (planification, indicateurs, suivis, documents, plaintes). Seul le fichier zip les gardera.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
+ "Après le téléchargement, TOUTES les données de cet espace seront supprimées définitivement : stratégies, projets, planification, indicateurs, suivis, bénéficiaires, documents, plaintes, partenaires et fichiers. Seul le fichier zip les gardera.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "Arborescence": [
   "pages/geo/ZonesAdministrativesPage.tsx",
@@ -1670,6 +1698,9 @@
  ],
  "Aucun projet rattaché à ce cadre stratégique.": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
+ ],
+ "Aucun projet rattaché à ces cadres": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "Aucun résultat ne correspond à la recherche.": [
   "pages/projets/ProjetDetailPage.tsx"
@@ -2162,6 +2193,9 @@
   "pages/strategie/CadreTableau.tsx",
   "serveur"
  ],
+ "Budget alloué aux activités (FCFA)": [
+  "utils/carteParZone.ts"
+ ],
  "Budget dépensé (FCFA)": [
   "pages/strategie/AxesBudgetsTab.tsx"
  ],
@@ -2224,6 +2258,7 @@
  "Cadre stratégique": [
   "layouts/AppLayout.tsx",
   "pages/langues/LanguesPage.tsx",
+  "pages/organisation/SauvegardeTransfert.tsx",
   "pages/planification/PlanificationImportPage.tsx",
   "pages/projets/ProjetForm.tsx",
   "pages/strategie/CadreStrategiqueDetailPage.tsx",
@@ -2389,11 +2424,23 @@
  "Ce dossier sera traité dans le circuit confidentiel : seuls l'Administrateur et les personnes désignées par l'organisation y ont accès. N'en parlez qu'aux personnes prévues par les règles de confidentialité et de signalement de votre organisation.": [
   "pages/plaintes/SaisieDossierModal.tsx"
  ],
+ "Ce fichier contient des données personnelles en clair (bénéficiaires, plaignants, pièces jointes). Gardez-le en lieu sûr et ne l'envoyez jamais par courriel.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
+ "Ce fichier est un extrait (quelques projets ou cadres) : il s'ajoute à cet espace.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
+ "Ce fichier n'est pas un zip valide.": [
+  "serveur"
+ ],
  "Ce fichier n'est pas une image valide.": [
   "serveur"
  ],
  "Ce fichier n'est plus lisible.": [
   "serveur"
+ ],
+ "Ce fichier ne peut pas être repris.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "Ce financement a des rallonges : à gérer dans l'onglet Financement": [
   "pages/projets/BailleursMontants.tsx"
@@ -2543,6 +2590,9 @@
  ],
  "Cet espace est déjà créé ou en cours de création.": [
   "serveur"
+ ],
+ "Cet espace garde tout ce qu'il a ; les données de la sauvegarde s'y ajoutent. Ce qui existe déjà (zones, comptes, bailleurs, réglages…) n'est pas dupliqué ; un projet dont le code existe déjà est ajouté avec un code suffixé « -R1 ».": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "Cet indicateur": [
   "pages/parametres/ParametresAlertePage.tsx"
@@ -2798,6 +2848,12 @@
  ],
  "Choisir un ou plusieurs bénéficiaires…": [
   "components/beneficiaires/BeneficiairesTab.tsx"
+ ],
+ "Choisir un ou plusieurs cadres": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
+ "Choisir un ou plusieurs projets": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "Choisir un rôle ou une personne…": [
   "pages/plaintes/CircuitsPlaintes.tsx"
@@ -3115,6 +3171,9 @@
  ],
  "Coche les blocs à afficher. Le type de chaque graphique se change avec le petit bouton en haut à droite du bloc. Ces choix s'appliquent au tableau de bord de tous les utilisateurs.": [
   "components/dashboard/PersonnalisationModal.tsx"
+ ],
+ "Cochez la case « Je ne suis pas un robot ».": [
+  "serveur"
  ],
  "Code": [
   "pages/DashboardConsolidePage.tsx",
@@ -4148,11 +4207,20 @@
  "Donne un nom à la période et choisis ses dates.": [
   "pages/parametres/RapportageCard.tsx"
  ],
+ "Données importées : {0} éléments créés, {1} déjà présents réutilisés, {2} codes suffixés « -R ».": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
+ "Données importées : {0} éléments. Reconnectez-vous avec les comptes de l'espace sauvegardé : retour à la connexion dans quelques secondes.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "Données personnelles": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
  "Données protégées chiffrées, liens de téléchargement temporaires": [
   "pages/accueil/AProposPage.tsx"
+ ],
+ "Données téléchargées : le fichier zip se trouve dans les téléchargements de votre ordinateur.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "dont {0} j de prolongation": [
   "pages/plaintes/DossierPlaintePage.tsx"
@@ -4579,6 +4647,9 @@
  "En vous connectant, vous acceptez les conditions d'utilisation et la politique de confidentialité de la plateforme.": [
   "auth/LoginPage.tsx"
  ],
+ "Énorme": [
+  "pages/carte/CartePage.tsx"
+ ],
  "Enquête de satisfaction": [
   "api/plaintes.ts"
  ],
@@ -4734,6 +4805,9 @@
  ],
  "Envoyer aussi les notifications par courriel": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
+ ],
+ "Envoyer et vérifier": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "Envoyer la demande": [
   "pages/plaintes/HabilitationsPlaintes.tsx"
@@ -5409,6 +5483,9 @@
  "Exporter les bénéficiaires": [
   "pages/beneficiaires/ExportBeneficiairesModal.tsx"
  ],
+ "Exporter les données": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "Exports Excel, PDF et Word, en français, anglais, arabe, espagnol, allemand et italien.": [
   "pages/accueil/AccueilPage.tsx"
  ],
@@ -5417,6 +5494,9 @@
  ],
  "Extrait de la vidéo de présentation.": [
   "pages/formation/FormationPage.tsx"
+ ],
+ "Extrait téléchargé, puis retiré de la plateforme : {0} projet(s) et {1} cadre(s) stratégique(s) supprimés.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "Facultatif": [
   "pages/geo/ZonesAdministrativesPage.tsx",
@@ -5430,6 +5510,9 @@
  ],
  "Facultatif — le taux de cette activité vient de la saisie ci-dessus ; cette partie enregistre le budget dépensé, le statut et un commentaire pour la période.": [
   "components/suivi/SaisieSuiviMethode.tsx"
+ ],
+ "Facultatif : laissez vide pour choisir des projets parmi tous ceux de l'espace.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "Facultatif : noms ou fonctions de personnes sans compte.": [
   "pages/plaintes/SaisieDossierModal.tsx"
@@ -5527,9 +5610,15 @@
  "Fichier de la chaîne des documents : {0} document(s) créé(s), {1} mis à jour.": [
   "serveur"
  ],
+ "Fichier de sauvegarde (.zip)": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "Fichier Excel (.xlsx)": [
   "pages/projets/ExportPlanification.tsx",
   "pages/strategie/ChaineDocumentsModal.tsx"
+ ],
+ "Fichier introuvable : envoyez-le de nouveau.": [
+  "serveur"
  ],
  "Fichiers": [
   "components/documents/DocumentsTab.tsx",
@@ -5697,6 +5786,9 @@
  ],
  "Global : {0} {1}": [
   "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Grand": [
+  "pages/carte/CartePage.tsx"
  ],
  "Graphiques": [
   "pages/langues/LanguesPage.tsx"
@@ -5896,6 +5988,9 @@
  "Import combiné — un seul fichier Excel": [
   "pages/planification/PlanificationImportPage.tsx"
  ],
+ "Import en cours : cela peut prendre plusieurs minutes. Ne fermez pas cette page.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "Import impossible": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
@@ -5954,6 +6049,9 @@
  "Importer une liste (Excel)": [
   "pages/projets/BeneficiairesProjetSection.tsx"
  ],
+ "Impossible : {0} projet(s) de ces cadres resteraient ici sans cadre. Gardez tous leurs projets dans la liste pour retirer les cadres.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "Impossible de créer cet indicateur : ": [
   "serveur"
  ],
@@ -5987,6 +6085,15 @@
  ],
  "Imprimer les cartes de ce projet": [
   "pages/beneficiaires/BeneficiairesListPage.tsx"
+ ],
+ "Ind. à risque": [
+  "utils/carteParZone.ts"
+ ],
+ "Ind. conformes": [
+  "utils/carteParZone.ts"
+ ],
+ "Ind. critiques": [
+  "utils/carteParZone.ts"
  ],
  "Indicateur": [
   "pages/indicateurs/IndicateursListPage.tsx",
@@ -6039,6 +6146,15 @@
  ],
  "Indicateurs (référence, cible, réalisé)": [
   "pages/projets/CadreLogiqueTab.tsx"
+ ],
+ "Indicateurs à risque (paliers intermédiaires)": [
+  "utils/carteParZone.ts"
+ ],
+ "Indicateurs conformes (palier le plus haut)": [
+  "utils/carteParZone.ts"
+ ],
+ "Indicateurs critiques (palier le plus bas)": [
+  "utils/carteParZone.ts"
  ],
  "Indicateurs et suivi": [
   "pages/accueil/AccueilPage.tsx"
@@ -6231,6 +6347,9 @@
  ],
  "J'accepte que les informations de ce formulaire soient utilisées pour traiter mon retour.": [
   "pages/plaintes/public/FormulairePublicPage.tsx"
+ ],
+ "J'ai compris : télécharger et supprimer": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "J'ai déjà un code de suivi": [
   "pages/plaintes/public/FormulairePublicPage.tsx"
@@ -6547,11 +6666,20 @@
  "La réouverture est réservée à l'Administrateur et au Coordonnateur général.": [
   "serveur"
  ],
+ "La reprise a échoué : rien n'a été modifié.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
+ "La reprise d'une sauvegarde n'est pas possible dans l'espace de démonstration.": [
+  "serveur"
+ ],
  "La restauration n'a pas abouti.": [
   "pages/documents/CorbeillePage.tsx"
  ],
  "La saisie des valeurs réalisées et leur évolution dans le temps se font depuis le module Suivi.": [
   "pages/indicateurs/IndicateurDetailPage.tsx"
+ ],
+ "La sauvegarde n'a pas pu être créée.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "La suppression n'a pas abouti.": [
   "pages/console/Newsletter.tsx"
@@ -6623,6 +6751,12 @@
   "auth/LoginPage.tsx",
   "serveur"
  ],
+ "Le contrôle anti-robot a expiré ou n'est pas valide : cochez de nouveau la case.": [
+  "serveur"
+ ],
+ "Le contrôle anti-robot n'a pas pu être vérifié. Réessayez dans un instant.": [
+  "serveur"
+ ],
  "Le cours en ligne complet (leçons pas à pas, vidéos, exercices, quiz et attestation) s'ouvre dès que l'abonnement de votre organisation est activé.": [
   "pages/formation/FormationPage.tsx"
  ],
@@ -6680,6 +6814,9 @@
  "Le dossier repassera au circuit ordinaire. À réserver aux signalements sans objet ; le motif est inscrit au journal.": [
   "pages/plaintes/DossierPlaintePage.tsx"
  ],
+ "Le fichier est téléchargé, mais la suppression a échoué : rien n'a été supprimé.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "Le fichier est un classeur à plusieurs feuilles (Cadre stratégique, Structuration, Projet, Planification, Indicateurs, Bénéficiaires), avec une colonne par niveau pour les hiérarchies. Seule la feuille « Projet » est obligatoire — les autres sections sont ignorées si elles sont laissées vides. Les bénéficiaires importés sont automatiquement inscrits au projet créé.": [
   "pages/planification/PlanificationImportPage.tsx"
  ],
@@ -6694,6 +6831,9 @@
  ],
  "Le gestionnaire est prévenu quand l'échéance approche.": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
+ ],
+ "Le journal d'audit est conservé ; les événements de l'espace sauvegardé s'y ajoutent.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "Le libellé est requis.": [
   "pages/projets/ActiviteForm.tsx",
@@ -6932,6 +7072,12 @@
  ],
  "Les plaignants peuvent joindre des fichiers (formulaire public et complément)": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
+ ],
+ "Les programmes de ces cadres sont aussi retirés.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
+ "Les projets et cadres choisis seront supprimés de cet espace dès que le fichier sera téléchargé. Les zones, comptes, bailleurs et bénéficiaires restent.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "Les réalisations seulement": [
   "utils/rapportage.ts"
@@ -7399,6 +7545,9 @@
   "pages/stockage/StockagePage.tsx"
  ],
  "Mode de réponse inconnu.": [
+  "serveur"
+ ],
+ "Mode de reprise inconnu.": [
   "serveur"
  ],
  "Mode démonstration": [
@@ -7956,6 +8105,9 @@
  ],
  "Non validé": [
   "pages/projets/AvancementModal.tsx"
+ ],
+ "Normal": [
+  "pages/carte/CartePage.tsx"
  ],
  "Note": [
   "pages/plaintes/DossierPlaintePage.tsx",
@@ -8938,6 +9090,9 @@
   "pages/suivi/SuiviProjetDashboard.tsx",
   "utils/statusTones.ts"
  ],
+ "plateforme": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "Plateforme de monitoring": [
   "components/common/Logos.tsx"
  ],
@@ -9020,6 +9175,9 @@
  "Pour confirmer, recopiez le numéro du dossier : {0}": [
   "pages/plaintes/OperationsDossier.tsx"
  ],
+ "Pour confirmer, tapez {0}": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "Pour faire traduire une langue entière, exportez-la, faites compléter la colonne de traduction dans Excel puis importez le fichier.": [
   "pages/langues/LanguesPage.tsx"
  ],
@@ -9039,6 +9197,9 @@
  ],
  "Pour rapprocher des retours qui concernent le même problème. Rien n'est fusionné automatiquement.": [
   "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Pour retrouver, dans cet espace, tout ce que vous aviez dans un autre (sur cette plateforme ou une autre).": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "Pour terminer le dossier, utilisez « Clôturer » (motif, décision et retour au plaignant).": [
   "serveur"
@@ -9090,6 +9251,9 @@
   "pages/beneficiaires/BeneficiaireForm.tsx",
   "pages/projets/EquipeTab.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Préparation du fichier : cela peut prendre quelques minutes.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "Présélectionnée automatiquement — change-la ou vide-la si tu ne veux pas rattacher la personne à une équipe précise.": [
   "pages/projets/EquipeTab.tsx"
@@ -9182,6 +9346,7 @@
   "pages/beneficiaires/BeneficiaireDetailPage.tsx",
   "pages/carte/CarteParZone.tsx",
   "pages/organisation/OrganisationPage.tsx",
+  "pages/organisation/SauvegardeTransfert.tsx",
   "pages/parametres/ParametresAlertePage.tsx",
   "pages/parametres/RapportageCard.tsx",
   "pages/plaintes/ActionsCorrectivesPage.tsx",
@@ -9470,6 +9635,12 @@
  "Réalisation": [
   "pages/indicateurs/IndicateursListPage.tsx"
  ],
+ "Réalisation ind.": [
+  "utils/carteParZone.ts"
+ ],
+ "Réalisation moyenne des indicateurs (%)": [
+  "utils/carteParZone.ts"
+ ],
  "Réalise": [
   "pages/projets/PartenairesProjetTab.tsx"
  ],
@@ -9734,6 +9905,12 @@
  "Remplace les termes de la plateforme par ceux de ton organisation : ils changent partout (écrans, formulaires, rattachements, messages, exports). Indique le singulier, le pluriel et le genre (pour accorder « un/une », « le/la », « nouveau/nouvelle »…). Laisse vide pour garder le terme par défaut.": [
   "layouts/AppLayout.tsx"
  ],
+ "Remplacer le contenu de cet espace": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
+ "Remplacer tout le contenu": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "Remplacez d'abord les rôles des étapes par des personnes nommément désignées.": [
   "serveur"
  ],
@@ -9805,6 +9982,9 @@
  "Reprendre à l'étape": [
   "pages/plaintes/OperationsDossier.tsx"
  ],
+ "Reprendre une sauvegarde": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "reprise de l'existant": [
   "pages/journal-audit/JournalAuditPage.tsx"
  ],
@@ -9846,6 +10026,9 @@
  ],
  "Restaurer": [
   "pages/documents/CorbeillePage.tsx"
+ ],
+ "Restent : les comptes des utilisateurs, les réglages, le logo, les zones et les listes de référence.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "Résultat": [
   "components/suivi/ImportCanevasSuiviModal.tsx"
@@ -9893,6 +10076,12 @@
  ],
  "Retirer de ce projet (reste dans les autres)": [
   "pages/projets/EquipeTab.tsx"
+ ],
+ "Retirer de la plateforme ?": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
+ "Retirer de la plateforme ce qui est exporté (après le téléchargement)": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "Retirer l'attribut": [
   "components/common/AttributsLibres.tsx"
@@ -10210,8 +10399,17 @@
  "Saut autorisé": [
   "pages/geo/ZonesAdministrativesPage.tsx"
  ],
+ "Sauvegarde de « {0} » du {1} : {2} éléments.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "Sauvegarde de toutes les bases et de tous les fichiers chaque nuit à 2 h, 7 jours gardés.": [
   "pages/console/Supervision.tsx"
+ ],
+ "Sauvegarde et transfert": [
+  "pages/organisation/OrganisationPage.tsx"
+ ],
+ "Sauvegarde téléchargée, puis données de l'espace effacées : {0} éléments supprimés. Les comptes et les réglages sont gardés.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "Scanner pour ouvrir cette fiche": [
   "pages/beneficiaires/BeneficiaireDetailPage.tsx"
@@ -10400,6 +10598,9 @@
  "Seulement les éléments prévus à ces dates": [
   "pages/projets/PlanificationPeriodeTab.tsx"
  ],
+ "Seulement les projets et les cadres stratégiques choisis, avec tout ce qui leur appartient (planification, indicateurs, suivis, documents, plaintes, bénéficiaires inscrits). Les zones, bailleurs, partenaires et comptes cités viennent avec ; les autres projets restent ici.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "Seuls l'Administrateur et les personnes habilitées gèrent les habilitations confidentielles.": [
   "pages/plaintes/HabilitationsPlaintes.tsx",
   "serveur"
@@ -10425,6 +10626,9 @@
  ],
  "Shapefile dans une archive .zip (avec ses fichiers .shp, .shx, .dbf et .prj), GeoPackage (.gpkg), GeoJSON ou KML. La projection est lue dans le fichier et convertie automatiquement.": [
   "pages/carte/FenetresCarte.tsx"
+ ],
+ "Si le téléchargement n'aboutit pas, rien n'est supprimé.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "Si oui, il est traité de façon confidentielle par des personnes désignées.": [
   "pages/plaintes/ChampsRetour.tsx"
@@ -10960,6 +11164,9 @@
  "Taille du portefeuille": [
   "pages/accueil/InscriptionPage.tsx"
  ],
+ "Taille du texte :": [
+  "pages/carte/CartePage.tsx"
+ ],
  "Taille maximale d'un fichier joint (Mo)": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
@@ -11034,9 +11241,24 @@
  "Télécharger cette version": [
   "components/documents/DocumentsTab.tsx"
  ],
+ "Télécharger et vider l'espace": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
+ "Télécharger l'extrait": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
+ "Télécharger l'extrait et le retirer": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "Télécharger la carte": [
   "pages/carte/CartePage.tsx",
   "pages/carte/FenetresCarte.tsx"
+ ],
+ "Télécharger la sauvegarde complète": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
+ "Télécharger la sauvegarde et vider l'espace": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "Télécharger le canevas": [
   "pages/plaintes/ParametragePlaintesPage.tsx",
@@ -11208,6 +11430,9 @@
   "pages/plaintes/TableauPlaintesPage.tsx",
   "pages/utilisateurs/RolesTab.tsx"
  ],
+ "Tous les projets de ces cadres sont choisis : retirez ceux à ne pas emporter.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "Tous les statuts": [
   "components/dashboard/FiltresTableauDeBord.tsx",
   "pages/console/Newsletter.tsx",
@@ -11234,6 +11459,12 @@
  ],
  "Tout fonctionne normalement.": [
   "pages/console/Supervision.tsx"
+ ],
+ "Tout l'espace": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
+ "Tout le contenu actuel de cet espace est remplacé par celui de la sauvegarde. Ensuite, on se connecte avec les comptes de l'espace sauvegardé ; votre compte est gardé s'il n'y figure pas.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "Tout le cycle du projet, au même endroit": [
   "pages/accueil/AccueilPage.tsx"
@@ -11302,6 +11533,9 @@
  "Toutes les catégories": [
   "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
+ "Toutes les données seront supprimées dès que le fichier sera téléchargé : stratégies, projets, bénéficiaires, documents, plaintes, partenaires et fichiers. Les comptes, les réglages, le logo, les zones et les listes de référence restent.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "Toutes les priorités": [
   "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
@@ -11344,6 +11578,9 @@
  "Transmis au circuit confidentiel": [
   "pages/plaintes/OperationsDossier.tsx",
   "pages/plaintes/SaisieDossierModal.tsx"
+ ],
+ "Très grand": [
+  "pages/carte/CartePage.tsx"
  ],
  "Trimestres": [
   "pages/projets/PlanificationTableau.tsx",
@@ -11467,6 +11704,9 @@
  "Un élément ne peut pas contribuer à lui-même ni à ses descendants.": [
   "serveur"
  ],
+ "Un extrait se reprend toujours en mode « Ajouter » : il ne peut jamais effacer l'espace qui le reçoit. Les comptes cités y arrivent désactivés.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "Un fichier dépasse la taille maximale de {0} Mo.": [
   "serveur"
  ],
@@ -11524,6 +11764,9 @@
  "Un seul fichier pour toute la chaîne : feuille « Maillons » (les rubriques), « Documents » (chaque document et son rattachement) et « Éléments » (la structuration de chaque document et l'élément au-dessus auquel chacun contribue). Réimporter met à jour sans dupliquer.": [
   "pages/strategie/ChaineDocumentsModal.tsx"
  ],
+ "Un seul fichier zip avec toutes les données de votre espace : stratégies, projets, planification, indicateurs, suivis, bénéficiaires, documents, plaintes, comptes, réglages et fichiers.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "Un shapefile se compose de plusieurs fichiers : envoyez-les ensemble dans une archive .zip.": [
   "serveur"
  ],
@@ -11574,6 +11817,9 @@
  ],
  "Une réponse est attendue au plus tard un mois après la réception.": [
   "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
+ ],
+ "Une sélection": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "Une seule colonne de niveau doit être remplie par ligne — ligne ignorée.": [
   "serveur"
@@ -11801,6 +12047,9 @@
  "Versions": [
   "components/documents/ExplorateurDocuments.tsx"
  ],
+ "Veuillez patienter…": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "Vide : celle du niveau au-dessus, sinon du projet, sinon de l'organisation.": [
   "pages/projets/ActiviteForm.tsx"
  ],
@@ -11810,11 +12059,17 @@
  "Vide : sans limite.": [
   "components/documents/PartageDocumentModal.tsx"
  ],
+ "Vider l'espace après le téléchargement": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "Vider la corbeille": [
   "pages/documents/CorbeillePage.tsx"
  ],
  "Vider la corbeille ? Tous les éléments qu'elle contient seront supprimés définitivement, fichiers compris. Cette action est irréversible.": [
   "pages/documents/CorbeillePage.tsx"
+ ],
+ "Vider tout l'espace ?": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "Village, quartier, site…": [
   "pages/plaintes/ChampsRetour.tsx"

@@ -3,6 +3,7 @@ import { apiClient, tokenStorage } from "../api/client";
 import type { EtapeDoubleAuth, JetonsConnexion } from "../api/doubleAuth";
 import type { User } from "../types";
 import { appliquerLangueDuCompte } from "../utils/i18n";
+import { ACCUEIL_APP } from "../utils/accueil";
 
 interface AuthContextValue {
   user: User | null;
@@ -49,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       username, courriel: username, password, ...(console ? { console } : {}), ...(abonnement ? { abonnement } : {}),
     });
     if (data.double_authentification) return data as EtapeDoubleAuth;
-    await ouvrirSession(data, "/");
+    await ouvrirSession(data, ACCUEIL_APP);
     return null;
   }
 

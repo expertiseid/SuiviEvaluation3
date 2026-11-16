@@ -348,7 +348,15 @@ def _plateforme(request):
         "espace": _espace_courant(),
         # Déconnexion après inactivité, en minutes (0 : jamais) : minuteur de l'interface, réglage de l'Administrateur.
         "session_inactivite_min": _inactivite_minutes(),
+        # Couches cartographiques intégrées (limites, villes et villages) : non pour les clients (apps.geo.services.couches).
+        "carte_couches_integrees": _couches_integrees(),
     }
+
+
+def _couches_integrees():
+    from apps.geo.services.couches import couches_integrees
+
+    return couches_integrees()
 
 
 def _inactivite_minutes():

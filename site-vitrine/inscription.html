@@ -47,7 +47,7 @@
       <!-- Étape 1 : profil -->
       <!-- Champ piège, hors du formulaire : le remplissage automatique du navigateur ne l'atteint pas, un robot si. -->
       <input class="piege" type="text" id="site_web" tabindex="-1" autocomplete="off" aria-hidden="true">
-      <form id="etape-1" class="formulaire" novalidate>
+      <form id="etape-1" class="formulaire" method="post" novalidate>
         <div class="message-global erreur" id="erreur-1" role="alert"></div>
 
         <fieldset>
@@ -95,13 +95,14 @@
           <div class="champ large u-mt-16">
             <label class="case"><input type="checkbox" id="conditions" data-champ="conditions"> <span>J'accepte les <a href="conditions-utilisation.html" target="_blank" rel="noopener">conditions d'utilisation</a> et la <a href="confidentialite.html" target="_blank" rel="noopener">politique de confidentialité</a>, et que ces informations soient utilisées par Expertise-ID pour créer et gérer l'espace de mon organisation. <span class="req">*</span></span></label>
           </div>
+          <div class="champ large u-mt-16" id="bloc-robot" hidden><div id="recaptcha"></div></div>
         </fieldset>
 
         <button class="bouton bouton-plein" type="submit" id="bouton-1">Continuer vers le choix de l'offre</button>
       </form>
 
       <!-- Étape 2 : offre -->
-      <form id="etape-2" class="formulaire cache" novalidate>
+      <form id="etape-2" class="formulaire cache" method="post" novalidate>
         <div class="message-global erreur" id="erreur-2" role="alert"></div>
         <p>Le profil de <b id="nom-organisation"></b> est créé. Choisissez votre offre et réglez-la en ligne : votre espace est créé aussitôt.</p>
         <div class="choix-offres">
@@ -217,7 +218,7 @@
     <div><h4>Aide</h4><a href="documentation.html">Documentation</a><a href="contact.html">Contact</a><a href="#" data-lien="CONNEXION">Se connecter</a></div>
     <div class="newsletter-pied">
       <div><h4>Newsletter</h4><p>Les nouveautés de la plateforme, les formations et les conseils d'Expertise-ID, dans votre boîte courriel.</p></div>
-      <form class="form-newsletter" novalidate>
+      <form class="form-newsletter" method="post" novalidate>
         <div class="ligne-newsletter"><input type="email" name="courriel" required autocomplete="email" placeholder="Votre adresse courriel" aria-label="Votre adresse courriel"><button class="bouton bouton-plein" type="submit">S'inscrire</button></div>
         <label class="case-newsletter"><input type="checkbox" name="accord"> <span>J'accepte de recevoir la newsletter ; je peux me désinscrire à tout moment.</span></label>
         <input type="text" name="site_web" class="piege" tabindex="-1" autocomplete="off" aria-hidden="true">
@@ -228,9 +229,9 @@
     <div class="bas"><span>© 2026 Expertise-ID</span></div>
   </div>
 </footer>
-<script src="vitrine/traductions.js?v=20261112m"></script>
+<script src="vitrine/traductions.js?v=20261113a"></script>
 <script src="vitrine/langues.js?v=20261111a"></script>
 <script src="vitrine/site.js?v=20261111b"></script>
-<script src="vitrine/inscription.js?v=20261110c"></script>
+<script src="vitrine/inscription.js?v=20261113a"></script>
 </body>
 </html>

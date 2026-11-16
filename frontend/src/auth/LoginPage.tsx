@@ -10,6 +10,7 @@ import { useAuth } from "./useAuth";
 import { messageErreurApi } from "../utils/erreurs";
 import { voc } from "../utils/vocabulaire";
 import { langue } from "../utils/i18n";
+import { ACCUEIL_APP } from "../utils/accueil";
 import { ChoixLangue } from "../components/common/ChoixLangue";
 
 const statut = (erreur: unknown) => (erreur as { response?: { status?: number } }).response?.status;
@@ -26,7 +27,7 @@ export function LoginPage({ operateur = false }: { operateur?: boolean }) {
   // connexion ; seulement une page de la plateforme (« /… », jamais « //autre-site »).
   const [parametres] = useSearchParams();
   const suite = parametres.get("suite") ?? "";
-  const destination = operateur ? "/console" : /^\/(?![/\\])/.test(suite) ? suite : "/";
+  const destination = operateur ? "/console" : /^\/(?![/\\])/.test(suite) ? suite : ACCUEIL_APP;
   const pourAbonnement = destination === "/mon-abonnement";
   const multi = !!plateforme?.multi_organisations;
   const navigate = useNavigate();

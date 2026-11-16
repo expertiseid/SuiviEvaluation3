@@ -19,7 +19,7 @@ PARTICULIERES = {ActionDossier.Type.EXPORT: A.EXPORT, ActionDossier.Type.TELECHA
 
 @receiver(post_save, sender=ActionDossier)
 def _reporter_action(sender, instance, created, **kwargs):
-    if created:
+    if created and not kwargs.get("raw"):  # raw : chargement d'une sauvegarde, déjà dans son journal
         auditer(instance.auteur, PARTICULIERES.get(instance.type, A.DOSSIER), instance.dossier.numero,
                 type=instance.type, sensible=instance.dossier.sensible)
 

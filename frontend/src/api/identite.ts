@@ -24,6 +24,8 @@ export interface IdentiteOrganisation {
   espace: { sous_domaine: string; nom: string } | null;
   /** Déconnexion après ce nombre de minutes sans activité (réglage de l'Administrateur) ; 0 : jamais. */
   session_inactivite_min: number;
+  /** Couches cartographiques intégrées (limites, villes et villages) : non pour les clients, oui en développement et en démonstration. */
+  carte_couches_integrees: boolean;
 }
 
 export function useIdentiteOrganisation() {

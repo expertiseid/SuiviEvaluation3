@@ -110,6 +110,26 @@
   remplirPays();
   document.addEventListener("langue-site", remplirPays);
 
+  // Contrôle « Je ne suis pas un robot » (Google reCAPTCHA) : affiché seulement si la plateforme a
+  // une clé ; le serveur refuse alors l'inscription sans la case cochée.
+  var robot = { cle: "", widget: null };
+  envoyer("/public/inscription/controle/").then(function (r) {
+    if (!r || !r.recaptcha) return;
+    robot.cle = r.recaptcha;
+    document.getElementById("bloc-robot").hidden = false;
+    window.monitoraRecaptcha = function () {
+      robot.widget = window.grecaptcha.render("recaptcha", { sitekey: robot.cle });
+    };
+    var script = document.createElement("script");
+    script.src = "https://www.google.com/recaptcha/api.js?onload=monitoraRecaptcha&render=explicit&hl=" +
+      encodeURIComponent(document.documentElement.lang || "fr");
+    script.async = true;
+    document.head.appendChild(script);
+  }).catch(function () { /* pas de contrôle si la clé n'a pas pu être lue */ });
+  function jetonRobot() {
+    return robot.widget !== null && window.grecaptcha ? window.grecaptcha.getResponse(robot.widget) : "";
+  }
+
   // Étape 1 : profil.
   form1.addEventListener("submit", function (ev) {
     ev.preventDefault();
@@ -129,6 +149,8 @@
     });
     if (d.mot_de_passe && d.mot_de_passe !== document.getElementById("confirmation").value) locales.confirmation = "Les deux mots de passe ne sont pas identiques.";
     if (!d.conditions) locales.conditions = "Votre accord est nécessaire pour créer le profil.";
+    d.recaptcha = jetonRobot();
+    if (robot.cle && !d.recaptcha) locales.recaptcha = "Cochez la case « Je ne suis pas un robot ».";
     if (Object.keys(locales).length) { afficherErreurs(form1, locales, "Complétez les champs signalés."); return; }
 
     var bouton = document.getElementById("bouton-1");
@@ -138,6 +160,8 @@
       montrerEtape2(resume.organisation);
     }).catch(function (e) {
       afficherErreurs(form1, erreurReseau(e), "Certaines informations sont à corriger.");
+      // Une case cochée ne sert qu'une fois : il faut la cocher de nouveau après un refus.
+      if (robot.widget !== null && window.grecaptcha) window.grecaptcha.reset(robot.widget);
     }).finally(function () {
       bouton.disabled = false; bouton.textContent = T("Continuer vers le choix de l'offre");
     });

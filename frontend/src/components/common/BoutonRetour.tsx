@@ -1,6 +1,7 @@
 import { Button } from "@mantine/core";
 import { ArrowLeft } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { ACCUEIL_APP } from "../../utils/accueil";
 import { voc } from "../../utils/vocabulaire";
 
 // Pages qui ont déjà leur propre lien de retour, vers une destination précise.
@@ -13,10 +14,10 @@ const AVEC_RETOUR_PROPRE = [/^\/strategie\/(?!type\/[^/]+$)/, /^\/plaintes\/doss
 export function BoutonRetour() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  if (pathname === "/" || AVEC_RETOUR_PROPRE.some((motif) => motif.test(pathname))) return null;
+  if (pathname === ACCUEIL_APP || AVEC_RETOUR_PROPRE.some((motif) => motif.test(pathname))) return null;
   const retour = () => {
     if (((window.history.state as { idx?: number } | null)?.idx ?? 0) > 0) navigate(-1);
-    else navigate(pathname.replace(/\/[^/]+\/?$/, "") || "/");
+    else navigate(pathname.replace(/\/[^/]+\/?$/, "") || ACCUEIL_APP);
   };
   return (
     <Button variant="subtle" color="gray" size="compact-sm" leftSection={<ArrowLeft size={16} />} onClick={retour}

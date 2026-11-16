@@ -31,7 +31,7 @@ def _projet(instance):
 
 
 def _avant_enregistrement_saisie(sender, instance, **kwargs):
-    if _desactive.get():
+    if _desactive.get() or kwargs.get("raw"):  # raw : chargement d'une sauvegarde
         return
     utilisateur = utilisateur_courant()
     projet = _projet(instance)

@@ -289,7 +289,7 @@ def titre_par_defaut(donnees, couches, par_zone, portee=""):
 
 
 def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf", titre_portee="", organisation="", fond="aucun", par_zone=None,
-                 etendue="pays", titre="", sous_titre=""):
+                 etendue="pays", titre="", sous_titre="", limites_integrees=True):
     """
     `donnees` : celles de l'écran (services.carte_donnees) ; `couches` : {nom: True} parmi COUCHES,
     plus `importees` : [CoucheImportee] à dessiner ; `par_zone` : carte par zone facultative
@@ -323,7 +323,8 @@ def rendre_carte(donnees, couches, papier="A3", orientation="auto", sortie="pdf"
         return max(x * k, 0.25)
 
     pays = donnees["pays"]
-    limites = {l.niveau: l for l in LimiteAdministrative.objects.filter(pays=pays, niveau__in=(1, 2, 3))}
+    # Sans couches intégrées (clients, apps.geo.services.couches) : ni limites ni emprise du pays.
+    limites = {l.niveau: l for l in LimiteAdministrative.objects.filter(pays=pays, niveau__in=(1, 2, 3))} if limites_integrees else {}
     # Emprise : la zone filtrée ; sinon tout le pays, ou les bénéficiaires si demandé (et localisés).
     positions = [(p["lng"], p["lat"]) for p in donnees["points"]] + [(z["lng"], z["lat"]) for z in donnees["zones"]]
     contour = (donnees.get("zone_filtre") or {}).get("contour")

@@ -51,6 +51,7 @@ import { libelleStructure, structuresEnArbre } from "../../utils/organisation";
 import type { Partenaire, PartiePrenante, StructureOrganisation } from "../../types";
 import { IdentiteOrganisation } from "./IdentiteOrganisation";
 import { Organigramme } from "./Organigramme";
+import { SauvegardeTransfert } from "./SauvegardeTransfert";
 
 const TYPES_STRUCTURE_SUGGERES = ["Organisation", "Direction", "Service", "Secteur", "Division", "Cellule", voc("Antenne régionale")];
 const TYPES_PARTENAIRE = [
@@ -793,6 +794,7 @@ export function OrganisationPage() {
           <Tabs.Tab value="parties">{voc("Parties prenantes")}</Tabs.Tab>
           <Tabs.Tab value="partenaires">{voc("Partenaires")}</Tabs.Tab>
           <Tabs.Tab value="identite">{voc("Identité et logo")}</Tabs.Tab>
+          <Tabs.Tab value="sauvegarde">{voc("Sauvegarde et transfert")}</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel value="structure" pt="md">
           <StructureTab />
@@ -805,6 +807,9 @@ export function OrganisationPage() {
         </Tabs.Panel>
         <Tabs.Panel value="identite" pt="md">
           <IdentiteOrganisation />
+        </Tabs.Panel>
+        <Tabs.Panel value="sauvegarde" pt="md">
+          <SauvegardeTransfert />
         </Tabs.Panel>
       </Tabs>
     </Stack>

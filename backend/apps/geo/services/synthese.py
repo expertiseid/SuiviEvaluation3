@@ -21,6 +21,7 @@ CATALOGUE = [
     ("budget", "Budget des projets présents (FCFA)", "Budget", "budget", "montant", "Vue d'ensemble"),
     ("fonds_propres", "Fonds propres (FCFA)", "Fonds propres", "budget", "montant", "Budget et financements"),
     ("financements", "Financements des bailleurs (FCFA)", "Financements", "budget", "montant", "Budget et financements"),
+    ("budget_alloue", "Budget alloué aux activités (FCFA)", "Alloué", "budget", "montant", "Budget et financements"),
     ("depenses", "Dépenses réalisées (FCFA)", "Dépenses", "budget", "montant", "Budget et financements"),
     ("bailleurs", "Nombre de bailleurs", "Bailleurs", "projets", "entier", "Budget et financements"),
     ("partenaires_consortium", "Nombre de partenaires de consortium", "Consortium", "projets", "entier", "Budget et financements"),
@@ -33,6 +34,10 @@ CATALOGUE = [
     ("activites_en_cours", "Activités en cours", "Act. en cours", "projets", "entier", "Projets"),
     ("activites_non_realisees", "Activités non réalisées", "Non réalisées", "projets", "entier", "Projets"),
     ("indicateurs", "Nombre d'indicateurs", "Indicateurs", "projets", "entier", "Projets"),
+    ("indicateurs_conformes", "Indicateurs conformes (palier le plus haut)", "Ind. conformes", "projets", "entier", "Projets"),
+    ("indicateurs_a_risque", "Indicateurs à risque (paliers intermédiaires)", "Ind. à risque", "projets", "entier", "Projets"),
+    ("indicateurs_critiques", "Indicateurs critiques (palier le plus bas)", "Ind. critiques", "projets", "entier", "Projets"),
+    ("taux_indicateurs", "Réalisation moyenne des indicateurs (%)", "Réalisation ind.", "taux", "pourcentage", "Projets"),
     ("taux_physique", "Exécution physique moyenne (%)", "Exécution physique", "taux", "pourcentage", "Projets"),
     ("taux_financier", "Exécution financière moyenne (%)", "Exécution financière", "taux", "pourcentage", "Projets"),
     ("cible_totale", "Cible totale des projets", "Cible", "beneficiaires", "entier", "Bénéficiaires"),
@@ -51,7 +56,7 @@ FAMILLES = {code: famille for code, _, _, famille, *_ in CATALOGUE}
 TYPES = {code: type_valeur for code, _, _, _, type_valeur, _ in CATALOGUE}
 
 # Valeurs additionnées projet par projet (un projet compte dans chaque zone où il est présent).
-_SOMMES = ("budget", "fonds_propres", "financements", "depenses", "depenses_12_mois", "activites", "activites_realisees",
+_SOMMES = ("budget", "budget_alloue", "indicateurs_conformes", "indicateurs_a_risque", "indicateurs_critiques", "fonds_propres", "financements", "depenses", "depenses_12_mois", "activites", "activites_realisees",
            "activites_en_cours", "activites_non_realisees", "indicateurs", "cible_totale", "cible_femmes", "cible_hommes",
            "cible_jeunes", "cible_pdi")
 # Valeurs comptées sans doublon (un même bailleur sur deux projets de la zone compte une fois).
@@ -71,6 +76,7 @@ def _chiffres_projets(projets) -> dict:
     from django.utils import timezone
 
     from apps.indicators.models import Indicateur
+    from apps.indicators.services import palier_pour_taux, paliers_pour, taux_realisation, valeur_realisee_totale
     from apps.partners.models import Financement, RallongeFinancement
     from apps.projects.budgets import total_budget
     from apps.projects.models import Activite, PartenaireProjet
@@ -81,7 +87,8 @@ def _chiffres_projets(projets) -> dict:
     chiffres = {p.id: {
         "budget": Decimal(p.budget_total or 0), "fonds_propres": Decimal(p.fonds_propres or 0), "financements": Decimal("0"),
         "depenses": Decimal("0"), "depenses_12_mois": Decimal("0"), "activites": 0, "activites_realisees": 0,
-        "activites_en_cours": 0, "activites_non_realisees": 0, "indicateurs": 0,
+        "activites_en_cours": 0, "activites_non_realisees": 0, "indicateurs": 0, "budget_alloue": Decimal("0"),
+        "indicateurs_conformes": 0, "indicateurs_a_risque": 0, "indicateurs_critiques": 0, "taux_indicateurs": [],
         "cible_totale": p.cible_totale or 0, "cible_femmes": p.cible_femmes or 0, "cible_hommes": p.cible_hommes or 0,
         "cible_jeunes": p.cible_jeunes or 0, "cible_pdi": p.cible_pdi or 0,
         "bailleurs": set(), "partenaires_consortium": {c.id for c in p.partenaires_consortium.all()},
@@ -96,22 +103,41 @@ def _chiffres_projets(projets) -> dict:
         cle = "partenaires_consortium" if nature == PartenaireProjet.Nature.CONSORTIUM else "partenaires_mise_en_oeuvre"
         chiffres[pid][cle].add(partenaire)
     activites_par_projet = {}
-    for a in Activite.objects.filter(projet_id__in=ids).only("id", "projet_id", "activite_parent_id", "statut", "budget_realise"):
+    for a in Activite.objects.filter(projet_id__in=ids).only("id", "projet_id", "activite_parent_id", "statut", "budget_realise", "budget_alloue"):
         activites_par_projet.setdefault(a.projet_id, []).append(a)
         chiffres[a.projet_id]["activites"] += 1
         chiffres[a.projet_id][{"REALISEE": "activites_realisees", "EN_COURS": "activites_en_cours"}.get(a.statut, "activites_non_realisees")] += 1
     for pid, activites in activites_par_projet.items():
         chiffres[pid]["depenses"] = total_budget([a for a in activites if a.budget_realise is not None], "budget_realise")
+        chiffres[pid]["budget_alloue"] = total_budget([a for a in activites if a.budget_alloue is not None], "budget_alloue")
     for r in PointSuivi.objects.filter(activite__projet_id__in=ids, periode_fin__gte=il_y_a_un_an, budget_realise__isnull=False).values(
         "activite__projet_id"
     ).annotate(t=Sum("budget_realise")):
         chiffres[r["activite__projet_id"]]["depenses_12_mois"] = r["t"]
-    for r in (
-        Indicateur.objects.filter(Q(projet_id__in=ids) | Q(activite__projet_id__in=ids))
-        .values("projet_id", "activite__projet_id").annotate(n=Count("id"))
-    ):
-        chiffres[r["projet_id"] or r["activite__projet_id"]]["indicateurs"] += r["n"]
+    # État de chaque indicateur, comme le bloc « Indicateurs par statut » du tableau de bord : la palette
+    # d'alerte peut différer d'un projet à l'autre, on retient donc la position du palier atteint
+    # (le plus bas = critique, le plus haut = conforme, entre les deux = à risque).
+    par_id = {p.id: p for p in projets}
+    for ind in Indicateur.objects.filter(Q(projet_id__in=ids) | Q(activite__projet_id__in=ids)).select_related("activite"):
+        pid = ind.projet_id or ind.activite.projet_id
+        chiffres[pid]["indicateurs"] += 1
+        taux = taux_realisation(valeur_realisee_totale(ind), ind.valeur_cible)
+        if taux is None:
+            continue
+        chiffres[pid]["taux_indicateurs"].append(float(taux))
+        paliers = paliers_pour(indicateur=ind, projet=par_id[pid])
+        palier = palier_pour_taux(taux, paliers)
+        if palier is None:
+            continue
+        rang = paliers.index(palier)
+        cle = ("indicateurs_critiques" if rang == 0 else
+               "indicateurs_conformes" if rang == len(paliers) - 1 else "indicateurs_a_risque")
+        chiffres[pid][cle] += 1
     return chiffres
+
+
+def _moyenne(valeurs):
+    return round(sum(valeurs) / len(valeurs), 1) if valeurs else None
 
 
 def synthese_par_zone(pays, ordre, projets_visibles, projets=None, dans_zones=None) -> dict:
@@ -250,6 +276,7 @@ def synthese_par_zone(pays, ordre, projets_visibles, projets=None, dans_zones=No
             "nouveaux_beneficiaires": len(nouveaux_zone.get(zid, ())),
             "taux_physique": round(sum(physiques) / len(physiques), 1) if physiques else None,
             "taux_financier": round(sum(financiers) / len(financiers), 1) if financiers else None,
+            "taux_indicateurs": _moyenne([t for pid in ids for t in chiffres[pid]["taux_indicateurs"]]),
             "projets_en_cours": sum(1 for l in lignes if l["statut"] == "EN_COURS"),
             "projets_en_preparation": sum(1 for l in lignes if l["statut"] == "EN_PREPARATION"),
             "projets_clotures": sum(1 for l in lignes if l["statut"] == "CLOTURE"),

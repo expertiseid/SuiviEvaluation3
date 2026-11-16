@@ -74,6 +74,7 @@ import { useAccesModules } from "../utils/modules";
 import { libelleRole } from "../utils/roles";
 import { useTypesDocuments } from "../api/strategy";
 import { routeMaillon } from "../utils/chaineDocuments";
+import { ACCUEIL_APP } from "../utils/accueil";
 import { FenetreStockagePlein } from "../components/common/FenetreStockagePlein";
 import { BandeauAbonnement } from "../components/common/BandeauAbonnement";
 
@@ -309,7 +310,7 @@ function PersonnalisationMenuModal({
 function renderNavLink(item: NavItem, pathname: string) {
   const active =
     item.to === "/"
-      ? pathname === "/"
+      ? pathname === ACCUEIL_APP
       : item.to === "/strategie"
         ? // Les maillons suivants de la chaîne ont leur propre rubrique (/strategie/type/…).
           pathname.startsWith(item.to) && !pathname.startsWith("/strategie/type/")
@@ -318,7 +319,7 @@ function renderNavLink(item: NavItem, pathname: string) {
     <NavLink
       key={item.to}
       component={RouterNavLink}
-      to={item.to}
+      to={item.to === "/" ? ACCUEIL_APP : item.to}
       // Le lien de React Router ne se marque pas actif tout seul : seul `active` (ci-dessus) compte.
       end
       label={item.label}
@@ -378,7 +379,7 @@ export function AppLayout() {
   const itemsPrincipaux = ITEMS_PRINCIPAUX.flatMap((item) =>
     item.to === "/strategie" ? [premierMaillon ? { ...item, label: voc(premierMaillon) } : item, ...itemsMaillons] : [item]);
 
-  const surTableauDeBord = pathname === "/";
+  const surTableauDeBord = pathname === ACCUEIL_APP;
   const afficherBandeau = surTableauDeBord && !!echeances && echeances.length > 0;
 
   return (

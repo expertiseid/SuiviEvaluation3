@@ -4,6 +4,8 @@ set -e
 # Base centrale puis chaque espace d'organisation : toutes les bases à jour avant d'ouvrir.
 python manage.py migrer_organisations
 python manage.py collectstatic --noinput --verbosity 0
+# Délai de 300 s, comme les relais nginx : la sauvegarde complète et la reprise d'un gros espace (Organisation ›
+# Sauvegarde et transfert) peuvent prendre plusieurs minutes.
 exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 \
   --workers "${GUNICORN_WORKERS:-2}" --threads "${GUNICORN_THREADS:-4}" \
-  --timeout 120 --access-logfile - --error-logfile -
+  --timeout 300 --access-logfile - --error-logfile -

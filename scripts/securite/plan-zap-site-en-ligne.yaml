@@ -1,0 +1,58 @@
+# Analyse de sécurité ZAP (passive) du site vitrine EN LIGNE : parcours des pages et observation des réponses,
+# sans attaque ni envoi de formulaire (aucune inscription ni message de contact créés). Lancement :
+#   PLAN=plan-zap-site-en-ligne.yaml MEMOIRE=2g scripts/securite/analyse_zap.sh
+env:
+  contexts:
+    - name: site
+      urls:
+        - https://expertise-id-monitora.com/
+        - https://expertise-id-monitora.com/securite.html
+        - https://expertise-id-monitora.com/contact.html
+        - https://expertise-id-monitora.com/inscription.html
+        - https://expertise-id-monitora.com/documentation.html
+        - https://expertise-id-monitora.com/actualites.html
+        - https://expertise-id-monitora.com/partenaires.html
+        - https://expertise-id-monitora.com/confidentialite.html
+        - https://expertise-id-monitora.com/login
+      includePaths:
+        - "https://expertise-id-monitora.com.*"
+      excludePaths:
+        - ".*\\.(png|jpe?g|webp|svg|gif|woff2?|ttf|webm|mp4|ico)(\\?.*)?$"
+        - "https://expertise-id-monitora.com/api/.*"
+  parameters:
+    failOnError: false
+    failOnWarning: false
+    progressToStdout: true
+jobs:
+  - type: requestor
+    parameters:
+      user: ""
+    requests:
+      - url: https://expertise-id-monitora.com/api/v1/identite/
+  - type: spider
+    parameters:
+      context: site
+      maxDuration: 3
+      processForm: false
+      postForm: false
+      threadCount: 2
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 10
+  - type: report
+    parameters:
+      template: traditional-pdf
+      reportDir: /zap/wrk
+      reportFile: rapport-zap-site-en-ligne
+      reportTitle: "Analyse de sécurité ZAP — site Expertise-ID Monitora (en ligne)"
+  - type: report
+    parameters:
+      template: traditional-html
+      reportDir: /zap/wrk
+      reportFile: rapport-zap-site-en-ligne
+      reportTitle: "Analyse de sécurité ZAP — site Expertise-ID Monitora (en ligne)"
+  - type: report
+    parameters:
+      template: traditional-json
+      reportDir: /zap/wrk
+      reportFile: rapport-zap-site-en-ligne

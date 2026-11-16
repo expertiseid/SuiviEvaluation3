@@ -12,6 +12,7 @@ import { useAuth } from "../../auth/useAuth";
 import { LogoPlateforme, PiedDePage } from "../../components/common/Logos";
 import { messageErreurApi } from "../../utils/erreurs";
 import { langue, locale } from "../../utils/i18n";
+import { ACCUEIL_APP } from "../../utils/accueil";
 import { voc } from "../../utils/vocabulaire";
 
 const somme = (n: number, devise = "XOF") => `${n.toLocaleString("fr-FR")} ${devise === "XOF" ? "FCFA" : devise}`;
@@ -202,7 +203,7 @@ export function MonAbonnementPage() {
       <Container size="md" py="lg" style={{ flex: 1, width: "100%" }}>
         <Stack gap="md">
           {page && page.statut !== "BLOQUE" && (
-            <Box><Button component={Link} to="/" variant="subtle" leftSection={<ArrowLeft size={16} />} px={0}>{voc("Retour à la plateforme")}</Button></Box>
+            <Box><Button component={Link} to={ACCUEIL_APP} variant="subtle" leftSection={<ArrowLeft size={16} />} px={0}>{voc("Retour à la plateforme")}</Button></Box>
           )}
           <Title order={2}>{voc("Abonnement")}</Title>
           {reference && <RetourPaiement reference={reference} fermer={() => setParametres({}, { replace: true })} />}

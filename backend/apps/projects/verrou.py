@@ -107,12 +107,14 @@ def _verifier(instance):
 
 
 def _avant_enregistrement(sender, instance, **kwargs):
+    if kwargs.get("raw"):
+        return  # chargement d'une sauvegarde (loaddata) : les données sont reprises telles quelles
     _verifier(instance)
 
 
 def _avant_enregistrement_projet(sender, instance, **kwargs):
     """Un projet clôturé ne peut être modifié que pour le rouvrir (changement de statut)."""
-    if _desactive.get() or instance.pk is None:
+    if _desactive.get() or instance.pk is None or kwargs.get("raw"):
         return
     ancien = sender.objects.filter(pk=instance.pk).values_list("statut", flat=True).first()
     if ancien == sender.Statut.CLOTURE and instance.statut == sender.Statut.CLOTURE:

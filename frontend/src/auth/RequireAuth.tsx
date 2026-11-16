@@ -4,6 +4,7 @@ import { Center, Loader } from "@mantine/core";
 import { useIdentiteOrganisation } from "../api/identite";
 import { surveillerInactivite } from "./inactivite";
 import { useAuth } from "./useAuth";
+import { ACCUEIL_APP } from "../utils/accueil";
 import type { Role } from "../types";
 
 export function RequireAuth({ children, roles }: { children: ReactNode; roles?: Role[] }) {
@@ -34,11 +35,11 @@ export function RequireAuth({ children, roles }: { children: ReactNode; roles?: 
   // des organisations n'y ont pas accès.
   if (plateforme?.multi_organisations) {
     if (user.est_operateur && pathname !== "/console") return <Navigate to="/console" replace />;
-    if (!user.est_operateur && pathname === "/console") return <Navigate to="/" replace />;
+    if (!user.est_operateur && pathname === "/console") return <Navigate to={ACCUEIL_APP} replace />;
   }
 
   if (roles && !roles.includes(user.role)) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={ACCUEIL_APP} replace />;
   }
 
   return <>{children}</>;

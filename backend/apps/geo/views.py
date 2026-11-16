@@ -40,8 +40,11 @@ def limites_administratives(request):
     Contours d'un niveau administratif (GeoJSON) pour la carte : ?pays=BF&niveau=2. Téléchargés
     depuis geoBoundaries au premier appel, puis servis depuis le cache.
     """
+    from .services.couches import MESSAGE, couches_integrees
     from .services.limites import LimitesIndisponibles, completer_par_les_enfants, placer_zones, telecharger
 
+    if not couches_integrees():
+        raise NotFound(MESSAGE)
     pays = (request.query_params.get("pays") or "BF").upper()[:2]
     niveau = int(request.query_params.get("niveau") or 1)
     try:
@@ -78,6 +81,10 @@ def localites(request):
     Villes et villages de la partie visible de la carte : ?pays=BF&bbox=sud,ouest,nord,est.
     Au-delà de LOCALITES_MAX, les villes et villages administratifs passent en premier.
     """
+    from .services.couches import couches_integrees
+
+    if not couches_integrees():
+        return Response({"total": 0, "localites": []})
     pays = (request.query_params.get("pays") or "BF").upper()[:2]
     try:
         sud, ouest, nord, est = (float(x) for x in request.query_params.get("bbox", "").split(","))
@@ -145,6 +152,11 @@ def carte_synthese(request):
     """
     from apps.dashboard.filtres import projets_retenus
     from apps.projects.queryset_filters import visible_projets_ids
+
+    from .services.couches import MESSAGE, couches_integrees
+
+    if not couches_integrees():  # la carte par zone dessine les limites intégrées
+        raise NotFound(MESSAGE)
 
     from .services.synthese import INDICATEURS, ids_parametre, synthese_par_zone
 

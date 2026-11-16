@@ -188,6 +188,9 @@ INSCRIPTIONS_OUVERTES = env.bool("INSCRIPTIONS_OUVERTES", default=True)
 # Zones administratives installées automatiquement selon le pays (apps/geo/services/installation.py) :
 # « arriere-plan » (par défaut), « synchrone » ou « desactivee ».
 ZONES_INSTALLATION = env("ZONES_INSTALLATION", default="arriere-plan")
+# Couches cartographiques intégrées (limites, villes et villages ; apps/geo/services/couches.py) : désactivées
+# pour les clients, qui importent leurs propres couches ; activées en développement et pour la démonstration.
+CARTE_COUCHES_INTEGREES = env.bool("CARTE_COUCHES_INTEGREES", default=False)
 # Adresse(s) d'Expertise-ID prévenues des inscriptions, paiements et demandes de paiement par carte
 # (plusieurs adresses séparées par des virgules ; la première est montrée aux clients comme contact).
 COURRIEL_ABONNEMENTS = env("COURRIEL_ABONNEMENTS", default="")
@@ -240,8 +243,8 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS", default=["http://localhost:5173"]
 )
-# Nom des fichiers téléchargés (cartes, rapports) lisible par le navigateur.
-CORS_EXPOSE_HEADERS = ["Content-Disposition"]
+# Nom des fichiers téléchargés (cartes, rapports) et reçu d'un extrait (transfert) lisibles par le navigateur.
+CORS_EXPOSE_HEADERS = ["Content-Disposition", "X-Recu-Extrait"]
 # Espaces des organisations : https://<sous-domaine>.DOMAINE_PLATEFORME (et *.localhost en développement).
 CORS_ALLOWED_ORIGIN_REGEXES = env.list("CORS_ALLOWED_ORIGIN_REGEXES", default=[r"^http://([a-z0-9-]+\.)?localhost(:\d+)?$"])
 from corsheaders.defaults import default_headers  # noqa: E402
@@ -285,6 +288,9 @@ PLAINTES_SMS_EXPEDITEUR = env("PLAINTES_SMS_EXPEDITEUR", default="")
 # --- Plaintes : pièces jointes (lot 8) ---
 # Répertoire privé, hors de MEDIA_ROOT et de toute racine web : les fichiers y sont toujours chiffrés et
 # ne sont servis que par l'application, après contrôle d'accès. Voir apps/plaintes/pieces.py.
+# Contrôle « Je ne suis pas un robot » de l'inscription (Google reCAPTCHA v2) : actif si les deux clés sont réglées.
+RECAPTCHA_CLE_SITE = env("RECAPTCHA_CLE_SITE", default="")
+RECAPTCHA_CLE_SECRETE = env("RECAPTCHA_CLE_SECRETE", default="")
 PLAINTES_STOCKAGE_PRIVE = env("PLAINTES_STOCKAGE_PRIVE", default="") or str(BASE_DIR / "prive" / "plaintes")
 # Plafond de la plateforme par fichier (Mo) ; chaque mécanisme règle sa limite en dessous.
 PLAINTES_PLAFOND_PIECE_MO = env.int("PLAINTES_PLAFOND_PIECE_MO", default=10)

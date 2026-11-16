@@ -21,6 +21,7 @@ import { useAuth } from "../../auth/useAuth";
 import { messageErreurApi } from "../../utils/erreurs";
 import { voc } from "../../utils/vocabulaire";
 import { LogoComplet } from "../../components/common/Logos";
+import { ACCUEIL_APP } from "../../utils/accueil";
 import { CadreVitrine } from "./CadreVitrine";
 
 const FONCTIONNALITES = [
@@ -53,8 +54,8 @@ export function AccueilPage() {
     }
     setDemarrage(true);
     try {
-      await ouvrirSession(await connexionDemo(), "/");
-      navigate("/");
+      await ouvrirSession(await connexionDemo(), ACCUEIL_APP);
+      navigate(ACCUEIL_APP);
     } catch (error) {
       notifications.show({ color: "red", message: messageErreurApi(error, voc("La démonstration n'est pas disponible pour le moment.")) });
     } finally {

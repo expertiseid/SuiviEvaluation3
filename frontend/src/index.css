@@ -49,17 +49,17 @@ body {
 
 /* Carte (CartePage) : étiquettes des zones, des villages et des bénéficiaires, plein écran. */
 .etiquette-carte { background: none; border: none; white-space: nowrap; pointer-events: none;
-  font: 600 11px/1 system-ui, sans-serif; color: #374151; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 2px #fff; }
+  font: 600 calc(11px * var(--echelle-texte, 1))/1 system-ui, sans-serif; color: #374151; text-shadow: 0 0 calc(3px * var(--echelle-texte, 1)) #fff, 0 0 calc(3px * var(--echelle-texte, 1)) #fff, 0 0 calc(2px * var(--echelle-texte, 1)) #fff; }
 .etiquette-carte span { display: inline-block; transform: translate(-50%, -50%); }
-.etiquette-carte.n1 { font-size: 13px; font-weight: 700; color: #111827; text-transform: uppercase; letter-spacing: .5px; }
-.etiquette-carte.n3 { font-weight: 500; color: #6b7280; font-size: 10px; }
-.etiquette-carte.village span { transform: translate(5px, -50%); font-weight: 500; font-size: 10px; color: #1f2937; }
+.etiquette-carte.n1 { font-size: calc(13px * var(--echelle-texte, 1)); font-weight: 700; color: #111827; text-transform: uppercase; letter-spacing: .5px; }
+.etiquette-carte.n3 { font-weight: 500; color: #6b7280; font-size: calc(10px * var(--echelle-texte, 1)); }
+.etiquette-carte.village span { transform: translate(calc(5px * var(--echelle-texte, 1)), -50%); font-weight: 500; font-size: calc(10px * var(--echelle-texte, 1)); color: #1f2937; }
 .encadre-carte:fullscreen { border-radius: 0; }
 .encadre-carte:fullscreen .leaflet-container { height: 100vh !important; }
 .etiquette-carte.valeur-zone { pointer-events: auto; cursor: pointer; }
-.etiquette-carte.valeur-zone span { font-size: 12px; font-weight: 800; color: #111827; background: rgba(255,255,255,.88); border: 1px solid #6b7280; border-radius: 8px; padding: 2px 6px; text-align: center; line-height: 1.15; }
-.etiquette-carte.valeur-zone small { display: block; font-size: 9px; font-weight: 600; color: #4b5563; text-transform: uppercase; letter-spacing: .3px; }
-.etiquette-carte.beneficiaire span { transform: translate(8px, -50%); font-weight: 600; font-size: 11px; color: #9a3412; }
+.etiquette-carte.valeur-zone span { font-size: calc(12px * var(--echelle-texte, 1)); font-weight: 800; color: #111827; background: rgba(255,255,255,.88); border: calc(1px * var(--echelle-texte, 1)) solid #6b7280; border-radius: calc(8px * var(--echelle-texte, 1)); padding: calc(2px * var(--echelle-texte, 1)) calc(6px * var(--echelle-texte, 1)); text-align: center; line-height: 1.15; }
+.etiquette-carte.valeur-zone small { display: block; font-size: calc(9px * var(--echelle-texte, 1)); font-weight: 600; color: #4b5563; text-transform: uppercase; letter-spacing: .3px; }
+.etiquette-carte.beneficiaire span { transform: translate(calc(8px * var(--echelle-texte, 1)), -50%); font-weight: 600; font-size: calc(11px * var(--echelle-texte, 1)); color: #9a3412; }
 
 /* Bulle d'un élément d'une couche importée (CartePage). */
 .bulle-couche { font-size: 12px; }
