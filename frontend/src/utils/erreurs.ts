@@ -10,6 +10,8 @@ export function messageErreurApi(error: unknown, message: string): string {
   // Messages du serveur et message par défaut : traduits dans la langue de l'interface.
   if (isAxiosError(error) && error.response?.data) {
     const data = error.response.data;
+    // Page d'erreur du serveur web (délai dépassé, serveur redémarré…) au lieu d'un message : rien à en tirer.
+    if (typeof data !== "object") return voc(message);
     if (typeof data.detail === "string") return voc(data.detail);
     for (const valeur of Object.values(data)) {
       if (Array.isArray(valeur) && typeof valeur[0] === "string") return voc(valeur[0]);

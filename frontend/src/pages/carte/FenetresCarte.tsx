@@ -7,6 +7,7 @@ import {
   Button,
   Checkbox,
   ColorInput,
+  ColorSwatch,
   FileInput,
   Group,
   Modal,
@@ -21,7 +22,7 @@ import {
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { telechargerCarteImprimable, type OptionsCarteImprimable } from "../../api/beneficiaries";
-import { useImporterCouche, useModifierCouche, useSupprimerCouche, type CoucheImportee } from "../../api/geo";
+import { useImporterCouche, useModifierCouche, useSupprimerCouche, type CoucheImportee, type ResultatImportCouche } from "../../api/geo";
 import { useIdentiteOrganisation } from "../../api/identite";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
 import { messageErreurApi } from "../../utils/erreurs";
@@ -38,7 +39,7 @@ export function ImportCoucheModal({ onClose }: { onClose: () => void }) {
   const [fichier, setFichier] = useState<File | null>(null);
   const [nom, setNom] = useState("");
   const [couleur, setCouleur] = useState(COULEURS[0]);
-  const [resultat, setResultat] = useState<CoucheImportee | null>(null);
+  const [resultat, setResultat] = useState<ResultatImportCouche | null>(null);
 
   async function valider() {
     if (!fichier || !nom.trim()) {
@@ -54,13 +55,37 @@ export function ImportCoucheModal({ onClose }: { onClose: () => void }) {
 
   return (
     <Modal opened onClose={onClose} title={voc("Importer une couche sur la carte")} size="lg">
-      {resultat ? (
+      {resultat && resultat.couches_creees.length > 1 ? (
+        <Stack gap="sm">
+          <Alert color="teal" title={voc`${resultat.couches_creees.length} couches importées`}>
+            {voc("Le fichier contient plusieurs couches : chacune est importée séparément, convertie en WGS 84 depuis sa propre projection. Les tables sans géométrie sont ignorées.")}
+          </Alert>
+          {resultat.couches_creees.map((c) => (
+            <Paper key={c.id} withBorder p="xs" radius="md">
+              <Group gap="xs" wrap="nowrap">
+                <ColorSwatch color={c.couleur} size={16} />
+                <Text size="sm" fw={500} style={{ flex: 1 }}>{c.nom}</Text>
+                <Badge size="xs" variant="light">{GEOMETRIES[c.geometrie]}</Badge>
+                <Text size="xs" c="dimmed">{c.nombre_objets} {voc("objet(s)")}</Text>
+              </Group>
+            </Paper>
+          ))}
+          {resultat.couches_ignorees.length > 0 && (
+            <Text size="xs" c="dimmed">{voc("Couches sans aucun objet géographique, non importées :")} {resultat.couches_ignorees.join(", ")}.</Text>
+          )}
+          <Text size="xs" c="dimmed">{voc("Nom, couleur et attribut des noms se modifient dans « Gérer les couches ».")}</Text>
+          <Group justify="flex-end"><Button onClick={onClose}>{voc("Fermer")}</Button></Group>
+        </Stack>
+      ) : resultat ? (
         <Stack gap="sm">
           <Alert color="teal" title={voc`« ${resultat.nom} » importée`}>
             {resultat.nombre_objets} {voc("objet(s) (")}{GEOMETRIES[resultat.geometrie].toLowerCase()}{voc(") · projection d'origine :")} {resultat.projection_source || "—"}{voc(", convertie en WGS 84.")}
             {resultat.champ_etiquette ? voc` Noms affichés : attribut « ${resultat.champ_etiquette} ».` : voc(" Aucun attribut de nom reconnu (modifiable dans « Gérer les couches »).")}
           </Alert>
           <Text size="xs" c="dimmed">{voc("Attributs conservés :")} {resultat.colonnes.join(", ") || voc("aucun")}.</Text>
+          {resultat.couches_ignorees.length > 0 && (
+            <Text size="xs" c="dimmed">{voc("Couches sans aucun objet géographique, non importées :")} {resultat.couches_ignorees.join(", ")}.</Text>
+          )}
           <Group justify="flex-end"><Button onClick={onClose}>{voc("Fermer")}</Button></Group>
         </Stack>
       ) : (

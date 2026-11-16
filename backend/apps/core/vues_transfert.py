@@ -3,15 +3,23 @@ Sauvegarde complète et reprise d'un espace (transfert.py), réservées à l'Adm
 
 Le fichier de reprise peut dépasser la taille maximale d'un envoi (100 Mo derrière le serveur web) :
 l'écran l'envoie par morceaux (POST transfert/morceau/), puis demande la reprise (POST transfert/reprendre/).
+La reprise d'un gros espace dépasse le délai d'une requête (300 s) : elle se fait en arrière-plan, et
+l'écran en suit l'avancement (GET transfert/reprise/?identifiant=) jusqu'au compte rendu.
 """
+import contextlib
 import hashlib
+import json
+import logging
 import os
 import re
 import tempfile
+import threading
 import zipfile
 from pathlib import Path
 
+from django.conf import settings
 from django.core import signing
+from django.db import connections
 from django.http import FileResponse
 from rest_framework import status
 from rest_framework.decorators import api_view, parser_classes, permission_classes
@@ -23,6 +31,8 @@ from apps.organisations import contexte
 from . import transfert
 from .audit import A, auditer
 from .permissions import IsAdmin
+
+logger = logging.getLogger(__name__)
 
 TAILLE_MORCEAU_MAX = 60 * 1024 * 1024
 # Confirmation attendue selon le mode : « ajouter » garde tout l'existant ; « remplacer » l'efface.
@@ -42,6 +52,23 @@ def _fichier_envoi(identifiant: str) -> Path:
     if not re.fullmatch(r"[a-z0-9-]{8,64}", identifiant or ""):
         raise ValueError
     return _dossier_envois() / f"{identifiant}.zip"
+
+
+def _fichier_etat(cible: Path) -> Path:
+    """État de la reprise lancée, à côté du fichier : lu par tous les processus du serveur."""
+    return cible.with_suffix(".etat.json")
+
+
+def _ecrire_etat(cible: Path, etat: dict):
+    provisoire = cible.with_suffix(".etat.tmp")
+    provisoire.write_text(json.dumps(etat, ensure_ascii=False), encoding="utf-8")
+    provisoire.replace(_fichier_etat(cible))
+
+
+def _reponse_etat(cible: Path) -> Response:
+    etat = json.loads(_fichier_etat(cible).read_text(encoding="utf-8"))
+    code = {"en_cours": status.HTTP_202_ACCEPTED, "erreur": status.HTTP_400_BAD_REQUEST}.get(etat["etat"], status.HTTP_200_OK)
+    return Response(etat, status=code)
 
 
 def _espace_de_demo() -> bool:
@@ -162,6 +189,8 @@ def reprendre(request):
         cible = _fichier_envoi(request.data.get("identifiant", ""))
     except ValueError:
         return Response({"detail": "Envoi invalide."}, status=status.HTTP_400_BAD_REQUEST)
+    if _fichier_etat(cible).exists() and request.data.get("confirmation") == CONFIRMATIONS[mode]:
+        return _reponse_etat(cible)  # reprise déjà lancée pour ce fichier (double clic) : son avancement
     if not cible.exists():
         return Response({"detail": "Fichier introuvable : envoyez-le de nouveau."}, status=status.HTTP_400_BAD_REQUEST)
     if _espace_de_demo():
@@ -172,13 +201,52 @@ def reprendre(request):
             with zipfile.ZipFile(cible) as archive:
                 manifeste = transfert.lire_manifeste(archive)
             return Response({"manifeste": {c: manifeste.get(c) for c in ("organisation", "date", "objets", "selection")}})
-        compte_rendu = transfert.importer(str(cible), request.user, mode)
+        with zipfile.ZipFile(cible) as archive:
+            transfert.lire_manifeste(archive)  # fichier lisible : vérifié avant de lancer la reprise
     except zipfile.BadZipFile:
         return Response({"detail": "Ce fichier n'est pas un zip valide."}, status=status.HTTP_400_BAD_REQUEST)
     except transfert.TransfertRefuse as erreur:
         return Response({"detail": str(erreur)}, status=status.HTTP_400_BAD_REQUEST)
-    cible.unlink(missing_ok=True)
-    auditer(None, A.CONFIGURATION, "Reprise d'une sauvegarde complète", module="organisation",
-            auteur=f"{request.user.username}", mode=mode, origine=compte_rendu["origine"], date_sauvegarde=compte_rendu["date_sauvegarde"],
-            objets=compte_rendu["objets"])
-    return Response(compte_rendu)
+
+    org, administrateur = contexte.courante(), request.user
+    en_arriere_plan = getattr(settings, "REPRISE_EN_ARRIERE_PLAN", True)
+    _ecrire_etat(cible, {"etat": "en_cours"})
+
+    def travail():
+        try:
+            with contexte.dans_organisation(org) if org is not None else contextlib.nullcontext():
+                compte_rendu = transfert.importer(str(cible), administrateur, mode)
+                auditer(None, A.CONFIGURATION, "Reprise d'une sauvegarde complète", module="organisation",
+                        auteur=administrateur.username, mode=mode, origine=compte_rendu["origine"],
+                        date_sauvegarde=compte_rendu["date_sauvegarde"], objets=compte_rendu["objets"])
+            _ecrire_etat(cible, {"etat": "termine", "compte_rendu": compte_rendu})
+        except zipfile.BadZipFile:
+            _ecrire_etat(cible, {"etat": "erreur", "detail": "Ce fichier n'est pas un zip valide."})
+        except transfert.TransfertRefuse as erreur:
+            _ecrire_etat(cible, {"etat": "erreur", "detail": str(erreur)})
+        except Exception:  # tout est annulé (transaction) ; le détail reste dans le journal du serveur
+            logger.exception("Reprise de la sauvegarde %s impossible.", cible.name)
+            _ecrire_etat(cible, {"etat": "erreur", "detail": "La reprise a échoué : rien n'a été modifié."})
+        finally:
+            cible.unlink(missing_ok=True)
+            if en_arriere_plan:
+                connections.close_all()
+
+    if en_arriere_plan:
+        threading.Thread(target=travail, name=f"reprise-{cible.stem}", daemon=True).start()
+    else:
+        travail()
+    return _reponse_etat(cible)
+
+
+@api_view(["GET"])
+@permission_classes([IsAdmin])
+def suivre_reprise(request):
+    """Avancement de la reprise lancée (?identifiant=) : en cours, terminée (avec son compte rendu) ou en erreur."""
+    try:
+        cible = _fichier_envoi(request.query_params.get("identifiant", ""))
+        return _reponse_etat(cible)
+    except ValueError:
+        return Response({"detail": "Envoi invalide."}, status=status.HTTP_400_BAD_REQUEST)
+    except FileNotFoundError:
+        return Response({"detail": "Aucune reprise en cours pour ce fichier."}, status=status.HTTP_404_NOT_FOUND)

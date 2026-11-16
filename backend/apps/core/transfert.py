@@ -145,6 +145,7 @@ SINGLETONS = {"dashboard.configurationtableaudebord", "dashboard.configurationme
               "core.identiteorganisation"}
 # Éléments sans champ unique, reconnus par ces champs pour ne pas les dupliquer.
 CORRESPONDANCES = {"geo.niveauadministratif": ("pays", "ordre"), "geo.zone": ("niveau_administratif", "parent", "nom"),
+                   "geo.localite": ("pays", "nom", "commune", "latitude", "longitude"),
                    "partners.bailleur": ("nom",), "partners.partenaire": ("nom",),
                    "strategy.typedocument": ("ordre",), "strategy.cadrestrategique": ("type_document", "nom"),
                    "strategy.typeniveau": ("cadre_strategique", "ordre"),
@@ -535,27 +536,57 @@ def _verifications(modele, label):
     return groupes
 
 
-def _existant(objet, label, en_attente=()):
-    """Élément déjà présent qui correspond (les champs dont le lien est encore en attente ne comptent pas)."""
-    modele = type(objet)
-    for groupe, condition in _verifications(modele, label):
-        if any(nom in en_attente for nom in groupe):
-            continue
-        valeurs = {}
-        for nom in groupe:
-            champ = modele._meta.get_field(nom)
-            valeurs[champ.attname] = getattr(objet, champ.attname)
-        if len(groupe) == 1 and list(valeurs.values())[0] in (None, ""):
-            continue
-        existants = modele._base_manager.filter(**valeurs)
-        if condition is not None:
-            existants = existants.filter(condition)
-        trouve = existants.only("pk").first()
-        if trouve:
-            return trouve
-    if label == "accounts.user" and objet.email:
-        return modele._base_manager.filter(email__iexact=objet.email).only("pk").first()
-    return None
+class _Index:
+    """
+    Éléments déjà présents, par groupe de champs qui les désigne : lus en une requête par groupe (au premier
+    besoin), puis complétés au fil des créations — au lieu d'une requête par élément de la sauvegarde.
+    """
+
+    def __init__(self):
+        self.groupes = {}  # (modèle, groupe, condition) -> {valeurs: numéro}
+
+    @staticmethod
+    def _noms(modele, groupe):
+        return tuple(modele._meta.get_field(nom).attname for nom in groupe)
+
+    def _table(self, modele, groupe, condition):
+        cle = (modele, groupe, condition)
+        if cle not in self.groupes:
+            existants = modele._base_manager.all()
+            if condition is not None:
+                existants = existants.filter(condition)
+            table = {}
+            for *valeurs, numero in existants.order_by("-pk").values_list(*self._noms(modele, groupe), "pk"):
+                table[tuple(valeurs)] = numero  # du plus récent au plus ancien : le plus ancien reste
+            self.groupes[cle] = table
+        return self.groupes[cle]
+
+    def chercher(self, objet, label, en_attente=()):
+        """Numéro de l'élément déjà présent qui correspond (les champs dont le lien est en attente ne comptent pas)."""
+        modele = type(objet)
+        for groupe, condition in _verifications(modele, label):
+            if any(nom in en_attente for nom in groupe):
+                continue
+            valeurs = tuple(getattr(objet, attname) for attname in self._noms(modele, groupe))
+            if len(groupe) == 1 and valeurs[0] in (None, ""):
+                continue
+            numero = self._table(modele, groupe, condition).get(valeurs)
+            if numero is not None:
+                return numero
+        if label == "accounts.user" and objet.email:
+            return modele._base_manager.filter(email__iexact=objet.email).values_list("pk", flat=True).first()
+        return None
+
+    def ajouter(self, objet, label):
+        """Élément créé : désormais trouvé par les suivants (une unicité partielle seulement s'il en remplit la condition)."""
+        modele = type(objet)
+        for groupe, condition in _verifications(modele, label):
+            cle = (modele, groupe, condition)
+            if cle not in self.groupes:
+                continue
+            if condition is not None and not modele._base_manager.filter(condition, pk=objet.pk).exists():
+                continue
+            self.groupes[cle].setdefault(tuple(getattr(objet, a) for a in self._noms(modele, groupe)), objet.pk)
 
 
 def _code_libre(objet, champ_nom):
@@ -642,6 +673,7 @@ def _fusionner(chemin_donnees, archive, comptes_desactives=False) -> Counter:
     a_corriger = []  # (modèle, champ, modèle visé, ancien numéro visé, numéro de l'élément créé)
     plusieurs = []  # liens multiples, posés à la fin
     bilan = Counter()
+    index = _Index()
     with connection.cursor() as curseur:
         curseur.execute("SET CONSTRAINTS ALL DEFERRED")
     for label_modele in _ordre_des_modeles(presents):
@@ -684,9 +716,9 @@ def _fusionner(chemin_donnees, archive, comptes_desactives=False) -> Counter:
                 continue
             if label == AUDIT:
                 objet.utilisateur_id = correspondance["accounts.user"].get(objet.utilisateur_id)
-            existant = None if label == AUDIT else _existant(objet, label, {c.name for c, _, _ in en_attente})
+            existant = None if label == AUDIT else index.chercher(objet, label, {c.name for c, _, _ in en_attente})
             if existant is not None:
-                correspondance[label][ancien] = existant.pk
+                correspondance[label][ancien] = existant
                 bilan["reutilises"] += 1
                 continue
             if label in RENOMMER and modele._base_manager.filter(**{RENOMMER[label]: getattr(objet, RENOMMER[label])}).exists():
@@ -698,6 +730,8 @@ def _fusionner(chemin_donnees, archive, comptes_desactives=False) -> Counter:
                 bilan["comptes_desactives"] += 1
             objet.pk = None
             models.Model.save_base(objet, raw=True, force_insert=True)
+            if label != AUDIT:
+                index.ajouter(objet, label)
             correspondance[label][ancien] = objet.pk
             bilan["crees"] += 1
             a_corriger += [(modele, champ, visee, valeur, objet.pk) for champ, visee, valeur in en_attente]

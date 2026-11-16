@@ -16,9 +16,16 @@ from . import transfert
 
 
 @pytest.fixture(autouse=True)
-def stockage(tmp_path, settings):
+def stockage(tmp_path, settings, monkeypatch):
     settings.MEDIA_ROOT = str(tmp_path / "media")
     settings.PLAINTES_STOCKAGE_PRIVE = str(tmp_path / "prive")
+    # Reprise dans la requête (un fil à part ne verrait pas la base de test) ; envois propres à chaque test.
+    settings.REPRISE_EN_ARRIERE_PLAN = False
+    from . import vues_transfert
+
+    envois = tmp_path / "reprises"
+    envois.mkdir()
+    monkeypatch.setattr(vues_transfert, "_dossier_envois", lambda: envois)
     return tmp_path
 
 
@@ -129,7 +136,8 @@ def test_api_reservee_a_l_administrateur_et_par_morceaux(admin, db):
     assert Projet.objects.count() == 0
     reprise = client.post("/api/v1/transfert/reprendre/", {"identifiant": "essai-reprise-1", "confirmation": "REMPLACER"},
                           format="json")
-    assert reprise.status_code == 200, reprise.data
+    assert reprise.status_code == 200 and reprise.data["etat"] == "termine", reprise.data
+    assert reprise.data["compte_rendu"]["mode"] == "remplacer"
     assert client.post("/api/v1/transfert/morceau/", {"identifiant": "../../etc", "numero": 0,
                                                       "morceau": io.BytesIO(b"x")}, format="multipart").status_code == 400
 
@@ -140,6 +148,11 @@ def test_ajouter_garde_l_existant_et_ne_duplique_pas_les_referentiels(admin, sto
 
     region = NiveauAdministratif.objects.get_or_create(pays="BF", ordre=1, defaults={"nom_niveau": "Région"})[0]
     Zone.objects.create(niveau_administratif=region, nom="Zone d'essai")
+    from apps.geo.models import Localite
+
+    village = {"pays": "BF", "nom": "Réo", "statut": "VILLAGE", "commune": "Réo", "latitude": 12.32, "longitude": -2.47}
+    Localite.objects.create(**village)
+    Localite.objects.create(**village)  # même village en double dans la sauvegarde : un seul repris
     Bailleur.objects.create(nom="Union européenne")
     projet = _projet("COMMUN-1")
     (stockage / "media" / "ged").mkdir(parents=True)
@@ -153,12 +166,14 @@ def test_ajouter_garde_l_existant_et_ne_duplique_pas_les_referentiels(admin, sto
     (stockage / "media" / "ged" / "note.pdf").write_bytes(b"version de l'espace")
 
     zones, niveaux = Zone.objects.count(), NiveauAdministratif.objects.count()
+    Localite.objects.filter(pk=Localite.objects.order_by("pk").last().pk).delete()
     compte_rendu = transfert.importer(zip_, admin, "ajouter")
 
     codes = set(Projet.objects.values_list("code", flat=True))
     assert codes == {"COMMUN-1", "ICI-1", "COMMUN-1-R1"}
     assert Projet.objects.get(code="COMMUN-1").nom == "Projet de l'espace d'arrivée"
     assert Zone.objects.count() == zones and NiveauAdministratif.objects.count() == niveaux
+    assert Localite.objects.filter(nom="Réo").count() == 1  # localités reconnues, pas recréées
     assert Bailleur.objects.count() == 1
     assert User.objects.filter(username="adm_tr").count() == 1
     assert compte_rendu["renommes"] == 1 and compte_rendu["reutilises"] > 0
@@ -177,7 +192,15 @@ def test_api_mode_ajouter_demande_sa_propre_confirmation(admin, db):
     assert sans.status_code == 200 and "manifeste" in sans.data  # mauvais mot : simple analyse
     avec = client.post("/api/v1/transfert/reprendre/", {"identifiant": "essai-ajout-1", "mode": "ajouter",
                                                         "confirmation": "AJOUTER"}, format="json")
-    assert avec.status_code == 200 and avec.data["mode"] == "ajouter"
+    assert avec.status_code == 200 and avec.data["compte_rendu"]["mode"] == "ajouter"
+    # Avancement suivi par l'écran (la reprise se fait en arrière-plan en production) ; un second clic ne relance rien.
+    suivi = client.get("/api/v1/transfert/reprise/", {"identifiant": "essai-ajout-1"})
+    assert suivi.status_code == 200 and suivi.data["etat"] == "termine"
+    projets = Projet.objects.count()
+    encore = client.post("/api/v1/transfert/reprendre/", {"identifiant": "essai-ajout-1", "mode": "ajouter",
+                                                          "confirmation": "AJOUTER"}, format="json")
+    assert encore.data["etat"] == "termine" and Projet.objects.count() == projets
+    assert client.get("/api/v1/transfert/reprise/", {"identifiant": "inconnu-123"}).status_code == 404
     assert Projet.objects.filter(code="APRES-1").exists()
 
 

@@ -110,7 +110,8 @@ def _envoyer_accuse(demande):
     _envoyer(demande.courriel, "Votre profil a bien été créé",
              f"Bonjour {demande.contact_nom},\n\nLe profil de {demande.organisation} a bien été créé sur la plateforme "
              "Expertise-ID Monitora (connexion avec votre adresse : " + demande.courriel + ").\n\nPour accéder à la plateforme, "
-             "choisissez une offre d'abonnement et réglez-la en ligne : votre espace est créé aussitôt.\n\n"
+             "choisissez une offre d'abonnement et réglez-la en ligne : votre espace est alors créé. Son activation "
+             "peut prendre jusqu'à 10 minutes ; un courriel vous prévient dès qu'il est prêt.\n\n"
              "Expertise-ID")
 
 

@@ -157,6 +157,12 @@ export interface CoucheImportee {
   created_at: string;
 }
 
+/** Réponse de l'import : une couche importée par couche géographique du fichier (GeoPackage à plusieurs couches). */
+export interface ResultatImportCouche extends CoucheImportee {
+  couches_creees: CoucheImportee[];
+  couches_ignorees: string[];
+}
+
 export function useCouchesImportees() {
   return useQuery({
     queryKey: ["couches-importees"],
@@ -182,7 +188,7 @@ export function useImporterCouche() {
       donnees.append("fichier", fichier);
       donnees.append("nom", nom);
       donnees.append("couleur", couleur);
-      return (await apiClient.post<CoucheImportee>("/couches-importees/", donnees, { timeout: 300000 })).data;
+      return (await apiClient.post<ResultatImportCouche>("/couches-importees/", donnees, { timeout: 300000 })).data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["couches-importees"] }),
   });

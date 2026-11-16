@@ -3,6 +3,9 @@ Import d'une couche SIG pour la carte des bénéficiaires : shapefile (archive .
 .shx, .dbf et .prj), GeoPackage (.gpkg), GeoJSON ou KML. La projection est lue dans le
 fichier et la couche reprojetée en WGS 84 ; les géométries sont simplifiées et seuls quelques
 attributs sont gardés, pour un affichage rapide.
+
+Un fichier à plusieurs couches (GeoPackage surtout) donne une couche importée par couche du
+fichier, chacune lue, reprojetée et contrôlée séparément ; les tables sans géométrie sont ignorées.
 """
 import json
 import os
@@ -13,6 +16,8 @@ import zipfile
 EXTENSIONS = (".shp", ".gpkg", ".geojson", ".json", ".kml")
 MAX_OBJETS = 20000
 MAX_COLONNES = 8
+# Couleurs des couches suivantes d'un fichier à plusieurs couches (mêmes que la fenêtre d'import).
+COULEURS = ("#7048e8", "#e8590c", "#1c7ed6", "#c2255c", "#2f9e44", "#f08c00", "#0c8599", "#495057")
 # Colonnes reconnues comme nom des objets (écrit sur la carte).
 NOMS = ("nom", "name", "libelle", "label", "nom_com", "nom_prov", "nom_reg", "nom_vill", "localite", "village", "commune", "intitule", "designation")
 
@@ -22,6 +27,10 @@ TECHNIQUES = re.compile(r"(?i)^(objectid(_\d+)?|fid|ogc_fid|shape_(leng|le_\d+|a
 
 class ImportSigImpossible(Exception):
     pass
+
+
+class CoucheVide(ImportSigImpossible):
+    """Couche sans objet : ignorée dans un fichier à plusieurs couches."""
 
 
 def _colonne_des_noms(gdf, attributs) -> str:
@@ -76,22 +85,70 @@ def _famille(types) -> str:
     raise ImportSigImpossible("La couche mélange points, lignes et polygones : importez-les séparément.")
 
 
-def lire_couche(fichier) -> dict:
-    """Lit, reprojette et simplifie la couche ; renvoie ce qu'il faut enregistrer."""
+def couleurs(premiere, nombre) -> list:
+    """La couleur choisie pour la première couche, puis celles de la palette, sans la répéter."""
+    suite = [c for c in COULEURS if c.lower() != (premiere or "").lower()]
+    return [premiere] + [suite[i % len(suite)] for i in range(nombre - 1)]
+
+
+def _couches_geographiques(chemin) -> list:
+    """Noms des couches avec géométrie du fichier ([None] : une seule couche, lue sans la nommer)."""
+    if chemin.lower().endswith(".shp"):
+        return [None]
+    import pyogrio
+
+    try:
+        couches = pyogrio.list_layers(chemin)
+    except Exception as exc:
+        raise ImportSigImpossible(f"Fichier illisible ({exc}).")
+    noms = [str(nom) for nom, geometrie in couches if geometrie is not None]
+    if not noms:
+        raise ImportSigImpossible("Le fichier ne contient aucune couche géographique.")
+    return noms if len(noms) > 1 else [None]
+
+
+def _lire(chemin, couche):
     import geopandas as gpd
 
+    options = {"layer": couche} if couche else {}
+    try:
+        return gpd.read_file(chemin, encoding="utf-8", **options) if chemin.lower().endswith(".shp") else gpd.read_file(chemin, **options)
+    except UnicodeDecodeError:
+        return gpd.read_file(chemin, encoding="latin-1", **options)
+    except Exception as exc:
+        raise ImportSigImpossible(f"Fichier illisible ({exc}).")
+
+
+def lire_couches(fichier) -> tuple:
+    """
+    Lit chaque couche géographique du fichier : ([(nom de la couche ou None, données à enregistrer)],
+    [couches ignorées]). None : fichier à une seule couche. Une couche sans objet (géométries toutes
+    vides) d'un fichier qui en a plusieurs est ignorée, et signalée.
+    """
     with tempfile.TemporaryDirectory() as dossier:
         chemin = _fichier_geo(dossier, fichier)
+        noms = _couches_geographiques(chemin)
+        lus = [(nom, _lire(chemin, nom)) for nom in noms]
+    couches, ignorees = [], []
+    for nom, gdf in lus:
         try:
-            gdf = gpd.read_file(chemin, encoding="utf-8") if chemin.lower().endswith(".shp") else gpd.read_file(chemin)
-        except UnicodeDecodeError:
-            gdf = gpd.read_file(chemin, encoding="latin-1")
-        except Exception as exc:
-            raise ImportSigImpossible(f"Fichier illisible ({exc}).")
+            couches.append((nom, _preparer(gdf)))
+        except CoucheVide:
+            if nom is None:
+                raise
+            ignorees.append(nom)
+        except ImportSigImpossible as exc:
+            raise ImportSigImpossible(f"Couche « {nom} » : {exc}" if nom else str(exc))
+    if not couches:
+        raise ImportSigImpossible("Les couches du fichier ne contiennent aucun objet géographique.")
+    return couches, ignorees
 
+
+def _preparer(gdf) -> dict:
+    """Reprojette (selon la projection propre à la couche), simplifie et réduit les attributs."""
     gdf = gdf[gdf.geometry.notna() & ~gdf.geometry.is_empty]
     if gdf.empty:
-        raise ImportSigImpossible("La couche ne contient aucun objet géographique.")
+        raise CoucheVide("La couche ne contient aucun objet géographique.")
     if len(gdf) > MAX_OBJETS:
         raise ImportSigImpossible(f"Couche trop volumineuse ({len(gdf)} objets, {MAX_OBJETS} au plus).")
     projection = gdf.crs.name if gdf.crs is not None else ""

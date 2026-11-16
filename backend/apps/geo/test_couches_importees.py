@@ -77,6 +77,46 @@ def test_import_et_carte_imprimable(tmp_path):
 
 
 @pytest.mark.django_db
+def test_geopackage_a_plusieurs_couches(tmp_path):
+    """Une couche importée par couche géographique du fichier, chacune reprojetée et colorée ; tables sans géométrie ignorées."""
+    import pandas as pd
+    import pyogrio
+    from shapely.geometry import LineString, Point
+
+    chemin = tmp_path / "projet.gpkg"
+    gpd.GeoDataFrame({"nom_village": ["Koudougou", "Réo"]}, geometry=[Point(-2.36, 12.25), Point(-2.47, 12.32)],
+                     crs=4326).to_file(chemin, layer="villages")
+    # Autre projection dans le même fichier (UTM 30N).
+    gpd.GeoDataFrame({"nom_piste": ["Piste 1"], "OBJECTID": [1]}, geometry=[LineString([(400000, 1300000), (420000, 1320000)])],
+                     crs=32630).to_file(chemin, layer="pistes")
+    pyogrio.write_dataframe(pd.DataFrame({"etat": ["bon", "mauvais"]}), chemin, layer="etat_piste")
+    assert len(pyogrio.list_layers(chemin)) == 3
+
+    client = APIClient()
+    client.force_authenticate(User.objects.create_user(username="adm_gpkg", password="x", role=ROLE_ADMIN))
+    r = client.post("/api/v1/couches-importees/", {"fichier": SimpleUploadedFile("projet.gpkg", chemin.read_bytes()),
+                                                   "nom": "Projet", "couleur": "#e8590c"}, format="multipart")
+    assert r.status_code == 201, r.data
+    creees = {c["nom"]: c for c in r.data["couches_creees"]}
+    assert set(creees) == {"Projet — villages", "Projet — pistes"} and r.data["couches_ignorees"] == []
+    villages, pistes = creees["Projet — villages"], creees["Projet — pistes"]
+    assert (villages["geometrie"], villages["nombre_objets"], villages["champ_etiquette"]) == ("POINT", 2, "nom_village")
+    assert (pistes["geometrie"], pistes["champ_etiquette"]) == ("LIGNE", "nom_piste")
+    ouest, sud, est, nord = pistes["emprise"]
+    assert -4.0 < ouest < est < -3.0 and 11.0 < sud < nord < 12.5  # reprojetée depuis sa propre projection
+    assert r.data["couches_creees"][0]["couleur"] == "#e8590c"
+    assert len({c["couleur"] for c in r.data["couches_creees"]}) == 2
+    assert CoucheImportee.objects.filter(nom__startswith="Projet").count() == 2
+
+    # Fichier à une seule couche : le nom choisi, sans suffixe.
+    seul = tmp_path / "seul.gpkg"
+    gpd.GeoDataFrame({"nom": ["A"]}, geometry=[Point(-2, 12)], crs=4326).to_file(seul, layer="points")
+    r = client.post("/api/v1/couches-importees/", {"fichier": SimpleUploadedFile("seul.gpkg", seul.read_bytes()), "nom": "Seul"},
+                    format="multipart")
+    assert r.status_code == 201 and [c["nom"] for c in r.data["couches_creees"]] == ["Seul"]
+
+
+@pytest.mark.django_db
 def test_synthese_par_zone():
     """Projets d'une région comptés dans ses provinces ; bénéficiaires selon leur localité."""
     from apps.beneficiaries.models import ParticipationProjet

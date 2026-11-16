@@ -316,6 +316,9 @@
  "{0} compte(s) ajouté(s) désactivé(s) : activez-les dans Utilisateurs si besoin.": [
   "pages/organisation/SauvegardeTransfert.tsx"
  ],
+ "{0} couches importées": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
  "{0} créé(s), {1} mis à jour": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
@@ -3601,6 +3604,9 @@
   "pages/carte/CartePage.tsx",
   "pages/carte/FenetresCarte.tsx"
  ],
+ "Couches sans aucun objet géographique, non importées :": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
  "Couleur": [
   "pages/carte/FenetresCarte.tsx",
   "pages/parametres/ParametresAlertePage.tsx"
@@ -6819,6 +6825,9 @@
  "Le dossier repassera au circuit ordinaire. À réserver aux signalements sans objet ; le motif est inscrit au journal.": [
   "pages/plaintes/DossierPlaintePage.tsx"
  ],
+ "Le fichier contient plusieurs couches : chacune est importée séparément, convertie en WGS 84 depuis sa propre projection. Les tables sans géométrie sont ignorées.": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
  "Le fichier est téléchargé, mais la suppression a échoué : rien n'a été supprimé.": [
   "pages/organisation/SauvegardeTransfert.tsx"
  ],
@@ -8012,6 +8021,9 @@
   "pages/beneficiaires/BeneficiaireForm.tsx",
   "pages/projets/EquipeTab.tsx"
  ],
+ "Nom, couleur et attribut des noms se modifient dans « Gérer les couches ».": [
+  "pages/carte/FenetresCarte.tsx"
+ ],
  "Nom, prénom, téléphone…": [
   "components/beneficiaires/BeneficiairesTab.tsx"
  ],
@@ -8365,6 +8377,9 @@
   "pages/console/Newsletter.tsx",
   "pages/plaintes/MessagesPlaintes.tsx",
   "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "objet(s)": [
+  "pages/carte/FenetresCarte.tsx"
  ],
  "objet(s) ·": [
   "pages/carte/FenetresCarte.tsx"

@@ -117,22 +117,32 @@ class CoucheImporteeViewSet(viewsets.ModelViewSet):
     parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     def create(self, request, *args, **kwargs):
+        """
+        Une couche importée par couche géographique du fichier : « <nom> — <couche> » pour un fichier qui
+        en a plusieurs (GeoPackage), chacune de sa couleur ; réponse : la première, toutes dans
+        « couches_creees », et dans « couches_ignorees » les couches du fichier sans aucun objet.
+        """
+        from django.db import transaction
         from rest_framework.exceptions import ValidationError
 
-        from .services.import_sig import ImportSigImpossible, lire_couche
+        from .services.import_sig import ImportSigImpossible, couleurs, lire_couches
 
         fichier = request.FILES.get("fichier")
         if fichier is None:
             raise ValidationError({"fichier": "Choisissez un fichier."})
         try:
-            lue = lire_couche(fichier)
+            lues, ignorees = lire_couches(fichier)
         except ImportSigImpossible as exc:
             raise ValidationError({"fichier": str(exc)})
         nom = (request.data.get("nom") or os.path.splitext(os.path.basename(fichier.name))[0]).strip()[:150]
-        serializer = self.get_serializer(data={"nom": nom, "couleur": request.data.get("couleur") or "#7048e8"})
-        serializer.is_valid(raise_exception=True)
-        couche = serializer.save(fichier_source=fichier.name[:255], cree_par=request.user, **lue)
-        return Response(self.get_serializer(couche).data, status=201)
+        creees = []
+        with transaction.atomic():
+            for (couche, lue), couleur in zip(lues, couleurs(request.data.get("couleur") or "#7048e8", len(lues))):
+                serializer = self.get_serializer(data={"nom": f"{nom} — {couche}"[:150] if couche else nom, "couleur": couleur})
+                serializer.is_valid(raise_exception=True)
+                creees.append(serializer.save(fichier_source=fichier.name[:255], cree_par=request.user, **lue))
+        donnees = self.get_serializer(creees, many=True).data
+        return Response({**donnees[0], "couches_creees": donnees, "couches_ignorees": ignorees}, status=201)
 
     @action(detail=True, methods=["get"])
     def geojson(self, request, pk=None):

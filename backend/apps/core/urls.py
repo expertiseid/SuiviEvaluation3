@@ -16,5 +16,6 @@ urlpatterns = router.urls + [
     path("transfert/exporter/", vues_transfert.exporter, name="transfert-exporter"),
     path("transfert/morceau/", vues_transfert.recevoir_morceau, name="transfert-morceau"),
     path("transfert/reprendre/", vues_transfert.reprendre, name="transfert-reprendre"),
+    path("transfert/reprise/", vues_transfert.suivre_reprise, name="transfert-reprise"),
     path("transfert/retirer/", vues_transfert.retirer, name="transfert-retirer"),
 ]
