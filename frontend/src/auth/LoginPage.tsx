@@ -6,6 +6,7 @@ import { CLE_ABONNEMENT } from "../pages/accueil/InscriptionPage";
 import { KeyRound, Mail, MailCheck } from "lucide-react";
 import { type EtapeDoubleAuth, connexionCode, demanderNouveauMotDePasse, renvoyerCode } from "../api/doubleAuth";
 import { useIdentiteOrganisation } from "../api/identite";
+import { EntreeDemo } from "./EntreeDemo";
 import { useAuth } from "./useAuth";
 import { messageErreurApi } from "../utils/erreurs";
 import { voc } from "../utils/vocabulaire";
@@ -135,6 +136,9 @@ export function LoginPage({ operateur = false }: { operateur?: boolean }) {
     setError(null);
     setInfo(null);
   };
+
+  // Installation de démonstration : pas de page de connexion, on entre dans la démo (la console garde la sienne).
+  if (!operateur && plateforme?.demo_directe) return <EntreeDemo destination={destination} />;
 
   // Plateforme multi-organisations : on se connecte avec son adresse courriel (installation unique : identifiant).
   const parCourriel = multi || operateur;

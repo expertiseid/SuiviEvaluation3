@@ -536,14 +536,41 @@ def _verifications(modele, label):
     return groupes
 
 
+class _Indecidable(Exception):
+    pass
+
+
+def _remplit(objet, condition) -> bool:
+    """L'élément remplit-il la condition d'une unicité partielle ? (« champ », « champ__isnull » seulement)"""
+    from django.db.models import Q
+
+    resultats = []
+    for enfant in condition.children:
+        if isinstance(enfant, Q):
+            resultats.append(_remplit(objet, enfant))
+            continue
+        cle, attendu = enfant
+        nom, _, operation = cle.partition("__")
+        actuel = getattr(objet, type(objet)._meta.get_field(nom).attname)
+        if operation == "isnull":
+            resultats.append((actuel is None) == bool(attendu))
+        elif operation in ("", "exact"):
+            resultats.append(actuel == attendu)
+        else:
+            raise _Indecidable
+    resultat = all(resultats) if condition.connector == Q.AND else any(resultats)
+    return not resultat if condition.negated else resultat
+
+
 class _Index:
     """
     Éléments déjà présents, par groupe de champs qui les désigne : lus en une requête par groupe (au premier
-    besoin), puis complétés au fil des créations — au lieu d'une requête par élément de la sauvegarde.
+    besoin), puis complétés au fil des créations — au lieu d'une requête par élément de la sauvegarde. Un
+    élément pas encore enregistré (paquet en attente) y figure lui-même ; son numéro vient à l'enregistrement.
     """
 
     def __init__(self):
-        self.groupes = {}  # (modèle, groupe, condition) -> {valeurs: numéro}
+        self.groupes = {}  # (modèle, groupe, condition) -> {valeurs: numéro ou élément en attente}
 
     @staticmethod
     def _noms(modele, groupe):
@@ -562,7 +589,10 @@ class _Index:
         return self.groupes[cle]
 
     def chercher(self, objet, label, en_attente=()):
-        """Numéro de l'élément déjà présent qui correspond (les champs dont le lien est en attente ne comptent pas)."""
+        """
+        Élément déjà présent qui correspond : son numéro, ou l'élément lui-même s'il attend d'être enregistré
+        (les champs dont le lien est en attente ne comptent pas).
+        """
         modele = type(objet)
         for groupe, condition in _verifications(modele, label):
             if any(nom in en_attente for nom in groupe):
@@ -570,23 +600,63 @@ class _Index:
             valeurs = tuple(getattr(objet, attname) for attname in self._noms(modele, groupe))
             if len(groupe) == 1 and valeurs[0] in (None, ""):
                 continue
-            numero = self._table(modele, groupe, condition).get(valeurs)
-            if numero is not None:
-                return numero
+            trouve = self._table(modele, groupe, condition).get(valeurs)
+            if trouve is not None:
+                return trouve
         if label == "accounts.user" and objet.email:
             return modele._base_manager.filter(email__iexact=objet.email).values_list("pk", flat=True).first()
         return None
 
-    def ajouter(self, objet, label):
-        """Élément créé : désormais trouvé par les suivants (une unicité partielle seulement s'il en remplit la condition)."""
+    def ajouter(self, objet, label, enregistre=True) -> bool:
+        """
+        Élément créé (ou en attente : `enregistre` faux) : désormais trouvé par les suivants — pour une
+        unicité partielle, s'il en remplit la condition. Rend faux s'il reste une condition à vérifier en base,
+        une fois l'élément enregistré.
+        """
         modele = type(objet)
+        complet = True
         for groupe, condition in _verifications(modele, label):
             cle = (modele, groupe, condition)
             if cle not in self.groupes:
                 continue
-            if condition is not None and not modele._base_manager.filter(condition, pk=objet.pk).exists():
-                continue
-            self.groupes[cle].setdefault(tuple(getattr(objet, a) for a in self._noms(modele, groupe)), objet.pk)
+            if condition is not None:
+                try:
+                    if not _remplit(objet, condition):
+                        continue
+                except _Indecidable:
+                    if not enregistre:
+                        complet = False
+                        continue
+                    if not modele._base_manager.filter(condition, pk=objet.pk).exists():
+                        continue
+            valeurs = tuple(getattr(objet, a) for a in self._noms(modele, groupe))
+            self.groupes[cle].setdefault(valeurs, objet.pk if enregistre else objet)
+        return complet
+
+    def numeroter(self, objet, label):
+        """Paquet enregistré : l'élément en attente laisse place à son numéro."""
+        modele = type(objet)
+        for groupe, condition in _verifications(modele, label):
+            table = self.groupes.get((modele, groupe, condition))
+            valeurs = tuple(getattr(objet, a) for a in self._noms(modele, groupe))
+            if table is not None and table.get(valeurs) is objet:
+                table[valeurs] = objet.pk
+
+
+def _existant_en_base(objet, label):
+    """Élément déjà enregistré qui correspond (repli d'un paquet refusé par la base, élément par élément)."""
+    modele = type(objet)
+    for groupe, condition in _verifications(modele, label):
+        valeurs = {modele._meta.get_field(nom).attname: getattr(objet, modele._meta.get_field(nom).attname) for nom in groupe}
+        if len(groupe) == 1 and list(valeurs.values())[0] in (None, ""):
+            continue
+        existants = modele._base_manager.filter(**valeurs)
+        if condition is not None:
+            existants = existants.filter(condition)
+        trouve = existants.values_list("pk", flat=True).first()
+        if trouve is not None:
+            return trouve
+    return None
 
 
 def _code_libre(objet, champ_nom):
@@ -657,10 +727,45 @@ def _ordre_des_modeles(labels) -> list:
     return ordre
 
 
-def _fusionner(chemin_donnees, archive, comptes_desactives=False) -> Counter:
-    """Ajoute les éléments de la sauvegarde à ceux de l'espace ; renvoie les nombres créés et réutilisés."""
+TAILLE_PAQUET = 1000
+
+
+def _inserer(modele, objets):
+    """
+    Insère les éléments en une requête par lot, valeurs telles quelles (comme un enregistrement « raw » :
+    dates de création et de modification d'origine gardées), et leur donne leur numéro.
+    """
+    meta = modele._meta
+    champs = [f for f in meta.local_concrete_fields if f is not meta.auto_field and not getattr(f, "generated", False)]
+    retour = meta.db_returning_fields
+    lot = max(1, 60000 // max(1, len(champs)))  # sous la limite de 65 535 valeurs d'une requête PostgreSQL
+    for debut in range(0, len(objets), lot):
+        morceau = objets[debut:debut + lot]
+        lignes = modele._base_manager._insert(morceau, fields=champs, returning_fields=retour, raw=True)
+        for objet, ligne in zip(morceau, lignes):
+            for champ, valeur in zip(retour, ligne):
+                setattr(objet, champ.attname, valeur)
+            objet._state.adding = False
+            objet._state.db = connection.alias
+
+
+def _groupable(modele, label) -> bool:
+    """
+    Enregistrable par paquets (une requête pour mille éléments) : ni compte (index des comptes), ni code à
+    renommer, ni lien vers un élément du même modèle (il doit être enregistré avant celui qui le désigne).
+    """
+    if label == "accounts.user" or label in RENOMMER or modele._meta.parents:
+        return False
+    return not any(f.is_relation and f.related_model is modele for f in modele._meta.concrete_fields)
+
+
+def _fusionner(chemin_donnees, archive, comptes_desactives=False, progression=None) -> Counter:
+    """
+    Ajoute les éléments de la sauvegarde à ceux de l'espace ; renvoie les nombres créés et réutilisés.
+    `progression(traités, total)` est appelée au fil de l'ajout.
+    """
     from django.core import serializers
-    from django.db import models
+    from django.db import IntegrityError, models
 
     racine = _racine(settings.MEDIA_ROOT)
     noms_archive = set(archive.namelist())
@@ -670,14 +775,64 @@ def _fusionner(chemin_donnees, archive, comptes_desactives=False) -> Counter:
         for o in json.load(f):
             par_modele[o["model"]].append(o)
     presents = set(par_modele)
+    total = sum(len(v) for v in par_modele.values())
+    traites = 0
     a_corriger = []  # (modèle, champ, modèle visé, ancien numéro visé, numéro de l'élément créé)
     plusieurs = []  # liens multiples, posés à la fin
     bilan = Counter()
     index = _Index()
+    paquet = []  # (élément, ancien numéro, liens en attente, liens multiples, condition à vérifier en base)
+    alias = []  # (modèle, ancien numéro, élément en attente du paquet auquel il correspond)
+
+    def creer(objet, label, ancien, en_attente, m2m):
+        correspondance[label][ancien] = objet.pk
+        bilan["crees"] += 1
+        a_corriger.extend((type(objet), champ, visee, valeur, objet.pk) for champ, visee, valeur in en_attente)
+        if m2m:
+            plusieurs.append((objet, m2m))
+
+    def vider(label):
+        """Enregistre le paquet en une requête ; refusé par la base, élément par élément comme avant."""
+        if not paquet:
+            return
+        modele = type(paquet[0][0])
+        try:
+            with transaction.atomic():
+                _inserer(modele, [p[0] for p in paquet])
+        except IntegrityError:
+            for objet, *_ in paquet:
+                objet.pk = None
+            for objet, ancien, en_attente, m2m, _verifier in paquet:
+                try:
+                    with transaction.atomic():
+                        models.Model.save_base(objet, raw=True, force_insert=True)
+                except IntegrityError:
+                    objet.pk = _existant_en_base(objet, label)
+                    if objet.pk is None:
+                        raise
+                    bilan["reutilises"] += 1
+                    correspondance[label][ancien] = objet.pk
+                    continue
+                creer(objet, label, ancien, en_attente, m2m)
+        else:
+            for objet, ancien, en_attente, m2m, _verifier in paquet:
+                creer(objet, label, ancien, en_attente, m2m)
+        for objet, _ancien, _en_attente, _m2m, verifier in paquet:
+            index.numeroter(objet, label)
+            if verifier:
+                index.ajouter(objet, label)
+        paquet.clear()
+        for visee, ancien, objet in alias:
+            correspondance[visee][ancien] = objet.pk
+        alias.clear()
+
     with connection.cursor() as curseur:
         curseur.execute("SET CONSTRAINTS ALL DEFERRED")
     for label_modele in _ordre_des_modeles(presents):
         for desserialise in serializers.deserialize("python", par_modele.pop(label_modele), ignorenonexistent=True):
+            traites += 1
+            if progression and traites % TAILLE_PAQUET == 0:
+                progression(traites, total)
             objet = desserialise.object
             modele = type(objet)
             label = modele._meta.label_lower
@@ -718,7 +873,10 @@ def _fusionner(chemin_donnees, archive, comptes_desactives=False) -> Counter:
                 objet.utilisateur_id = correspondance["accounts.user"].get(objet.utilisateur_id)
             existant = None if label == AUDIT else index.chercher(objet, label, {c.name for c, _, _ in en_attente})
             if existant is not None:
-                correspondance[label][ancien] = existant
+                if isinstance(existant, models.Model):
+                    alias.append((label, ancien, existant))  # doublon d'un élément du paquet en attente
+                else:
+                    correspondance[label][ancien] = existant
                 bilan["reutilises"] += 1
                 continue
             if label in RENOMMER and modele._base_manager.filter(**{RENOMMER[label]: getattr(objet, RENOMMER[label])}).exists():
@@ -729,14 +887,19 @@ def _fusionner(chemin_donnees, archive, comptes_desactives=False) -> Counter:
                 objet.is_active = False  # compte cité par une sélection : l'administrateur l'active s'il le souhaite
                 bilan["comptes_desactives"] += 1
             objet.pk = None
+            if _groupable(modele, label):
+                verifier = label != AUDIT and not index.ajouter(objet, label, enregistre=False)
+                paquet.append((objet, ancien, en_attente, desserialise.m2m_data, verifier))
+                if len(paquet) >= TAILLE_PAQUET:
+                    vider(label)
+                continue
             models.Model.save_base(objet, raw=True, force_insert=True)
             if label != AUDIT:
                 index.ajouter(objet, label)
-            correspondance[label][ancien] = objet.pk
-            bilan["crees"] += 1
-            a_corriger += [(modele, champ, visee, valeur, objet.pk) for champ, visee, valeur in en_attente]
-            if desserialise.m2m_data:
-                plusieurs.append((objet, desserialise.m2m_data))
+            creer(objet, label, ancien, en_attente, desserialise.m2m_data)
+        vider(label_modele)
+    if progression:
+        progression(total, total)
 
     for modele, champ, visee, ancien, numero in a_corriger:
         nouveau = correspondance[visee].get(ancien)
@@ -785,8 +948,11 @@ def _ajouter_pieces(archive):
         os.chmod(cible, 0o600)
 
 
-def importer(chemin_zip: str, administrateur, mode: str = "remplacer") -> dict:
-    """Reprend la sauvegarde dans l'espace courant (« remplacer » ou « ajouter ») ; renvoie un compte rendu."""
+def importer(chemin_zip: str, administrateur, mode: str = "remplacer", progression=None) -> dict:
+    """
+    Reprend la sauvegarde dans l'espace courant (« remplacer » ou « ajouter ») ; renvoie un compte rendu.
+    `progression(traités, total)` suit l'ajout élément par élément (mode « ajouter »).
+    """
     from apps.accounts.models import User
     from apps.organisations import comptes, quota
     from apps.plaintes.chiffrement import _fernet
@@ -803,7 +969,8 @@ def importer(chemin_zip: str, administrateur, mode: str = "remplacer") -> dict:
                 with open(donnees, "wb") as f:
                     f.write(archive.read("donnees.json"))
                 with transaction.atomic():
-                    bilan = _fusionner(donnees, archive, comptes_desactives=bool(manifeste.get("selection")))
+                    bilan = _fusionner(donnees, archive, comptes_desactives=bool(manifeste.get("selection")),
+                                       progression=progression)
             _ajouter_pieces(archive)
             org = contexte.courante()
             if contexte.actif() and org is not None:

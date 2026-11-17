@@ -11,6 +11,8 @@ export interface IdentiteOrganisation {
   mode_demo: boolean;
   /** Une démonstration est proposée (« Essayer la démo »). */
   demo_disponible: boolean;
+  /** Installation de démonstration : on y entre sans connexion (aucune page de connexion). */
+  demo_directe: boolean;
   /** Installation séparée : adresse de l'installation de démonstration (ou vide). */
   url_demo: string;
   inscriptions: boolean;

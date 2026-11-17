@@ -1,9 +1,13 @@
 from django.urls import path
 
-from .views import configuration_menu, dashboard_configuration, dashboard_consolide, dashboard_echeances, dashboard_projet
+from .views import (
+    configuration_menu, dashboard_configuration, dashboard_consolide, dashboard_consolide_export, dashboard_echeances,
+    dashboard_projet,
+)
 
 urlpatterns = [
     path("dashboard/consolide/", dashboard_consolide, name="dashboard-consolide"),
+    path("dashboard/consolide/export/", dashboard_consolide_export, name="dashboard-consolide-export"),
     path("dashboard/configuration/", dashboard_configuration, name="dashboard-configuration"),
     path("dashboard/echeances/", dashboard_echeances, name="dashboard-echeances"),
     path("dashboard/projet/<int:projet_id>/", dashboard_projet, name="dashboard-projet"),

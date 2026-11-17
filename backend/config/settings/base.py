@@ -249,7 +249,7 @@ CORS_EXPOSE_HEADERS = ["Content-Disposition", "X-Recu-Extrait"]
 CORS_ALLOWED_ORIGIN_REGEXES = env.list("CORS_ALLOWED_ORIGIN_REGEXES", default=[r"^http://([a-z0-9-]+\.)?localhost(:\d+)?$"])
 from corsheaders.defaults import default_headers  # noqa: E402
 
-CORS_ALLOW_HEADERS = (*default_headers, "x-organisation")
+CORS_ALLOW_HEADERS = (*default_headers, "x-organisation", "x-acces-partage")
 
 # --- Email (notifications) ---
 # Backend "console" par défaut : les emails sont écrits dans les logs du

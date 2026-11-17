@@ -136,6 +136,9 @@
  "· Valeur de base :": [
   "pages/indicateurs/IndicateurDetailPage.tsx"
  ],
+ "« {0} »": [
+  "pages/partage/PagePartagee.tsx"
+ ],
  "« {0} » : {1} caractères au plus pour le nom, {2} pour la valeur.": [
   "serveur"
  ],
@@ -370,6 +373,9 @@
  ],
  "{0} élément(s) supprimé(s) définitivement": [
   "pages/documents/CorbeillePage.tsx"
+ ],
+ "{0} éléments traités sur {1}": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "{0} envoyé(s) sur {1}": [
   "pages/console/Newsletter.tsx"
@@ -661,6 +667,12 @@
  ],
  "30 jours": [
   "components/documents/PartageDocumentModal.tsx"
+ ],
+ "4 caractères au moins. Communiquez-le séparément du lien (par téléphone, par exemple).": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "4 caractères au moins. Les accès déjà ouverts devront le saisir.": [
+  "components/partage/BoutonPartage.tsx"
  ],
  "5 projets complets, avec tous les onglets remplis ;": [
   "pages/accueil/AccueilPage.tsx"
@@ -2415,6 +2427,9 @@
  "Ce dossier est marqué urgent : il demande un traitement immédiat.": [
   "serveur"
  ],
+ "Ce dossier est protégé par un mot de passe.": [
+  "pages/documents/DocumentPartagePage.tsx"
+ ],
  "Ce dossier est vide.": [
   "components/documents/ExplorateurDocuments.tsx"
  ],
@@ -2423,6 +2438,9 @@
  ],
  "Ce dossier n'est pas sensible.": [
   "serveur"
+ ],
+ "Ce dossier ne contient aucun fichier pour l'instant.": [
+  "pages/documents/DocumentPartagePage.tsx"
  ],
  "Ce dossier sera traité dans le circuit confidentiel : seuls l'Administrateur et les personnes désignées par l'organisation y ont accès. N'en parlez qu'aux personnes prévues par les règles de confidentialité et de signalement de votre organisation.": [
   "pages/plaintes/SaisieDossierModal.tsx"
@@ -2702,6 +2720,9 @@
  ],
  "Changer les dates met à jour toutes les valeurs de cette période ; une date prévue qui sortirait de la nouvelle période est effacée.": [
   "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Changer ou retirer le mot de passe": [
+  "components/partage/BoutonPartage.tsx"
  ],
  "Chaque bénéficiaire importé sera automatiquement associé au projet ": [
   "pages/beneficiaires/ImportBeneficiairesModal.tsx"
@@ -4048,12 +4069,20 @@
   "pages/journal-audit/JournalAuditPage.tsx"
  ],
  "Désactivé": [
+  "components/documents/PartageDocumentModal.tsx",
   "components/partage/BoutonPartage.tsx",
   "pages/plaintes/CircuitsPlaintes.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
  "Désactiver": [
+  "components/documents/PartageDocumentModal.tsx",
   "pages/plaintes/ParametragePlaintesPage.tsx"
+ ],
+ "Désactiver ce lien ? La personne ne pourra plus ouvrir le document, même si elle a déjà le lien.": [
+  "components/documents/PartageDocumentModal.tsx"
+ ],
+ "Désactiver ce lien ? La personne ne pourra plus ouvrir le dossier, même si elle a déjà le lien.": [
+  "components/documents/PartageDocumentModal.tsx"
  ],
  "Désactiver le mécanisme": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
@@ -4298,6 +4327,9 @@
  ],
  "Dossier parent": [
   "components/documents/ExplorateurDocuments.tsx"
+ ],
+ "Dossier partagé : téléchargez les fichiers pour les lire": [
+  "pages/documents/DocumentPartagePage.tsx"
  ],
  "Dossier signalé comme sensible.": [
   "serveur"
@@ -4676,6 +4708,7 @@
  "Enregistrer": [
   "components/documents/ExplorateurDocuments.tsx",
   "components/indicators/SaisieValeurIndicateurForm.tsx",
+  "components/partage/BoutonPartage.tsx",
   "components/suivi/MethodeCalculLigne.tsx",
   "components/suivi/SaisiePointSuiviForm.tsx",
   "layouts/AppLayout.tsx",
@@ -4896,6 +4929,7 @@
  ],
  "Erreur lors de l'enregistrement": [
   "components/documents/ExplorateurDocuments.tsx",
+  "components/partage/BoutonPartage.tsx",
   "pages/DashboardConsolidePage.tsx",
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
   "pages/console/ConsolePage.tsx",
@@ -5454,6 +5488,7 @@
   "serveur"
  ],
  "Exporter": [
+  "pages/DashboardConsolidePage.tsx",
   "pages/beneficiaires/BeneficiairesListPage.tsx",
   "pages/langues/LanguesPage.tsx",
   "pages/plaintes/DossiersPlaintesPage.tsx",
@@ -6518,6 +6553,9 @@
  "L'essentiel de la plateforme en un coup d'œil : clients, paiements, stockage et serveurs.": [
   "pages/console/Supervision.tsx"
  ],
+ "L'export a échoué.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "L'export n'a pas abouti.": [
   "pages/console/Newsletter.tsx",
   "pages/journal-audit/JournalAuditPage.tsx",
@@ -6590,6 +6628,7 @@
   "auth/LoginPage.tsx"
  ],
  "La démonstration n'est pas disponible pour le moment.": [
+  "auth/EntreeDemo.tsx",
   "pages/accueil/AccueilPage.tsx"
  ],
  "La démonstration n'est pas disponible sur cette installation.": [
@@ -6653,7 +6692,10 @@
  "La personne a-t-elle donné son accord pour l'enregistrement de ses données ?": [
   "pages/beneficiaires/BeneficiaireForm.tsx"
  ],
- "La personne qui reçoit le lien n'a pas besoin de compte. Elle ne voit que ce document, jusqu'à la date d'expiration ; vous pouvez révoquer le lien à tout moment.": [
+ "La personne qui reçoit le lien n'a pas besoin de compte. Elle ne voit que ce document, jusqu'à la date d'expiration ; vous pouvez désactiver le lien à tout moment.": [
+  "components/documents/PartageDocumentModal.tsx"
+ ],
+ "La personne qui reçoit le lien n'a pas besoin de compte. Elle voit les fichiers de ce dossier et de ses sous-dossiers (dernières versions, y compris ceux ajoutés plus tard) et les télécharge pour les lire, un par un ou tous en zip, jusqu'à la date d'expiration ; vous pouvez désactiver le lien à tout moment.": [
   "components/documents/PartageDocumentModal.tsx"
  ],
  "La plateforme crée la base de données de l'organisation, ses tables et son compte administrateur (adresse courriel et mot de passe choisis à l'inscription), puis envoie le courriel « Votre espace est prêt ».": [
@@ -6853,7 +6895,7 @@
   "pages/projets/ActiviteForm.tsx",
   "pages/projets/SousActiviteForm.tsx"
  ],
- "Le lien a été retiré par la personne qui l'a partagé.": [
+ "Le lien a été désactivé par la personne qui l'a partagé.": [
   "pages/documents/DocumentPartagePage.tsx"
  ],
  "Le lien n'a pas pu être créé.": [
@@ -7191,6 +7233,12 @@
  "Lien créé : copiez-le pour l'envoyer.": [
   "components/partage/BoutonPartage.tsx"
  ],
+ "Lien créé : envoyez le lien et, séparément, son mot de passe.": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Lien désactivé": [
+  "components/documents/PartageDocumentModal.tsx"
+ ],
  "Lien expiré : reconnectez-vous avec votre identifiant.": [
   "serveur"
  ],
@@ -7209,9 +7257,6 @@
  "Lien retiré avec {0}.": [
   "serveur"
  ],
- "Lien révoqué": [
-  "components/documents/PartageDocumentModal.tsx"
- ],
  "Lien valable jusqu'au": [
   "pages/partage/PagePartagee.tsx"
  ],
@@ -7219,6 +7264,9 @@
   "pages/documents/DocumentPartagePage.tsx"
  ],
  "Liens de ce document": [
+  "components/documents/PartageDocumentModal.tsx"
+ ],
+ "Liens de ce dossier": [
   "components/documents/PartageDocumentModal.tsx"
  ],
  "Liens existants": [
@@ -7785,14 +7833,24 @@
  ],
  "Mot de passe": [
   "auth/LoginPage.tsx",
+  "components/partage/BoutonPartage.tsx",
   "pages/accueil/InscriptionPage.tsx",
   "pages/documents/DocumentPartagePage.tsx",
+  "pages/partage/PagePartagee.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
  "Mot de passe (facultatif)": [
-  "components/documents/PartageDocumentModal.tsx"
+  "components/documents/PartageDocumentModal.tsx",
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Mot de passe du lien": [
+  "components/partage/BoutonPartage.tsx"
+ ],
+ "Mot de passe enregistré.": [
+  "components/partage/BoutonPartage.tsx"
  ],
  "Mot de passe incorrect.": [
+  "pages/partage/PagePartagee.tsx",
   "serveur"
  ],
  "Mot de passe oublié": [
@@ -7801,6 +7859,9 @@
  ],
  "Mot de passe oublié ?": [
   "auth/LoginPage.tsx"
+ ],
+ "Mot de passe retiré : le lien s'ouvre sans.": [
+  "components/partage/BoutonPartage.tsx"
  ],
  "Motif": [
   "pages/plaintes/HabilitationsPlaintes.tsx",
@@ -8208,6 +8269,7 @@
  ],
  "Nouveau mot de passe": [
   "auth/NouveauMotDePassePage.tsx",
+  "components/partage/BoutonPartage.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
  "Nouveau nom": [
@@ -8519,6 +8581,9 @@
  "Ouverte": [
   "pages/parametres/RapportageCard.tsx"
  ],
+ "Ouverture de la démonstration…": [
+  "auth/EntreeDemo.tsx"
+ ],
  "Ouverture de la saisie du projet": [
   "pages/projets/ProjetForm.tsx"
  ],
@@ -8540,7 +8605,13 @@
  "Ouvrir dans un nouvel onglet": [
   "pages/documents/DocumentPartagePage.tsx"
  ],
+ "Ouvrir la page": [
+  "pages/partage/PagePartagee.tsx"
+ ],
  "Ouvrir le document": [
+  "pages/documents/DocumentPartagePage.tsx"
+ ],
+ "Ouvrir le dossier": [
   "pages/documents/DocumentPartagePage.tsx"
  ],
  "Ouvrir le formulaire": [
@@ -8560,6 +8631,9 @@
  ],
  "Page de suivi": [
   "pages/plaintes/DossiersPlaintesPage.tsx"
+ ],
+ "Page protégée": [
+  "pages/partage/PagePartagee.tsx"
  ],
  "Paiement en cours de confirmation… Cette page se met à jour toute seule.": [
   "pages/abonnement/MonAbonnementPage.tsx",
@@ -8687,10 +8761,16 @@
  "Partage d'un document par lien": [
   "api/journalAudit.ts"
  ],
+ "partagée par {0}. ": [
+  "pages/partage/PagePartagee.tsx"
+ ],
  "Partager": [
   "components/partage/BoutonPartage.tsx"
  ],
  "Partager « {0} » par lien": [
+  "components/documents/PartageDocumentModal.tsx"
+ ],
+ "Partager le dossier « {0} » par lien": [
   "components/documents/PartageDocumentModal.tsx"
  ],
  "Partager le suivi du projet": [
@@ -9230,6 +9310,9 @@
  "Pour tous les projets": [
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
  ],
+ "Pour un téléchargement plus tard, rechargez la page.": [
+  "pages/documents/DocumentPartagePage.tsx"
+ ],
  "Pour une agrégation « pondérée par les poids » du niveau au-dessus.": [
   "pages/projets/ActiviteForm.tsx"
  ],
@@ -9509,6 +9592,9 @@
  ],
  "Protection de vos données": [
   "pages/plaintes/public/FormulairePublicPage.tsx"
+ ],
+ "Protéger par un mot de passe": [
+  "components/partage/BoutonPartage.tsx"
  ],
  "Province": [
   "pages/carte/FenetresCarte.tsx"
@@ -10080,6 +10166,7 @@
  ],
  "Retirer": [
   "components/beneficiaires/BeneficiairesTab.tsx",
+  "components/partage/BoutonPartage.tsx",
   "pages/plaintes/HabilitationsPlaintes.tsx",
   "pages/plaintes/OperationsDossier.tsx",
   "pages/plaintes/PiecesJointesDossier.tsx",
@@ -10190,15 +10277,6 @@
  ],
  "Revérifier les signalements": [
   "pages/beneficiaires/DoublonsPage.tsx"
- ],
- "Révoqué": [
-  "components/documents/PartageDocumentModal.tsx"
- ],
- "Révoquer": [
-  "components/documents/PartageDocumentModal.tsx"
- ],
- "Révoquer ce lien ? La personne ne pourra plus ouvrir le document, même si elle a déjà le lien.": [
-  "components/documents/PartageDocumentModal.tsx"
  ],
  "Rien (bénéficiaires seulement)": [
   "pages/carte/CartePage.tsx"
@@ -10377,6 +10455,9 @@
  ],
  "Saisis les objectifs de chaque élément sur cette période directement dans les champs (quantité, et budget pour une activité) — l'enregistrement est automatique. Le crayon permet d'ajouter des dates prévues et un commentaire.": [
   "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Saisissez le mot de passe qui vous a été communiqué avec le lien.": [
+  "pages/partage/PagePartagee.tsx"
  ],
  "Sans activité de votre part, vous serez déconnecté dans une minute. Bougez la souris ou appuyez sur une touche pour rester connecté.": [
   "auth/inactivite.ts"
@@ -11525,6 +11606,9 @@
  "Tout sera supprimé : le dossier, le récit, les échanges, les pièces jointes et l'historique. Contrairement à l'anonymisation, rien n'est gardé, pas même pour les statistiques. Cette action est irréversible.": [
   "pages/plaintes/OperationsDossier.tsx"
  ],
+ "Tout télécharger ({0} fichiers, zip)": [
+  "pages/documents/DocumentPartagePage.tsx"
+ ],
  "Tout voir": [
   "pages/console/Supervision.tsx"
  ],
@@ -11537,7 +11621,7 @@
  "Toute personne peut demander l'accès à ses données, leur rectification, leur effacement ou s'opposer à leur traitement. Chaque demande est enregistrée, suivie jusqu'à la réponse (sous un mois) et inscrite au journal d'audit.": [
   "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
  ],
- "Toute personne qui a le lien voit la page en lecture seule, sans compte ni mot de passe, et sans pouvoir rien modifier.": [
+ "Toute personne qui a le lien voit la page en lecture seule, sans compte et sans pouvoir rien modifier. Avec un mot de passe, elle doit aussi le saisir.": [
   "components/partage/BoutonPartage.tsx"
  ],
  "Toutes": [

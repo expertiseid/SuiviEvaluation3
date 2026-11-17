@@ -259,7 +259,7 @@ def test_inscription_puis_activation_par_la_console(deux_organisations, settings
             gestion.supprimer(org)
 
 
-def test_demo(deux_organisations):
+def test_demo(deux_organisations, settings):
     _, org_b = deux_organisations
     anonyme = APIClient()
     assert anonyme.get("/api/v1/identite/").data["demo_disponible"] is False
@@ -267,6 +267,11 @@ def test_demo(deux_organisations):
     Organisation.objects.using("central").filter(pk=org_b.pk).update(mode_demo=True)
     try:
         assert anonyme.get("/api/v1/identite/").data["demo_disponible"] is True
+        # La démo est ici : on y entre sans page de connexion ; ailleurs (URL_DEMO), la connexion reste.
+        assert anonyme.get("/api/v1/identite/").data["demo_directe"] is True
+        settings.URL_DEMO = "https://demo.exemple.org"
+        assert anonyme.get("/api/v1/identite/").data["demo_directe"] is False
+        settings.URL_DEMO = ""
         visiteur = APIClient()
         visiteur.credentials(HTTP_AUTHORIZATION=f"Bearer {anonyme.post('/api/v1/public/demo/').data['access']}")
         identite = visiteur.get("/api/v1/identite/").data

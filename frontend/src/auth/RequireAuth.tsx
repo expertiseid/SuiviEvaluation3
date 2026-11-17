@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { Center, Loader } from "@mantine/core";
 import { useIdentiteOrganisation } from "../api/identite";
+import { EntreeDemo } from "./EntreeDemo";
 import { surveillerInactivite } from "./inactivite";
 import { useAuth } from "./useAuth";
 import { ACCUEIL_APP } from "../utils/accueil";
@@ -9,7 +10,7 @@ import type { Role } from "../types";
 
 export function RequireAuth({ children, roles }: { children: ReactNode; roles?: Role[] }) {
   const { user, loading } = useAuth();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const { data: plateforme, isLoading: chargementPlateforme } = useIdentiteOrganisation();
   // Session ouverte : déconnexion automatique après une période d'inactivité.
   useEffect(() => {
@@ -28,6 +29,8 @@ export function RequireAuth({ children, roles }: { children: ReactNode; roles?: 
   if (!user) {
     // Page d'accueil à l'adresse de la plateforme ; la console renvoie à la connexion Expertise-ID.
     if (pathname === "/console") return <Navigate to="/expertise-id" replace />;
+    // Installation de démonstration : pas de connexion, on entre dans la démo sur la page demandée.
+    if (plateforme?.demo_directe) return <EntreeDemo destination={pathname === "/" ? ACCUEIL_APP : pathname + search} />;
     return <Navigate to={pathname === "/" ? "/accueil" : "/login"} replace />;
   }
 

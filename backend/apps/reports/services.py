@@ -5,19 +5,23 @@ recalculés à la volée pour éviter toute désynchronisation.
 SEUIL_STATUT_ATTEINT = 80
 
 
-def taux_execution_physique_global(projet):
-    """Taux du projet, agrégé selon sa méthode d'agrégation (voir apps.projects.taux)."""
+def taux_execution_physique_global(projet, parametres=None, activites=None):
+    """
+    Taux du projet, agrégé selon sa méthode d'agrégation (voir apps.projects.taux). `activites` : celles du
+    projet déjà lues, pour calculer plusieurs projets sans relire la base (tableau de bord).
+    """
     from apps.projects.taux import ArbreTaux
 
-    return ArbreTaux(projet).taux_projet().taux
+    return ArbreTaux(projet, parametres, elements=activites).taux_projet().taux
 
 
-def taux_execution_financiere_global(projet):
+def taux_execution_financiere_global(projet, activites=None):
     """Σ budget_realise / Σ budget_alloue des activités du projet, sans double compte (apps.projects.budgets)."""
     from apps.projects.budgets import total_budget
     from apps.projects.models import Activite
 
-    activites = list(Activite.objects.filter(projet=projet).only("id", "activite_parent_id", "budget_alloue", "budget_realise"))
+    if activites is None:
+        activites = list(Activite.objects.filter(projet=projet).only("id", "activite_parent_id", "budget_alloue", "budget_realise"))
     planifie = total_budget(activites, "budget_alloue")
     if not planifie:
         return None

@@ -15,7 +15,8 @@ class LienPartage(TimestampedModel):
     """
     Lien secret donnant accès, sans compte et en lecture seule, à une page : le tableau de bord
     (avec les projets visibles par son créateur et ses filtres) ou le suivi d'un projet (tout, les
-    activités seulement, ou les indicateurs seulement). Révocable, avec expiration facultative.
+    activités seulement, ou les indicateurs seulement). Révocable, avec expiration facultative, et
+    mot de passe facultatif (gardé haché, comme celui d'un compte).
     """
 
     class Type(models.TextChoices):
@@ -36,6 +37,7 @@ class LienPartage(TimestampedModel):
     cree_par = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="liens_partage")
     expire_le = models.DateField(null=True, blank=True)
     actif = models.BooleanField(default=True)
+    mot_de_passe = models.CharField(max_length=128, blank=True, default="", help_text="Empreinte ; vide : sans mot de passe.")
     nombre_consultations = models.PositiveIntegerField(default=0)
     derniere_consultation = models.DateTimeField(null=True, blank=True)
 

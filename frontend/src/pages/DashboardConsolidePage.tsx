@@ -1,12 +1,14 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { FolderKanban, Wallet, Users, Gauge, MapPin, SlidersHorizontal } from "lucide-react";
-import { Badge, Button, Grid, Group, Paper, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
+import { ChevronDown, Download, FileSpreadsheet, FileText, FolderKanban, Presentation, Wallet, Users, Gauge, MapPin, SlidersHorizontal } from "lucide-react";
+import { Badge, Button, Grid, Group, Menu, Paper, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
 import {
   useConfigurationTableauDeBord,
   useDashboardConsolide,
   useEnregistrerConfigurationTableauDeBord,
+  telechargerTableauDeBord,
+  type FormatExportTableauDeBord,
 } from "../api/dashboard";
 import { notifications } from "@mantine/notifications";
 import { messageErreurApi } from "../utils/erreurs";
@@ -205,6 +207,17 @@ export function DashboardConsolidePage() {
   const partage = usePartage();
   const parametres = partage ? (partage.filtres as FiltresDashboard) : versParametres(filtres);
   const { data, isLoading, isFetching } = useDashboardConsolide(parametres);
+  const [exportEnCours, setExportEnCours] = useState(false);
+  async function exporter(fichier: FormatExportTableauDeBord) {
+    setExportEnCours(true);
+    try {
+      await telechargerTableauDeBord(parametres, fichier);
+    } catch (error) {
+      notifications.show({ message: messageErreurApi(error, voc("L'export a échoué.")), color: "red" });
+    } finally {
+      setExportEnCours(false);
+    }
+  }
 
   const blocs = data ? definirBlocs(data, !partage) : [];
   const visibles = blocs.filter((b) => !masques.includes(b.cle));
@@ -218,11 +231,29 @@ export function DashboardConsolidePage() {
     <Stack gap="lg">
       <Group justify="space-between">
         <TitreRubrique route="/" defaut={voc("Tableau de bord")} majuscules />
-        {!partage && <BoutonPartage type="TABLEAU_DE_BORD" filtres={parametres as Record<string, unknown>} />}
-        {peutPersonnaliser && !partage && (
-          <Button variant="light" leftSection={<SlidersHorizontal size={16} />} onClick={() => setPersonnalisation(true)}>
-            {voc("Personnaliser")}{blocs.length > 0 && voc` (${visibles.length}/${blocs.length} blocs)`}
-          </Button>
+        {!partage && (
+          <Group gap="xs">
+            <Menu position="bottom-end" withinPortal>
+              <Menu.Target>
+                <Button variant="light" color="green" leftSection={<Download size={16} />} rightSection={<ChevronDown size={14} />}
+                  loading={exportEnCours}>
+                  {voc("Exporter")}
+                </Button>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item leftSection={<FileSpreadsheet size={15} color="var(--mantine-color-green-7)" />} onClick={() => exporter("xlsx")}>Excel</Menu.Item>
+                <Menu.Item leftSection={<FileText size={15} color="var(--mantine-color-red-7)" />} onClick={() => exporter("pdf")}>PDF</Menu.Item>
+                <Menu.Item leftSection={<FileText size={15} color="var(--mantine-color-blue-7)" />} onClick={() => exporter("docx")}>Word</Menu.Item>
+                <Menu.Item leftSection={<Presentation size={15} color="var(--mantine-color-orange-7)" />} onClick={() => exporter("pptx")}>PowerPoint</Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+            <BoutonPartage type="TABLEAU_DE_BORD" filtres={parametres as Record<string, unknown>} />
+            {peutPersonnaliser && (
+              <Button variant="light" leftSection={<SlidersHorizontal size={16} />} onClick={() => setPersonnalisation(true)}>
+                {voc("Personnaliser")}{blocs.length > 0 && voc` (${visibles.length}/${blocs.length} blocs)`}
+              </Button>
+            )}
+          </Group>
         )}
       </Group>
 

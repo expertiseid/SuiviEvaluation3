@@ -70,8 +70,10 @@ def test_attributs_par_la_fiche_et_dans_les_exports():
 
     classeur = load_workbook(io.BytesIO(client.get(f"/api/v1/suivi/projets/{projet.id}/exporter/excel/").content))
     feuille = classeur["Activités"]
-    assert feuille.cell(1, feuille.max_column).value == "Responsable"
-    assert feuille.cell(2, feuille.max_column).value == "ONG A"
+    # Une colonne par attribut, celles des sous-activités comprises (ligne juste sous leur activité).
+    assert [feuille.cell(1, c).value for c in (feuille.max_column - 1, feuille.max_column)] == ["Responsable", "Lieu"]
+    assert feuille.cell(2, feuille.max_column - 1).value == "ONG A"
+    assert (feuille.cell(3, 2).value, feuille.cell(3, feuille.max_column).value) == ("Session", "Kaya")
     cadre = client.get(f"/api/v1/rapports/cadre-logique/{projet.id}/").data
     assert next(l for l in cadre["lignes"] if l["id"] == activite.id)["attributs"] == {"Responsable": "ONG A"}
 

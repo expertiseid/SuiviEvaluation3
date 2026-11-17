@@ -12,6 +12,23 @@ import type {
   FiltresDashboard,
 } from "../types";
 
+export type FormatExportTableauDeBord = "xlsx" | "pdf" | "docx" | "pptx";
+
+/** Tableau de bord en fichier (Excel, PDF, Word ou PowerPoint) : mêmes chiffres et mêmes filtres que l'écran. */
+export async function telechargerTableauDeBord(filtres: FiltresDashboard = {}, fichier: FormatExportTableauDeBord = "xlsx") {
+  const params = { ...filtres, statuts: filtres.statuts?.length ? filtres.statuts.join(",") : undefined, fichier };
+  const reponse = await apiClient.get("/dashboard/consolide/export/", { params, responseType: "blob", timeout: 0 });
+  const nom = /filename="?([^";]+)/.exec(reponse.headers["content-disposition"] ?? "")?.[1] ?? `tableau_de_bord.${fichier}`;
+  const url = window.URL.createObjectURL(new Blob([reponse.data]));
+  const lien = document.createElement("a");
+  lien.href = url;
+  lien.setAttribute("download", nom);
+  document.body.appendChild(lien);
+  lien.click();
+  lien.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 export function useDashboardConsolide(filtres: FiltresDashboard = {}) {
   const partage = usePartage();
   const params = {

@@ -50,6 +50,7 @@ import {
   useModifierDossier,
   useSupprimerSelection,
   telechargerSelection,
+  type CiblePartage,
 } from "../../api/documents";
 import type { Dossier, GedDocument } from "../../types";
 import { usePreference } from "../../utils/affichage";
@@ -164,7 +165,7 @@ export function ExplorateurDocuments({ projetId }: { projetId?: number }) {
   const [versions, setVersions] = useState<number | null>(null);
   const [renommer, setRenommer] = useState<{ type: "dossier" | "document"; id: number; nom: string } | null>(null);
   const [deplacer, setDeplacer] = useState<GedDocument | null>(null);
-  const [partager, setPartager] = useState<GedDocument | null>(null);
+  const [partager, setPartager] = useState<CiblePartage | null>(null);
 
   const sousDossiers = dossiers.filter((d) => d.parent === courant);
   const chemin: Dossier[] = [];
@@ -200,6 +201,7 @@ export function ExplorateurDocuments({ projetId }: { projetId?: number }) {
         <ActionIcon size="sm" variant="subtle" color="gray" aria-label={voc("Actions")} onClick={(e) => e.stopPropagation()}><Ellipsis size={16} /></ActionIcon>
       </Menu.Target>
       <Menu.Dropdown onClick={(e) => e.stopPropagation()}>
+        <Menu.Item leftSection={<Link2 size={14} />} onClick={() => setPartager({ type: "dossier", id: d.id, nom: d.nom })}>{voc("Partager par lien")}</Menu.Item>
         <Menu.Item leftSection={<Pencil size={14} />} onClick={() => setRenommer({ type: "dossier", id: d.id, nom: d.nom })}>{voc("Renommer")}</Menu.Item>
         <Menu.Item leftSection={<Trash2 size={14} />} color="red" onClick={() => supprimerLeDossier(d)}>{voc("Supprimer")}</Menu.Item>
       </Menu.Dropdown>
@@ -211,7 +213,7 @@ export function ExplorateurDocuments({ projetId }: { projetId?: number }) {
         <ActionIcon size="sm" variant="subtle" color="gray" aria-label={voc("Actions")} onClick={(e) => e.stopPropagation()}><Ellipsis size={16} /></ActionIcon>
       </Menu.Target>
       <Menu.Dropdown onClick={(e) => e.stopPropagation()}>
-        <Menu.Item leftSection={<Link2 size={14} />} onClick={() => setPartager(doc)}>{voc("Partager par lien")}</Menu.Item>
+        <Menu.Item leftSection={<Link2 size={14} />} onClick={() => setPartager({ type: "document", id: doc.id, nom: doc.nom })}>{voc("Partager par lien")}</Menu.Item>
         <Menu.Item leftSection={<History size={14} />} onClick={() => setVersions(doc.id)}>{voc("Versions")}</Menu.Item>
         <Menu.Item leftSection={<Pencil size={14} />} onClick={() => setRenommer({ type: "document", id: doc.id, nom: doc.nom })}>{voc("Renommer")}</Menu.Item>
         <Menu.Item leftSection={<FolderInput size={14} />} onClick={() => setDeplacer(doc)}>{voc("Déplacer")}</Menu.Item>
@@ -419,7 +421,7 @@ export function ExplorateurDocuments({ projetId }: { projetId?: number }) {
       <VersionsModal documentId={versions} opened={versions !== null} onClose={() => setVersions(null)} />
       {renommer && <RenommerModal key={`${renommer.type}${renommer.id}`} cible={renommer} onClose={() => setRenommer(null)} />}
       {deplacer && <DeplacerModal key={deplacer.id} doc={deplacer} dossiers={dossiers} onClose={() => setDeplacer(null)} />}
-      {partager && <PartageDocumentModal key={partager.id} doc={partager} onClose={() => setPartager(null)} />}
+      {partager && <PartageDocumentModal key={`${partager.type}-${partager.id}`} cible={partager} onClose={() => setPartager(null)} />}
     </Stack>
   );
 }

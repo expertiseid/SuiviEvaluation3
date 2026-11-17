@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient, avecOrganisation } from "./client";
+import { accesPartage, apiClient, avecOrganisation } from "./client";
 import type { Paginated } from "../types";
 
 export interface LienPartage {
@@ -18,6 +18,10 @@ export interface LienPartage {
   nombre_consultations: number;
   derniere_consultation: string | null;
   created_at: string;
+  /** Protégé par un mot de passe (le mot de passe lui-même n'est jamais renvoyé). */
+  protege: boolean;
+  /** Envoi seulement : nouveau mot de passe, ou « » pour le retirer. */
+  mot_de_passe?: string;
 }
 
 export function useLiensPartage(type: LienPartage["type"], projetId: number | null) {
@@ -47,3 +51,9 @@ export function useSupprimerLienPartage() {
 
 /** Adresse publique d'un lien (à copier et envoyer). */
 export const adresseLien = (jeton: string) => avecOrganisation(`${window.location.origin}/partage/${jeton}`);
+
+/** Lien protégé : vérifie le mot de passe et garde l'accès accordé pour les demandes suivantes. */
+export async function ouvrirLienProtege(jeton: string, motDePasse: string) {
+  const { data } = await apiClient.post<{ acces: string }>(`/public/partage/${jeton}/acces/`, { mot_de_passe: motDePasse });
+  accesPartage.ecrire(jeton, data.acces);
+}

@@ -338,6 +338,7 @@ def _plateforme(request):
         # Démonstration (apps.accounts.demo) : visiteur connecté à la démo (mode_demo), ou démo proposée.
         "mode_demo": demo_actif(),
         "demo_disponible": _demo_disponible(),
+        "demo_directe": _demo_directe(),
         "url_demo": getattr(settings, "URL_DEMO", ""),
         "inscriptions": getattr(settings, "INSCRIPTIONS_OUVERTES", True),
         "contact": getattr(settings, "COURRIEL_ABONNEMENTS", ""),
@@ -383,6 +384,13 @@ def _demo_disponible():
     if demo_actif() or getattr(settings, "URL_DEMO", ""):
         return True
     return bool(contexte.actif() and espace_demo())
+
+
+def _demo_directe():
+    """Installation de démonstration (la démo est ici, pas ailleurs) : on y entre sans connexion."""
+    from django.conf import settings
+
+    return _demo_disponible() and not getattr(settings, "URL_DEMO", "")
 
 
 def _espace_courant():

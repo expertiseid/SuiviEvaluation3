@@ -209,14 +209,16 @@ class ArbreTaux:
     arbre.taux_projet().
     """
 
-    def __init__(self, projet, parametres=None, a_la_date=None):
+    def __init__(self, projet, parametres=None, a_la_date=None, elements=None):
+        """`elements` : activités du projet déjà lues (avec sous_activites, jalons_livrables et taux_manuels)."""
         from .models import Activite
 
         self.projet = projet
         self.parametres = parametres or ParametresCalcul.courants()
-        elements = list(
-            Activite.objects.filter(projet=projet).prefetch_related("sous_activites", "jalons_livrables", "taux_manuels")
-        )
+        if elements is None:
+            elements = list(
+                Activite.objects.filter(projet=projet).prefetch_related("sous_activites", "jalons_livrables", "taux_manuels")
+            )
         self.elements = {e.id: e for e in elements}
         self.enfants = {e.id: [] for e in elements}
         self.racines = []

@@ -103,6 +103,19 @@ class DossierViewSet(viewsets.ModelViewSet):
 
         corbeille.jeter(self.request.user, dossiers=[instance])
 
+    @action(detail=True, methods=["get", "post"])
+    def liens(self, request, pk=None):
+        """Liens de partage du dossier entier (personnes sans compte) : liste, ou création."""
+        from .partage import liens_du_document
+
+        return liens_du_document(self, request, self.get_object(), dossier=True)
+
+    @action(detail=True, methods=["post"], url_path=r"liens/(?P<lien_id>\d+)/revoquer")
+    def revoquer_lien(self, request, pk=None, lien_id=None):
+        from .partage import revoquer
+
+        return revoquer(request, self.get_object(), lien_id)
+
 
 def _selection(request, donnees, tous=False):
     """Dossiers et documents désignés ({"dossiers": [...], "documents": [...]}), parmi ceux visibles."""

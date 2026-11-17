@@ -139,6 +139,9 @@ class LienDocument(TimestampedModel):
     consultation seule ou consultation et téléchargement, date et heure d'expiration obligatoires, mot
     de passe et nombre d'ouvertures facultatifs, révocable à tout moment. Chaque ouverture est comptée.
     Sans version fixée, le lien donne toujours la dernière version du document.
+
+    Ou lien vers un dossier entier : la personne voit les fichiers du dossier et de ses sous-dossiers (tels
+    qu'ils sont au moment où elle ouvre le lien, dernières versions) et les télécharge, un par un ou en zip.
     """
 
     class Droit(models.TextChoices):
@@ -146,7 +149,8 @@ class LienDocument(TimestampedModel):
         TELECHARGER = "TELECHARGER", "Consulter et télécharger"
 
     jeton = models.CharField(max_length=64, unique=True, default=nouveau_jeton_document, editable=False)
-    document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name="liens")
+    document = models.ForeignKey(Document, null=True, blank=True, on_delete=models.CASCADE, related_name="liens")
+    dossier = models.ForeignKey(Dossier, null=True, blank=True, on_delete=models.CASCADE, related_name="liens")
     version = models.ForeignKey(DocumentVersion, null=True, blank=True, on_delete=models.CASCADE, related_name="liens",
                                 help_text="Vide : toujours la dernière version.")
     droit = models.CharField(max_length=12, choices=Droit.choices, default=Droit.CONSULTER)
@@ -162,9 +166,15 @@ class LienDocument(TimestampedModel):
 
     class Meta:
         ordering = ("-created_at",)
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(document__isnull=False, dossier__isnull=True) | models.Q(document__isnull=True, dossier__isnull=False),
+                name="lien_document_ou_dossier",
+            )
+        ]
 
     def __str__(self):
-        return self.libelle or f"Lien vers {self.document}"
+        return self.libelle or f"Lien vers {self.document or self.dossier}"
 
     @property
     def etat(self) -> str:

@@ -7,9 +7,8 @@ import { DateTimePicker } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import { Ban, Check, Copy, Link2 } from "lucide-react";
 import {
-  type LienDocument, adresseLienDocument, useCreerLienDocument, useLiensDocument, useRevoquerLienDocument,
+  type CiblePartage, type LienDocument, adresseLienDocument, useCreerLienDocument, useLiensDocument, useRevoquerLienDocument,
 } from "../../api/documents";
-import type { GedDocument } from "../../types";
 import { messageErreurApi } from "../../utils/erreurs";
 import { locale } from "../../utils/i18n";
 import { voc } from "../../utils/vocabulaire";
@@ -21,19 +20,21 @@ const DUREES = () => [
 ];
 const COULEUR_ETAT: Record<LienDocument["etat"], string> = { ACTIF: "teal", EXPIRE: "gray", EPUISE: "orange", REVOQUE: "red" };
 const LIBELLE_ETAT = (): Record<LienDocument["etat"], string> => ({
-  ACTIF: voc("Actif"), EXPIRE: voc("Expiré"), EPUISE: voc("Ouvertures épuisées"), REVOQUE: voc("Révoqué"),
+  ACTIF: voc("Actif"), EXPIRE: voc("Expiré"), EPUISE: voc("Ouvertures épuisées"), REVOQUE: voc("Désactivé"),
 });
 const dateHeure = (d: string) => new Date(d).toLocaleString(locale(), { dateStyle: "short", timeStyle: "short" });
 
 /**
- * Partager un document avec une personne qui n'a pas de compte : lien secret, droit (consulter, ou
- * consulter et télécharger), expiration, mot de passe et nombre d'ouvertures facultatifs. Liste des
- * liens du document, avec leur état et leurs ouvertures ; révocation immédiate.
+ * Partager un document — ou un dossier entier — avec une personne qui n'a pas de compte : lien secret,
+ * droit (consulter, ou consulter et télécharger ; un dossier se télécharge toujours), expiration, mot de
+ * passe et nombre d'ouvertures facultatifs. Liste des liens, avec leur état et leurs ouvertures ;
+ * révocation immédiate.
  */
-export function PartageDocumentModal({ doc, onClose }: { doc: GedDocument; onClose: () => void }) {
-  const { data: liens = [] } = useLiensDocument(doc.id);
-  const creer = useCreerLienDocument(doc.id);
-  const revoquer = useRevoquerLienDocument(doc.id);
+export function PartageDocumentModal({ cible, onClose }: { cible: CiblePartage; onClose: () => void }) {
+  const dossier = cible.type === "dossier";
+  const { data: liens = [] } = useLiensDocument(cible);
+  const creer = useCreerLienDocument(cible);
+  const revoquer = useRevoquerLienDocument(cible);
   const [droit, setDroit] = useState<"CONSULTER" | "TELECHARGER">("CONSULTER");
   const [duree, setDuree] = useState("7");
   const [date, setDate] = useState<string | null>(null);
@@ -59,7 +60,7 @@ export function PartageDocumentModal({ doc, onClose }: { doc: GedDocument; onClo
     }
     try {
       setNouveau(await creer.mutateAsync({
-        droit, expire_le: expire.toISOString(), libelle: libelle.trim(), mot_de_passe: motDePasse,
+        droit: dossier ? "TELECHARGER" : droit, expire_le: expire.toISOString(), libelle: libelle.trim(), mot_de_passe: motDePasse,
         ouvertures_max: ouvertures === "" ? null : Number(ouvertures),
       }));
       setLibelle("");
@@ -71,13 +72,15 @@ export function PartageDocumentModal({ doc, onClose }: { doc: GedDocument; onClo
   };
 
   const retirer = (lien: LienDocument) => confirmerSuppression({
-    message: voc("Révoquer ce lien ? La personne ne pourra plus ouvrir le document, même si elle a déjà le lien."),
-    labelConfirmer: voc("Révoquer"),
+    message: dossier
+      ? voc("Désactiver ce lien ? La personne ne pourra plus ouvrir le dossier, même si elle a déjà le lien.")
+      : voc("Désactiver ce lien ? La personne ne pourra plus ouvrir le document, même si elle a déjà le lien."),
+    labelConfirmer: voc("Désactiver"),
     onConfirm: async () => {
       try {
         await revoquer.mutateAsync(lien.id);
         if (nouveau?.id === lien.id) setNouveau(null);
-        notifications.show({ message: voc("Lien révoqué"), color: "green" });
+        notifications.show({ message: voc("Lien désactivé"), color: "green" });
       } catch (error) {
         notifications.show({ message: messageErreurApi(error, voc("Erreur")), color: "red" });
       }
@@ -97,10 +100,12 @@ export function PartageDocumentModal({ doc, onClose }: { doc: GedDocument; onClo
   );
 
   return (
-    <Modal opened onClose={onClose} title={voc`Partager « ${doc.nom} » par lien`} size="xl">
+    <Modal opened onClose={onClose} title={dossier ? voc`Partager le dossier « ${cible.nom} » par lien` : voc`Partager « ${cible.nom} » par lien`} size="xl">
       <Stack gap="md">
         <Text size="sm" c="dimmed">
-          {voc("La personne qui reçoit le lien n'a pas besoin de compte. Elle ne voit que ce document, jusqu'à la date d'expiration ; vous pouvez révoquer le lien à tout moment.")}
+          {dossier
+            ? voc("La personne qui reçoit le lien n'a pas besoin de compte. Elle voit les fichiers de ce dossier et de ses sous-dossiers (dernières versions, y compris ceux ajoutés plus tard) et les télécharge pour les lire, un par un ou tous en zip, jusqu'à la date d'expiration ; vous pouvez désactiver le lien à tout moment.")
+            : voc("La personne qui reçoit le lien n'a pas besoin de compte. Elle ne voit que ce document, jusqu'à la date d'expiration ; vous pouvez désactiver le lien à tout moment.")}
         </Text>
         {nouveau && (
           <Alert color="teal" icon={<Link2 size={18} />} title={voc("Lien créé : copiez-le et envoyez-le")}>
@@ -115,10 +120,12 @@ export function PartageDocumentModal({ doc, onClose }: { doc: GedDocument; onClo
         )}
         <Stack gap="sm">
           <Text fw={600} size="sm">{voc("Nouveau lien")}</Text>
-          <SegmentedControl value={droit} onChange={(v) => setDroit(v as typeof droit)} data={[
-            { value: "CONSULTER", label: voc("Consulter seulement") },
-            { value: "TELECHARGER", label: voc("Consulter et télécharger") },
-          ]} />
+          {!dossier && (
+            <SegmentedControl value={droit} onChange={(v) => setDroit(v as typeof droit)} data={[
+              { value: "CONSULTER", label: voc("Consulter seulement") },
+              { value: "TELECHARGER", label: voc("Consulter et télécharger") },
+            ]} />
+          )}
           <Group grow align="flex-start">
             <TextInput label={voc("Pour qui ? (facultatif)")} placeholder={voc("Ex : Bailleur — rapport annuel")} value={libelle}
               onChange={(e) => setLibelle(e.currentTarget.value)} />
@@ -141,7 +148,7 @@ export function PartageDocumentModal({ doc, onClose }: { doc: GedDocument; onClo
             <Button leftSection={<Link2 size={16} />} onClick={valider} loading={creer.isPending}>{voc("Créer le lien")}</Button>
           </Group>
         </Stack>
-        <Divider label={voc("Liens de ce document")} labelPosition="left" />
+        <Divider label={dossier ? voc("Liens de ce dossier") : voc("Liens de ce document")} labelPosition="left" />
         {liens.length === 0 ? (
           <Text size="sm" c="dimmed">{voc("Aucun lien pour l'instant.")}</Text>
         ) : (
@@ -172,8 +179,8 @@ export function PartageDocumentModal({ doc, onClose }: { doc: GedDocument; onClo
                       {lien.etat === "ACTIF" && (
                         <Group gap={4} wrap="nowrap" justify="flex-end">
                           {boutonCopier(lien.jeton)}
-                          <Tooltip label={voc("Révoquer")}>
-                            <ActionIcon variant="subtle" color="red" onClick={() => retirer(lien)} aria-label={voc("Révoquer")}><Ban size={16} /></ActionIcon>
+                          <Tooltip label={voc("Désactiver")}>
+                            <ActionIcon variant="subtle" color="red" onClick={() => retirer(lien)} aria-label={voc("Désactiver")}><Ban size={16} /></ActionIcon>
                           </Tooltip>
                         </Group>
                       )}

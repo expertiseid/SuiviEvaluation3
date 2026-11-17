@@ -72,6 +72,8 @@ export function SauvegardeTransfert() {
   const [confirmation, setConfirmation] = useState("");
   const [mode, setMode] = useState<ModeReprise>("ajouter");
   const [repriseEnCours, setRepriseEnCours] = useState(false);
+  // Avancement de l'ajout (éléments traités / total), donné par le serveur pendant la reprise.
+  const [avancement, setAvancement] = useState<{ traites: number; total: number } | null>(null);
   // Message de fin, gardé à l'écran sous le bouton (téléchargement, reprise).
   const [exportTermine, setExportTermine] = useState<string | null>(null);
   const [repriseTerminee, setRepriseTerminee] = useState<string | null>(null);
@@ -139,8 +141,9 @@ export function SauvegardeTransfert() {
     if (!identifiant) return;
     setRepriseTerminee(null);
     setRepriseEnCours(true);
+    setAvancement(null);
     try {
-      const compteRendu = await reprendreSauvegarde(identifiant, mode);
+      const compteRendu = await reprendreSauvegarde(identifiant, mode, (traites, total) => setAvancement({ traites, total }));
       if (compteRendu.mode === "ajouter") {
         setRepriseTerminee(
           voc`Données importées : ${(compteRendu.crees ?? 0).toLocaleString(locale())} éléments créés, ${(compteRendu.reutilises ?? 0).toLocaleString(locale())} déjà présents réutilisés, ${(compteRendu.renommes ?? 0).toLocaleString(locale())} codes suffixés « -R ».`
@@ -346,7 +349,15 @@ export function SauvegardeTransfert() {
               </Button>
             )}
             {repriseEnCours && (
-              <Text size="xs" c="dimmed">{voc("Import en cours : cela peut prendre plusieurs minutes. Ne fermez pas cette page.")}</Text>
+              <Stack gap={4}>
+                {avancement && (
+                  <>
+                    <Progress value={(100 * avancement.traites) / avancement.total} size="sm" animated />
+                    <Text size="xs">{voc`${avancement.traites.toLocaleString(locale())} éléments traités sur ${avancement.total.toLocaleString(locale())}`}</Text>
+                  </>
+                )}
+                <Text size="xs" c="dimmed">{voc("Import en cours : cela peut prendre plusieurs minutes. Ne fermez pas cette page.")}</Text>
+              </Stack>
             )}
           </Stack>
         )}

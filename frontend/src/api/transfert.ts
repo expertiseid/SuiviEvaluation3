@@ -67,16 +67,21 @@ export async function analyserSauvegarde(identifiant: string): Promise<Manifeste
   return (await apiClient.post("/transfert/reprendre/", { identifiant }, { timeout: 0 })).data.manifeste;
 }
 
-type EtatReprise = { etat: "en_cours" | "termine" | "erreur"; compte_rendu?: CompteRenduReprise; detail?: string };
+type EtatReprise = {
+  etat: "en_cours" | "termine" | "erreur"; compte_rendu?: CompteRenduReprise; detail?: string; traites?: number; total?: number;
+};
 
 /**
  * Lance la reprise, puis en suit l'avancement jusqu'au compte rendu : elle se fait en arrière-plan sur le
  * serveur (un gros espace dépasse le délai d'une requête). Une erreur du serveur arrive comme un refus (400).
  */
-export async function reprendreSauvegarde(identifiant: string, mode: ModeReprise): Promise<CompteRenduReprise> {
+export async function reprendreSauvegarde(
+  identifiant: string, mode: ModeReprise, avancement?: (traites: number, total: number) => void,
+): Promise<CompteRenduReprise> {
   const confirmation = mode === "ajouter" ? "AJOUTER" : "REMPLACER";
   let etat: EtatReprise = (await apiClient.post<EtatReprise>("/transfert/reprendre/", { identifiant, mode, confirmation }, { timeout: 0 })).data;
   while (etat.etat === "en_cours") {
+    if (avancement && etat.total) avancement(etat.traites ?? 0, etat.total);
     await new Promise((resolu) => window.setTimeout(resolu, 3000));
     etat = (await apiClient.get<EtatReprise>("/transfert/reprise/", { params: { identifiant } })).data;
   }

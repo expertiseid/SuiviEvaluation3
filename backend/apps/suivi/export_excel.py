@@ -1,10 +1,11 @@
 """
 Export « bien fait » de la fiche de suivi d'un projet : reprend TOUTES les
 informations affichées sur le tableau de bord de suivi (exécution globale,
-indicateurs, activités et sous-activités avec leur historique complet et la
-progression attendue à date), réparties sur plusieurs feuilles lisibles et
-filtrables — plutôt qu'un import, ce fichier est un document de restitution
-(bailleur, rapport, archive).
+indicateurs, activités et sous-activités avec leur historique complet), réparties
+sur plusieurs feuilles lisibles et filtrables — plutôt qu'un import, ce fichier est un
+document de restitution (bailleur, rapport, archive). Sous-activités juste sous leur
+activité (libellé en italique), dans les activités comme dans leur historique ; niveaux
+de regroupement en gras et colorés, comme dans l'export Word.
 """
 import datetime
 import io
@@ -152,180 +153,112 @@ def exporter_suivi_excel(projet) -> bytes:
             )
     _largeurs(ws_indic_hist, [38, 13, 13, 13, 12, 12, 12, 14, 38, 30])
 
-    # ---------- Activités (résumé) ----------
+    # ---------- Activités : sous-activités juste sous leur activité, niveaux de regroupement mis en avant ----------
+    from apps.projects.models import Activite
+
+    from .export_word import FONDS_NIVEAUX, _profondeurs
+
+    profondeurs, _noms_niveaux = _profondeurs(projet)
+    groupes = set(Activite.objects.filter(projet=projet, enfants__isnull=False).values_list("id", flat=True))
     ws_act = wb.create_sheet("Activités")
     colonnes = [
-        "Code",
-        "Libellé",
-        "Statut",
-        "Méthode de calcul",
-        "Début",
-        "Fin",
-        "Valeur de référence",
-        "Quantité prévue",
-        "Unité",
-        "Réalisé cumulé",
-        "Taux physique (%)",
-        "Attendu physique aujourd'hui",
-        "Budget alloué (FCFA)",
-        "Budget réalisé cumulé (FCFA)",
-        "Taux financier (%)",
+        "Code", "Libellé", "Statut", "Méthode de calcul", "Début prévu", "Fin prévu", "Début effectif", "Fin effectif",
+        "Valeur de référence", "Quantité prévue", "Unité", "Réalisé cumulé", "Taux physique (%)",
+        "Attendu physique aujourd'hui", "Budget alloué (FCFA)", "Budget réalisé cumulé (FCFA)", "Taux financier (%)",
         "Attendu financier aujourd'hui (FCFA)",
     ]
-    # Attributs libres (« Responsable », « Lieu »…) : une colonne chacun, en fin de tableau.
-    noms_attributs = list(dict.fromkeys(nom for a in data["activites"] for nom in a.get("attributs") or {}))
-    noms_attributs = ordonner(noms_attributs, projet.ordre_attributs)
+    # Attributs libres (« Lieu de mise en œuvre », « Priorité »…) : une colonne chacun, en fin de tableau.
+    noms_attributs = ordonner(list(dict.fromkeys(
+        nom for a in data["activites"] for e in [a, *a["sous_activites"]] for nom in e.get("attributs") or {})), projet.ordre_attributs)
     _entete(ws_act, colonnes + noms_attributs)
+
+    def mettre_en_forme(feuille, fond=None, gras=False, italique=False):
+        for cellule in feuille[feuille.max_row]:
+            if fond:
+                cellule.fill = PatternFill("solid", fgColor=fond.lstrip("#"))
+            if gras or italique:
+                cellule.font = Font(bold=gras, italic=italique)
+
+    ws_hist = wb.create_sheet("Activités — historique")
+    _entete(ws_hist, [
+        "Activité", "Période début", "Période fin", "Quantité réalisée", "Cumul quantité", "Taux physique (%)",
+        "Attendu physique", "Écart physique", "Budget réalisé (FCFA)", "Cumul budget (FCFA)", "Taux financier (%)",
+        "Attendu financier (FCFA)", "Écart financier", "Statut", "Commentaire",
+    ])
+
     for activite in data["activites"]:
+        profondeur = profondeurs.get(activite["id"], 0)
+        groupe = activite["id"] in groupes
+        fond = FONDS_NIVEAUX[min(profondeur, len(FONDS_NIVEAUX) - 1)] if groupe else None
         # Taux hors quantités (tâches, jalons, livrables, binaire, manuel, agrégé) : pas de
         # quantités ni d'attendu en quantité, le taux vient de la méthode.
         par_quantite = activite["methode_calcul_effective"] == "QUANTITE"
         cible = activite["quantite_prevue"] if par_quantite else None
         depart = activite["valeur_reference"] or 0
-        debut = activite["date_debut"]
-        fin = activite["date_fin"]
+        debut, fin = activite["date_debut"], activite["date_fin"]
         budget = activite["budget_alloue"]
         realise = activite["historique"][-1]["quantite_cumulee"] if activite["historique"] and par_quantite else None
         budget_realise = activite["historique"][-1]["budget_cumule"] if activite["historique"] else None
         attendu_phys = valeur_attendue_a(aujourdhui, debut, fin, depart, cible) if debut and fin and cible else None
         attendu_fin = valeur_attendue_a(aujourdhui, debut, fin, 0, budget) if debut and fin and budget else None
-        ws_act.append(
-            [
-                activite["code_activite"],
-                activite["libelle"],
-                STATUT_ACTIVITE_LABEL.get(activite["statut"], activite["statut"]),
-                libelle_methode(activite["methode_calcul_effective"]),
-                debut,
-                fin,
-                float(depart),
-                float(cible) if cible is not None else None,
-                activite["unite_quantite"] if par_quantite else "%",
-                float(realise) if realise is not None else None,
-                activite["taux_realisation"],
-                round(attendu_phys, 1) if attendu_phys is not None else None,
-                float(budget) if budget is not None else None,
-                float(budget_realise) if budget_realise is not None else None,
-                activite["taux_execution_financiere"],
-                round(attendu_fin, 1) if attendu_fin is not None else None,
-                *[(activite.get("attributs") or {}).get(nom) for nom in noms_attributs],
-            ]
-        )
-    _largeurs(ws_act, [12, 38, 14, 24, 12, 12, 14, 14, 10, 14, 14, 18, 16, 18, 14, 18] + [24] * len(noms_attributs))
-
-    # ---------- Activités — historique ----------
-    ws_act_hist = wb.create_sheet("Activités — historique")
-    colonnes = [
-        "Activité",
-        "Période début",
-        "Période fin",
-        "Quantité réalisée",
-        "Cumul quantité",
-        "Taux physique (%)",
-        "Attendu physique",
-        "Écart physique",
-        "Budget réalisé (FCFA)",
-        "Cumul budget (FCFA)",
-        "Taux financier (%)",
-        "Attendu financier (FCFA)",
-        "Écart financier",
-        "Statut",
-        "Commentaire",
-    ]
-    _entete(ws_act_hist, colonnes)
-    for activite in data["activites"]:
-        par_quantite = activite["methode_calcul_effective"] == "QUANTITE"
-        cible = activite["quantite_prevue"] if par_quantite else None
-        depart = activite["valeur_reference"] or 0
-        debut = activite["date_debut"]
-        fin = activite["date_fin"]
-        budget = activite["budget_alloue"]
+        ws_act.append([
+            activite["code_activite"], activite["libelle"], STATUT_ACTIVITE_LABEL.get(activite["statut"], activite["statut"]),
+            libelle_methode(activite["methode_calcul_effective"]), debut, fin,
+            activite.get("date_debut_reelle"), activite.get("date_fin_reelle"),
+            float(depart), float(cible) if cible is not None else None, activite["unite_quantite"] if par_quantite else "%",
+            float(realise) if realise is not None else None, activite["taux_realisation"],
+            round(attendu_phys, 1) if attendu_phys is not None else None,
+            float(budget) if budget is not None else None, float(budget_realise) if budget_realise is not None else None,
+            activite["taux_execution_financiere"], round(attendu_fin, 1) if attendu_fin is not None else None,
+            *[(activite.get("attributs") or {}).get(nom) for nom in noms_attributs],
+        ])
+        mettre_en_forme(ws_act, fond, gras=groupe)
         for h in activite["historique"]:
             cumule = h["quantite_cumulee"] if par_quantite else None
             attendu = valeur_attendue_a(h["periode_fin"], debut, fin, depart, cible) if debut and fin and cible else None
             budget_cumule = h["budget_cumule"]
-            attendu_budget = (
-                valeur_attendue_a(h["periode_fin"], debut, fin, 0, budget) if debut and fin and budget else None
-            )
-            ws_act_hist.append(
-                [
-                    activite["libelle"],
-                    h["periode_debut"],
-                    h["periode_fin"],
-                    float(h["quantite_realisee"]) if h["quantite_realisee"] is not None and par_quantite else None,
-                    float(cumule) if cumule is not None else None,
-                    taux_de(cumule, cible),
-                    round(attendu, 1) if attendu is not None else None,
-                    ecart_texte(cumule, attendu, activite["unite_quantite"]),
-                    float(h["budget_realise"]) if h["budget_realise"] is not None else None,
-                    float(budget_cumule) if budget_cumule is not None else None,
-                    taux_de(budget_cumule, budget),
-                    round(attendu_budget, 1) if attendu_budget is not None else None,
-                    ecart_texte(budget_cumule, attendu_budget, "FCFA"),
-                    STATUT_ACTIVITE_LABEL.get(h["statut"], h["statut"]),
-                    h["commentaire"],
-                ]
-            )
-    _largeurs(ws_act_hist, [30, 13, 13, 14, 12, 14, 14, 34, 16, 14, 14, 16, 34, 14, 30])
-
-    # ---------- Sous-activités (résumé + historique) ----------
-    ws_sa = wb.create_sheet("Sous-activités")
-    colonnes = ["Activité parente", "Sous-activité", "Statut", "Début", "Fin", "Quantité prévue", "Unité", "Réalisé cumulé", "Taux (%)", "Attendu aujourd'hui"]
-    _entete(ws_sa, colonnes)
-    for activite in data["activites"]:
+            attendu_budget = valeur_attendue_a(h["periode_fin"], debut, fin, 0, budget) if debut and fin and budget else None
+            ws_hist.append([
+                activite["libelle"], h["periode_debut"], h["periode_fin"],
+                float(h["quantite_realisee"]) if h["quantite_realisee"] is not None and par_quantite else None,
+                float(cumule) if cumule is not None else None, taux_de(cumule, cible),
+                round(attendu, 1) if attendu is not None else None, ecart_texte(cumule, attendu, activite["unite_quantite"]),
+                float(h["budget_realise"]) if h["budget_realise"] is not None else None,
+                float(budget_cumule) if budget_cumule is not None else None, taux_de(budget_cumule, budget),
+                round(attendu_budget, 1) if attendu_budget is not None else None,
+                ecart_texte(budget_cumule, attendu_budget, "FCFA"), STATUT_ACTIVITE_LABEL.get(h["statut"], h["statut"]),
+                h["commentaire"],
+            ])
+        # Sous-activités juste sous leur activité (libellé en italique) ; pas de budget propre.
         for sa in activite["sous_activites"]:
-            cible = sa["quantite_prevue"]
-            debut = sa["date_debut"]
-            fin = sa["date_fin"]
-            realise = sa["historique"][-1]["quantite_cumulee"] if sa["historique"] else None
-            taux = taux_de(realise, cible)
-            attendu = valeur_attendue_a(aujourdhui, debut, fin, 0, cible) if debut and fin and cible else None
-            ws_sa.append(
-                [
-                    activite["libelle"],
-                    sa["libelle"],
-                    STATUT_SOUS_ACTIVITE_LABEL.get(sa["statut"], sa["statut"]),
-                    debut,
-                    fin,
-                    float(cible) if cible is not None else None,
-                    sa["unite_quantite"],
-                    float(realise) if realise is not None else None,
-                    taux,
-                    round(attendu, 1) if attendu is not None else None,
-                ]
-            )
-    _largeurs(ws_sa, [30, 30, 14, 12, 12, 14, 10, 14, 10, 16])
-
-    ws_sa_hist = wb.create_sheet("Sous-activités — historique")
-    colonnes = ["Activité parente", "Sous-activité", "Période début", "Période fin", "Quantité réalisée", "Cumul", "Taux (%)", "Attendu", "Écart", "Statut", "Commentaire"]
-    _entete(ws_sa_hist, colonnes)
-    for activite in data["activites"]:
-        for sa in activite["sous_activites"]:
-            cible = sa["quantite_prevue"]
-            debut = sa["date_debut"]
-            fin = sa["date_fin"]
+            cible_sa = sa["quantite_prevue"]
+            debut_sa, fin_sa = sa["date_debut"], sa["date_fin"]
+            realise_sa = sa["historique"][-1]["quantite_cumulee"] if sa["historique"] else None
+            attendu_sa = valeur_attendue_a(aujourdhui, debut_sa, fin_sa, 0, cible_sa) if debut_sa and fin_sa and cible_sa else None
+            ws_act.append([
+                "", sa["libelle"], STATUT_SOUS_ACTIVITE_LABEL.get(sa["statut"], sa["statut"]), "", debut_sa, fin_sa, None, None,
+                None, float(cible_sa) if cible_sa is not None else None, sa["unite_quantite"],
+                float(realise_sa) if realise_sa is not None else None, taux_de(realise_sa, cible_sa),
+                round(attendu_sa, 1) if attendu_sa is not None else None, None, None, None, None,
+                *[(sa.get("attributs") or {}).get(nom) for nom in noms_attributs],
+            ])
+            mettre_en_forme(ws_act, italique=True)
             for h in sa["historique"]:
                 cumule = h["quantite_cumulee"]
-                attendu = valeur_attendue_a(h["periode_fin"], debut, fin, 0, cible) if debut and fin and cible else None
-                ws_sa_hist.append(
-                    [
-                        activite["libelle"],
-                        sa["libelle"],
-                        h["periode_debut"],
-                        h["periode_fin"],
-                        float(h["quantite_realisee"]) if h["quantite_realisee"] is not None else None,
-                        float(cumule) if cumule is not None else None,
-                        taux_de(cumule, cible),
-                        round(attendu, 1) if attendu is not None else None,
-                        ecart_texte(cumule, attendu, sa["unite_quantite"]),
-                        STATUT_SOUS_ACTIVITE_LABEL.get(h["statut"], h["statut"]),
-                        h["commentaire"],
-                    ]
-                )
-    _largeurs(ws_sa_hist, [26, 26, 13, 13, 14, 12, 10, 12, 34, 14, 30])
+                attendu = valeur_attendue_a(h["periode_fin"], debut_sa, fin_sa, 0, cible_sa) if debut_sa and fin_sa and cible_sa else None
+                ws_hist.append([
+                    sa["libelle"], h["periode_debut"], h["periode_fin"],
+                    float(h["quantite_realisee"]) if h["quantite_realisee"] is not None else None,
+                    float(cumule) if cumule is not None else None, taux_de(cumule, cible_sa),
+                    round(attendu, 1) if attendu is not None else None, ecart_texte(cumule, attendu, sa["unite_quantite"]),
+                    None, None, None, None, "", STATUT_SOUS_ACTIVITE_LABEL.get(h["statut"], h["statut"]), h["commentaire"],
+                ])
+                mettre_en_forme(ws_hist, italique=True)
+    _largeurs(ws_act, [12, 38, 14, 24, 12, 12, 12, 12, 14, 14, 10, 14, 14, 18, 16, 18, 14, 18] + [24] * len(noms_attributs))
+    _largeurs(ws_hist, [34, 13, 13, 14, 12, 14, 14, 34, 16, 14, 14, 16, 34, 14, 30])
 
     # Activités avant les indicateurs dans l'ordre des onglets (Résumé en tête).
-    ordre = ["Résumé", "Activités", "Activités — historique", "Sous-activités", "Sous-activités — historique",
-             v('Indicateurs'), v('Indicateurs — historique')]
+    ordre = ["Résumé", "Activités", "Activités — historique", v('Indicateurs'), v('Indicateurs — historique')]
     wb._sheets.sort(key=lambda feuille: ordre.index(feuille.title))
     wb.active = 0
 

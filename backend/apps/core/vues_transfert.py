@@ -14,6 +14,7 @@ import os
 import re
 import tempfile
 import threading
+import time
 import zipfile
 from pathlib import Path
 
@@ -40,6 +41,11 @@ CONFIRMATIONS = {"ajouter": "AJOUTER", "remplacer": "REMPLACER"}
 # Retrait après un extrait : le reçu (signé à l'export) ne vaut qu'une heure, pour cet administrateur.
 SEL_RETRAIT = "transfert.retrait"
 DUREE_RECU = 3600
+# Reprise en arrière-plan : son état est rafraîchi toutes les 15 s ; sans nouvelle depuis 90 s, elle s'est
+# arrêtée (serveur redémarré) — tout a été annulé avec elle.
+BATTEMENT = 15
+SILENCE_MAX = 90
+REPRISE_ARRETEE = ("La reprise s'est arrêtée (serveur redémarré) : rien n'a été modifié. Recommencez-la.")
 
 
 def _dossier_envois() -> Path:
@@ -60,15 +66,36 @@ def _fichier_etat(cible: Path) -> Path:
 
 
 def _ecrire_etat(cible: Path, etat: dict):
-    provisoire = cible.with_suffix(".etat.tmp")
-    provisoire.write_text(json.dumps(etat, ensure_ascii=False), encoding="utf-8")
+    provisoire = cible.with_suffix(f".etat.{threading.get_ident()}.tmp")
+    provisoire.write_text(json.dumps({**etat, "maj": time.time()}, ensure_ascii=False), encoding="utf-8")
     provisoire.replace(_fichier_etat(cible))
 
 
+def _lire_etat(chemin: Path) -> dict:
+    """État de la reprise ; « en cours » sans nouvelle depuis SILENCE_MAX : arrêtée avec le serveur."""
+    etat = json.loads(chemin.read_text(encoding="utf-8"))
+    if etat["etat"] == "en_cours" and time.time() - etat.get("maj", 0) > SILENCE_MAX:
+        etat = {"etat": "erreur", "detail": REPRISE_ARRETEE}
+    return etat
+
+
 def _reponse_etat(cible: Path) -> Response:
-    etat = json.loads(_fichier_etat(cible).read_text(encoding="utf-8"))
+    etat = _lire_etat(_fichier_etat(cible))
+    etat.pop("maj", None)
     code = {"en_cours": status.HTTP_202_ACCEPTED, "erreur": status.HTTP_400_BAD_REQUEST}.get(etat["etat"], status.HTTP_200_OK)
     return Response(etat, status=code)
+
+
+def _reprise_en_cours(sauf: Path) -> bool:
+    """Une autre reprise tourne-t-elle dans cet espace ? (deux à la fois s'attendraient l'une l'autre)"""
+    for chemin in _dossier_envois().glob("*.etat.json"):
+        if chemin != _fichier_etat(sauf):
+            try:
+                if _lire_etat(chemin)["etat"] == "en_cours":
+                    return True
+            except (OSError, ValueError, KeyError):
+                continue
+    return False
 
 
 def _espace_de_demo() -> bool:
@@ -208,31 +235,55 @@ def reprendre(request):
     except transfert.TransfertRefuse as erreur:
         return Response({"detail": str(erreur)}, status=status.HTTP_400_BAD_REQUEST)
 
+    if _reprise_en_cours(cible):
+        return Response({"detail": "Une reprise est déjà en cours dans cet espace : attendez qu'elle se termine "
+                                   "avant d'en lancer une autre."}, status=status.HTTP_409_CONFLICT)
+
     org, administrateur = contexte.courante(), request.user
     en_arriere_plan = getattr(settings, "REPRISE_EN_ARRIERE_PLAN", True)
-    _ecrire_etat(cible, {"etat": "en_cours"})
+    avancement = {"etat": "en_cours", "traites": 0, "total": 0}
+    _ecrire_etat(cible, avancement)
+    fini, verrou = threading.Event(), threading.Lock()
+
+    def battre():
+        """Signe de vie, même quand l'ajout attend la base (et en mode « remplacer », sans avancement)."""
+        while not fini.wait(BATTEMENT):
+            with verrou:
+                if not fini.is_set():
+                    _ecrire_etat(cible, avancement)
+
+    def terminer(etat):
+        with verrou:  # plus aucun signe de vie ne repassera « en cours » par-dessus
+            fini.set()
+            _ecrire_etat(cible, etat)
+
+    def avancer(traites, total):
+        avancement.update(traites=traites, total=total)
+        _ecrire_etat(cible, avancement)
 
     def travail():
         try:
             with contexte.dans_organisation(org) if org is not None else contextlib.nullcontext():
-                compte_rendu = transfert.importer(str(cible), administrateur, mode)
+                compte_rendu = transfert.importer(str(cible), administrateur, mode, progression=avancer)
                 auditer(None, A.CONFIGURATION, "Reprise d'une sauvegarde complète", module="organisation",
                         auteur=administrateur.username, mode=mode, origine=compte_rendu["origine"],
                         date_sauvegarde=compte_rendu["date_sauvegarde"], objets=compte_rendu["objets"])
-            _ecrire_etat(cible, {"etat": "termine", "compte_rendu": compte_rendu})
+            terminer({"etat": "termine", "compte_rendu": compte_rendu})
         except zipfile.BadZipFile:
-            _ecrire_etat(cible, {"etat": "erreur", "detail": "Ce fichier n'est pas un zip valide."})
+            terminer({"etat": "erreur", "detail": "Ce fichier n'est pas un zip valide."})
         except transfert.TransfertRefuse as erreur:
-            _ecrire_etat(cible, {"etat": "erreur", "detail": str(erreur)})
+            terminer({"etat": "erreur", "detail": str(erreur)})
         except Exception:  # tout est annulé (transaction) ; le détail reste dans le journal du serveur
             logger.exception("Reprise de la sauvegarde %s impossible.", cible.name)
-            _ecrire_etat(cible, {"etat": "erreur", "detail": "La reprise a échoué : rien n'a été modifié."})
+            terminer({"etat": "erreur", "detail": "La reprise a échoué : rien n'a été modifié."})
         finally:
+            fini.set()  # au cas où une erreur inattendue serait passée outre
             cible.unlink(missing_ok=True)
             if en_arriere_plan:
                 connections.close_all()
 
     if en_arriere_plan:
+        threading.Thread(target=battre, name=f"reprise-{cible.stem}-vie", daemon=True).start()
         threading.Thread(target=travail, name=f"reprise-{cible.stem}", daemon=True).start()
     else:
         travail()

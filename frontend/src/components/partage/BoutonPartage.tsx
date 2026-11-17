@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Copy, Link2, Share2, Trash2 } from "lucide-react";
+import { Check, Copy, KeyRound, Link2, Lock, Share2, Trash2 } from "lucide-react";
 import {
   ActionIcon,
   Badge,
@@ -8,6 +8,8 @@ import {
   Group,
   Modal,
   Paper,
+  PasswordInput,
+  Popover,
   SegmentedControl,
   Stack,
   Switch,
@@ -48,9 +50,55 @@ function Adresse({ jeton }: { jeton: string }) {
   );
 }
 
+/** Mot de passe d'un lien existant : le changer, l'ajouter ou le retirer. */
+function MotDePasseLien({ lien }: { lien: LienPartage }) {
+  const enregistrer = useEnregistrerLienPartage();
+  const [ouvert, setOuvert] = useState(false);
+  const [motDePasse, setMotDePasse] = useState("");
+
+  async function appliquer(valeur: string) {
+    try {
+      await enregistrer.mutateAsync({ id: lien.id, mot_de_passe: valeur });
+      notifications.show({ message: valeur ? voc("Mot de passe enregistré.") : voc("Mot de passe retiré : le lien s'ouvre sans."), color: "green" });
+      setOuvert(false);
+      setMotDePasse("");
+    } catch (e) {
+      notifications.show({ message: messageErreurApi(e, voc("Erreur lors de l'enregistrement")), color: "red" });
+    }
+  }
+
+  return (
+    <Popover opened={ouvert} onChange={setOuvert} width={280} position="bottom-end" withArrow>
+      <Popover.Target>
+        <Tooltip label={lien.protege ? voc("Changer ou retirer le mot de passe") : voc("Protéger par un mot de passe")}>
+          <ActionIcon size="sm" variant="subtle" color={lien.protege ? "grape" : "gray"} onClick={() => setOuvert((o) => !o)}
+            aria-label={voc("Mot de passe du lien")}>
+            <KeyRound size={13} />
+          </ActionIcon>
+        </Tooltip>
+      </Popover.Target>
+      <Popover.Dropdown>
+        <Stack gap="xs">
+          <PasswordInput size="xs" label={lien.protege ? voc("Nouveau mot de passe") : voc("Mot de passe")}
+            description={voc("4 caractères au moins. Les accès déjà ouverts devront le saisir.")}
+            value={motDePasse} onChange={(e) => setMotDePasse(e.currentTarget.value)} />
+          <Group justify="space-between">
+            {lien.protege ? (
+              <Button size="xs" variant="subtle" color="red" onClick={() => appliquer("")} loading={enregistrer.isPending}>{voc("Retirer")}</Button>
+            ) : <span />}
+            <Button size="xs" onClick={() => appliquer(motDePasse)} disabled={motDePasse.length < 4} loading={enregistrer.isPending}>
+              {voc("Enregistrer")}
+            </Button>
+          </Group>
+        </Stack>
+      </Popover.Dropdown>
+    </Popover>
+  );
+}
+
 /**
  * Partage d'une page en lecture seule par un lien secret, sans compte : création (contenu,
- * expiration), copie, désactivation et suppression des liens existants.
+ * expiration, mot de passe facultatif), copie, désactivation et suppression des liens existants.
  */
 function PartageModal({ type, projetId, filtres, onClose }: { type: LienPartage["type"]; projetId: number | null; filtres?: Record<string, unknown>; onClose: () => void }) {
   const { data: liens = [] } = useLiensPartage(type, projetId);
@@ -59,12 +107,20 @@ function PartageModal({ type, projetId, filtres, onClose }: { type: LienPartage[
   const [libelle, setLibelle] = useState("");
   const [contenu, setContenu] = useState<LienPartage["contenu"]>("TOUT");
   const [expireLe, setExpireLe] = useState<string | null>(null);
+  const [motDePasse, setMotDePasse] = useState("");
 
   async function creer() {
     try {
-      await enregistrer.mutateAsync({ type, projet: projetId, contenu, libelle: libelle.trim(), expire_le: expireLe, filtres: filtres ?? {} });
-      notifications.show({ message: voc("Lien créé : copiez-le pour l'envoyer."), color: "green" });
+      await enregistrer.mutateAsync({
+        type, projet: projetId, contenu, libelle: libelle.trim(), expire_le: expireLe, filtres: filtres ?? {},
+        ...(motDePasse ? { mot_de_passe: motDePasse } : {}),
+      });
+      notifications.show({
+        message: motDePasse ? voc("Lien créé : envoyez le lien et, séparément, son mot de passe.") : voc("Lien créé : copiez-le pour l'envoyer."),
+        color: "green",
+      });
       setLibelle("");
+      setMotDePasse("");
     } catch (e) {
       notifications.show({ message: messageErreurApi(e, voc("Erreur lors de la création du lien")), color: "red" });
     }
@@ -74,7 +130,7 @@ function PartageModal({ type, projetId, filtres, onClose }: { type: LienPartage[
     <Modal opened onClose={onClose} title={type === "TABLEAU_DE_BORD" ? voc("Partager le tableau de bord") : voc("Partager le suivi du projet")} size="lg">
       <Stack gap="md">
         <Text size="sm" c="dimmed">
-          {voc("Toute personne qui a le lien voit la page en lecture seule, sans compte ni mot de passe, et sans pouvoir rien modifier.")}
+          {voc("Toute personne qui a le lien voit la page en lecture seule, sans compte et sans pouvoir rien modifier. Avec un mot de passe, elle doit aussi le saisir.")}
           {type === "TABLEAU_DE_BORD" && voc(" Les chiffres portent sur les projets que vous voyez, avec les filtres actuels.")}
         </Text>
         <Paper withBorder p="sm" radius="md">
@@ -86,9 +142,13 @@ function PartageModal({ type, projetId, filtres, onClose }: { type: LienPartage[
                 <SegmentedControl fullWidth value={contenu} onChange={(v) => setContenu(v as LienPartage["contenu"])} data={CONTENUS} />
               </div>
             )}
+            <PasswordInput label={voc("Mot de passe (facultatif)")}
+              description={voc("4 caractères au moins. Communiquez-le séparément du lien (par téléphone, par exemple).")}
+              value={motDePasse} onChange={(e) => setMotDePasse(e.currentTarget.value)} autoComplete="new-password" />
             <DateInput label={voc("Expire le (facultatif)")} description={voc("Sans date, le lien reste valable jusqu'à ce que vous le désactiviez.")} valueFormat="DD/MM/YYYY" clearable value={expireLe} onChange={setExpireLe} minDate={new Date()} />
             <Group justify="flex-end">
-              <Button leftSection={<Link2 size={15} />} onClick={creer} loading={enregistrer.isPending}>{voc("Créer le lien")}</Button>
+              <Button leftSection={<Link2 size={15} />} onClick={creer} loading={enregistrer.isPending}
+                disabled={motDePasse.length > 0 && motDePasse.length < 4}>{voc("Créer le lien")}</Button>
             </Group>
           </Stack>
         </Paper>
@@ -103,9 +163,11 @@ function PartageModal({ type, projetId, filtres, onClose }: { type: LienPartage[
                     <Text size="sm" fw={500}>{l.libelle || voc("Sans nom")}</Text>
                     {type === "SUIVI_PROJET" && <Badge size="xs" variant="light">{CONTENUS.find((c) => c.value === l.contenu)?.label}</Badge>}
                     {!l.valide && <Badge size="xs" color="gray">{l.actif ? voc("Expiré") : voc("Désactivé")}</Badge>}
+                    {l.protege && <Badge size="xs" color="grape" variant="light" leftSection={<Lock size={10} />}>{voc("Mot de passe")}</Badge>}
                   </Group>
                   <Group gap={6} wrap="nowrap">
                     <Switch size="xs" checked={l.actif} label={voc("Actif")} onChange={(e) => enregistrer.mutate({ id: l.id, actif: e.currentTarget.checked })} />
+                    <MotDePasseLien lien={l} />
                     <ActionIcon size="sm" variant="subtle" color="red" aria-label={voc("Supprimer le lien")}
                       onClick={() => confirmerSuppression({ message: voc("Supprimer ce lien ? Il ne fonctionnera plus."), onConfirm: () => supprimer.mutate(l.id) })}>
                       <Trash2 size={13} />

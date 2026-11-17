@@ -1,6 +1,9 @@
 import re
+from collections import defaultdict
+from decimal import Decimal
 
-from django.db.models import Q
+from django.db.models import Q, Sum
+from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
@@ -55,11 +58,36 @@ def _resume_indicateurs(indicateurs):
     Chaque indicateur suit la palette de SON projet (elles peuvent différer
     d'un projet à l'autre) — les compteurs sont donc regroupés par
     (libellé, couleur) du palier atteint plutôt que par 3 statuts fixes.
+
+    Mêmes règles que valeur_realisee_totale et paliers_pour (grille de l'indicateur, sinon de son projet,
+    sinon globale), calculées en quelques requêtes pour tous les indicateurs au lieu de plusieurs par
+    indicateur.
     """
+    from apps.indicators.models import PalierAlerte, ValeurIndicateur
+
+    lignes = list(indicateurs.values_list("id", "valeur_cible", "projet_id", "activite__projet_id"))
+    ids = [ligne[0] for ligne in lignes]
+    # Saisies approuvées seulement (gestionnaire par défaut), comme indicateur.valeurs.
+    realises = dict(ValeurIndicateur.objects.filter(indicateur_id__in=ids).values("indicateur_id")
+                    .annotate(total=Sum("valeur_realisee")).values_list("indicateur_id", "total"))
+    par_indicateur, par_projet, globale = defaultdict(list), defaultdict(list), []
+    projets = {ligne[2] or ligne[3] for ligne in lignes} - {None}
+    paliers = PalierAlerte.objects.filter(Q(indicateur_id__in=ids) | Q(projet_id__in=projets) | Q(
+        projet__isnull=True, indicateur__isnull=True, activite__isnull=True)).order_by("borne_min")
+    for palier in paliers:
+        if palier.indicateur_id is not None:
+            par_indicateur[palier.indicateur_id].append(palier)
+        elif palier.projet_id is not None:
+            par_projet[palier.projet_id].append(palier)
+        elif palier.activite_id is None:
+            globale.append(palier)
+
     compteurs = {}
-    for indicateur in indicateurs:
-        taux = taux_realisation(valeur_realisee_totale(indicateur), indicateur.valeur_cible)
-        palier = palier_pour_taux(taux, paliers_pour(indicateur=indicateur, projet=indicateur.projet_rattache))
+    for numero, valeur_cible, projet_id, projet_activite_id in lignes:
+        taux = taux_realisation(realises.get(numero) or Decimal("0"), valeur_cible)
+        projet = projet_id or projet_activite_id
+        grille = par_indicateur.get(numero) or (par_projet.get(projet) if projet else None) or globale
+        palier = palier_pour_taux(taux, grille)
         if palier is None:
             continue
         cle = (palier.libelle, palier.couleur)
@@ -126,9 +154,11 @@ def _evolutions(projets, ids):
 
 def _repartitions(projets, ids):
     """Répartitions pour les graphiques en camembert du tableau de bord consolidé."""
+    from collections import Counter
+
     from django.db.models import Count
 
-    from apps.projects.models import Activite
+    from apps.projects.models import Activite, ParametresCalcul
     from apps.reports.services import taux_execution_financiere_global, taux_execution_physique_global
 
     def compter(queryset, champ):
@@ -136,6 +166,16 @@ def _repartitions(projets, ids):
 
     activites = Activite.objects.filter(projet__id__in=ids)
     participations = ParticipationProjet.objects.filter(projet__id__in=ids)
+    # Par projet : activités lues une fois pour tous (taux, statuts), bénéficiaires par sexe en une requête.
+    liste = list(projets.order_by("code"))
+    parametres = ParametresCalcul.courants()
+    activites_de = defaultdict(list)
+    for activite in Activite.objects.filter(projet__in=liste).prefetch_related("sous_activites", "jalons_livrables", "taux_manuels"):
+        activites_de[activite.projet_id].append(activite)
+    sexes_de = defaultdict(dict)
+    for r in (participations.filter(projet__in=liste).values("projet_id", "beneficiaire__sexe")
+              .annotate(n=Count("beneficiaire", distinct=True))):
+        sexes_de[r["projet_id"]][r["beneficiaire__sexe"]] = r["n"]
     return {
         "projets_par_statut": compter(projets, "statut"),
         "activites_par_statut": compter(activites, "statut"),
@@ -148,29 +188,19 @@ def _repartitions(projets, ids):
             for r in participations.values("projet__code").annotate(n=Count("beneficiaire", distinct=True))
         },
         "activites_par_projet": [
-            {"code": p.code, **compter(activites.filter(projet=p), "statut")}
-            for p in projets.order_by("code")
+            {"code": p.code, **Counter(a.statut for a in activites_de[p.id])} for p in liste
         ],
         "beneficiaires_par_projet_sexe": [
-            {
-                "code": p.code,
-                **{
-                    r["beneficiaire__sexe"]: r["n"]
-                    for r in participations.filter(projet=p)
-                    .values("beneficiaire__sexe")
-                    .annotate(n=Count("beneficiaire", distinct=True))
-                },
-            }
-            for p in projets.order_by("code")
+            {"code": p.code, **sexes_de[p.id]} for p in liste
         ],
         **_evolutions(projets, ids),
         "execution_par_projet": [
             {
                 "code": p.code,
-                "physique": taux_execution_physique_global(p),
-                "financier": taux_execution_financiere_global(p),
+                "physique": taux_execution_physique_global(p, parametres, activites_de[p.id]),
+                "financier": taux_execution_financiere_global(p, activites_de[p.id]),
             }
-            for p in projets.order_by("code")
+            for p in liste
         ],
     }
 
@@ -185,6 +215,48 @@ def dashboard_consolide(request):
     projets retenus.
     """
     return Response(donnees_consolidees(visible_projets_ids(request.user), request.query_params))
+
+
+FORMATS_EXPORT = {
+    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "pdf": "application/pdf",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+}
+
+
+@api_view(["GET"])
+@permission_classes([HasGlobalVisibilityOrAssigned])
+def dashboard_consolide_export(request):
+    """
+    Tableau de bord en fichier (?fichier=xlsx, pdf, docx ou pptx) : mêmes chiffres et mêmes filtres que
+    l'écran (voir dashboard_consolide).
+    """
+    fichier = request.query_params.get("fichier", "xlsx")  # « format » est réservé par DRF
+    if fichier not in FORMATS_EXPORT:
+        raise ValidationError({"fichier": "Format inconnu : xlsx, pdf, docx ou pptx."})
+    return reponse_export(donnees_consolidees(visible_projets_ids(request.user), request.query_params),
+                          request.query_params, fichier)
+
+
+def reponse_export(donnees, filtres, fichier="xlsx"):
+    from django.http import HttpResponse
+
+    from apps.core.models import IdentiteOrganisation
+
+    organisation = IdentiteOrganisation.courante().nom
+    if fichier == "xlsx":
+        from .excel import excel_tableau_de_bord
+
+        contenu = excel_tableau_de_bord(donnees, filtres, organisation)
+    else:
+        from . import rapport
+
+        contenu = {"pdf": rapport.pdf, "docx": rapport.word, "pptx": rapport.powerpoint}[fichier](
+            rapport.contenu(donnees, filtres, organisation))
+    reponse = HttpResponse(contenu, content_type=FORMATS_EXPORT[fichier])
+    reponse["Content-Disposition"] = f"attachment; filename=tableau_de_bord_{timezone.localdate():%Y-%m-%d}.{fichier}"
+    return reponse
 
 
 def donnees_consolidees(ids_visibles, filtres) -> dict:

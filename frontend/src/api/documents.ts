@@ -250,28 +250,35 @@ export interface LienDocument {
   created_at: string;
 }
 
-export function useLiensDocument(documentId: number | null) {
+/** Ce qu'on partage par lien : un document, ou un dossier entier (avec ses sous-dossiers). */
+export interface CiblePartage {
+  type: "document" | "dossier";
+  id: number;
+  nom: string;
+}
+const cheminLiens = (cible: CiblePartage) => `/${cible.type === "dossier" ? "dossiers" : "documents"}/${cible.id}/liens/`;
+
+export function useLiensDocument(cible: CiblePartage) {
   return useQuery({
-    queryKey: ["ged-document-liens", documentId],
-    queryFn: async () => (await apiClient.get<LienDocument[]>(`/documents/${documentId}/liens/`)).data,
-    enabled: !!documentId,
+    queryKey: ["ged-liens", cible.type, cible.id],
+    queryFn: async () => (await apiClient.get<LienDocument[]>(cheminLiens(cible))).data,
   });
 }
 
-export function useCreerLienDocument(documentId: number) {
+export function useCreerLienDocument(cible: CiblePartage) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (donnees: { droit: string; expire_le: string; libelle: string; mot_de_passe: string; ouvertures_max: number | null }) =>
-      (await apiClient.post<LienDocument>(`/documents/${documentId}/liens/`, donnees)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ged-document-liens", documentId] }),
+      (await apiClient.post<LienDocument>(cheminLiens(cible), donnees)).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ged-liens", cible.type, cible.id] }),
   });
 }
 
-export function useRevoquerLienDocument(documentId: number) {
+export function useRevoquerLienDocument(cible: CiblePartage) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (lienId: number) => (await apiClient.post<LienDocument>(`/documents/${documentId}/liens/${lienId}/revoquer/`)).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ged-document-liens", documentId] }),
+    mutationFn: async (lienId: number) => (await apiClient.post<LienDocument>(`${cheminLiens(cible)}${lienId}/revoquer/`)).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ged-liens", cible.type, cible.id] }),
   });
 }
 
@@ -282,7 +289,13 @@ export const adresseLienDocument = (jeton: string) => avecOrganisation(`${window
 export interface DocumentPartage {
   etat: LienDocument["etat"];
   droit: LienDocument["droit"];
-  document: string;
+  /** Nom du document partagé, ou null pour un dossier. */
+  document: string | null;
+  /** Nom du dossier partagé (lien vers un dossier entier). */
+  dossier?: string;
+  /** Dossier ouvert : ses fichiers (chemin dans le dossier, « Sous-dossier/ »), et tout en zip. */
+  fichiers?: { chemin: string; nom: string; taille: number | null; telechargement_url: string }[];
+  zip_url?: string | null;
   expire_le: string;
   mot_de_passe: boolean;
   organisation: string;

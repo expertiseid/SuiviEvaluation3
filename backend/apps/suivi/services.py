@@ -225,6 +225,8 @@ def construire_dashboard_suivi(projet) -> dict:
                 "budget_alloue": activite.budget_alloue,
                 "date_debut": activite.date_debut,
                 "date_fin": activite.date_fin,
+                "date_debut_reelle": activite.date_debut_reelle,
+                "date_fin_reelle": activite.date_fin_reelle,
                 "taux_realisation": taux_activite,
                 # Méthode réglée sur l'élément (vide = héritée) et méthode appliquée (ou AGREGATION).
                 "methode_calcul": activite.methode_calcul,

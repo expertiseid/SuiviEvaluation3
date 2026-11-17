@@ -107,3 +107,27 @@ def test_seul_l_administrateur_renomme_les_rubriques_du_menu():
     assert admin.put("/api/v1/interface/menu/", {"vocabulaire": {"inconnu": {"singulier": "x"}}}, format="json").status_code == 400
     assert charge.put("/api/v1/interface/menu/", {"libelles": {"/projets": "X"}}, format="json").status_code == 403
     assert admin.put("/api/v1/interface/menu/", {"libelles": ["pas un dict"]}, format="json").status_code == 400
+
+
+@pytest.mark.django_db
+def test_export_du_tableau_de_bord_en_quatre_formats(client):
+    """Excel, PDF, Word et PowerPoint : mêmes chiffres et mêmes filtres que l'écran."""
+    import io
+
+    from apps.projects.models import Activite
+
+    projet = Projet.objects.get(code="B")
+    Activite.objects.create(projet=projet, libelle="Forages", statut="EN_COURS")
+    debuts = {"xlsx": b"PK", "docx": b"PK", "pptx": b"PK", "pdf": b"%PDF"}
+    for fichier, debut in debuts.items():
+        r = client.get("/api/v1/dashboard/consolide/export/", {"fichier": fichier, "statuts": "EN_COURS"})
+        assert r.status_code == 200 and r.content.startswith(debut), fichier
+        assert r["Content-Disposition"].endswith(f".{fichier}")
+    from openpyxl import load_workbook
+    from pptx import Presentation
+
+    classeur = load_workbook(io.BytesIO(client.get("/api/v1/dashboard/consolide/export/", {"fichier": "xlsx"}).content))
+    assert [f.title for f in classeur][:3] == ["Synthèse", "Projets", "Répartitions"]
+    diapos = Presentation(io.BytesIO(client.get("/api/v1/dashboard/consolide/export/", {"fichier": "pptx"}).content)).slides
+    assert any(forme.has_chart for diapo in diapos for forme in diapo.shapes)
+    assert client.get("/api/v1/dashboard/consolide/export/", {"fichier": "odt"}).status_code == 400

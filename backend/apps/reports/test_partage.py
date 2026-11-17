@@ -56,3 +56,50 @@ def test_liens_de_partage():
     client_chef.force_authenticate(chef)
     assert client_chef.post("/api/v1/liens-partage/", {"type": "SUIVI_PROJET", "projet": projet.id}, format="json").status_code == 403
     assert client_chef.get("/api/v1/liens-partage/").data["count"] == 0
+
+
+@pytest.mark.django_db
+def test_lien_protege_par_un_mot_de_passe():
+    from django.core.cache import cache
+
+    cache.clear()  # essais limités par adresse, partagés entre les tests
+    admin = User.objects.create_user(username="adm_mdp", password="x", role=ROLE_ADMIN)
+    client = APIClient()
+    client.force_authenticate(admin)
+    Projet.objects.create(nom="P", code="MDP-1", date_debut="2026-01-01", date_fin="2026-12-31")
+    trop_court = client.post("/api/v1/liens-partage/", {"type": "TABLEAU_DE_BORD", "mot_de_passe": "abc"}, format="json")
+    assert trop_court.status_code == 400 and "mot_de_passe" in trop_court.data
+    lien = client.post("/api/v1/liens-partage/", {"type": "TABLEAU_DE_BORD", "libelle": "Comité", "mot_de_passe": "Sahel-2026"},
+                       format="json").data
+    assert lien["protege"] is True and "mot_de_passe" not in lien
+    assert LienPartage.objects.get(id=lien["id"]).mot_de_passe.startswith(("pbkdf2", "argon2", "bcrypt"))  # haché
+    jeton = lien["jeton"]
+
+    public = APIClient()
+    # Sans le mot de passe : ni la description, ni les chiffres ; aucune consultation comptée.
+    refus = public.get(f"/api/v1/public/partage/{jeton}/")
+    assert refus.status_code == 403 and refus.data["code"] == "mot_de_passe_requis" and refus.data["libelle"] == "Comité"
+    assert public.get(f"/api/v1/public/partage/{jeton}/dashboard/").status_code == 403
+    assert LienPartage.objects.get(id=lien["id"]).nombre_consultations == 0
+    assert public.post(f"/api/v1/public/partage/{jeton}/acces/", {"mot_de_passe": "faux"}, format="json").status_code == 403
+    acces = public.post(f"/api/v1/public/partage/{jeton}/acces/", {"mot_de_passe": "Sahel-2026"}, format="json").data["acces"]
+    public.credentials(HTTP_X_ACCES_PARTAGE=acces)
+    assert public.get(f"/api/v1/public/partage/{jeton}/").status_code == 200
+    assert public.get(f"/api/v1/public/partage/{jeton}/dashboard/").data["nombre_projets"] == 1
+    # L'accès d'un lien ne vaut pas pour un autre lien protégé.
+    autre = client.post("/api/v1/liens-partage/", {"type": "TABLEAU_DE_BORD", "mot_de_passe": "Sahel-2026"}, format="json").data
+    assert public.get(f"/api/v1/public/partage/{autre['jeton']}/dashboard/").status_code == 403
+
+    # Nouveau mot de passe : l'accès accordé avec l'ancien ne vaut plus ; « » retire la protection.
+    client.patch(f"/api/v1/liens-partage/{lien['id']}/", {"mot_de_passe": "Nouveau-2027"}, format="json")
+    assert public.get(f"/api/v1/public/partage/{jeton}/dashboard/").status_code == 403
+    assert client.patch(f"/api/v1/liens-partage/{lien['id']}/", {"libelle": "Comité 2"}, format="json").data["protege"] is True
+    assert client.patch(f"/api/v1/liens-partage/{lien['id']}/", {"mot_de_passe": ""}, format="json").data["protege"] is False
+    assert APIClient().get(f"/api/v1/public/partage/{jeton}/dashboard/").status_code == 200
+
+    # Essais en série : bloqués après 10 par minute.
+    for _ in range(10):
+        APIClient().post(f"/api/v1/public/partage/{autre['jeton']}/acces/", {"mot_de_passe": "x"}, format="json")
+    assert APIClient().post(f"/api/v1/public/partage/{autre['jeton']}/acces/", {"mot_de_passe": "Sahel-2026"},
+                            format="json").status_code == 429
+    cache.clear()

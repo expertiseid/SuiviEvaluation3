@@ -41,6 +41,8 @@ MODULES = [
     "projects/taux.py",
     "reports/cadre_logique.py",
     "reports/financier.py",
+    "dashboard/excel.py",
+    "dashboard/rapport.py",
     "reports/risques.py",
     "reports/suivi_strategique.py",
     "strategy/services.py",
@@ -123,6 +125,8 @@ def _est_un_texte(texte: str) -> bool:
         return False  # expression régulière, en-tête HTTP, code technique (EPSG:{0})
     if '="' in t or t in ("Arial", "Calibri", "DejaVu Sans", "Liberation Sans", "Agg", "Mn", "shapeName", "#texte"):
         return False  # attribut HTML, police, réglage technique
+    if re.fullmatch(r"w:\w+", t) or t in ("Normal", "Table Grid", "center left", "lower right"):
+        return False  # balise et styles Word, position de légende (graphiques)
     return True
 
 

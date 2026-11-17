@@ -230,3 +230,33 @@ def test_suivi_par_periode_saisies_taux_et_exports(contexte):
     assert excel.status_code == 200
     pdf = client.get(f"/api/v1/periodes-planification/{periode['id']}/exporter-suivi/pdf/")
     assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
+
+
+@pytest.mark.django_db
+def test_export_excel_du_suivi_sous_activites_sous_leur_activite(contexte):
+    """Activités : en-tête du suivi (prévu, effectif, attendus) et sous-activités juste sous leur activité."""
+    import io
+
+    from openpyxl import load_workbook
+
+    from .export_excel import exporter_suivi_excel
+
+    activite = contexte["activite"]
+    Activite.objects.filter(pk=activite.pk).update(attributs={"Lieu de mise en œuvre": "Bam", "Priorité": "Haute"})
+    PointSuivi.objects.create(activite=activite, periode_debut="2026-02-01", periode_fin="2026-02-28", quantite_realisee=300,
+                              budget_realise=5000000, statut="EN_COURS", saisi_par=contexte["admin"])
+    classeur = load_workbook(io.BytesIO(exporter_suivi_excel(activite.projet)))
+    assert [f.title for f in classeur][:3] == ["Résumé", "Activités", "Activités — historique"]
+    feuille = classeur["Activités"]
+    assert [c.value for c in feuille[1]] == [
+        "Code", "Libellé", "Statut", "Méthode de calcul", "Début prévu", "Fin prévu", "Début effectif", "Fin effectif",
+        "Valeur de référence", "Quantité prévue", "Unité", "Réalisé cumulé", "Taux physique (%)", "Attendu physique aujourd'hui",
+        "Budget alloué (FCFA)", "Budget réalisé cumulé (FCFA)", "Taux financier (%)", "Attendu financier aujourd'hui (FCFA)",
+        "Lieu de mise en œuvre", "Priorité",
+    ]
+    lignes = list(feuille.iter_rows(min_row=2, values_only=True))
+    assert [ligne[1] for ligne in lignes] == ["OG", "OS", "Former", "Session"]  # sous-activité juste sous son activité
+    assert lignes[2][11] == 300 and lignes[2][18:20] == ("Bam", "Haute") and lignes[3][9] == 100
+    assert feuille["B2"].font.b and feuille["B2"].fill.fill_type == "solid"  # niveaux de regroupement mis en avant
+    assert feuille["B5"].font.i  # sous-activité en italique
+    assert [c.value for c in classeur["Activités — historique"]["A"][1:]] == ["Former"]

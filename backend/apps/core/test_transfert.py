@@ -204,6 +204,33 @@ def test_api_mode_ajouter_demande_sa_propre_confirmation(admin, db):
     assert Projet.objects.filter(code="APRES-1").exists()
 
 
+def test_une_seule_reprise_a_la_fois_et_reprise_arretee_signalee(admin, db):
+    import json
+    import time
+
+    from . import vues_transfert
+
+    client = _client(admin)
+    contenu = b"".join(client.get("/api/v1/transfert/exporter/").streaming_content)
+    client.post("/api/v1/transfert/morceau/", {"identifiant": "essai-seule-1", "numero": 0, "morceau": io.BytesIO(contenu)},
+                format="multipart")
+    autre = vues_transfert._dossier_envois() / "essai-autre-1.etat.json"
+    # Une autre reprise donne signe de vie dans cet espace : la seconde est refusée (elles s'attendraient).
+    autre.write_text(json.dumps({"etat": "en_cours", "traites": 5000, "total": 104247, "maj": time.time()}))
+    suivi = client.get("/api/v1/transfert/reprise/", {"identifiant": "essai-autre-1"})
+    assert suivi.status_code == 202 and (suivi.data["traites"], suivi.data["total"]) == (5000, 104247)
+    refus = client.post("/api/v1/transfert/reprendre/", {"identifiant": "essai-seule-1", "mode": "ajouter",
+                                                         "confirmation": "AJOUTER"}, format="json")
+    assert refus.status_code == 409 and "déjà en cours" in refus.data["detail"]
+    # Sans signe de vie depuis plus de 90 s (serveur redémarré) : arrêtée, et elle ne bloque plus.
+    autre.write_text(json.dumps({"etat": "en_cours", "maj": time.time() - 120}))
+    arretee = client.get("/api/v1/transfert/reprise/", {"identifiant": "essai-autre-1"})
+    assert arretee.status_code == 400 and "serveur redémarré" in arretee.data["detail"]
+    lancee = client.post("/api/v1/transfert/reprendre/", {"identifiant": "essai-seule-1", "mode": "ajouter",
+                                                          "confirmation": "AJOUTER"}, format="json")
+    assert lancee.status_code == 200 and lancee.data["etat"] == "termine"
+
+
 def test_extrait_d_un_projet_seul_puis_ajout(admin, stockage, tmp_path):
     from apps.projects.models import Activite
 

@@ -61,6 +61,13 @@ export function avecOrganisation(lien: string): string {
   return org ? `${lien}${lien.includes("?") ? "&" : "?"}org=${encodeURIComponent(org)}` : lien;
 }
 
+/** Accès accordé à un lien de partage protégé par un mot de passe (le temps de l'onglet). */
+export const accesPartage = {
+  lire: (jeton: string) => { try { return sessionStorage.getItem(`acces-partage:${jeton}`); } catch { return null; } },
+  ecrire: (jeton: string, acces: string) => { try { sessionStorage.setItem(`acces-partage:${jeton}`, acces); } catch { /* navigation privée */ } },
+};
+const ADRESSE_PARTAGE = /^\/public\/partage\/([^/]+)\//;
+
 // Connexion, inscription, paiement : jamais avec le jeton d'une session déjà ouverte dans ce navigateur
 // (ex. visiteur de la démo, en lecture seule, dont le jeton ferait refuser la connexion).
 const SANS_SESSION = /^\/(auth\/token|auth\/double-authentification|public)\//;
@@ -78,6 +85,10 @@ apiClient.interceptors.request.use((config) => {
   } else if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  // Lien de partage protégé : l'accès accordé après le mot de passe accompagne chaque demande.
+  const lien = ADRESSE_PARTAGE.exec(config.url ?? "");
+  const acces = lien && accesPartage.lire(lien[1]);
+  if (acces) config.headers["X-Acces-Partage"] = acces;
   // Langue des fichiers produits par le serveur (rapports, exports, modèles d'import).
   config.headers["Accept-Language"] = langue();
   return config;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Link, NavLink as RouterNavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Activity,
@@ -35,6 +35,7 @@ import {
 import {
   ActionIcon,
   AppShell,
+  Center,
   Image,
   Box,
   Checkbox,
@@ -511,7 +512,10 @@ export function AppLayout() {
         ) : (
           <>
             <BoutonRetour />
-            <Outlet />
+            {/* Pages chargées à la demande (App.tsx) : le cadre reste affiché pendant le chargement. */}
+            <Suspense fallback={<Center h="40vh"><Loader /></Center>}>
+              <Outlet />
+            </Suspense>
           </>
         )}
         </Box>
