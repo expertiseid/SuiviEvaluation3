@@ -66,6 +66,7 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
   const [zoneCascadeInitialisee, setZoneCascadeInitialisee] = useState(false);
   const [latitude, setLatitude] = useState<number | string>(beneficiaire?.latitude ?? "");
   const [longitude, setLongitude] = useState<number | string>(beneficiaire?.longitude ?? "");
+  const [tailleMenage, setTailleMenage] = useState<number | string>(beneficiaire?.taille_menage ?? "");
   const [localisationEnCours, setLocalisationEnCours] = useState(false);
 
   /** Position actuelle de l'appareil (téléphone sur le terrain), via le navigateur. */
@@ -123,6 +124,7 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
     setZoneCascade(CHAMPS_VIDES.zoneCascade);
     setLatitude("");
     setLongitude("");
+    setTailleMenage("");
     setStatutsSelectionnes(CHAMPS_VIDES.statutsSelectionnes);
     setTypesActiviteSelectionnes(CHAMPS_VIDES.typesActiviteSelectionnes);
     setReponses({});
@@ -167,6 +169,7 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
       zone,
       latitude: latitude === "" ? null : String(latitude),
       longitude: longitude === "" ? null : String(longitude),
+      taille_menage: tailleMenage === "" ? null : Number(tailleMenage),
       consentement: consentement == null ? null : consentement === "oui",
       date_consentement: consentement == null ? null : dateConsentement,
       statuts_particuliers: statutsSelectionnes.map(Number),
@@ -288,6 +291,8 @@ export function BeneficiaireForm({ beneficiaire, onDone }: { beneficiaire?: Bene
         <TextInput label={voc("Téléphone")} value={telephone} onChange={(e) => setTelephone(e.currentTarget.value)} />
         <TextInput label={voc("N° pièce d'identité")} value={numeroPiece} onChange={(e) => setNumeroPiece(e.currentTarget.value)} />
       </Group>
+      <NumberInput label={voc("Taille du ménage")} description={voc("Personnes vivant dans le ménage, la personne comprise (bénéficiaires indirects).")}
+        min={1} max={200} allowDecimal={false} maw={340} value={tailleMenage} onChange={setTailleMenage} />
       <Group grow align="flex-start">
         <Select
           label={voc("Consentement")}

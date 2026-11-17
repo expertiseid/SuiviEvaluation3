@@ -15,10 +15,17 @@ from apps.core.permissions import HasGlobalVisibilityOrAssigned, peut_personnali
 from apps.core.vocabulaire import oublier_vocabulaire, v
 from apps.geo.models import NiveauAdministratif, Zone
 from apps.indicators.models import Indicateur
-from apps.indicators.services import palier_pour_taux, paliers_pour, valeur_realisee_totale, taux_realisation
+from apps.indicators.services import palier_pour_taux, paliers_pour, taux_indicateur
 from apps.notifications.services import lister_echeances
 from apps.projects.models import Projet
 from apps.projects.queryset_filters import visible_projets_ids
+
+from apps.projects.avancement import avancement
+from apps.beneficiaries.territoires import beneficiaires_territoires
+from apps.projects.finances import finances
+from apps.projects.pilotage import pilotage
+
+from .qualite import qualite
 
 from .filtres import filtrer_projets
 from .models import ConfigurationMenu, ConfigurationTableauDeBord
@@ -59,19 +66,22 @@ def _resume_indicateurs(indicateurs):
     d'un projet à l'autre) — les compteurs sont donc regroupés par
     (libellé, couleur) du palier atteint plutôt que par 3 statuts fixes.
 
-    Mêmes règles que valeur_realisee_totale et paliers_pour (grille de l'indicateur, sinon de son projet,
+    Mêmes règles que taux_indicateur et paliers_pour (grille de l'indicateur, sinon de son projet,
     sinon globale), calculées en quelques requêtes pour tous les indicateurs au lieu de plusieurs par
     indicateur.
     """
-    from apps.indicators.models import PalierAlerte, ValeurIndicateur
+    from django.db.models import F
 
-    lignes = list(indicateurs.values_list("id", "valeur_cible", "projet_id", "activite__projet_id"))
-    ids = [ligne[0] for ligne in lignes]
+    from apps.indicators.models import Indicateur, PalierAlerte
+    from apps.indicators.services import taux_indicateur, valeurs_actuelles
+
+    elements = list(indicateurs.annotate(projet_de_l_activite=F("activite__projet_id")).only(
+        "id", "valeur_cible", "valeur_reference", "sens", "calcul_taux", "agregation", "projet_id", "activite_id"))
+    ids = [i.pk for i in elements]
     # Saisies approuvées seulement (gestionnaire par défaut), comme indicateur.valeurs.
-    realises = dict(ValeurIndicateur.objects.filter(indicateur_id__in=ids).values("indicateur_id")
-                    .annotate(total=Sum("valeur_realisee")).values_list("indicateur_id", "total"))
+    realises = valeurs_actuelles(elements)
     par_indicateur, par_projet, globale = defaultdict(list), defaultdict(list), []
-    projets = {ligne[2] or ligne[3] for ligne in lignes} - {None}
+    projets = {i.projet_id or i.projet_de_l_activite for i in elements} - {None}
     paliers = PalierAlerte.objects.filter(Q(indicateur_id__in=ids) | Q(projet_id__in=projets) | Q(
         projet__isnull=True, indicateur__isnull=True, activite__isnull=True)).order_by("borne_min")
     for palier in paliers:
@@ -83,10 +93,13 @@ def _resume_indicateurs(indicateurs):
             globale.append(palier)
 
     compteurs = {}
-    for numero, valeur_cible, projet_id, projet_activite_id in lignes:
-        taux = taux_realisation(realises.get(numero) or Decimal("0"), valeur_cible)
-        projet = projet_id or projet_activite_id
-        grille = par_indicateur.get(numero) or (par_projet.get(projet) if projet else None) or globale
+    for indicateur in elements:
+        realise = realises.get(indicateur.pk)
+        if realise is None and indicateur.agregation == Indicateur.Agregation.SOMME:
+            realise = Decimal("0")  # rien de saisi : 0 réalisé
+        taux = taux_indicateur(indicateur, realise) if realise is not None else None
+        projet = indicateur.projet_id or indicateur.projet_de_l_activite
+        grille = par_indicateur.get(indicateur.pk) or (par_projet.get(projet) if projet else None) or globale
         palier = palier_pour_taux(taux, grille)
         if palier is None:
             continue
@@ -96,6 +109,19 @@ def _resume_indicateurs(indicateurs):
         [{"libelle": libelle, "couleur": couleur, "count": count} for (libelle, couleur), count in compteurs.items()],
         key=lambda r: r["libelle"],
     )
+
+
+def _non_actualises(indicateurs) -> int:
+    """Indicateurs dont une nouvelle valeur est attendue et pas encore saisie (selon leur fréquence de collecte)."""
+    from django.db.models import Max
+
+    from apps.indicators.models import ValeurIndicateur
+    from apps.indicators.services import actualisation
+
+    elements = list(indicateurs.select_related("activite", "projet"))
+    dernieres = dict(ValeurIndicateur.objects.filter(indicateur__in=[i.pk for i in elements]).values("indicateur_id")
+                     .annotate(fin=Max("periode_fin")).values_list("indicateur_id", "fin"))
+    return sum(1 for i in elements if actualisation(i, derniere_fin=dernieres.get(i.pk) or False)["en_retard"])
 
 
 def _evolutions(projets, ids):
@@ -217,6 +243,29 @@ def dashboard_consolide(request):
     return Response(donnees_consolidees(visible_projets_ids(request.user), request.query_params))
 
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def export_graphique(request):
+    """
+    Un graphique (ou tableau) du tableau de bord en Excel, avec un graphique natif relié aux données :
+    {titre, entetes, lignes, type}. Les données viennent de l'écran : rien n'est relu en base.
+    """
+    from django.http import HttpResponse
+
+    from .excel import excel_graphique
+
+    entetes, lignes = request.data.get("entetes"), request.data.get("lignes")
+    if not isinstance(entetes, list) or not isinstance(lignes, list) or not entetes:
+        raise ValidationError({"detail": "Données du graphique manquantes."})
+    titre = str(request.data.get("titre") or "")[:120]
+    reponse = HttpResponse(excel_graphique(titre, [str(e) for e in entetes], [l for l in lignes if isinstance(l, list)],
+                                           str(request.data.get("type") or "colonnes"),
+                                           series=int(request.data["series"]) if str(request.data.get("series", "")).isdigit() else None),
+                           content_type=FORMATS_EXPORT["xlsx"])
+    reponse["Content-Disposition"] = "attachment; filename=graphique.xlsx"
+    return reponse
+
+
 FORMATS_EXPORT = {
     "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "pdf": "application/pdf",
@@ -274,6 +323,12 @@ def donnees_consolidees(ids_visibles, filtres) -> dict:
         "budget_total": sum((p.budget_total for p in projets), start=0),
         "nombre_beneficiaires": nombre_beneficiaires,
         "indicateurs_par_statut": _resume_indicateurs(indicateurs),
+        "indicateurs_non_actualises": _non_actualises(indicateurs),
+        "avancement": avancement(ids),
+        "finances": finances(ids),
+        "territoires": beneficiaires_territoires(ids),
+        "qualite": qualite(ids),
+        "pilotage": pilotage(ids),
         "zones_couvertes": _zones_couvertes(ids),
         **_repartitions(projets, ids),
         **repartitions_projets(projets),
@@ -314,7 +369,7 @@ def dashboard_projet(request, projet_id):
 
     indicateurs_detail = []
     for indicateur in indicateurs:
-        taux = taux_realisation(valeur_realisee_totale(indicateur), indicateur.valeur_cible)
+        taux = taux_indicateur(indicateur)
         palier = palier_pour_taux(taux, paliers_pour(indicateur=indicateur, projet=projet))
         indicateurs_detail.append(
             {
@@ -360,17 +415,55 @@ def dashboard_configuration(request):
             raise ValidationError({"blocs_masques": "Liste de clés de blocs attendue."})
         if not isinstance(types, dict) or not set(types.values()) <= TYPES_GRAPHIQUES:
             raise ValidationError({"types_graphiques": "Type de graphique inconnu."})
+        apparences = request.data.get("apparences", configuration.apparences)
         configuration.blocs_masques = blocs
         configuration.types_graphiques = types
+        configuration.apparences = apparences_valides(apparences)
         configuration.modifie_par = request.user
         configuration.save()
     return Response(
         {
             "blocs_masques": configuration.blocs_masques,
             "types_graphiques": configuration.types_graphiques,
+            "apparences": configuration.apparences,
             "peut_modifier": peut_personnaliser_tableau_de_bord(request.user),
         }
     )
+
+
+# Apparence d'un bloc : seuls ces réglages, avec ces valeurs, sont enregistrés.
+COULEUR_HEX = re.compile(r"#[0-9a-fA-F]{6}")
+REGLAGES_APPARENCE = {
+    "titre": lambda x: isinstance(x, str) and len(x) <= 120,
+    "sous_titre": lambda x: isinstance(x, str) and len(x) <= 240,
+    "mode": lambda x: x in ("graphique", "tableau", "les_deux"),
+    "legende": lambda x: x in ("auto", "masquee", "haut", "bas", "droite"),
+    "valeurs": lambda x: isinstance(x, bool),
+    "quadrillage": lambda x: isinstance(x, bool),
+    "palette": lambda x: x in ("defaut", "vive", "douce", "bleus", "verts", "contraste"),
+    "couleurs": lambda x: isinstance(x, dict) and len(x) <= 80 and all(
+        isinstance(k, str) and len(k) <= 150 and isinstance(c, str) and COULEUR_HEX.fullmatch(c) for k, c in x.items()),
+    "axe_x": lambda x: isinstance(x, str) and len(x) <= 80,
+    "axe_y": lambda x: isinstance(x, str) and len(x) <= 80,
+    "rotation": lambda x: x in (0, 30, 45, 90),
+    "hauteur": lambda x: isinstance(x, int) and 160 <= x <= 900,
+    "taille_texte": lambda x: isinstance(x, int) and 9 <= x <= 18,
+    "format": lambda x: x in ("auto", "entier", "court", "pourcent"),
+    "tri": lambda x: x in ("aucun", "croissant", "decroissant"),
+}
+
+
+def apparences_valides(valeur) -> dict:
+    """{clé du bloc : réglages} ; refusé dès qu'un réglage ou une valeur n'est pas prévu."""
+    if not isinstance(valeur, dict) or len(valeur) > 80:
+        raise ValidationError({"apparences": "Apparences des blocs attendues."})
+    for cle, reglages in valeur.items():
+        if not isinstance(cle, str) or len(cle) > 60 or not isinstance(reglages, dict):
+            raise ValidationError({"apparences": "Apparence de bloc invalide."})
+        for nom, x in reglages.items():
+            if nom not in REGLAGES_APPARENCE or not REGLAGES_APPARENCE[nom](x):
+                raise ValidationError({"apparences": f"Réglage d'apparence invalide : {nom}."})
+    return valeur
 
 
 LONGUEUR_MAX_LIBELLE_MENU = 60

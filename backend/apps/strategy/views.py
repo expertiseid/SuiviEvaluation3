@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from apps.core.masquage import elements_masques
 from apps.core.langues import dans_la_langue_demandee
 from apps.core.permissions import HasGlobalVisibilityOrAssigned, IsAdminOrReadOnly, has_global_visibility
-from apps.indicators.services import indicateurs_pour_projet, valeur_realisee_totale
+from apps.indicators.services import indicateurs_pour_projet, valeur_actuelle
 from apps.projects.budgets import activites_comptees, total_budget
 from apps.projects.models import Activite, Projet
 from apps.projects.queryset_filters import visible_projets_ids
@@ -219,7 +219,7 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
                         {
                             "id": i.id,
                             "libelle": i.libelle,
-                            "valeur_realisee": valeur_realisee_totale(i),
+                            "valeur_realisee": valeur_actuelle(i),
                             "valeur_cible": i.valeur_cible,
                             "unite": i.unite,
                         }

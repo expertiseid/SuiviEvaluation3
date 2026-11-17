@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from simple_history.models import HistoricalRecords
 
@@ -99,6 +100,9 @@ class Beneficiaire(TimestampedModel):
     )
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    taille_menage = models.PositiveSmallIntegerField(
+        null=True, blank=True, help_text="Personnes vivant dans le ménage du bénéficiaire, lui compris (bénéficiaires indirects).",
+    )
     consentement = models.BooleanField(
         null=True, blank=True, help_text="Accord de la personne pour l'enregistrement de ses données ; vide : non renseigné.",
     )
@@ -144,8 +148,19 @@ class ParticipationProjet(TimestampedModel):
     sous_activite = models.ForeignKey(
         "projects.SousActivite", null=True, blank=True, on_delete=models.CASCADE, related_name="participations"
     )
+    class Statut(models.TextChoices):
+        EN_COURS = "EN_COURS", "En cours"
+        TERMINE = "TERMINE", "A tout reçu"
+        ABANDON = "ABANDON", "Abandon"
+
     date_inscription = models.DateField()
     role_dans_projet = models.CharField(max_length=150, blank=True)
+    statut = models.CharField(max_length=10, choices=Statut.choices, default=Statut.EN_COURS)
+    date_sortie = models.DateField(null=True, blank=True, help_text="Fin de la participation (terminée ou abandon).")
+    satisfaction = models.PositiveSmallIntegerField(
+        null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(5)],
+        help_text="Satisfaction exprimée par le bénéficiaire, de 1 (pas du tout) à 5 (très satisfait).",
+    )
 
     history = HistoricalRecords()
 

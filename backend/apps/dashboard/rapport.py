@@ -95,6 +95,59 @@ def contenu(d: dict, filtres, organisation: str = "") -> dict:
         ] for p in sorted(d.get("projets", []), key=lambda p: p["code"])],
         "larges": [1],
     }]
+    fi = d.get("finances") or {}
+    if fi:
+        tableaux.append({
+            "titre": v("Budget et efficience"),
+            "entetes": [v("Projet"), v("Budget révisé"), v("Engagé"), v("Dépensé"), v("Financier"), v("Reçus des bailleurs")],
+            "lignes": [[p["code"], _montant(p["budget_revise"]), _montant(p["engage"]), _montant(p["depense"]),
+                        _pourcent(p["taux_execution"]), _montant(p["financements_recus"])] for p in fi["par_projet"]],
+            "larges": [0],
+        })
+        chiffres += [(v("Dépensé"), f"{_montant(fi['depense'])} ({_pourcent(fi['taux_execution'])})")]
+    av = d.get("avancement") or {}
+    if av.get("prevues"):
+        tableaux.append({
+            "titre": v("Avancement et retards des activités"),
+            "entetes": [v("Projet"), v("Activités"), v("Terminées"), v("En retard"), v("Retard moyen"), v("Exécution à date")],
+            "lignes": [[p["code"], _entier(p["prevues"]), _entier(p["terminees"]), _entier(p["en_retard"]),
+                        "—" if p["retard_moyen_jours"] is None else f"{round(p['retard_moyen_jours'])} j",
+                        _pourcent(p["taux_execution_a_date"])] for p in av["par_projet"]],
+            "larges": [0],
+        })
+        chiffres += [
+            (v("Activités terminées"), f"{_entier(av['terminees'])} / {_entier(av['prevues'])}"),
+            (v("Activités en retard"), _entier(av["en_retard"])),
+        ]
+    te = d.get("territoires") or {}
+    if te.get("territoires"):
+        tableaux.append({
+            "titre": v("Bénéficiaires par territoire"),
+            "entetes": [v("Territoire"), v("Bénéficiaires"), v("Femmes"), v("Pour 1 000 habitants"), v("Abandon")],
+            "lignes": [[t["zone"], _entier(t["beneficiaires"]), _pourcent(t["part_femmes"]),
+                        "—" if t["pour_1000_habitants"] is None else str(t["pour_1000_habitants"]).replace(".", ","),
+                        _pourcent(t["taux_abandon"])] for t in te["territoires"]],
+            "larges": [0],
+        })
+        if te["couverture_cible"] is not None:
+            chiffres += [(v("Couverture de la cible"), _pourcent(te["couverture_cible"]))]
+    qu, pi = d.get("qualite") or {}, d.get("pilotage") or {}
+    if qu and pi:
+        co, ri = qu["composantes"], pi["risques"]
+        tableaux.append({
+            "titre": v("Qualité des données et pilotage"), "entetes": [v("Mesure"), v("Valeur")],
+            "lignes": [
+                [v("Score de qualité des données"), "—" if qu["score"] is None else f"{qu['score']:.0f} / 100"],
+                [v("Complétude"), _pourcent(co["completude"])], [v("Saisies dans les délais"), _pourcent(co["ponctualite"])],
+                [v("Valeurs atypiques"), f"{_entier(qu['atypiques'])} / {_entier(qu['valeurs_verifiees'])}"],
+                [v("Rapports reçus / attendus"), f"{_entier(pi['rapports']['recus'])} / {_entier(pi['rapports']['attendus_a_date'])}"],
+                [v("Risques critiques et élevés ouverts"), _entier(ri["par_niveau"]["CRITIQUE"] + ri["par_niveau"]["ELEVE"])],
+                [v("Recommandations mises en œuvre"), _pourcent(pi["recommandations"]["taux_mise_en_oeuvre"])],
+            ],
+            "larges": [0],
+        })
+        if qu["score"] is not None:
+            chiffres += [(v("Qualité des données"), f"{qu['score']:.0f} / 100")]
     for titre, cle in ((v("Par bailleur"), "projets_par_bailleur"), (v("Par pays"), "projets_par_pays"),
                        (v("Par structure de mise en œuvre"), "projets_par_mise_en_oeuvre")):
         elements = d.get(cle, [])

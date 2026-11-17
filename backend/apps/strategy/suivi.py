@@ -7,7 +7,6 @@ valeurs des indicateurs stratégiques, appréciations par période, pièces just
 from collections import defaultdict
 from decimal import Decimal
 
-from django.db.models import Sum
 
 
 def sous_arbre(element) -> set:
@@ -107,17 +106,16 @@ def piece_jointe(piece, request):
 def indicateurs_element(element, request=None) -> list:
     """Indicateurs rattachés à l'élément : réalisé (saisies approuvées) et, pour ceux saisis directement, leurs valeurs."""
     from apps.indicators.models import Indicateur, ValeurIndicateur
-    from apps.indicators.services import taux_realisation
+    from apps.indicators.services import taux_indicateur
 
     indicateurs = list(Indicateur.objects.filter(elements_strategiques=element).select_related("projet", "activite__projet").order_by("id"))
-    realises = dict(
-        ValeurIndicateur.objects.filter(indicateur__in=indicateurs)
-        .values("indicateur").annotate(t=Sum("valeur_realisee")).values_list("indicateur", "t")
-    )
+    from apps.indicators.services import valeurs_actuelles
+
+    realises = valeurs_actuelles(indicateurs)
     resultat = []
     for i in indicateurs:
         projet = i.projet or (i.activite.projet if i.activite_id else None)
-        realise = realises.get(i.id, Decimal("0"))
+        realise = realises.get(i.id)
         direct = projet is None
         valeurs = []
         if direct:
@@ -131,7 +129,7 @@ def indicateurs_element(element, request=None) -> list:
         resultat.append({
             "id": i.id, "libelle": i.libelle, "unite": i.unite, "valeur_reference": i.valeur_reference,
             "valeur_cible": i.valeur_cible, "frequence_collecte": i.frequence_collecte, "realise": realise,
-            "taux": taux_realisation(realise, i.valeur_cible) if i.valeur_cible else None,
+            "taux": taux_indicateur(i, realise) if realise is not None else None,
             "origine": "Saisie directe" if direct else f"Projet {projet.code}",
             "saisie_directe": direct,
             "valeurs": valeurs,

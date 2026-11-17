@@ -18,8 +18,11 @@ export function CamembertChart({
   unite,
   formatValeur = (v) => v.toLocaleString(locale()),
   formatCourt = formatValeur,
+  sansLegende = false,
 }: {
   parts: PartCamembert[];
+  /** Légende masquée (apparence du bloc). */
+  sansLegende?: boolean;
   unite: string;
   /** Format complet, dans l'infobulle au survol. */
   formatValeur?: (v: number) => string;
@@ -63,7 +66,7 @@ export function CamembertChart({
           <Text size="xs" c="dimmed">{unite}</Text>
         </Stack>
       </div>
-      <Stack gap={6} style={{ minWidth: 0 }}>
+      {!sansLegende && <Stack gap={6} style={{ minWidth: 0 }}>
         {visibles.map((p) => (
           <Group key={p.libelle} gap={8} wrap="nowrap" align="flex-start">
             <div style={{ width: 12, height: 12, borderRadius: 3, background: p.couleur, marginTop: 4, flexShrink: 0 }} />
@@ -74,7 +77,7 @@ export function CamembertChart({
             </Text>
           </Group>
         ))}
-      </Stack>
+      </Stack>}
     </Group>
   );
 }

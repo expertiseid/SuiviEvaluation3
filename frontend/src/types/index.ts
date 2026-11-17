@@ -1,3 +1,4 @@
+import type { ApparenceBloc } from "../utils/apparence";
 // Code d'un rôle : les rôles système (ADMIN, COORDO_GENERAL, CHARGE_SE,
 // CHEF_PROJET, CHEF_SERVICE, ANIMATEUR_TERRAIN) plus ceux ajoutés par
 // l'Administrateur (référentiel RoleUtilisateur).
@@ -86,6 +87,8 @@ export interface Zone {
   /** Centre de la zone (carte des bénéficiaires) : calculé depuis les limites administratives, ou saisi. */
   latitude?: string | null;
   longitude?: string | null;
+  /** Population (recensement ou estimation) : couverture par territoire. */
+  population?: number | null;
 }
 
 export interface Partenaire {
@@ -160,6 +163,8 @@ export interface Financement {
   montant_finance: string;
   montant_rallonges: string;
   montant_total: string;
+  /** Montant réellement versé par le bailleur au projet (décaissé), ou null s'il n'est pas renseigné. */
+  montant_recu: string | null;
   rallonges: RallongeFinancement[];
 }
 
@@ -238,6 +243,7 @@ export interface CadreStrategique {
   cible_femmes?: number | null;
   cible_jeunes?: number | null;
   cible_pdi?: number | null;
+  beneficiaires_indirects?: number | null;
   elements_capitalisation?: string;
   /** Bailleurs du document (lecture). */
   financements?: { id: number; bailleur: number; bailleur_nom: string; montant: string }[];
@@ -492,6 +498,10 @@ export interface Activite {
   /** Partenaires chargés de cet élément (onglet Partenaires du projet). */
   partenaires_charges_noms?: string[];
   budget_alloue: string | null;
+  /** Budget après révision (vide : le budget alloué reste applicable). */
+  budget_revise?: string | null;
+  /** Montant engagé (contrats, bons de commande), même pas encore payé. */
+  budget_engage?: string | null;
   budget_realise: string | null;
   valeur_reference: string | null;
   quantite_prevue: string | null;
@@ -593,6 +603,8 @@ export interface Projet {
   cible_femmes: number | null;
   cible_jeunes: number | null;
   cible_pdi: number | null;
+  /** Estimation des personnes touchées sans être inscrites. */
+  beneficiaires_indirects: number | null;
   elements_capitalisation: string;
   methode_calcul: MethodeCalcul | "";
   methode_agregation: MethodeAgregation | "";
@@ -786,8 +798,57 @@ export interface Indicateur {
   elements_strategiques: number[];
   elements_strategiques_libelles: string[];
   valeurs: ValeurIndicateur[];
-  taux_realisation_actuel: number;
+  /** Taux d'atteinte (%), ou null s'il n'est pas calculable (cible nulle, référence égale à la cible…). */
+  taux_realisation_actuel: number | null;
   palier_actuel: { id: number; libelle: string; couleur: string; borne_min: number } | null;
+  /** Calcul du taux : plus haut ou plus bas = mieux ; réalisé ÷ cible ou progression depuis la référence ;
+   * saisies cumulables ou dernière valeur seulement. */
+  sens: "HAUSSE" | "BAISSE";
+  calcul_taux: "CIBLE" | "PROGRESSION";
+  agregation: "SOMME" | "DERNIERE";
+  /** Valeur retenue pour le taux (somme des saisies, ou dernière valeur), null si rien n'est saisi. */
+  valeur_actuelle: string | null;
+  /** À jour selon la fréquence de collecte : nouvelle valeur attendue le…, retard éventuel. */
+  actualisation: { derniere_saisie: string | null; attendue_le: string | null; en_retard: boolean; jours_de_retard: number };
+  /** Écart entre les deux dernières périodes saisies (null sans deux saisies). */
+  variation: { precedente: string; derniere: string; ecart: string; pourcent: number | null } | null;
+  /** Indicateur calculé : sa formule (aucune saisie), et son explication en français. */
+  formule?: FormuleIndicateur | null;
+  formule_explication?: string[] | null;
+}
+
+export interface TermeFormule {
+  code?: string;
+  mesure: string;
+  filtres: Record<string, string | number | string[] | null>;
+}
+
+export interface FormuleIndicateur {
+  termes: TermeFormule[];
+  expression: string;
+}
+
+type ChoixFormule = { value: string; label: string }[];
+
+export interface CatalogueFormules {
+  mesures: { cle: string; libelle: string; nature: string; filtres: string[] }[];
+  periodes: ChoixFormule;
+  variantes: ChoixFormule;
+  statuts_participation: ChoixFormule;
+  statuts_activite: ChoixFormule;
+  delais: ChoixFormule;
+  calculs_enquete: ChoixFormule;
+  statuts_particuliers: ChoixFormule;
+  modeles: { titre: string; unite: string; sens: "HAUSSE" | "BAISSE"; formule: FormuleIndicateur }[];
+}
+
+export interface ApercuFormule {
+  valeur: string | null;
+  termes: Record<string, string | null>;
+  non_calculable: string | null;
+  explication: string[];
+  /** Marge d'erreur (± à 95 %) des termes issus d'une enquête. */
+  marges: Record<string, number>;
 }
 
 export interface StatutParticulier {
@@ -814,6 +875,10 @@ export interface ParticipationProjet {
   sous_activite_nom: string | null;
   date_inscription: string;
   role_dans_projet: string;
+  statut: "EN_COURS" | "TERMINE" | "ABANDON";
+  date_sortie: string | null;
+  /** De 1 (pas du tout satisfait) à 5 (très satisfait). */
+  satisfaction: number | null;
 }
 
 export interface Beneficiaire {
@@ -834,6 +899,8 @@ export interface Beneficiaire {
   zone_nom: string | null;
   latitude: string | null;
   longitude: string | null;
+  /** Personnes du ménage, le bénéficiaire compris. */
+  taille_menage?: number | null;
   /** Accord de la personne pour l'enregistrement de ses données ; null : non renseigné. */
   consentement: boolean | null;
   date_consentement: string | null;
@@ -1014,6 +1081,15 @@ export interface DashboardConsolide {
   budget_total: number;
   nombre_beneficiaires: number;
   indicateurs_par_statut: RepartitionPalier[];
+  /** Indicateurs dont une nouvelle valeur est attendue (fréquence de collecte) et pas encore saisie. */
+  indicateurs_non_actualises: number;
+  /** Avancement et retards des activités de terrain (apps.projects.avancement). */
+  avancement: AvancementActivites;
+  /** Budget et efficience (apps.projects.finances). Montants en FCFA (texte décimal). */
+  finances: FinancesTableauDeBord;
+  territoires: TerritoiresTableauDeBord;
+  qualite: QualiteTableauDeBord;
+  pilotage: PilotageTableauDeBord;
   zones_couvertes: { niveau: string; count: number }[];
   projets_par_statut: Partial<Record<StatutProjet, number>>;
   activites_par_statut: Partial<Record<StatutActivite, number>>;
@@ -1055,6 +1131,8 @@ export interface DashboardConsolide {
 export interface ConfigurationTableauDeBord {
   blocs_masques: string[];
   types_graphiques: Record<string, string>;
+  /** Apparence de chaque bloc (titre, légende, couleurs, axes…), par clé de bloc. */
+  apparences?: Record<string, ApparenceBloc>;
   peut_modifier: boolean;
 }
 
@@ -1301,4 +1379,216 @@ export interface Risque {
   date_identification: string;
   date_prochaine_revue: string | null;
   evaluations: EvaluationRisque[];
+}
+
+/** Avancement et retards des activités de terrain (éléments sans élément en dessous). Taux en %, null si sans objet. */
+export interface AvancementActivites {
+  prevues: number;
+  demarrees: number;
+  terminees: number;
+  taux_demarrage: number | null;
+  taux_achevement: number | null;
+  attendues_a_date: number;
+  taux_execution_a_date: number | null;
+  en_retard: number;
+  part_en_retard: number | null;
+  retard_moyen_jours: number | null;
+  demarrage_en_retard: number;
+  terminees_dans_les_delais: number | null;
+  retard_moyen_a_l_achevement_jours: number | null;
+  duree_moyenne_realisation_jours: number | null;
+  sans_responsable: number;
+  sans_calendrier: number;
+  sans_budget: number;
+  avec_justificatifs: number | null;
+  jalons: { total: number; atteints: number; part_atteints: number | null; en_retard: number };
+  par_projet: {
+    code: string; prevues: number; terminees: number; taux_achevement: number | null; taux_execution_a_date: number | null;
+    en_retard: number; retard_moyen_jours: number | null; terminees_dans_les_delais: number | null;
+  }[];
+  activites_en_retard: { projet: string; code: string; libelle: string; date_fin: string; jours: number; statut: string }[];
+}
+
+/** Budget et efficience du tableau de bord. Montants en FCFA (texte décimal) ; taux en %, null si inconnus. */
+export interface FinancesTableauDeBord {
+  budget_initial: string; budget_revise: string; engage: string; depense: string;
+  solde_non_engage: string; reste_a_depenser: string;
+  taux_engagement: number | null; taux_execution: number | null;
+  depense_attendue_a_date: string; ecart_a_date: string;
+  budget_projets: string; fonds_propres: string; financements_acquis: string; financements_recus: string;
+  taux_decaissement: number | null; besoin_de_financement: string;
+  lignes_budgetees: number; lignes_en_depassement: number; part_lignes_en_depassement: number | null;
+  beneficiaires_uniques: number; cout_par_beneficiaire: string | null; cout_par_activite_realisee: string | null;
+  couts_unitaires: { code: string; libelle: string; unite: string; prevu: string; reel: string; ecart_pourcent: number | null; projet: string }[];
+  par_projet: {
+    code: string; budget_revise: string; engage: string; depense: string; taux_engagement: number | null;
+    taux_execution: number | null; ecart_a_date: string; financements_acquis: string; financements_recus: string;
+  }[];
+}
+
+/** Bénéficiaires et territoires du tableau de bord (apps.beneficiaries.territoires). */
+export interface TerritoiresTableauDeBord {
+  directs: number;
+  menages: number;
+  personnes_des_menages: number;
+  indirects: number | null;
+  source_indirects: "projets" | "menages" | null;
+  cible: number | null;
+  couverture_cible: number | null;
+  parcours: number;
+  statuts_saisis: boolean;
+  abandons: number | null;
+  taux_abandon: number | null;
+  taux_maintien: number | null;
+  taux_paquet_complet: number | null;
+  satisfaction_moyenne: number | null;
+  satisfaction_reponses: number;
+  part_satisfaits: number | null;
+  territoires: {
+    zone: string; pays: string; beneficiaires: number; part_femmes: number | null; population: number | null;
+    pour_1000_habitants: number | null; taux_abandon: number | null;
+  }[];
+  ecart_couverture: EcartTerritoires | null;
+  ecart_femmes: EcartTerritoires | null;
+  zones_ciblees: number;
+  zones_sans_beneficiaire: number;
+  zones_sans_beneficiaire_exemples: { projet: string; zone: string; niveau: string }[];
+  hors_zone: number;
+  hors_zone_exemples: { projet: string; zone: string; beneficiaires: number }[];
+  coordonnees_renseignees: number;
+  coordonnees_invalides: number;
+  zones_coordonnees_invalides: number;
+  couches: { nom: string; geometrie: "POINT" | "LIGNE" | "POLYGONE"; objets: number; surface_ha: number | null; longueur_km: number | null }[];
+  plaintes: number;
+  plaintes_pour_1000: number | null;
+  taux_plaintes_recurrentes: number | null;
+}
+
+export interface EcartTerritoires {
+  plus_haut: string;
+  valeur_haute: number;
+  plus_bas: string;
+  valeur_basse: number;
+  rapport: number | null;
+  difference: number;
+}
+
+export interface RapportProjet {
+  id: number;
+  projet: number;
+  libelle: string;
+  type: string;
+  destinataire: string;
+  echeance: string;
+  date_remise: string | null;
+  date_validation: string | null;
+  statut: "ATTENDU" | "RECU" | "A_REVOIR" | "VALIDE";
+  document: number | null;
+  document_titre: string;
+  commentaire: string;
+  en_retard: boolean;
+}
+
+export interface Recommandation {
+  id: number;
+  projet: number;
+  code: string;
+  libelle: string;
+  source: string;
+  date: string;
+  rapport: number | null;
+  rapport_libelle: string;
+  priorite: "HAUTE" | "MOYENNE" | "BASSE";
+  responsable: number | null;
+  responsable_nom: string;
+  echeance: string | null;
+  statut: "A_FAIRE" | "EN_COURS" | "REALISEE" | "ABANDONNEE";
+  date_mise_en_oeuvre: string | null;
+  suivi: string;
+}
+
+export interface Apprentissage {
+  id: number;
+  projet: number;
+  type: "LECON" | "BONNE_PRATIQUE" | "DECISION";
+  titre: string;
+  description: string;
+  date: string;
+  decideur: string;
+  recommandation: number | null;
+  recommandation_libelle: string;
+  element: number | null;
+  element_libelle: string;
+}
+
+/** Qualité des données du tableau de bord (apps.dashboard.qualite). */
+export interface QualiteTableauDeBord {
+  score: number | null;
+  composantes: Record<"completude" | "ponctualite" | "plausibilite" | "doublons", number | null>;
+  poids: Record<"completude" | "ponctualite" | "plausibilite" | "doublons", number>;
+  completude: Record<"activites" | "indicateurs" | "beneficiaires", { total: number; champs: Record<string, number | null>; completude: number | null }>;
+  saisies: number;
+  saisies_a_temps: number;
+  delai_jours: number;
+  valeurs_verifiees: number;
+  atypiques: number;
+  atypiques_exemples: { projet: string; libelle: string; valeur: number; unite: string; periode_fin?: string; prevu?: number; motif: "indicateur" | "quantite" }[];
+  doublons_signales: number;
+  doublons_non_traites: number;
+  approbations_en_attente: number;
+  saisies_rejetees: number;
+}
+
+/** Rapports, risques et apprentissage du tableau de bord (apps.projects.pilotage). */
+export interface PilotageTableauDeBord {
+  rapports: {
+    total: number; attendus_a_date: number; recus: number; valides: number; a_revoir: number; en_retard: number;
+    taux_remis: number | null; taux_a_temps: number | null; retard_moyen_jours: number | null;
+    en_retard_exemples: { projet: string; libelle: string; echeance: string; jours: number }[];
+  };
+  risques: {
+    total: number; ouverts: number; survenus: number; par_niveau: Record<NiveauRisque, number>;
+    avec_mesures: number | null; suivis: number | null; revue_en_retard: number;
+    graves_exemples: { projet: string; code: string; libelle: string; criticite: number; niveau: NiveauRisque; mesures: boolean; derniere_revue: string | null }[];
+  };
+  recommandations: {
+    total: number; retenues: number; realisees: number; en_cours: number; taux_mise_en_oeuvre: number | null; en_retard: number;
+    en_retard_exemples: { projet: string; code: string; libelle: string; echeance: string; priorite: string }[];
+  };
+  apprentissage: { lecons: number; bonnes_pratiques: number; decisions: number };
+}
+
+export interface ColonneEnquete {
+  nom: string;
+  type: "NOMBRE" | "TEXTE";
+}
+
+/** Enquête importée (sans ses données) et son plan de sondage. */
+export interface Enquete {
+  id: number;
+  titre: string;
+  projet: number | null;
+  projet_code: string;
+  date_debut: string | null;
+  date_fin: string | null;
+  fichier_source: string;
+  colonnes: ColonneEnquete[];
+  colonnes_ecartees: string[];
+  nombre_reponses: number;
+  colonne_poids: string;
+  colonne_strate: string;
+  colonne_grappe: string;
+  cree_par_nom: string;
+  created_at: string;
+}
+
+export type CalculEnquete = "proportion" | "moyenne" | "total";
+
+export interface ResultatEnquete {
+  resultats: {
+    groupe: string | null; estimation: number; erreur_type: number; ic_bas: number; ic_haut: number; marge: number;
+    n: number; effectif_pondere: number; deff: number | null; effectif_faible: boolean;
+  }[];
+  plan: string;
+  avertissements: string[];
 }

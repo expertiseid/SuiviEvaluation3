@@ -1,17 +1,26 @@
 import { useState } from "react";
 import { Trash2, UserPlus, Users } from "lucide-react";
-import { ActionIcon, Button, Card, Group, MultiSelect, Table, Text, TextInput, Tooltip } from "@mantine/core";
+import { ActionIcon, Button, Card, Group, MultiSelect, Select, Table, Text, TextInput, Tooltip } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import {
   useBeneficiaires,
   useCreateParticipation,
   useDeleteParticipation,
+  useModifierParticipation,
   useParticipations,
 } from "../../api/beneficiaries";
 import { EmptyState } from "../common/EmptyState";
 import { confirmerSuppression } from "../common/confirmerSuppression";
 import { messageErreurApi } from "../../utils/erreurs";
 import { voc } from "../../utils/vocabulaire";
+import type { ParticipationProjet } from "../../types";
+
+const statuts = (): { value: ParticipationProjet["statut"]; label: string }[] => [
+  { value: "EN_COURS", label: voc("En cours") },
+  { value: "TERMINE", label: voc("A tout reçu") },
+  { value: "ABANDON", label: voc("Abandon") },
+];
+const SATISFACTION = ["1", "2", "3", "4", "5"];
 
 export function BeneficiairesTab({
   projetId,
@@ -31,6 +40,13 @@ export function BeneficiairesTab({
   const [selection, setSelection] = useState<string[]>([]);
   const createParticipation = useCreateParticipation();
   const deleteParticipation = useDeleteParticipation();
+  const modifier = useModifierParticipation();
+
+  function changer(p: ParticipationProjet, modif: Partial<Pick<ParticipationProjet, "statut" | "date_sortie" | "satisfaction">>) {
+    modifier.mutate({ id: p.id, ...modif }, {
+      onError: (error) => notifications.show({ message: messageErreurApi(error, voc("Erreur lors de l'enregistrement")), color: "red" }),
+    });
+  }
 
   const optionsBeneficiaires = (resultatsRecherche?.results ?? [])
     .filter((b) => !participations?.some((p) => p.beneficiaire === b.id))
@@ -127,6 +143,16 @@ export function BeneficiairesTab({
               <Table.Tr>
                 <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Nom")}</Table.Th>
                 <Table.Th tt="uppercase" fz="xs" c="dimmed">{voc("Date d'inscription")}</Table.Th>
+                <Table.Th tt="uppercase" fz="xs" c="dimmed">
+                  <Tooltip label={voc("« A tout reçu » : la personne a bénéficié de tout ce qui était prévu pour elle (paquet complet).")} multiline w={300}>
+                    <span>{voc("Statut")}</span>
+                  </Tooltip>
+                </Table.Th>
+                <Table.Th tt="uppercase" fz="xs" c="dimmed">
+                  <Tooltip label={voc("Satisfaction exprimée par la personne, de 1 (pas du tout satisfaite) à 5 (très satisfaite).")} multiline w={300}>
+                    <span>{voc("Satisfaction")}</span>
+                  </Tooltip>
+                </Table.Th>
                 <Table.Th />
               </Table.Tr>
             </Table.Thead>
@@ -137,6 +163,20 @@ export function BeneficiairesTab({
                     <Text size="sm" fw={500}>{p.beneficiaire_nom}</Text>
                   </Table.Td>
                   <Table.Td>{p.date_inscription}</Table.Td>
+                  <Table.Td>
+                    <Select size="xs" w={140} allowDeselect={false} aria-label={voc("Statut")} value={p.statut}
+                      data={statuts()}
+                      onChange={(v) => v && changer(p, {
+                        statut: v as ParticipationProjet["statut"],
+                        // Date de sortie : le jour où la participation se termine (ou s'arrête).
+                        date_sortie: v === "EN_COURS" ? null : p.date_sortie ?? new Date().toISOString().slice(0, 10),
+                      })} />
+                  </Table.Td>
+                  <Table.Td>
+                    <Select size="xs" w={90} clearable placeholder="—" aria-label={voc("Satisfaction")} data={SATISFACTION}
+                      value={p.satisfaction ? String(p.satisfaction) : null}
+                      onChange={(v) => changer(p, { satisfaction: v ? Number(v) : null })} />
+                  </Table.Td>
                   <Table.Td>
                     <Tooltip label={voc("Retirer")}>
                       <ActionIcon variant="subtle" color="red" onClick={() => handleSupprimer(p)}>

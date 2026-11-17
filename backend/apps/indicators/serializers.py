@@ -4,8 +4,8 @@ from rest_framework import serializers
 from apps.core.vocabulaire import v
 from apps.strategy.models import ElementStrategique
 
-from .models import Indicateur, PalierAlerte, ParametresAlerte, ValeurIndicateur
-from .services import palier_pour_taux, paliers_pour, taux_realisation, valeur_realisee_totale
+from .models import Enquete, Indicateur, PalierAlerte, ParametresAlerte, ValeurIndicateur
+from .services import actualisation, palier_pour_taux, paliers_pour, taux_indicateur, valeur_actuelle, variation
 
 
 class ParametresAlerteSerializer(serializers.ModelSerializer):
@@ -47,14 +47,14 @@ class ValeurIndicateurSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("date_saisie", "saisi_par")
 
+    def validate_indicateur(self, indicateur):
+        if indicateur.formule:
+            raise serializers.ValidationError(v("Cet indicateur est calculé par une formule : aucune valeur n'est à saisir."))
+        return indicateur
+
     def get_taux_realisation(self, obj):
-        cumule = (
-            obj.indicateur.valeurs.filter(periode_fin__lte=obj.periode_fin).aggregate(total=Sum("valeur_realisee"))[
-                "total"
-            ]
-            or 0
-        )
-        return taux_realisation(cumule, obj.indicateur.valeur_cible)
+        """Taux à la fin de cette période (cumul des saisies, ou cette valeur, selon l'indicateur)."""
+        return taux_indicateur(obj.indicateur, valeur_actuelle(obj.indicateur, jusqu_au=obj.periode_fin))
 
     def create(self, validated_data):
         validated_data["saisi_par"] = self.context["request"].user
@@ -64,6 +64,9 @@ class ValeurIndicateurSerializer(serializers.ModelSerializer):
 class IndicateurSerializer(serializers.ModelSerializer):
     valeurs = ValeurIndicateurSerializer(many=True, read_only=True)
     taux_realisation_actuel = serializers.SerializerMethodField()
+    valeur_actuelle = serializers.SerializerMethodField()
+    actualisation = serializers.SerializerMethodField()
+    variation = serializers.SerializerMethodField()
     palier_actuel = serializers.SerializerMethodField()
     # Lien par table intermédiaire (IndicateurElement) : DRF le rendrait en lecture seule, le
     # rattachement envoyé par le formulaire était alors ignoré sans message.
@@ -76,6 +79,7 @@ class IndicateurSerializer(serializers.ModelSerializer):
     projet_nom = serializers.StringRelatedField(source="projet", read_only=True)
     projet_rattache_nom = serializers.SerializerMethodField()
     activite_libelle = serializers.StringRelatedField(source="activite", read_only=True)
+    formule_explication = serializers.SerializerMethodField()
 
     class Meta:
         model = Indicateur
@@ -97,13 +101,49 @@ class IndicateurSerializer(serializers.ModelSerializer):
             "valeurs",
             "taux_realisation_actuel",
             "palier_actuel",
+            "sens",
+            "calcul_taux",
+            "agregation",
+            "valeur_actuelle",
+            "actualisation",
+            "variation",
+            "formule",
+            "formule_explication",
         )
 
     def get_taux_realisation_actuel(self, obj):
-        return taux_realisation(valeur_realisee_totale(obj), obj.valeur_cible)
+        return taux_indicateur(obj)
+
+    def get_formule_explication(self, obj):
+        """La formule d'un indicateur calculé, en français (une ligne par terme, puis le calcul)."""
+        from .formules import explication
+
+        return explication(obj.formule) if obj.formule else None
+
+    def validate_formule(self, formule):
+        from .formules import FormuleInvalide, valider
+
+        if formule in (None, {}):
+            return None
+        try:
+            return valider(formule)
+        except FormuleInvalide as exc:
+            raise serializers.ValidationError(str(exc))
+
+    def get_actualisation(self, obj):
+        """À jour ou non selon la fréquence de collecte (dernière saisie, nouvelle valeur attendue le…)."""
+        return actualisation(obj)
+
+    def get_variation(self, obj):
+        """Écart entre les deux dernières périodes saisies."""
+        return variation(obj)
+
+    def get_valeur_actuelle(self, obj):
+        """Valeur retenue pour le taux : somme des saisies, ou dernière valeur saisie."""
+        return valeur_actuelle(obj)
 
     def get_palier_actuel(self, obj):
-        taux = taux_realisation(valeur_realisee_totale(obj), obj.valeur_cible)
+        taux = taux_indicateur(obj)
         palier = palier_pour_taux(taux, paliers_pour(indicateur=obj, projet=obj.projet_rattache))
         if palier is None:
             return None
@@ -143,4 +183,39 @@ class IndicateurSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 v("Un indicateur se rattache soit au projet, soit à un élément de sa planification (ou à aucun des deux, s'il est purement stratégique).")
             )
+        if attrs.get("formule"):
+            # Calculé : la formule donne un niveau à chaque instant, pas des quantités à additionner.
+            attrs["agregation"] = Indicateur.Agregation.DERNIERE
+            if self.instance is not None and self.instance.valeurs.exists():
+                raise serializers.ValidationError(
+                    {"formule": v("Cet indicateur a déjà des valeurs saisies : créez plutôt un nouvel indicateur calculé.")})
+        return attrs
+
+
+class EnqueteSerializer(serializers.ModelSerializer):
+    """Description d'une enquête (sans ses données) ; le plan de sondage se règle ici."""
+
+    projet_code = serializers.CharField(source="projet.code", read_only=True, default="")
+    cree_par_nom = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Enquete
+        fields = (
+            "id", "titre", "projet", "projet_code", "date_debut", "date_fin", "fichier_source", "colonnes", "colonnes_ecartees",
+            "nombre_reponses", "colonne_poids", "colonne_strate", "colonne_grappe", "cree_par_nom", "created_at",
+        )
+        read_only_fields = ("fichier_source", "colonnes", "colonnes_ecartees", "nombre_reponses")
+
+    def get_cree_par_nom(self, obj):
+        u = obj.cree_par
+        return (u.get_full_name() or u.username) if u else ""
+
+    def validate(self, attrs):
+        colonnes = {c["nom"]: c["type"] for c in (self.instance.colonnes if self.instance else attrs.get("colonnes", []))}
+        for champ in ("colonne_poids", "colonne_strate", "colonne_grappe"):
+            nom = attrs.get(champ)
+            if nom and nom not in colonnes:
+                raise serializers.ValidationError({champ: v("Colonne inconnue : « {0} ».").format(nom)})
+        if attrs.get("colonne_poids") and colonnes.get(attrs["colonne_poids"]) != "NOMBRE":
+            raise serializers.ValidationError({"colonne_poids": v("Les poids doivent être des nombres.")})
         return attrs

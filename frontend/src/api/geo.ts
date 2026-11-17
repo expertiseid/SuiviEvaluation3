@@ -153,6 +153,9 @@ export interface CoucheImportee {
   champ_etiquette: string;
   nombre_objets: number;
   emprise: [number, number, number, number];
+  /** Surface totale des polygones (ha), longueur totale des lignes (km). */
+  surface_ha: number | null;
+  longueur_km: number | null;
   cree_par_nom: string;
   created_at: string;
 }

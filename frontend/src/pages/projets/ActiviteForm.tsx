@@ -91,6 +91,8 @@ export function ActiviteForm({
   const [equipeNouveauDateDebutContrat, setEquipeNouveauDateDebutContrat] = useState<string | null>(null);
   const [equipeNouveauDateFinContrat, setEquipeNouveauDateFinContrat] = useState<string | null>(null);
   const [budgetAlloue, setBudgetAlloue] = useState<number | string>(activite?.budget_alloue ?? "");
+  const [budgetRevise, setBudgetRevise] = useState<number | string>(activite?.budget_revise ?? "");
+  const [budgetEngage, setBudgetEngage] = useState<number | string>(activite?.budget_engage ?? "");
   const [valeurReference, setValeurReference] = useState<number | string>(activite?.valeur_reference ?? "");
   const [quantitePrevue, setQuantitePrevue] = useState<number | string>(activite?.quantite_prevue ?? "");
   const [uniteQuantite, setUniteQuantite] = useState(activite?.unite_quantite ?? "");
@@ -160,6 +162,8 @@ export function ActiviteForm({
       responsables: responsablesIds,
       equipe_responsable: equipeResponsable ? Number(equipeResponsable) : null,
       budget_alloue: budgetAlloue === "" ? null : Number(budgetAlloue),
+      budget_revise: budgetRevise === "" ? null : Number(budgetRevise),
+      budget_engage: budgetEngage === "" ? null : Number(budgetEngage),
       valeur_reference: valeurReference === "" ? null : Number(valeurReference),
       quantite_prevue: quantitePrevue === "" ? null : Number(quantitePrevue),
       unite_quantite: uniteQuantite,
@@ -253,6 +257,12 @@ export function ActiviteForm({
         min={0}
         error={budgetDepasseLeRestant ? voc("Ce montant dépasse le budget restant du projet.") : undefined}
       />
+      <Group grow align="flex-start">
+        <NumberInput label={voc("Budget révisé (FCFA)")} description={voc("Vide : le budget alloué reste applicable.")}
+          value={budgetRevise} onChange={setBudgetRevise} min={0} thousandSeparator=" " />
+        <NumberInput label={voc("Montant engagé (FCFA)")} description={voc("Contrats et bons de commande, même pas encore payés.")}
+          value={budgetEngage} onChange={setBudgetEngage} min={0} thousandSeparator=" " />
+      </Group>
       {budgetDepasseLeRestant && (
         <Alert color="orange" variant="light">
           {voc("Ce budget alloué (")}{budgetAllouNumber.toLocaleString(locale())} {voc(" FCFA) dépasse le budget restant du projet (")}{budgetRestant.toLocaleString(locale())} {voc("FCFA sur")} {budgetProjetTotal.toLocaleString(locale())} {voc("FCFA au total). Vérifie le montant avant d'enregistrer.")}

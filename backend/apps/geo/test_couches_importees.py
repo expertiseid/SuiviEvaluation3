@@ -176,3 +176,14 @@ def test_synthese_par_zone():
     carte = client.get("/api/v1/beneficiaires/carte/", {"statuts": "EN_PREPARATION"}).data
     assert carte["total"] == 0 and carte["projets_retenus"] == [regional.id]
     assert client.get("/api/v1/beneficiaires/carte/", {"statuts": "CLOTURE"}).data["total"] == 1
+
+
+def test_surfaces_et_longueurs_mesurees_sur_l_ellipsoide():
+    from shapely.geometry import LineString, box
+
+    from .services.mesures import mesurer
+
+    # Un degré de méridien à l'équateur : 110,57 km ; un carré de 0,01° : ~123 ha.
+    assert round(mesurer([LineString([(0, 0), (0, 1)])], "LIGNE")["longueur_km"], 1) == 110.6
+    assert 120 < mesurer([box(0, 0, 0.01, 0.01)], "POLYGONE")["surface_ha"] < 125
+    assert mesurer([], "POINT") == {"surface_ha": None, "longueur_km": None}

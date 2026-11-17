@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown, Download, FileSpreadsheet, FileText, FolderKanban, Presentation, Wallet, Users, Gauge, MapPin, SlidersHorizontal } from "lucide-react";
-import { Badge, Button, Grid, Group, Menu, Paper, SimpleGrid, Stack, Table, Text, Title } from "@mantine/core";
+import { ChevronDown, Download, FileSpreadsheet, FileText, FolderKanban, Paintbrush, Presentation, Wallet, Users, Gauge, MapPin, SlidersHorizontal } from "lucide-react";
+import { ActionIcon, Badge, Button, Grid, Group, Menu, Paper, SimpleGrid, Stack, Table, Text, Title, Tooltip } from "@mantine/core";
 import {
   useConfigurationTableauDeBord,
   useDashboardConsolide,
@@ -20,9 +20,15 @@ import { PersonnalisationModal, type DefinitionBloc } from "../components/dashbo
 import { StatCard } from "../components/common/StatCard";
 import { CamembertChart } from "../components/charts/CamembertChart";
 import { ChoixTypeGraphique, GraphiqueAdaptable, type SerieGraphique } from "../components/charts/GraphiqueAdaptable";
+import { ExportBloc, HORS_EXPORT, type DonneesExport } from "../components/charts/ExportBloc";
+import { ApparenceBlocDrawer } from "../components/dashboard/ApparenceBlocDrawer";
+import { ApparenceContext, useApparence, type ApparenceBloc } from "../utils/apparence";
 import { typesPossibles, type TypeGraphique } from "../utils/typesGraphiques";
 import { PROJET_STATUT_LABEL } from "../utils/statusTones";
-import type { DashboardConsolide, FiltresDashboard, LigneRepartitionProjets, StatutProjet } from "../types";
+import type {
+  AvancementActivites, DashboardConsolide, FinancesTableauDeBord, FiltresDashboard, LigneRepartitionProjets, PilotageTableauDeBord, QualiteTableauDeBord,
+  StatutProjet, TerritoiresTableauDeBord,
+} from "../types";
 import { TitreRubrique } from "../components/common/TitreRubrique";
 import { voc } from "../utils/vocabulaire";
 
@@ -39,14 +45,24 @@ const COULEUR_HOMMES = "#1c7ed6";
 
 const CLE_STOCKAGE_FILTRES = "tableau-de-bord.filtres";
 
-function CarteGraphique({ titre, actions, children }: { titre: string; actions?: ReactNode; children: ReactNode }) {
+function CarteGraphique({ titre, sousTitre, actions, donnees, children }: {
+  titre: string; sousTitre?: string; actions?: ReactNode; donnees?: () => DonneesExport | null; children: ReactNode;
+}) {
+  // Zone reproduite par les images : titre et contenu, sans les boutons.
+  const zone = useRef<HTMLDivElement>(null);
   return (
-    <Paper withBorder p="md" radius="md" h="100%">
+    <Paper withBorder p="md" radius="md" h="100%" ref={zone}>
       <Group justify="space-between" align="flex-start" wrap="nowrap" mb="sm">
-        <Title order={4} c="dark.8" style={{ borderLeft: "4px solid var(--mantine-color-teal-6)", paddingLeft: 10 }}>
-          {titre}
-        </Title>
-        {actions}
+        <div>
+          <Title order={4} c="dark.8" style={{ borderLeft: "4px solid var(--mantine-color-teal-6)", paddingLeft: 10 }}>
+            {titre}
+          </Title>
+          {sousTitre && <Text size="sm" c="dimmed" mt={2} pl={14}>{sousTitre}</Text>}
+        </div>
+        <Group gap={6} wrap="nowrap" className={HORS_EXPORT}>
+          {actions}
+          <ExportBloc titre={titre} zone={zone} donnees={donnees} />
+        </Group>
       </Group>
       {children}
     </Paper>
@@ -117,13 +133,19 @@ function RepartitionProjets({
   couleur: string;
 }) {
   const [toutVoir, setToutVoir] = useState(false);
+  const apparence = useApparence();
   if (toutes.length === 0) return <Vide message={vide} />;
+  if (apparence.tri && apparence.tri !== "aucun") {
+    // Même ordre que le graphique (tri de l'apparence du bloc), sur le montant.
+    toutes = [...toutes].sort((x, y) => (Number(x.montant) - Number(y.montant)) * (apparence.tri === "croissant" ? 1 : -1));
+  }
   const totalMontant = toutes.reduce((s, l) => s + Number(l.montant), 0);
   const nbMasques = toutVoir ? 0 : Math.max(0, toutes.length - LIMITE_LIGNES);
   const lignes = toutVoir ? toutes : toutes.slice(0, LIMITE_LIGNES);
   return (
     <Stack gap="sm">
-      {type !== "tableau" && (
+      {type !== "tableau" && apparence.mode !== "tableau" && (
+        <ApparenceContext.Provider value={{ ...apparence, mode: "graphique" }}>
         <GraphiqueAdaptable
           type={type}
           categories={lignes.map((l) => l.libelle)}
@@ -134,6 +156,7 @@ function RepartitionProjets({
           unite="FCFA"
           hauteur={Math.max(160, lignes.length * 44)}
         />
+        </ApparenceContext.Provider>
       )}
       <Table striped withTableBorder verticalSpacing={6} fz="sm">
         <Table.Thead>
@@ -146,13 +169,13 @@ function RepartitionProjets({
         <Table.Tbody>
           {lignes.map((l) => (
             <Table.Tr key={l.libelle}>
-              <Table.Td>
-                {l.libelle}
-                <Group gap={4} mt={2}>
-                  {l.projets.map((code) => <Badge key={code} size="xs" variant="light">{code}</Badge>)}
-                </Group>
+              <Table.Td>{l.libelle}</Table.Td>
+              {/* Codes des projets au survol du nombre, plutôt qu'une liste qui encombre le tableau. */}
+              <Table.Td ta="right">
+                <Tooltip label={l.projets.join(", ")} multiline maw={360} withArrow disabled={l.projets.length === 0}>
+                  <Text span size="sm" style={{ cursor: "help", borderBottom: "1px dotted var(--mantine-color-gray-5)" }}>{l.nombre}</Text>
+                </Tooltip>
               </Table.Td>
-              <Table.Td ta="right">{l.nombre}</Table.Td>
               <Table.Td ta="right" style={{ whiteSpace: "nowrap" }}>{Number(l.montant).toLocaleString(locale())}</Table.Td>
             </Table.Tr>
           ))}
@@ -184,6 +207,8 @@ type Bloc = DefinitionBloc & {
   avecCarte?: boolean;
   graphique?: { types: TypeGraphique[]; defaut: TypeGraphique };
   rendu: (type: TypeGraphique) => ReactNode;
+  /** Données du bloc pour son téléchargement (CSV, Excel avec graphique natif). */
+  donnees?: (type: TypeGraphique) => DonneesExport | null;
 };
 
 export function DashboardConsolidePage() {
@@ -197,11 +222,22 @@ export function DashboardConsolidePage() {
   const types = (configuration?.types_graphiques ?? {}) as Record<string, TypeGraphique>;
   const [personnalisation, setPersonnalisation] = useState(false);
 
-  function sauvegarder(payload: { blocs_masques?: string[]; types_graphiques?: Record<string, TypeGraphique> }) {
+  const apparences = configuration?.apparences ?? {};
+  const [aPersonnaliser, setAPersonnaliser] = useState<Bloc | null>(null);
+  function sauvegarder(payload: { blocs_masques?: string[]; types_graphiques?: Record<string, TypeGraphique>;
+    apparences?: Record<string, ApparenceBloc> }, apres?: () => void) {
     enregistrer.mutate(payload, {
+      onSuccess: () => apres?.(),
       onError: (error) =>
         notifications.show({ message: messageErreurApi(error, voc("Erreur lors de l'enregistrement")), color: "red" }),
     });
+  }
+  /** Séries (plusieurs) ou catégories (une seule série) du bloc, pour choisir leurs couleurs. */
+  function nomsColorables(b: Bloc): string[] {
+    const d = b.donnees?.(typeDe(b));
+    if (!d) return [];
+    const unique = d.series === 1 || d.entetes.length === 2;
+    return unique ? d.lignes.map((l) => String(l[0])) : d.entetes.slice(1);
   }
   // Lien de partage : filtres enregistrés avec le lien, ni personnalisation ni liens vers les projets.
   const partage = usePartage();
@@ -276,27 +312,61 @@ export function DashboardConsolidePage() {
           )}
           {visibles.map((b) => (
             <Grid.Col key={b.cle} span={{ base: 12, md: b.largeur === 12 ? 12 : 6, xl: b.largeur }}>
+              <ApparenceContext.Provider value={apparences[b.cle] ?? {}}>
               {b.avecCarte === false ? (
                 b.rendu(typeDe(b))
               ) : (
                 <CarteGraphique
-                  titre={b.titre}
+                  titre={apparences[b.cle]?.titre || b.titre}
+                  sousTitre={apparences[b.cle]?.sous_titre}
+                  donnees={b.donnees ? () => b.donnees!(typeDe(b)) : undefined}
                   actions={
-                    b.graphique && peutPersonnaliser && (
-                      <ChoixTypeGraphique
-                        valeur={typeDe(b)}
-                        types={b.graphique.types}
-                        onChange={(t) => sauvegarder({ types_graphiques: { ...types, [b.cle]: t } })}
-                      />
+                    peutPersonnaliser && !partage && (
+                      <Group gap={6} wrap="nowrap">
+                        {b.graphique && (
+                          <ChoixTypeGraphique
+                            valeur={typeDe(b)}
+                            types={b.graphique.types}
+                            onChange={(t) => sauvegarder({ types_graphiques: { ...types, [b.cle]: t } })}
+                          />
+                        )}
+                        <Tooltip label={voc("Personnaliser ce bloc")} withArrow>
+                          <ActionIcon variant="default" size="md" onClick={() => setAPersonnaliser(b)} aria-label={voc("Personnaliser ce bloc")}>
+                            <Paintbrush size={15} />
+                          </ActionIcon>
+                        </Tooltip>
+                      </Group>
                     )
                   }
                 >
                   {b.rendu(typeDe(b))}
                 </CarteGraphique>
               )}
+              </ApparenceContext.Provider>
             </Grid.Col>
           ))}
         </Grid>
+      )}
+
+      {aPersonnaliser && (
+        <ApparenceBlocDrawer
+          opened
+          onClose={() => setAPersonnaliser(null)}
+          titreDefaut={aPersonnaliser.titre}
+          initiale={apparences[aPersonnaliser.cle] ?? {}}
+          noms={nomsColorables(aPersonnaliser)}
+          apercu={() => aPersonnaliser.rendu(typeDe(aPersonnaliser))}
+          enregistrement={enregistrer.isPending}
+          onEnregistrer={(a) => {
+            const suivantes = { ...apparences };
+            if (Object.keys(a).length) suivantes[aPersonnaliser.cle] = a;
+            else delete suivantes[aPersonnaliser.cle];
+            sauvegarder({ apparences: suivantes }, () => {
+              setAPersonnaliser(null);
+              notifications.show({ message: voc("Apparence enregistrée : tout le monde voit ce bloc ainsi."), color: "green" });
+            });
+          }}
+        />
       )}
 
       <PersonnalisationModal
@@ -330,6 +400,25 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
       valeurs: lignes.map((l) => (l[code] === undefined ? 0 : Number(l[code]))),
     }));
 
+  // Données des blocs à télécharger : première colonne = catégories, suivantes = séries.
+  const depuisSeries = (libelle: string, categories: string[], series: { nom: string; couleur: string; valeurs: (number | null)[] }[],
+    type: TypeGraphique, couleursCategories?: string[]): DonneesExport => ({
+    entetes: [libelle, ...series.map((x) => x.nom)],
+    lignes: categories.map((c, i) => [c, ...series.map((x) => x.valeurs[i] ?? null)]),
+    type,
+    legende: series.length > 1 ? series.map(({ nom, couleur }) => ({ nom, couleur }))
+      : type === "camembert" && couleursCategories
+        ? categories.map((nom, i) => ({ nom: `${nom} (${(series[0]?.valeurs[i] ?? 0).toLocaleString(locale())})`, couleur: couleursCategories[i] }))
+        : undefined,
+  });
+  const depuisRepartition = (colonne: string, lignes: LigneRepartitionProjets[], type: TypeGraphique): DonneesExport => ({
+    entetes: [colonne, voc("Montant (FCFA)"), voc("Projets")], series: 1, type,
+    lignes: lignes.map((l) => [l.libelle, Number(l.montant), l.nombre]),
+  });
+  const statutsLibelles = statuts.map((s) => PROJET_STATUT_LABEL[s]);
+  const budgetsProjets = codesProjets.map((code) => Number(data.projets.find((p) => p.code === code)?.budget_total ?? 0));
+  const avancementProjets = data.avancement.par_projet;
+
   return [
     {
       cle: "chiffres-cles", titre: voc("Chiffres clés"), groupe: "Vue d'ensemble", largeur: 12, avecCarte: false,
@@ -344,6 +433,8 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
     },
     {
       cle: "couverture", titre: voc("Couverture géographique (nombre de zones)"), groupe: voc("Géographie"), largeur: 12,
+      donnees: () => ({ entetes: [voc("Niveau"), voc("Zones")], type: "colonnes",
+        lignes: data.zones_couvertes.map((z) => [traduireDonnee(z.niveau), z.count]) }),
       rendu: () =>
         data.zones_couvertes.length === 0 ? (
           <Vide message={voc("Aucun pays renseigné sur les projets.")} />
@@ -355,34 +446,37 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
           </SimpleGrid>
         ),
     },
+    // Un bloc par niveau géographique (pays, puis région, province, commune…), chacun masquable et réglable.
     {
-      cle: "pays-zones", titre: voc("Projets par pays et zone d'intervention"), groupe: voc("Géographie"), largeur: 12,
+      cle: "pays", titre: voc("Projets par pays"), groupe: voc("Géographie"), largeur: 6,
+      donnees: (type) => depuisRepartition(voc("Pays"), data.projets_par_pays, type),
       graphique: graphique(1, "barres"),
       rendu: (type) => (
-        <SimpleGrid cols={{ base: 1, md: 2, xl: 1 + Math.max(1, data.projets_par_zone.length) }} spacing="lg">
-          <div>
-            <Text fw={600} mb="xs">{voc("Par pays")}</Text>
-            <RepartitionProjets type={type} lignes={data.projets_par_pays} colonne={voc("Pays")} vide={voc("Aucun pays renseigné.")}
-              couleur="#0c8599" noteMontant={voc("Montant = budget total des projets du pays.")} />
-          </div>
-          {data.projets_par_zone.length === 0 ? (
-            <div>
-              <Text fw={600} mb="xs">{voc("Par zone administrative")}</Text>
-              <Vide message={voc("Aucune zone d'intervention renseignée sur les fiches projet (champ « Zones »).")} />
-            </div>
-          ) : (
-            data.projets_par_zone.map((n) => (
-              <div key={n.niveau}>
-                <Text fw={600} mb="xs">{voc`Par ${langue() === "de" ? traduireDonnee(n.niveau) : traduireDonnee(n.niveau).toLowerCase()}`}</Text>
-                <RepartitionProjets type={type} lignes={n.zones} colonne={traduireDonnee(n.niveau)} vide="—" couleur="#1098ad" />
-              </div>
-            ))
-          )}
-        </SimpleGrid>
+        <RepartitionProjets type={type} lignes={data.projets_par_pays} colonne={voc("Pays")} vide={voc("Aucun pays renseigné.")}
+          couleur="#0c8599" noteMontant={voc("Montant = budget total des projets du pays.")} />
       ),
     },
+    ...(data.projets_par_zone.length === 0
+      ? [{
+          cle: "zones", titre: voc("Projets par zone d'intervention"), groupe: voc("Géographie"), largeur: 6,
+          rendu: () => <Vide message={voc("Aucune zone d'intervention renseignée sur les fiches projet (champ « Zones »).")} />,
+        } as Bloc]
+      : data.projets_par_zone.map((n, rang): Bloc => ({
+          cle: `zones-niveau-${rang + 1}`,
+          donnees: (type) => depuisRepartition(traduireDonnee(n.niveau), n.zones, type),
+          titre: voc`Projets par ${langue() === "de" ? traduireDonnee(n.niveau) : traduireDonnee(n.niveau).toLowerCase()}`,
+          groupe: voc("Géographie"), largeur: 6,
+          graphique: graphique(1, "barres"),
+          rendu: (type) => (
+            <RepartitionProjets type={type} lignes={n.zones} colonne={traduireDonnee(n.niveau)} vide="—" couleur="#1098ad" />
+          ),
+        }))),
     {
       cle: "budget-detail", titre: voc("Budget total et détail"), groupe: voc("Budget et financements"), largeur: 12,
+      donnees: (type) => depuisSeries(voc("Projet"), budget.par_projet.map((p) => p.code), [
+        { nom: voc("Fonds propres"), couleur: "#12b886", valeurs: budget.par_projet.map((p) => Number(p.fonds_propres)) },
+        { nom: voc("Financements bailleurs"), couleur: "#1c7ed6", valeurs: budget.par_projet.map((p) => Number(p.financements_bailleurs)) },
+      ], type),
       graphique: graphique(2, "barres"),
       rendu: (type) => (
         <Stack gap="md">
@@ -396,6 +490,8 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
           <GraphiqueAdaptable
             type={type}
             categories={budget.par_projet.map((p) => p.code)}
+            libelleCategories={voc("Projet")}
+            total
             series={[
               { cle: "fp", nom: voc("Fonds propres"), couleur: "#12b886", valeurs: budget.par_projet.map((p) => Number(p.fonds_propres)) },
               { cle: "fb", nom: voc("Financements bailleurs"), couleur: "#1c7ed6", valeurs: budget.par_projet.map((p) => Number(p.financements_bailleurs)) },
@@ -409,6 +505,7 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
     },
     {
       cle: "bailleurs", titre: voc("Projets par bailleur"), groupe: voc("Budget et financements"), largeur: 4,
+      donnees: (type) => depuisRepartition(voc("Bailleur"), data.projets_par_bailleur, type),
       graphique: graphique(1, "barres"),
       rendu: (type) => (
         <RepartitionProjets type={type} lignes={data.projets_par_bailleur} colonne={voc("Bailleur")} vide={voc("Aucun bailleur renseigné.")}
@@ -418,6 +515,7 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
     },
     {
       cle: "consortium", titre: voc("Projets par partenaire de consortium"), groupe: voc("Budget et financements"), largeur: 4,
+      donnees: (type) => depuisRepartition(voc("Partenaire"), data.projets_par_consortium, type),
       graphique: graphique(1, "barres"),
       rendu: (type) => (
         <RepartitionProjets type={type} lignes={data.projets_par_consortium} colonne={voc("Partenaire")} vide={voc("Aucun projet en consortium.")}
@@ -426,6 +524,7 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
     },
     {
       cle: "mise-en-oeuvre", titre: voc("Projets par partenaire de mise en œuvre"), groupe: voc("Budget et financements"), largeur: 4,
+      donnees: (type) => depuisRepartition(voc("Partenaire"), data.projets_par_mise_en_oeuvre, type),
       graphique: graphique(1, "barres"),
       rendu: (type) => (
         <RepartitionProjets type={type} lignes={data.projets_par_mise_en_oeuvre} colonne={voc("Partenaire")}
@@ -435,6 +534,12 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
     },
     {
       cle: "cibles", titre: voc("Cibles des projets (par sexe et par statut)"), groupe: voc("Bénéficiaires"), largeur: 12,
+      donnees: (type) => depuisSeries(voc("Projet"), cibles.par_projet.map((p) => p.code), [
+        { nom: voc("Femmes"), couleur: COULEUR_FEMMES, valeurs: cibles.par_projet.map((p) => p.femmes) },
+        { nom: voc("Hommes"), couleur: COULEUR_HOMMES, valeurs: cibles.par_projet.map((p) => p.hommes) },
+        { nom: voc("Jeunes"), couleur: "#f59f00", valeurs: cibles.par_projet.map((p) => p.jeunes) },
+        { nom: voc("PDI"), couleur: "#ae3ec9", valeurs: cibles.par_projet.map((p) => p.pdi) },
+      ], type),
       graphique: graphique(4, "colonnes"),
       rendu: (type) => (
         <Grid gap="lg">
@@ -456,6 +561,8 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
             <GraphiqueAdaptable
               type={type}
               categories={cibles.par_projet.map((p) => p.code)}
+              libelleCategories={voc("Projet")}
+              total
               series={[
                 { cle: "femmes", nom: voc("Femmes"), couleur: COULEUR_FEMMES, valeurs: cibles.par_projet.map((p) => p.femmes) },
                 { cle: "hommes", nom: voc("Hommes"), couleur: COULEUR_HOMMES, valeurs: cibles.par_projet.map((p) => p.hommes) },
@@ -471,12 +578,64 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
       ),
     },
     {
+      cle: "finances", titre: voc("Budget et efficience"), groupe: voc("Budget et financements"), largeur: 12,
+      donnees: () => ({
+        entetes: [voc("Projet"), voc("Dépensé (FCFA)"), voc("Budget révisé (FCFA)"), voc("Engagé (FCFA)"), voc("Exécution financière (%)"),
+          voc("Exécution physique (%)"), voc("Financements acquis (FCFA)"), voc("Reçus des bailleurs (FCFA)")],
+        series: 2, type: "barres",
+        lignes: data.finances.par_projet.map((p) => [p.code, Number(p.depense), Number(p.budget_revise), Number(p.engage), p.taux_execution,
+          data.execution_par_projet.find((e) => e.code === p.code)?.physique ?? null, Number(p.financements_acquis), Number(p.financements_recus)]),
+      }),
+      rendu: () => <FinancesBloc f={data.finances} physique={Object.fromEntries(data.execution_par_projet.map((e) => [e.code, e.physique]))} />,
+    },
+    {
+      cle: "avancement", titre: voc("Avancement et retards des activités"), groupe: voc("Projets"), largeur: 12,
+      donnees: () => ({
+        entetes: [voc("Projet"), voc("En retard"), voc("Activités"), voc("Terminées"), voc("Retard moyen (jours)"), voc("Exécution à date (%)")],
+        series: 1, type: "barres",
+        lignes: avancementProjets.map((p) => [p.code, p.en_retard, p.prevues, p.terminees, p.retard_moyen_jours, p.taux_execution_a_date]),
+      }),
+      rendu: () => <AvancementActivitesBloc a={data.avancement} />,
+    },
+    {
+      cle: "territoires", titre: voc("Bénéficiaires et territoires"), groupe: voc("Bénéficiaires"), largeur: 12,
+      donnees: () => ({
+        entetes: [voc("Territoire"), voc("Bénéficiaires"), voc("Femmes (%)"), voc("Population"), voc("Pour 1 000 habitants"), voc("Abandon (%)")],
+        series: 1, type: "barres",
+        lignes: data.territoires.territoires.map((t) => [t.zone, t.beneficiaires, t.part_femmes, t.population, t.pour_1000_habitants, t.taux_abandon]),
+      }),
+      rendu: () => <TerritoiresBloc t={data.territoires} />,
+    },
+    {
+      cle: "qualite", titre: voc("Qualité des données"), groupe: voc("Pilotage"), largeur: 12,
+      donnees: () => ({
+        entetes: [voc("Composante"), voc("Valeur (%)"), voc("Poids")], series: 1, type: "barres",
+        lignes: ([["completude", voc("Complétude")], ["ponctualite", voc("Saisies dans les délais")], ["plausibilite", voc("Valeurs plausibles")],
+          ["doublons", voc("Doublons traités")]] as const).map(([c, nom]) => [nom, data.qualite.composantes[c], data.qualite.poids[c]]),
+      }),
+      rendu: () => <QualiteBloc q={data.qualite} />,
+    },
+    {
+      cle: "pilotage", titre: voc("Rapports, risques et apprentissage"), groupe: voc("Pilotage"), largeur: 12,
+      donnees: () => ({
+        entetes: [voc("Niveau de risque"), voc("Risques ouverts")], series: 1, type: "colonnes",
+        lignes: ([["CRITIQUE", voc("Critique")], ["ELEVE", voc("Élevé")], ["MOYEN", voc("Moyen")], ["FAIBLE", voc("Faible")]] as const)
+          .map(([n, nom]) => [nom, data.pilotage.risques.par_niveau[n]]),
+      }),
+      rendu: () => <PilotageBloc p={data.pilotage} />,
+    },
+    {
       cle: "projets-statut", titre: voc("Projets par statut"), groupe: voc("Projets"), largeur: 4,
+      donnees: (type) => depuisSeries(voc("Statut"), statutsLibelles,
+        [{ nom: voc("Projets"), couleur: "#12b886", valeurs: statuts.map((x) => data.projets_par_statut[x] ?? 0) }], type,
+        statuts.map((x) => COULEURS_PROJET_STATUT[x])),
       graphique: graphique(1, "camembert"),
       rendu: (type) => (
         <GraphiqueAdaptable
           type={type}
           categories={statuts.map((s) => PROJET_STATUT_LABEL[s])}
+          libelleCategories={voc("Statut")}
+          total
           series={[{ cle: "n", nom: voc("Projets"), couleur: "#12b886", valeurs: statuts.map((s) => data.projets_par_statut[s] ?? 0) }]}
           couleursCategories={statuts.map((s) => COULEURS_PROJET_STATUT[s])}
           unite={data.nombre_projets > 1 ? voc("projets") : voc("projet")}
@@ -485,6 +644,8 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
     },
     {
       cle: "budget-projet", titre: voc("Budget par projet (FCFA)"), groupe: voc("Budget et financements"), largeur: 4,
+      donnees: (type) => depuisSeries(voc("Projet"), codesProjets,
+        [{ nom: voc("Budget (FCFA)"), couleur: "#4263eb", valeurs: budgetsProjets }], type, couleursProjets),
       graphique: graphique(1, "camembert"),
       rendu: (type) => (
         <GraphiqueAdaptable
@@ -499,16 +660,23 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
           formatAxe={formatFcfaCourt}
           unite="FCFA"
           hauteur={Math.max(280, codesProjets.length * 22)}
+          libelleCategories={voc("Projet")}
+          total
         />
       ),
     },
     {
       cle: "beneficiaires-sexe", titre: voc("Bénéficiaires inscrits par sexe"), groupe: voc("Bénéficiaires"), largeur: 4,
+      donnees: (type) => depuisSeries(voc("Sexe"), [voc("Femmes"), voc("Hommes")],
+        [{ nom: voc("Bénéficiaires"), couleur: COULEUR_FEMMES, valeurs: [data.beneficiaires_par_sexe.F ?? 0, data.beneficiaires_par_sexe.M ?? 0] }],
+        type, [COULEUR_FEMMES, COULEUR_HOMMES]),
       graphique: graphique(1, "camembert"),
       rendu: (type) => (
         <GraphiqueAdaptable
           type={type}
           categories={[voc("Femmes"), voc("Hommes")]}
+          libelleCategories={voc("Sexe")}
+          total
           series={[{ cle: "n", nom: voc("Bénéficiaires"), couleur: COULEUR_FEMMES, valeurs: [data.beneficiaires_par_sexe.F ?? 0, data.beneficiaires_par_sexe.M ?? 0] }]}
           couleursCategories={[COULEUR_FEMMES, COULEUR_HOMMES]}
           unite={voc("bénéficiaires")}
@@ -517,11 +685,18 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
     },
     {
       cle: "activites-projet", titre: voc("Activités par statut, par projet"), groupe: voc("Projets"), largeur: 6,
+      donnees: (type) => depuisSeries(voc("Projet"), data.activites_par_projet.map((p) => p.code), [
+        { nom: voc("Non réalisées"), couleur: "#adb5bd", valeurs: data.activites_par_projet.map((p) => p.NON_REALISEE ?? 0) },
+        { nom: voc("En cours"), couleur: "#fab219", valeurs: data.activites_par_projet.map((p) => p.EN_COURS ?? 0) },
+        { nom: voc("Réalisées"), couleur: "#0ca30c", valeurs: data.activites_par_projet.map((p) => p.REALISEE ?? 0) },
+      ], type),
       graphique: graphique(3, "colonnes-empilees"),
       rendu: (type) => (
         <GraphiqueAdaptable
           type={type}
           categories={data.activites_par_projet.map((p) => p.code)}
+          libelleCategories={voc("Projet")}
+          total
           series={[
             { cle: "nr", nom: voc("Non réalisées"), couleur: "#adb5bd", valeurs: data.activites_par_projet.map((p) => p.NON_REALISEE ?? 0) },
             { cle: "ec", nom: voc("En cours"), couleur: "#fab219", valeurs: data.activites_par_projet.map((p) => p.EN_COURS ?? 0) },
@@ -532,11 +707,16 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
     },
     {
       cle: "beneficiaires-projet", titre: voc("Bénéficiaires par projet (femmes / hommes)"), groupe: voc("Bénéficiaires"), largeur: 6,
+      donnees: (type) => depuisSeries(voc("Projet"), data.beneficiaires_par_projet_sexe.map((p) => p.code), [
+        { nom: voc("Femmes"), couleur: COULEUR_FEMMES, valeurs: data.beneficiaires_par_projet_sexe.map((p) => p.F ?? 0) },
+        { nom: voc("Hommes"), couleur: COULEUR_HOMMES, valeurs: data.beneficiaires_par_projet_sexe.map((p) => p.M ?? 0) },
+      ], type),
       graphique: graphique(2, "colonnes"),
       rendu: (type) => (
         <GraphiqueAdaptable
           type={type}
           categories={data.beneficiaires_par_projet_sexe.map((p) => p.code)}
+          libelleCategories={voc("Projet")}
           series={[
             { cle: "F", nom: voc("Femmes"), couleur: COULEUR_FEMMES, valeurs: data.beneficiaires_par_projet_sexe.map((p) => p.F ?? 0) },
             { cle: "M", nom: voc("Hommes"), couleur: COULEUR_HOMMES, valeurs: data.beneficiaires_par_projet_sexe.map((p) => p.M ?? 0) },
@@ -546,24 +726,42 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
     },
     {
       cle: "indicateurs-statut", titre: voc("Indicateurs par statut"), groupe: voc("Projets"), largeur: 6,
+      donnees: (type) => depuisSeries(voc("Niveau d'alerte"), data.indicateurs_par_statut.map((p) => p.libelle),
+        [{ nom: voc("Indicateurs"), couleur: "#868e96", valeurs: data.indicateurs_par_statut.map((p) => p.count) }], type,
+        data.indicateurs_par_statut.map((p) => p.couleur)),
       graphique: graphique(1, "colonnes"),
       rendu: (type) => (
-        <GraphiqueAdaptable
-          type={type}
-          categories={data.indicateurs_par_statut.map((p) => p.libelle)}
-          series={[{ cle: "n", nom: voc("Indicateurs"), couleur: "#868e96", valeurs: data.indicateurs_par_statut.map((p) => p.count) }]}
-          couleursCategories={data.indicateurs_par_statut.map((p) => p.couleur)}
-          unite={voc("indicateurs")}
-        />
+        <Stack gap="xs">
+          <GraphiqueAdaptable
+            type={type}
+            categories={data.indicateurs_par_statut.map((p) => p.libelle)}
+            libelleCategories={voc("Niveau d'alerte")}
+            total
+            series={[{ cle: "n", nom: voc("Indicateurs"), couleur: "#868e96", valeurs: data.indicateurs_par_statut.map((p) => p.count) }]}
+            couleursCategories={data.indicateurs_par_statut.map((p) => p.couleur)}
+            unite={voc("indicateurs")}
+          />
+          {/* Indicateurs en retard de saisie (fréquence de collecte) : leur niveau d'alerte peut être dépassé. */}
+          <Text size="sm" c={data.indicateurs_non_actualises ? "orange.8" : "dimmed"}>
+            {data.indicateurs_non_actualises
+              ? voc`${data.indicateurs_non_actualises} indicateur(s) non actualisé(s) : une nouvelle valeur est attendue selon leur fréquence de collecte.`
+              : voc("Tous les indicateurs sont à jour de leur fréquence de collecte.")}
+          </Text>
+        </Stack>
       ),
     },
     {
       cle: "execution-projet", titre: voc("Exécution par projet (%)"), groupe: voc("Projets"), largeur: 6,
+      donnees: (type) => depuisSeries(voc("Projet"), data.execution_par_projet.map((p) => p.code), [
+        { nom: voc("Exécution physique (%)"), couleur: "#1c7ed6", valeurs: data.execution_par_projet.map((p) => p.physique) },
+        { nom: voc("Exécution financière (%)"), couleur: "#12b886", valeurs: data.execution_par_projet.map((p) => p.financier) },
+      ], type),
       graphique: graphique(2, "colonnes"),
       rendu: (type) => (
         <GraphiqueAdaptable
           type={type}
           categories={data.execution_par_projet.map((p) => p.code)}
+          libelleCategories={voc("Projet")}
           series={[
             { cle: "physique", nom: voc("Exécution physique"), couleur: "#1c7ed6", valeurs: data.execution_par_projet.map((p) => p.physique) },
             { cle: "financier", nom: voc("Exécution financière"), couleur: "#12b886", valeurs: data.execution_par_projet.map((p) => p.financier) },
@@ -575,6 +773,8 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
     },
     {
       cle: "depenses-mois", titre: voc("Dépenses cumulées par projet (FCFA)"), groupe: voc("Évolution dans le temps"), largeur: 6,
+      donnees: (type) => depuisSeries(voc("Mois"), data.depenses_par_mois.map((l) => String(l.mois)),
+        serieParProjet(data.depenses_par_mois).filter((x) => x.valeurs.some((v) => v)), type),
       graphique: graphique(2, "courbes"),
       rendu: (type) =>
         data.depenses_par_mois.length === 0 ? (
@@ -583,6 +783,7 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
           <GraphiqueAdaptable
             type={type}
             categories={data.depenses_par_mois.map((l) => String(l.mois))}
+            libelleCategories={voc("Mois")}
             series={serieParProjet(data.depenses_par_mois).filter((s) => s.valeurs.some((v) => v))}
             formatCategorie={formatMois}
             formatValeur={fcfa}
@@ -593,6 +794,8 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
     },
     {
       cle: "inscriptions-mois", titre: voc("Nouveaux bénéficiaires inscrits par mois"), groupe: voc("Évolution dans le temps"), largeur: 6,
+      donnees: (type) => depuisSeries(voc("Mois"), data.inscriptions_par_mois.map((l) => String(l.mois)),
+        serieParProjet(data.inscriptions_par_mois).filter((x) => x.valeurs.some((v) => v)), type),
       graphique: graphique(2, "colonnes"),
       rendu: (type) =>
         data.inscriptions_par_mois.length === 0 ? (
@@ -602,6 +805,8 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
             <GraphiqueAdaptable
               type={type}
               categories={data.inscriptions_par_mois.map((l) => String(l.mois))}
+              libelleCategories={voc("Mois")}
+              total
               series={serieParProjet(data.inscriptions_par_mois).filter((s) => s.valeurs.some((v) => v))}
               formatCategorie={formatMois}
             />
@@ -611,6 +816,10 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
     },
     {
       cle: "liste-projets", titre: voc("Liste des projets"), groupe: voc("Projets"), largeur: 12,
+      donnees: () => ({
+        entetes: [voc("Code"), voc("Budget (FCFA)"), voc("Nom"), voc("Statut")], series: 1, type: "barres",
+        lignes: data.projets.map((p) => [p.code, Number(p.budget_total), p.nom, PROJET_STATUT_LABEL[p.statut] ?? p.statut]),
+      }),
       rendu: () =>
         data.projets.length === 0 ? (
           <Vide message={voc("Aucun projet pour le moment.")} />
@@ -650,4 +859,513 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
         ),
     },
   ];
+}
+
+const pct = (x: number | null) => (x === null ? "—" : `${x.toLocaleString(locale())} %`);
+const jours = (x: number | null) => (x === null ? "—" : voc`${Math.round(x).toLocaleString(locale())} j`);
+
+/**
+ * Avancement des activités de terrain : démarrage, achèvement, exécution à date, retards et délais,
+ * jalons, activités incomplètes ; retards par projet et activités les plus en retard.
+ */
+function AvancementActivitesBloc({ a }: { a: AvancementActivites }) {
+  if (a.prevues === 0) return <Vide message={voc("Aucune activité planifiée sur ces projets.")} />;
+  const incompletes = [
+    a.sans_responsable && voc`${a.sans_responsable} sans responsable`,
+    a.sans_calendrier && voc`${a.sans_calendrier} sans dates`,
+    a.sans_budget && voc`${a.sans_budget} sans budget`,
+    a.demarrage_en_retard && voc`${a.demarrage_en_retard} qui auraient dû démarrer`,
+  ].filter(Boolean);
+  return (
+    <Stack gap="md">
+      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+        <StatCard label={voc("Démarrées")} value={`${pct(a.taux_demarrage)}`} icon={<Gauge size={20} />} color="blue" />
+        <StatCard label={voc("Terminées")} value={`${pct(a.taux_achevement)}`} icon={<Gauge size={20} />} color="teal" />
+        <StatCard label={voc("Exécution à date")} value={pct(a.taux_execution_a_date)} icon={<Gauge size={20} />} color="indigo" />
+        <StatCard label={voc("En retard")} value={`${a.en_retard} (${pct(a.part_en_retard)})`} icon={<Gauge size={20} />}
+          color={a.en_retard ? "red" : "teal"} />
+        <StatCard label={voc("Retard moyen")} value={jours(a.retard_moyen_jours)} icon={<Gauge size={20} />} color="orange" />
+        <StatCard label={voc("Terminées dans les délais")} value={pct(a.terminees_dans_les_delais)} icon={<Gauge size={20} />} color="teal" />
+        <StatCard label={voc("Jalons atteints")} value={a.jalons.total ? `${a.jalons.atteints} / ${a.jalons.total}` : "—"}
+          icon={<Gauge size={20} />} color="grape" />
+        <StatCard label={voc("Avec justificatifs")} value={pct(a.avec_justificatifs)} icon={<Gauge size={20} />} color="gray" />
+      </SimpleGrid>
+      <Text size="sm" c="dimmed">
+        {voc`${a.prevues} activités de terrain : ${a.demarrees} démarrées, ${a.terminees} terminées ; ${a.attendues_a_date} devaient être terminées aujourd'hui.`}
+        {a.duree_moyenne_realisation_jours !== null && " " + voc`Durée moyenne de réalisation : ${jours(a.duree_moyenne_realisation_jours)}.`}
+        {a.jalons.en_retard > 0 && " " + voc`${a.jalons.en_retard} jalon(s) en retard.`}
+      </Text>
+      {incompletes.length > 0 && (
+        <Text size="sm" c="orange.8">{voc("À compléter :")} {incompletes.join(" · ")}.</Text>
+      )}
+      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+        <div>
+          <Text fw={600} mb="xs">{voc("Retards par projet")}</Text>
+          <Table.ScrollContainer minWidth={420} mah={360}>
+            <Table striped withTableBorder stickyHeader verticalSpacing={6} fz="sm">
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>{voc("Projet")}</Table.Th>
+                  <Table.Th ta="right">{voc("Activités")}</Table.Th>
+                  <Table.Th ta="right">{voc("En retard")}</Table.Th>
+                  <Table.Th ta="right">{voc("Retard moyen")}</Table.Th>
+                  <Table.Th ta="right">{voc("Exécution à date")}</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {a.par_projet.map((p) => (
+                  <Table.Tr key={p.code}>
+                    <Table.Td fw={600}>{p.code}</Table.Td>
+                    <Table.Td ta="right">{p.prevues}</Table.Td>
+                    <Table.Td ta="right" c={p.en_retard ? "red.7" : undefined}>{p.en_retard}</Table.Td>
+                    <Table.Td ta="right">{jours(p.retard_moyen_jours)}</Table.Td>
+                    <Table.Td ta="right">{pct(p.taux_execution_a_date)}</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+        </div>
+        <div>
+          <Text fw={600} mb="xs">{voc("Activités les plus en retard")}</Text>
+          {a.activites_en_retard.length === 0 ? (
+            <Text size="sm" c="dimmed">{voc("Aucune activité en retard.")}</Text>
+          ) : (
+            <Table.ScrollContainer minWidth={420} mah={360}>
+              <Table striped withTableBorder stickyHeader verticalSpacing={6} fz="sm">
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>{voc("Activité")}</Table.Th>
+                    <Table.Th>{voc("Échéance")}</Table.Th>
+                    <Table.Th ta="right">{voc("Retard")}</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {a.activites_en_retard.map((r) => (
+                    <Table.Tr key={`${r.projet}-${r.code}-${r.libelle}`}>
+                      <Table.Td>
+                        <Text size="sm">{r.libelle}</Text>
+                        <Text size="xs" c="dimmed">{r.projet}{r.code ? ` · ${r.code}` : ""}</Text>
+                      </Table.Td>
+                      <Table.Td style={{ whiteSpace: "nowrap" }}>{new Date(r.date_fin).toLocaleDateString(locale())}</Table.Td>
+                      <Table.Td ta="right" c="red.7" style={{ whiteSpace: "nowrap" }}>{jours(r.jours)}</Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </Table.ScrollContainer>
+          )}
+        </div>
+      </SimpleGrid>
+    </Stack>
+  );
+}
+
+/** Écart (points) entre exécution financière et physique au-delà duquel un projet est signalé. */
+const ECART_FINANCIER_PHYSIQUE = 20;
+
+/**
+ * Budget et efficience : budget initial et révisé, engagé, dépensé, attendu à date, solde ; financements
+ * acquis, reçus et restant à trouver ; coûts unitaires ; rapprochement exécution financière / physique.
+ */
+function FinancesBloc({ f, physique }: { f: FinancesTableauDeBord; physique: Record<string, number | null> }) {
+  const montant = (x: string | number | null) => (x === null ? "—" : fcfa(Number(x)));
+  const court = (x: string | number | null) => (x === null ? "—" : `${formatFcfaCourt(Number(x))} FCFA`);
+  const ecart = Number(f.ecart_a_date);
+  const signales = f.par_projet.filter((p) => p.taux_execution !== null && physique[p.code] !== null && physique[p.code] !== undefined
+    && p.taux_execution - (physique[p.code] as number) >= ECART_FINANCIER_PHYSIQUE);
+  return (
+    <Stack gap="md">
+      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+        <StatCard label={voc("Budget révisé")} value={court(f.budget_revise)} icon={<Wallet size={20} />} color="indigo" />
+        <StatCard label={voc("Engagé")} value={`${court(f.engage)} · ${pct(f.taux_engagement)}`} icon={<Wallet size={20} />} color="grape" />
+        <StatCard label={voc("Dépensé")} value={`${court(f.depense)} · ${pct(f.taux_execution)}`} icon={<Wallet size={20} />} color="orange" />
+        <StatCard label={voc("Reste à dépenser")} value={court(f.reste_a_depenser)} icon={<Wallet size={20} />} color="teal" />
+        <StatCard label={voc("Financements acquis")} value={court(f.financements_acquis)} icon={<Wallet size={20} />} color="blue" />
+        <StatCard label={voc("Reçus des bailleurs")} value={`${court(f.financements_recus)} · ${pct(f.taux_decaissement)}`} icon={<Wallet size={20} />} color="cyan" />
+        <StatCard label={voc("Coût par bénéficiaire")} value={court(f.cout_par_beneficiaire)} icon={<Users size={20} />} color="pink" />
+        <StatCard label={voc("Lignes en dépassement")} value={`${f.lignes_en_depassement} / ${f.lignes_budgetees}`} icon={<Gauge size={20} />}
+          color={f.lignes_en_depassement ? "red" : "teal"} />
+      </SimpleGrid>
+      <Text size="sm" c="dimmed">
+        {voc`Budget initial ${montant(f.budget_initial)} ; dépense attendue à ce jour ${montant(f.depense_attendue_a_date)}, soit un écart de ${ecart > 0 ? "+" : ""}${montant(ecart)}.`}
+        {f.taux_engagement !== null && " " + voc`Solde non engagé : ${montant(f.solde_non_engage)}.`}
+        {Number(f.besoin_de_financement) > 0 && " " + voc`Financement restant à trouver : ${montant(f.besoin_de_financement)}.`}
+        {f.cout_par_activite_realisee !== null && " " + voc`Coût moyen d'une activité réalisée : ${montant(f.cout_par_activite_realisee)}.`}
+      </Text>
+      {signales.length > 0 && (
+        <Text size="sm" c="orange.8">
+          {voc`Dépensent plus vite qu'ils n'avancent (écart d'au moins ${ECART_FINANCIER_PHYSIQUE} points) :`} {signales.map((p) => p.code).join(", ")}.
+        </Text>
+      )}
+      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+        <div>
+          <Text fw={600} mb="xs">{voc("Exécution par projet")}</Text>
+          <Table.ScrollContainer minWidth={520} mah={380}>
+            <Table striped withTableBorder stickyHeader verticalSpacing={6} fz="sm">
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>{voc("Projet")}</Table.Th>
+                  <Table.Th ta="right">{voc("Budget révisé")}</Table.Th>
+                  <Table.Th ta="right">{voc("Dépensé")}</Table.Th>
+                  <Table.Th ta="right">{voc("Financier")}</Table.Th>
+                  <Table.Th ta="right">{voc("Physique")}</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {f.par_projet.map((p) => {
+                  const ecartProjet = p.taux_execution !== null && physique[p.code] != null ? p.taux_execution - (physique[p.code] as number) : null;
+                  return (
+                    <Table.Tr key={p.code}>
+                      <Table.Td fw={600}>{p.code}</Table.Td>
+                      <Table.Td ta="right" style={{ whiteSpace: "nowrap" }}>{court(p.budget_revise)}</Table.Td>
+                      <Table.Td ta="right" style={{ whiteSpace: "nowrap" }}>{court(p.depense)}</Table.Td>
+                      <Table.Td ta="right" c={ecartProjet !== null && ecartProjet >= ECART_FINANCIER_PHYSIQUE ? "orange.8" : undefined}>{pct(p.taux_execution)}</Table.Td>
+                      <Table.Td ta="right">{pct(physique[p.code] ?? null)}</Table.Td>
+                    </Table.Tr>
+                  );
+                })}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+        </div>
+        <div>
+          <Text fw={600} mb="xs">{voc("Coûts unitaires : prévu et réel")}</Text>
+          {f.couts_unitaires.length === 0 ? (
+            <Text size="sm" c="dimmed">{voc("Il faut une quantité prévue et réalisée, un budget et une dépense sur une même activité.")}</Text>
+          ) : (
+            <Table.ScrollContainer minWidth={480} mah={380}>
+              <Table striped withTableBorder stickyHeader verticalSpacing={6} fz="sm">
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>{voc("Activité")}</Table.Th>
+                    <Table.Th ta="right">{voc("Prévu / unité")}</Table.Th>
+                    <Table.Th ta="right">{voc("Réel / unité")}</Table.Th>
+                    <Table.Th ta="right">{voc("Écart")}</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {f.couts_unitaires.map((u) => (
+                    <Table.Tr key={`${u.projet}-${u.code}-${u.libelle}`}>
+                      <Table.Td>
+                        <Text size="sm">{u.libelle}</Text>
+                        <Text size="xs" c="dimmed">{u.projet}{u.code ? ` · ${u.code}` : ""}{u.unite ? ` · ${voc`par ${u.unite}`}` : ""}</Text>
+                      </Table.Td>
+                      <Table.Td ta="right" style={{ whiteSpace: "nowrap" }}>{montant(u.prevu)}</Table.Td>
+                      <Table.Td ta="right" style={{ whiteSpace: "nowrap" }}>{montant(u.reel)}</Table.Td>
+                      <Table.Td ta="right" style={{ whiteSpace: "nowrap" }} c={(u.ecart_pourcent ?? 0) > 0 ? "red.7" : "teal.7"}>
+                        {u.ecart_pourcent === null ? "—" : `${u.ecart_pourcent > 0 ? "+" : ""}${u.ecart_pourcent.toLocaleString(locale())} %`}
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </Table.ScrollContainer>
+          )}
+        </div>
+      </SimpleGrid>
+    </Stack>
+  );
+}
+
+/**
+ * Bénéficiaires directs, indirects et ménages, couverture de la cible, maintien, abandon et paquet complet,
+ * satisfaction, comparaison des territoires, zones ciblées sans bénéficiaire, bénéficiaires hors zone,
+ * coordonnées non valides, surfaces et longueurs des couches, plaintes pour 1 000 bénéficiaires.
+ */
+function TerritoiresBloc({ t }: { t: TerritoiresTableauDeBord }) {
+  const n = (x: number | null) => (x === null ? "—" : x.toLocaleString(locale()));
+  const ecart = (e: TerritoiresTableauDeBord["ecart_couverture"], unite: string) => e && voc`de ${n(e.valeur_basse)}${unite} (${e.plus_bas}) à ${n(e.valeur_haute)}${unite} (${e.plus_haut})`;
+  return (
+    <Stack gap="md">
+      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+        <StatCard label={voc("Bénéficiaires directs")} value={n(t.directs)} icon={<Users size={20} />} color="teal" />
+        <StatCard label={voc("Bénéficiaires indirects")} value={n(t.indirects)} icon={<Users size={20} />} color="cyan" />
+        <StatCard label={voc("Couverture de la cible")} value={t.cible === null ? "—" : `${pct(t.couverture_cible)} · ${n(t.cible)}`}
+          icon={<Gauge size={20} />} color="indigo" />
+        <StatCard label={voc("Maintien")} value={t.taux_maintien === null ? "—" : `${pct(t.taux_maintien)} · ${voc`${n(t.abandons)} abandon(s)`}`}
+          icon={<Gauge size={20} />} color={(t.taux_abandon ?? 0) >= 20 ? "orange" : "teal"} />
+        <StatCard label={voc("Paquet complet reçu")} value={pct(t.taux_paquet_complet)} icon={<Gauge size={20} />} color="grape" />
+        <StatCard label={voc("Satisfaction")} value={t.satisfaction_moyenne === null ? "—" : `${n(t.satisfaction_moyenne)} / 5 · ${pct(t.part_satisfaits)}`}
+          icon={<Users size={20} />} color="pink" />
+        <StatCard label={voc("Zones ciblées sans bénéficiaire")} value={`${n(t.zones_sans_beneficiaire)} / ${n(t.zones_ciblees)}`} icon={<MapPin size={20} />}
+          color={t.zones_sans_beneficiaire ? "orange" : "teal"} />
+        <StatCard label={voc("Plaintes pour 1 000 bénéficiaires")} value={n(t.plaintes_pour_1000)} icon={<FileText size={20} />} color="red" />
+      </SimpleGrid>
+      <Text size="sm" c="dimmed">
+        {t.source_indirects === "projets" && voc("Bénéficiaires indirects : estimations saisies dans les projets.")}
+        {t.source_indirects === "menages" && voc`Bénéficiaires indirects estimés d'après ${n(t.menages)} ménage(s) renseigné(s) (${n(t.personnes_des_menages)} personnes).`}
+        {t.source_indirects === null && voc("Bénéficiaires indirects : à saisir dans le projet, ou la taille du ménage dans la fiche du bénéficiaire.")}
+        {" "}{t.statuts_saisis
+          ? voc`${n(t.parcours)} parcours (un bénéficiaire dans un projet).`
+          : voc("Maintien, abandon et paquet complet : à renseigner dans la liste des bénéficiaires de chaque activité (colonne « Statut »).")}
+        {t.satisfaction_reponses > 0 && " " + voc`Satisfaction : ${n(t.satisfaction_reponses)} réponse(s), part de 4 et 5 sur 5.`}
+        {" "}{voc`Plaintes récurrentes : ${pct(t.taux_plaintes_recurrentes)} des ${n(t.plaintes)} dossiers.`}
+      </Text>
+      {(t.ecart_couverture || t.ecart_femmes) && (
+        <Text size="sm">
+          <strong>{voc("Écarts entre territoires :")}</strong>
+          {t.ecart_couverture && " " + voc`bénéficiaires pour 1 000 habitants ${ecart(t.ecart_couverture, "")}${t.ecart_couverture.rapport ? voc`, soit ${n(t.ecart_couverture.rapport)} fois plus` : ""} ;`}
+          {t.ecart_femmes && " " + voc`part de femmes ${ecart(t.ecart_femmes, " %")}.`}
+        </Text>
+      )}
+      {(t.hors_zone > 0 || t.coordonnees_invalides > 0 || t.zones_coordonnees_invalides > 0) && (
+        <Text size="sm" c="orange.8">
+          {t.hors_zone > 0 && voc`${n(t.hors_zone)} bénéficiaire(s) inscrit(s) hors des zones de leur projet (${t.hors_zone_exemples.slice(0, 5).map((h) => `${h.projet} : ${h.zone}`).join(", ")}).`}
+          {t.coordonnees_invalides > 0 && " " + voc`${n(t.coordonnees_invalides)} position(s) GPS non valide(s) sur ${n(t.coordonnees_renseignees)}.`}
+          {t.zones_coordonnees_invalides > 0 && " " + voc`${n(t.zones_coordonnees_invalides)} zone(s) avec un centre hors du pays.`}
+        </Text>
+      )}
+      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+        <div>
+          <Text fw={600} mb="xs">{voc("Par territoire")}</Text>
+          <Table.ScrollContainer minWidth={520} mah={380}>
+            <Table striped withTableBorder stickyHeader verticalSpacing={6} fz="sm">
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>{voc("Territoire")}</Table.Th>
+                  <Table.Th ta="right">{voc("Bénéficiaires")}</Table.Th>
+                  <Table.Th ta="right">{voc("Femmes")}</Table.Th>
+                  <Table.Th ta="right">
+                    <Tooltip label={voc("Population saisie dans « Zones administratives », ou somme de celle des zones qu'il contient.")} multiline w={260}>
+                      <span>{voc("Pour 1 000 hab.")}</span>
+                    </Tooltip>
+                  </Table.Th>
+                  <Table.Th ta="right">{voc("Abandon")}</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {t.territoires.map((x) => (
+                  <Table.Tr key={`${x.pays}-${x.zone}`}>
+                    <Table.Td fw={600}>{x.zone}</Table.Td>
+                    <Table.Td ta="right">{n(x.beneficiaires)}</Table.Td>
+                    <Table.Td ta="right">{pct(x.part_femmes)}</Table.Td>
+                    <Table.Td ta="right">{n(x.pour_1000_habitants)}</Table.Td>
+                    <Table.Td ta="right">{pct(x.taux_abandon)}</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+        </div>
+        <Stack gap="md">
+          <div>
+            <Text fw={600} mb="xs">{voc("Zones ciblées sans bénéficiaire")}</Text>
+            {t.zones_sans_beneficiaire_exemples.length === 0 ? (
+              <Text size="sm" c="dimmed">{voc("Toutes les zones ciblées par les projets ont au moins un bénéficiaire inscrit.")}</Text>
+            ) : (
+              <Table.ScrollContainer minWidth={360} mah={220}>
+                <Table striped withTableBorder stickyHeader verticalSpacing={4} fz="sm">
+                  <Table.Thead>
+                    <Table.Tr><Table.Th>{voc("Projet")}</Table.Th><Table.Th>{voc("Zone")}</Table.Th><Table.Th>{voc("Niveau")}</Table.Th></Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {t.zones_sans_beneficiaire_exemples.map((z) => (
+                      <Table.Tr key={`${z.projet}-${z.zone}`}><Table.Td fw={600}>{z.projet}</Table.Td><Table.Td>{z.zone}</Table.Td><Table.Td>{z.niveau}</Table.Td></Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Table.ScrollContainer>
+            )}
+            {t.zones_sans_beneficiaire > t.zones_sans_beneficiaire_exemples.length && (
+              <Text size="xs" c="dimmed" mt={4}>{voc`… et ${n(t.zones_sans_beneficiaire - t.zones_sans_beneficiaire_exemples.length)} autre(s).`}</Text>
+            )}
+          </div>
+          {t.couches.some((c) => c.surface_ha !== null || c.longueur_km !== null) && (
+            <div>
+              <Text fw={600} mb="xs">{voc("Couches importées : surfaces et longueurs")}</Text>
+              <Table withTableBorder verticalSpacing={4} fz="sm">
+                <Table.Tbody>
+                  {t.couches.filter((c) => c.surface_ha !== null || c.longueur_km !== null).map((c) => (
+                    <Table.Tr key={c.nom}>
+                      <Table.Td>{c.nom}</Table.Td>
+                      <Table.Td ta="right">{voc`${n(c.objets)} objet(s)`}</Table.Td>
+                      <Table.Td ta="right" style={{ whiteSpace: "nowrap" }}>
+                        {c.surface_ha !== null ? `${Math.round(c.surface_ha).toLocaleString(locale())} ha` : `${(c.longueur_km ?? 0).toLocaleString(locale(), { maximumFractionDigits: 1 })} km`}
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </div>
+          )}
+        </Stack>
+      </SimpleGrid>
+    </Stack>
+  );
+}
+
+const COMPOSANTES_QUALITE = () => [
+  { cle: "completude", nom: voc("Complétude"), aide: voc("Part des informations essentielles renseignées (activités, indicateurs, bénéficiaires).") },
+  { cle: "ponctualite", nom: voc("Saisies dans les délais"), aide: voc("Saisies faites au plus tard 30 jours après la fin de leur période.") },
+  { cle: "plausibilite", nom: voc("Valeurs plausibles"), aide: voc("Valeurs qui ne s'écartent pas fortement des autres valeurs du même indicateur ; quantités réalisées pas plus de 2 fois au-dessus du prévu.") },
+  { cle: "doublons", nom: voc("Doublons traités"), aide: voc("Doublons de bénéficiaires signalés et déjà examinés (fusionnés ou écartés).") },
+] as const;
+
+/** Score de qualité des données, ses composantes et le détail de leur calcul. */
+function QualiteBloc({ q }: { q: QualiteTableauDeBord }) {
+  const n = (x: number) => x.toLocaleString(locale());
+  const couleur = (x: number | null) => (x === null ? "gray" : x >= 80 ? "teal" : x >= 60 ? "yellow" : "red");
+  const c = q.completude;
+  return (
+    <Stack gap="md">
+      <SimpleGrid cols={{ base: 2, sm: 5 }} spacing="sm">
+        <StatCard label={voc("Score de qualité")} value={q.score === null ? "—" : `${n(q.score)} / 100`} icon={<Gauge size={20} />} color={couleur(q.score)} />
+        {COMPOSANTES_QUALITE().map((x) => (
+          <Tooltip key={x.cle} label={x.aide} multiline w={280}>
+            <div>
+              <StatCard label={`${x.nom} (${q.poids[x.cle]} %)`} value={pct(q.composantes[x.cle])} icon={<Gauge size={20} />} color={couleur(q.composantes[x.cle])} />
+            </div>
+          </Tooltip>
+        ))}
+      </SimpleGrid>
+      <Text size="sm" c="dimmed">
+        {voc("Calcul du score : moyenne des composantes pondérée par leur poids (entre parenthèses) ; une composante sans donnée n'est pas comptée.")}
+        {" "}{voc`${n(q.saisies_a_temps)} saisie(s) sur ${n(q.saisies)} faite(s) dans les ${q.delai_jours} jours ; ${n(q.atypiques)} valeur(s) atypique(s) sur ${n(q.valeurs_verifiees)} vérifiée(s) ; ${n(q.doublons_non_traites)} doublon(s) à examiner sur ${n(q.doublons_signales)}.`}
+        {q.approbations_en_attente > 0 && " " + voc`${n(q.approbations_en_attente)} saisie(s) en attente d'approbation.`}
+      </Text>
+      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+        <div>
+          <Text fw={600} mb="xs">{voc("Complétude")}</Text>
+          <Table withTableBorder striped verticalSpacing={5} fz="sm">
+            <Table.Tbody>
+              {([
+                [voc("Activités"), c.activites, { responsable: voc("responsable"), dates: voc("dates"), budget: voc("budget"), quantite_prevue: voc("quantité prévue") }],
+                [voc("Indicateurs"), c.indicateurs, { reference: voc("valeur de référence"), valeurs: voc("au moins une valeur saisie") }],
+                [voc("Bénéficiaires"), c.beneficiaires, { date_naissance: voc("date de naissance"), localite: voc("localité"), contact: voc("téléphone ou pièce"), consentement: voc("consentement") }],
+              ] as const).map(([nom, f, libelles]) => (
+                <Table.Tr key={nom}>
+                  <Table.Td fw={600} style={{ whiteSpace: "nowrap" }}>{nom} <Text span size="xs" c="dimmed">({n(f.total)})</Text></Table.Td>
+                  <Table.Td ta="right" fw={600} c={`${couleur(f.completude)}.7`}>{pct(f.completude)}</Table.Td>
+                  <Table.Td>
+                    <Text size="xs" c="dimmed">
+                      {Object.entries(libelles).map(([cle, libelle]) => `${libelle} ${pct(f.champs[cle] ?? null)}`).join(" · ")}
+                    </Text>
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </div>
+        <div>
+          <Text fw={600} mb="xs">{voc("Valeurs atypiques à vérifier")}</Text>
+          {q.atypiques_exemples.length === 0 ? (
+            <Text size="sm" c="dimmed">{voc("Aucune valeur atypique détectée.")}</Text>
+          ) : (
+            <Table.ScrollContainer minWidth={420} mah={300}>
+              <Table striped withTableBorder stickyHeader verticalSpacing={5} fz="sm">
+                <Table.Tbody>
+                  {q.atypiques_exemples.map((x, i) => (
+                    <Table.Tr key={i}>
+                      <Table.Td>
+                        <Text size="sm">{x.libelle}</Text>
+                        <Text size="xs" c="dimmed">
+                          {x.projet}{x.motif === "quantite" ? ` · ${voc`prévu : ${n(x.prevu ?? 0)}`}` : x.periode_fin ? ` · ${voc`période finie le ${new Date(x.periode_fin).toLocaleDateString(locale())}`}` : ""}
+                        </Text>
+                      </Table.Td>
+                      <Table.Td ta="right" style={{ whiteSpace: "nowrap" }} fw={600}>{n(x.valeur)} {x.unite}</Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </Table.ScrollContainer>
+          )}
+        </div>
+      </SimpleGrid>
+    </Stack>
+  );
+}
+
+/** Rapports attendus, reçus et validés ; risques et leur suivi ; recommandations ; leçons et décisions. */
+function PilotageBloc({ p }: { p: PilotageTableauDeBord }) {
+  const n = (x: number) => x.toLocaleString(locale());
+  const { rapports: ra, risques: ri, recommandations: re, apprentissage: ap } = p;
+  const dateFr = (d: string | null) => (d ? new Date(d).toLocaleDateString(locale()) : "—");
+  const niveaux = { CRITIQUE: [voc("Critique"), "red"], ELEVE: [voc("Élevé"), "orange"], MOYEN: [voc("Moyen"), "yellow"], FAIBLE: [voc("Faible"), "green"] } as const;
+  return (
+    <Stack gap="md">
+      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+        <StatCard label={voc("Rapports reçus / attendus")} value={`${n(ra.recus)} / ${n(ra.attendus_a_date)}`} icon={<FileText size={20} />}
+          color={ra.en_retard ? "orange" : "teal"} />
+        <StatCard label={voc("Rapports validés")} value={n(ra.valides)} icon={<FileText size={20} />} color="teal" />
+        <StatCard label={voc("Risques critiques et élevés")} value={n(ri.par_niveau.CRITIQUE + ri.par_niveau.ELEVE)} icon={<Gauge size={20} />}
+          color={ri.par_niveau.CRITIQUE ? "red" : "orange"} />
+        <StatCard label={voc("Risques réévalués (3 mois)")} value={pct(ri.suivis)} icon={<Gauge size={20} />} color={(ri.suivis ?? 0) >= 80 ? "teal" : "orange"} />
+        <StatCard label={voc("Recommandations mises en œuvre")} value={re.retenues ? `${pct(re.taux_mise_en_oeuvre)} · ${n(re.realisees)} / ${n(re.retenues)}` : "—"}
+          icon={<Gauge size={20} />} color="indigo" />
+        <StatCard label={voc("Recommandations en retard")} value={n(re.en_retard)} icon={<Gauge size={20} />} color={re.en_retard ? "red" : "teal"} />
+        <StatCard label={voc("Leçons et bonnes pratiques")} value={n(ap.lecons + ap.bonnes_pratiques)} icon={<FileText size={20} />} color="grape" />
+        <StatCard label={voc("Décisions documentées")} value={n(ap.decisions)} icon={<FileText size={20} />} color="cyan" />
+      </SimpleGrid>
+      <Text size="sm" c="dimmed">
+        {ra.total === 0
+          ? voc("Aucun rapport attendu n'est encore enregistré : ajoutez-les dans l'onglet « Pilotage » de chaque projet.")
+          : voc`Rapports remis à temps : ${pct(ra.taux_a_temps)} ; ${n(ra.en_retard)} en retard ; ${n(ra.a_revoir)} à revoir.`}
+        {" "}{voc`${n(ri.ouverts)} risque(s) ouvert(s) dont ${n(ri.survenus)} survenu(s) ; mesures d'atténuation prévues pour ${pct(ri.avec_mesures)} ; ${n(ri.revue_en_retard)} revue(s) en retard.`}
+      </Text>
+      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+        <div>
+          <Text fw={600} mb="xs">{voc("Risques critiques et élevés")}</Text>
+          {ri.graves_exemples.length === 0 ? (
+            <Text size="sm" c="dimmed">{voc("Aucun risque critique ou élevé ouvert.")}</Text>
+          ) : (
+            <Table.ScrollContainer minWidth={540} mah={320}>
+              <Table striped withTableBorder stickyHeader verticalSpacing={5} fz="sm">
+                <Table.Thead>
+                  <Table.Tr><Table.Th>{voc("Risque")}</Table.Th><Table.Th>{voc("Niveau")}</Table.Th><Table.Th>{voc("Dernière réévaluation")}</Table.Th></Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {ri.graves_exemples.map((r) => (
+                    <Table.Tr key={`${r.projet}-${r.code}`}>
+                      <Table.Td><Text size="sm">{r.libelle}</Text><Text size="xs" c="dimmed">{r.projet} · {r.code}</Text></Table.Td>
+                      <Table.Td style={{ whiteSpace: "nowrap" }}>
+                        <Badge variant="light" color={niveaux[r.niveau][1]} styles={{ root: { overflow: "visible" }, label: { overflow: "visible" } }}>
+                          {niveaux[r.niveau][0]} · {r.criticite}
+                        </Badge>
+                      </Table.Td>
+                      <Table.Td c={r.derniere_revue ? undefined : "red.7"}>{r.derniere_revue ? dateFr(r.derniere_revue) : voc("Jamais")}</Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </Table.ScrollContainer>
+          )}
+        </div>
+        <Stack gap="md">
+          {ra.en_retard_exemples.length > 0 && (
+            <div>
+              <Text fw={600} mb="xs">{voc("Rapports en retard")}</Text>
+              <Table withTableBorder striped verticalSpacing={4} fz="sm">
+                <Table.Tbody>
+                  {ra.en_retard_exemples.map((r, i) => (
+                    <Table.Tr key={i}>
+                      <Table.Td><Text size="sm">{r.libelle}</Text><Text size="xs" c="dimmed">{r.projet} · {dateFr(r.echeance)}</Text></Table.Td>
+                      <Table.Td ta="right" c="red.7" style={{ whiteSpace: "nowrap" }}>{voc`${n(r.jours)} j`}</Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </div>
+          )}
+          {re.en_retard_exemples.length > 0 && (
+            <div>
+              <Text fw={600} mb="xs">{voc("Recommandations en retard")}</Text>
+              <Table withTableBorder striped verticalSpacing={4} fz="sm">
+                <Table.Tbody>
+                  {re.en_retard_exemples.map((r) => (
+                    <Table.Tr key={`${r.projet}-${r.code}`}>
+                      <Table.Td><Text size="sm">{r.libelle}</Text><Text size="xs" c="dimmed">{r.projet} · {r.code} · {dateFr(r.echeance)}</Text></Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </div>
+          )}
+          {ra.en_retard_exemples.length === 0 && re.en_retard_exemples.length === 0 && (
+            <Text size="sm" c="dimmed">{voc("Aucun rapport ni aucune recommandation en retard.")}</Text>
+          )}
+        </Stack>
+      </SimpleGrid>
+    </Stack>
+  );
 }

@@ -9,6 +9,9 @@ from .views import (
     PartenaireProjetViewSet,
     EvaluationRisqueViewSet,
     RisqueViewSet,
+    ApprentissageViewSet,
+    RapportProjetViewSet,
+    RecommandationViewSet,
     NiveauActiviteViewSet,
     ProjetViewSet,
     SousActiviteViewSet,
@@ -30,6 +33,9 @@ router.register("jalons-livrables", JalonLivrableViewSet, basename="jalon-livrab
 router.register("partenaires-projet", PartenaireProjetViewSet, basename="partenaire-projet")
 router.register("risques", RisqueViewSet, basename="risque")
 router.register("evaluations-risques", EvaluationRisqueViewSet, basename="evaluation-risque")
+router.register("rapports-attendus", RapportProjetViewSet, basename="rapport-attendu")
+router.register("recommandations", RecommandationViewSet, basename="recommandation")
+router.register("apprentissages", ApprentissageViewSet, basename="apprentissage")
 router.register("taux-manuels", TauxManuelViewSet, basename="taux-manuel")
 router.register("periodes-rapportage", FenetreRapportageViewSet, basename="periode-rapportage")
 

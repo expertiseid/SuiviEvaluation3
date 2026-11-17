@@ -76,7 +76,7 @@ def _chiffres_projets(projets) -> dict:
     from django.utils import timezone
 
     from apps.indicators.models import Indicateur
-    from apps.indicators.services import palier_pour_taux, paliers_pour, taux_realisation, valeur_realisee_totale
+    from apps.indicators.services import palier_pour_taux, paliers_pour, taux_indicateur
     from apps.partners.models import Financement, RallongeFinancement
     from apps.projects.budgets import total_budget
     from apps.projects.models import Activite, PartenaireProjet
@@ -121,7 +121,7 @@ def _chiffres_projets(projets) -> dict:
     for ind in Indicateur.objects.filter(Q(projet_id__in=ids) | Q(activite__projet_id__in=ids)).select_related("activite"):
         pid = ind.projet_id or ind.activite.projet_id
         chiffres[pid]["indicateurs"] += 1
-        taux = taux_realisation(valeur_realisee_totale(ind), ind.valeur_cible)
+        taux = taux_indicateur(ind)
         if taux is None:
             continue
         chiffres[pid]["taux_indicateurs"].append(float(taux))

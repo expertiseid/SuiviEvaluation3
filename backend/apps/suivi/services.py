@@ -57,13 +57,8 @@ def construire_dashboard_suivi(projet) -> dict:
     ont besoin de repartir exactement des mêmes chiffres que ceux affichés à
     l'écran (pas de recalcul séparé qui pourrait diverger).
     """
-    from apps.indicators.services import (
-        indicateurs_pour_projet,
-        palier_pour_taux,
-        paliers_pour,
-        taux_realisation,
-        valeur_realisee_totale,
-    )
+    from apps.indicators.models import Indicateur
+    from apps.indicators.services import indicateurs_pour_projet, palier_pour_taux, paliers_pour, taux_indicateur
     from apps.projects.models import Activite
     from apps.reports.services import statut_global, taux_execution_financiere_global
 
@@ -77,13 +72,15 @@ def construire_dashboard_suivi(projet) -> dict:
 
     indicateurs_detail = []
     for indicateur in indicateurs_pour_projet(projet.id).select_related("activite"):
-        taux = taux_realisation(valeur_realisee_totale(indicateur), indicateur.valeur_cible)
+        taux = taux_indicateur(indicateur)
         historique = []
         cumul = Decimal("0")
-        # Toutes les valeurs, y compris en attente ou rejetées (signalées) ; seules les approuvées cumulent.
+        derniere = indicateur.agregation == Indicateur.Agregation.DERNIERE
+        # Toutes les valeurs, y compris en attente ou rejetées (signalées) ; seules les approuvées comptent.
+        # « valeur_cumulee » : la valeur retenue à cette date (cumul des saisies, ou dernière valeur).
         for v in ValeurIndicateur.tous.filter(indicateur=indicateur).order_by("periode_fin"):
             if v.etat_approbation == EtatApprobation.APPROUVEE:
-                cumul += v.valeur_realisee
+                cumul = v.valeur_realisee if derniere else cumul + v.valeur_realisee
             historique.append(
                 {
                     "id": v.id,
@@ -92,7 +89,7 @@ def construire_dashboard_suivi(projet) -> dict:
                     "valeur_realisee": v.valeur_realisee,
                     "valeur_cumulee": cumul,
                     "commentaire": v.commentaire,
-                    "taux": taux_realisation(cumul, indicateur.valeur_cible),
+                    "taux": taux_indicateur(indicateur, cumul),
                     "etat_approbation": v.etat_approbation,
                     "motif_rejet": v.motif_rejet,
                 }

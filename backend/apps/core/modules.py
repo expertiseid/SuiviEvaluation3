@@ -33,7 +33,7 @@ API_PAR_MODULE = {
         "/api/v1/jalons-livrables", "/api/v1/tranches-planifiees", "/api/v1/periodes-planification",
         "/api/v1/partenaires-projet", "/api/v1/rapports/cadre-logique",
     ],
-    "/indicateurs": ["/api/v1/indicateurs", "/api/v1/valeurs-indicateurs"],
+    "/indicateurs": ["/api/v1/indicateurs", "/api/v1/valeurs-indicateurs", "/api/v1/enquetes"],
     "/suivi": ["/api/v1/points-suivi", "/api/v1/taux-manuels", "/api/v1/suivi/"],
     # Avant « /beneficiaires » : la carte des bénéficiaires relève de la rubrique Carte.
     "/carte": ["/api/v1/couches-importees", "/api/v1/beneficiaires/carte", "/api/v1/carte/"],
@@ -46,6 +46,7 @@ API_PAR_MODULE = {
     "/plaintes": ["/api/v1/plaintes/"],
     "projet:equipe": ["/api/v1/equipes"],
     "projet:risques": ["/api/v1/risques", "/api/v1/evaluations-risques", "/api/v1/rapports/risques"],
+    "projet:pilotage": ["/api/v1/rapports-attendus", "/api/v1/recommandations", "/api/v1/apprentissages"],
     "projet:financement": ["/api/v1/financements", "/api/v1/rallonges-financement", "/api/v1/rapports/financier"],
 }
 # Modules refusés même en lecture quand ils sont cachés.

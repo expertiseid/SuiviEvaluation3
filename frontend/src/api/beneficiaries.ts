@@ -98,6 +98,16 @@ export function useCreateParticipation() {
   });
 }
 
+/** Statut (en cours, a tout reçu, abandon), date de sortie et satisfaction d'une participation. */
+export function useModifierParticipation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...payload }: { id: number } & Partial<Pick<ParticipationProjet, "statut" | "date_sortie" | "satisfaction">>) =>
+      (await apiClient.patch<ParticipationProjet>(`/participations-projet/${id}/`, payload)).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["participations-projet"] }),
+  });
+}
+
 export function useDeleteParticipation() {
   const queryClient = useQueryClient();
   return useMutation({

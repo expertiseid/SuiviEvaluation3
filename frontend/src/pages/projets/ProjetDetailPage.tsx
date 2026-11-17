@@ -16,12 +16,12 @@ import {
   Pencil,
   Plus,
   Search,
-  ShieldCheck,
   Target,
   Trash2,
   Users,
   Wallet,
   MessagesSquare,
+  Lightbulb,
 } from "lucide-react";
 import { RetoursProjet } from "../plaintes/RetoursProjet";
 import {
@@ -67,6 +67,7 @@ import {
 import { RapportFinancierModal } from "./RapportFinancierModal";
 import { CadreLogiqueTab } from "./CadreLogiqueTab";
 import { RisquesTab } from "./RisquesTab";
+import { PilotageTab } from "./PilotageTab";
 import { AlerteBadge } from "../../components/indicators/AlerteBadge";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
 import { HistoriqueModification } from "../../components/audit/HistoriqueModification";
@@ -626,14 +627,17 @@ export function ProjetDetailPage() {
     { cle: "indicateurs", label: voc("Indicateurs"), icone: <Gauge size={15} />, onglets: [{ valeur: "indicateurs", label: voc("Indicateurs"), masque: "projet:indicateurs" }] },
     { cle: "financement", label: voc("Financement"), icone: <Wallet size={15} />, onglets: [{ valeur: "financement", label: voc("Financement"), masque: "projet:financement" }] },
     { cle: "documents", label: voc("Documents"), icone: <FileText size={15} />, onglets: [{ valeur: "documents", label: voc("Documents"), masque: "projet:documents" }] },
-    { cle: "retours", label: voc("Retours des communautés"), icone: <MessagesSquare size={15} />, onglets: [{ valeur: "retours", label: voc("Retours des communautés"), masque: "/plaintes" }] },
     {
-      cle: "controle", label: voc("Contrôle"), icone: <ShieldCheck size={15} />,
+      cle: "pilotage", label: voc("Pilotage"), icone: <Lightbulb size={15} />,
       onglets: [
+        { valeur: "rapports", label: voc("Rapports attendus"), masque: "projet:pilotage" },
+        { valeur: "recommandations", label: voc("Recommandations"), masque: "projet:pilotage" },
+        { valeur: "apprentissage", label: voc("Leçons et décisions"), masque: "projet:pilotage" },
         { valeur: "coherence", label: voc("Contrôle de cohérence"), masque: "projet:coherence" },
         { valeur: "historique", label: voc("Historique"), masque: "projet:historique" },
       ],
     },
+    { cle: "retours", label: voc("Retours des communautés"), icone: <MessagesSquare size={15} />, onglets: [{ valeur: "retours", label: voc("Retours des communautés"), masque: "/plaintes" }] },
   ]
     .map((g) => ({ ...g, onglets: g.onglets.filter((o) => !o.masque || !estMasque(o.masque)) }))
     .filter((g) => g.onglets.length > 0);
@@ -1037,6 +1041,12 @@ export function ProjetDetailPage() {
           </Tabs.Panel>
         )}
 
+        {!estMasque("projet:pilotage") && (["rapports", "recommandations", "apprentissage"] as const).map((section) => (
+          <Tabs.Panel key={section} value={section} pt="md">
+            <PilotageTab projetId={projetId} section={section} modifiable={!lectureSeule && peutEcrire("projet:pilotage")} />
+          </Tabs.Panel>
+        ))}
+
         {!estMasque("projet:coherence") && (
           <Tabs.Panel value="coherence" pt="md">
             <CoherenceTab projetId={projetId} />
@@ -1154,7 +1164,7 @@ export function ProjetDetailPage() {
         opened={beneficiairesActiviteId !== null}
         onClose={() => setBeneficiairesActiviteId(null)}
         title={voc("Bénéficiaires liés à l'élément")}
-        size="lg"
+        size="xl"
       >
         {beneficiairesActiviteId !== null && (
           <BeneficiairesTab projetId={projetId} activiteId={beneficiairesActiviteId} />
@@ -1165,7 +1175,7 @@ export function ProjetDetailPage() {
         opened={beneficiairesSousActiviteId !== null}
         onClose={() => setBeneficiairesSousActiviteId(null)}
         title={voc("Bénéficiaires liés à la sous-activité")}
-        size="lg"
+        size="xl"
       >
         {beneficiairesSousActiviteId !== null && (
           <BeneficiairesTab projetId={projetId} sousActiviteId={beneficiairesSousActiviteId} />

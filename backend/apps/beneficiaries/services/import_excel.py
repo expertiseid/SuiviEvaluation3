@@ -31,6 +31,7 @@ COLONNES_IDENTITE = [
     "Types d'activité menée (séparés par ;)",
     "Latitude",
     "Longitude",
+    "Taille du ménage",
     "Consentement (Oui/Non)",
     "Date du consentement (AAAA-MM-JJ)",
 ]
@@ -62,7 +63,7 @@ def _exemple(pays, niveaux):
         zone = zone.parent
     chemin = (chemin + [""] * len(niveaux))[: len(niveaux)]
     return [pays, *chemin, "Traoré", "Awa", "F", "1990-05-12", "70000001", "CNIB123456", "CNIB", "Femme;Jeune",
-            "Maraîchage", "", "", "Oui", "2026-01-15", ""]
+            "Maraîchage", "", "", 6, "Oui", "2026-01-15", ""]
 
 
 def generer_modele_import(pays: str = "BF", projet=None) -> bytes:
@@ -98,6 +99,7 @@ def generer_modele_import(pays: str = "BF", projet=None) -> bytes:
     ])
     instructions.append([f"- {niveaux[-1]} : créé(e) automatiquement s'il (elle) n'existe pas encore."])
     instructions.append(["- Latitude / Longitude (facultatif) : position GPS en degrés décimaux (ex : 12.3714 / -1.5197)."])
+    instructions.append(["- Taille du ménage (facultatif) : nombre de personnes vivant dans le ménage, le bénéficiaire compris (bénéficiaires indirects)."])
     instructions.append(["- Consentement (facultatif) : Oui si la personne a donné son accord pour l'enregistrement de ses données, Non sinon ; vide si non renseigné. Date du consentement : AAAA-MM-JJ."])
     instructions.append(["- Plusieurs statuts particuliers : séparer par un point-virgule (ex : Femme;Jeune)."])
     instructions.append([
@@ -206,6 +208,19 @@ def _decimal(valeur):
         return Decimal(str(valeur).replace(",", ".").strip()).quantize(Decimal("0.000001"))
     except InvalidOperation:
         return None
+
+
+def _taille_menage(valeur, numero, avertissements):
+    if valeur in (None, ""):
+        return None
+    try:
+        taille = int(float(str(valeur).replace(",", ".").strip()))
+    except ValueError:
+        taille = 0
+    if not 1 <= taille <= 200:
+        avertissements.append({"ligne": numero, "message": f"Taille du ménage invalide ignorée : « {valeur} »."})
+        return None
+    return taille
 
 
 def _resoudre_statuts(valeur):
@@ -345,6 +360,7 @@ def importer_beneficiaires_depuis_feuille(feuille, utilisateur, projet=None) -> 
             zone=zone,
             latitude=latitude,
             longitude=longitude,
+            taille_menage=_taille_menage(valeur(ligne, "Taille du ménage"), numero, avertissements),
             consentement=consentement,
             date_consentement=_normaliser_date(valeur(ligne, "Date du consentement (AAAA-MM-JJ)")) if consentement is not None else None,
         )

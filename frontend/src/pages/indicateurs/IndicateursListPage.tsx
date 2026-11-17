@@ -95,6 +95,7 @@ export function IndicateursListPage() {
         <TitreRubrique route="/indicateurs" defaut={voc("Indicateurs")} />
         <Group gap="xs">
           <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />
+          <Button variant="default" component={Link} to="/indicateurs/enquetes">{voc("Données d'enquête")}</Button>
           <Button variant="light" leftSection={<FileSpreadsheet size={16} />} onClick={() => setModalImportOuvert(true)}>
             {voc("Importer depuis Excel")}
           </Button>
@@ -179,7 +180,14 @@ export function IndicateursListPage() {
                             <Text component={Link} to={`/indicateurs/${i.id}`} size="sm" fw={600} c="dark.7" lineClamp={2} onClick={(e) => e.stopPropagation()}>
                               {i.libelle}
                             </Text>
-                            <Text size="xs" c="dimmed">{FREQUENCES[i.frequence_collecte] ?? i.frequence_collecte}</Text>
+                            <Group gap={6}>
+                              <Text size="xs" c="dimmed">{FREQUENCES[i.frequence_collecte] ?? i.frequence_collecte}</Text>
+                              {i.sens === "BAISSE" && <Badge size="xs" variant="light" color="grape">{voc("Plus bas = mieux")}</Badge>}
+                              {i.formule && <Badge size="xs" variant="light" color="indigo">{voc("Calculé")}</Badge>}
+                              {i.actualisation?.en_retard && (
+                                <Badge size="xs" variant="light" color="orange">{voc`Non actualisé (${i.actualisation.jours_de_retard} j)`}</Badge>
+                              )}
+                            </Group>
                           </Table.Td>
                           <Table.Td><Text size="sm">{i.unite || "—"}</Text></Table.Td>
                           <Table.Td ta="right"><Text size="sm" c="dimmed">{nombre(i.valeur_reference)}</Text></Table.Td>
@@ -189,9 +197,9 @@ export function IndicateursListPage() {
                               <Stack gap={4}>
                                 <Group justify="space-between" gap={6} wrap="nowrap">
                                   <Text size="xs" fw={600} c={i.palier_actuel.couleur}>{i.palier_actuel.libelle}</Text>
-                                  <Text size="xs" fw={700}>{i.taux_realisation_actuel.toLocaleString(locale())} %</Text>
+                                  <Text size="xs" fw={700}>{(i.taux_realisation_actuel ?? 0).toLocaleString(locale())} %</Text>
                                 </Group>
-                                <Progress value={Math.min(100, i.taux_realisation_actuel)} color={i.palier_actuel.couleur} size="sm" radius="xl"
+                                <Progress value={Math.max(0, Math.min(100, i.taux_realisation_actuel ?? 0))} color={i.palier_actuel.couleur} size="sm" radius="xl"
                                   aria-label={voc("Taux de réalisation")} />
                               </Stack>
                             ) : <Text size="xs" c="dimmed">{voc("Pas encore de valeur")}</Text>}
@@ -223,11 +231,11 @@ export function IndicateursListPage() {
         </Accordion>
       )}
 
-      <Modal opened={modalOpen} onClose={() => setModalOpen(false)} title={voc("Nouvel indicateur")} size="lg">
+      <Modal opened={modalOpen} onClose={() => setModalOpen(false)} title={voc("Nouvel indicateur")} size="xl">
         <IndicateurForm onDone={() => setModalOpen(false)} />
       </Modal>
 
-      <Modal opened={!!indicateurEnEdition} onClose={() => setIndicateurEnEdition(null)} title={voc("Modifier l'indicateur")} size="lg">
+      <Modal opened={!!indicateurEnEdition} onClose={() => setIndicateurEnEdition(null)} title={voc("Modifier l'indicateur")} size="xl">
         {indicateurEnEdition && (
           <IndicateurForm indicateur={indicateurEnEdition} onDone={() => setIndicateurEnEdition(null)} />
         )}

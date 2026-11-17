@@ -160,6 +160,10 @@ def _preparer(gdf) -> dict:
         projection = "WGS 84 (supposée : pas de fichier .prj)"
     gdf = gdf.to_crs(4326)
     famille = _famille(set(gdf.geom_type))
+    # Mesures sur les géométries d'origine (avant simplification).
+    from .mesures import mesurer
+
+    mesures = mesurer(list(gdf.geometry), famille)
 
     # Simplification à ~1/2000 de l'emprise (invisible à l'écran), sauf pour les points.
     ouest, sud, est, nord = (float(x) for x in gdf.total_bounds)
@@ -180,7 +184,7 @@ def _preparer(gdf) -> dict:
     return {
         "geometrie": famille, "projection_source": projection, "colonnes": gardees, "champ_etiquette": etiquette,
         "nombre_objets": len(geojson["features"]), "emprise": [round(ouest, 5), round(sud, 5), round(est, 5), round(nord, 5)],
-        "geojson": geojson,
+        "geojson": geojson, **mesures,
     }
 
 

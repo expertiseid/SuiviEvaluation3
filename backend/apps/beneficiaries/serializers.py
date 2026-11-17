@@ -69,6 +69,9 @@ class ParticipationProjetSerializer(serializers.ModelSerializer):
             "sous_activite_nom",
             "date_inscription",
             "role_dans_projet",
+            "statut",
+            "date_sortie",
+            "satisfaction",
         )
 
 
@@ -128,6 +131,7 @@ class BeneficiaireSerializer(serializers.ModelSerializer):
             "zone_nom",
             "latitude",
             "longitude",
+            "taille_menage",
             "consentement",
             "date_consentement",
             "date_anonymisation",

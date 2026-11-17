@@ -6,9 +6,7 @@ rattachés au projet lui-même forment la première ligne.
 """
 import datetime
 from collections import defaultdict
-from decimal import Decimal
 
-from django.db.models import Sum
 from django.utils.html import escape
 
 from apps.core.langues import traduire_modele
@@ -23,9 +21,9 @@ def _nombre(valeur):
 
 
 def _indicateur(indicateur, realises):
-    from apps.indicators.services import taux_realisation
+    from apps.indicators.services import taux_indicateur
 
-    realise = realises.get(indicateur.id, Decimal("0"))
+    realise = realises.get(indicateur.id)
     return {
         "id": indicateur.id,
         "libelle": indicateur.libelle,
@@ -33,12 +31,12 @@ def _indicateur(indicateur, realises):
         "reference": _nombre(indicateur.valeur_reference),
         "cible": _nombre(indicateur.valeur_cible),
         "realise": _nombre(realise),
-        "taux": taux_realisation(realise, indicateur.valeur_cible) if indicateur.valeur_cible else None,
+        "taux": taux_indicateur(indicateur, realise) if realise is not None else None,
     }
 
 
 def construire_cadre_logique(projet, masquees=frozenset()) -> dict:
-    from apps.indicators.models import Indicateur, ValeurIndicateur
+    from apps.indicators.models import Indicateur
     from apps.projects.models import Activite, NiveauActivite
     from apps.projects.taux import ArbreTaux
 
@@ -48,10 +46,9 @@ def construire_cadre_logique(projet, masquees=frozenset()) -> dict:
         Indicateur.objects.filter(activite__projet=projet).exclude(activite_id__in=masquees).order_by("id")
     )
     # Saisies approuvées uniquement (manager par défaut).
-    realises = dict(
-        ValeurIndicateur.objects.filter(indicateur__in=indicateurs)
-        .values("indicateur").annotate(t=Sum("valeur_realisee")).values_list("indicateur", "t")
-    )
+    from apps.indicators.services import valeurs_actuelles
+
+    realises = valeurs_actuelles(indicateurs)
     par_activite = defaultdict(list)
     for i in indicateurs:
         if i.activite_id:

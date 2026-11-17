@@ -99,7 +99,7 @@ def _feuille(wb, titre, colonnes, lecture, lignes, premiere=False):
 
 
 def generer_canevas_suivi(projet) -> bytes:
-    from apps.indicators.services import indicateurs_pour_projet, valeur_realisee_totale
+    from apps.indicators.services import indicateurs_pour_projet, valeur_actuelle
     from apps.projects.models import JalonLivrable, MethodeCalcul, NiveauActivite
     from apps.projects.taux import ArbreTaux
 
@@ -131,8 +131,8 @@ def generer_canevas_suivi(projet) -> bytes:
 
     parcourir(arbre.racines, 0)
     indicateurs = [
-        [f"I{i.id}", i.libelle, i.unite, i.valeur_cible, valeur_realisee_totale(i), "", "", "", ""]
-        for i in indicateurs_pour_projet(projet.id).order_by("libelle")
+        [f"I{i.id}", i.libelle, i.unite, i.valeur_cible, valeur_actuelle(i), "", "", "", ""]
+        for i in indicateurs_pour_projet(projet.id).filter(formule__isnull=True).order_by("libelle")
     ]
 
     wb = Workbook()
@@ -305,7 +305,7 @@ def analyser_canevas(fichier, projet, mode=MODE_AJOUT, utilisateur=None):
     elements = {f"E{e.id}": e for e in Activite.objects.filter(projet=projet)}
     sous_activites = {f"S{s.id}": s for s in SousActivite.objects.filter(activite__projet=projet)}
     jalons_existants = {f"J{j.id}": j for j in JalonLivrable.objects.filter(activite__projet=projet)}
-    indicateurs = {f"I{i.id}": i for i in indicateurs_pour_projet(projet.id)}
+    indicateurs = {f"I{i.id}": i for i in indicateurs_pour_projet(projet.id).filter(formule__isnull=True)}
     resultat, generales, deja_vus = [], [], {}
     aujourdhui = datetime.date.today()
 

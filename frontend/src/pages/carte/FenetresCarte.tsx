@@ -34,6 +34,13 @@ const GEOMETRIES = { POINT: "Points", LIGNE: "Lignes", POLYGONE: "Polygones" } a
 const COULEURS = ["#7048e8", "#e8590c", "#1c7ed6", "#c2255c", "#2f9e44", "#f08c00", "#0c8599", "#495057"];
 
 /** Import d'une couche SIG : shapefile (.zip), GeoPackage, GeoJSON ou KML. */
+/** Surface (polygones) ou longueur (lignes) totale de la couche. */
+function mesure(c: CoucheImportee) {
+  if (c.surface_ha != null) return ` ${c.surface_ha.toLocaleString(locale(), { maximumFractionDigits: 1 })} ha ·`;
+  if (c.longueur_km != null) return ` ${c.longueur_km.toLocaleString(locale(), { maximumFractionDigits: 1 })} km ·`;
+  return "";
+}
+
 export function ImportCoucheModal({ onClose }: { onClose: () => void }) {
   const importer = useImporterCouche();
   const [fichier, setFichier] = useState<File | null>(null);
@@ -66,7 +73,7 @@ export function ImportCoucheModal({ onClose }: { onClose: () => void }) {
                 <ColorSwatch color={c.couleur} size={16} />
                 <Text size="sm" fw={500} style={{ flex: 1 }}>{c.nom}</Text>
                 <Badge size="xs" variant="light">{GEOMETRIES[c.geometrie]}</Badge>
-                <Text size="xs" c="dimmed">{c.nombre_objets} {voc("objet(s)")}</Text>
+                <Text size="xs" c="dimmed">{c.nombre_objets} {voc("objet(s)")}{mesure(c)}</Text>
               </Group>
             </Paper>
           ))}
@@ -152,7 +159,7 @@ function LigneCouche({ couche }: { couche: CoucheImportee }) {
       </Group>
       <Text size="xs" c="dimmed" mt={4}>
         <Badge size="xs" variant="light" mr={6}>{GEOMETRIES[couche.geometrie]}</Badge>
-        {couche.nombre_objets} {voc("objet(s) ·")} {couche.fichier_source} {voc("· importée le")} {new Date(couche.created_at).toLocaleDateString(locale())} {voc("par")} {couche.cree_par_nom}
+        {couche.nombre_objets} {voc("objet(s) ·")}{mesure(couche)} {couche.fichier_source} {voc("· importée le")} {new Date(couche.created_at).toLocaleDateString(locale())} {voc("par")} {couche.cree_par_nom}
       </Text>
     </Paper>
   );

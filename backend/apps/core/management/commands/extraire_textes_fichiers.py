@@ -30,6 +30,8 @@ MODULES = [
     "beneficiaries/services/variables.py",
     "indicators/exports.py",
     "indicators/import_excel.py",
+    "indicators/formules.py",
+    "indicators/enquetes.py",
     "planification/services.py",
     "projects/import_excel.py",
     "strategy/import_chaine.py",

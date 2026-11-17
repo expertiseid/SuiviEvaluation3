@@ -47,6 +47,7 @@ export function modulesReglables(): { group: string; items: ModuleReglable[] }[]
         { cle: "projet:documents", label: voc("Documents"), ecriture: false },
         { cle: "projet:cadre-logique", label: voc("Cadre logique"), ecriture: false },
         { cle: "projet:risques", label: voc("Risques"), ecriture: true },
+        { cle: "projet:pilotage", label: voc("Pilotage (rapports, recommandations, leçons)"), ecriture: true },
         { cle: "projet:coherence", label: voc("Contrôle de cohérence"), ecriture: false },
         { cle: "projet:historique", label: voc("Historique"), ecriture: false },
       ],

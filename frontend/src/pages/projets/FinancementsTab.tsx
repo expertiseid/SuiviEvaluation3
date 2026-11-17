@@ -10,6 +10,7 @@ import {
   useEnregistrerRallonge,
   useFinancements,
   useSupprimerRallonge,
+  useModifierMontantRecu,
 } from "../../api/referentiels";
 import { StatCard } from "../../components/common/StatCard";
 import { SelectOrCreate } from "../../components/common/SelectOrCreate";
@@ -150,6 +151,7 @@ export function FinancementsTab({ projetId, lectureSeule = false }: { projetId: 
                 <Table.Th ta="right">{voc("Montant initial")}</Table.Th>
                 <Table.Th ta="right">{voc("Rallonges")}</Table.Th>
                 <Table.Th ta="right">{voc("Total")}</Table.Th>
+                <Table.Th ta="right">{voc("Reçu (décaissé)")}</Table.Th>
                 {!lectureSeule && <Table.Th w={150} />}
               </Table.Tr>
             </Table.Thead>
@@ -163,6 +165,11 @@ export function FinancementsTab({ projetId, lectureSeule = false }: { projetId: 
                       {Number(f.montant_rallonges) > 0 ? <Text span c="grape.7" fw={500}>+ {fcfa(f.montant_rallonges)}</Text> : "—"}
                     </Table.Td>
                     <Table.Td ta="right" fw={600}>{fcfa(f.montant_total)}</Table.Td>
+                    <Table.Td ta="right">
+                      {lectureSeule ? (f.montant_recu === null ? "—" : fcfa(f.montant_recu)) : (
+                        <MontantRecu financement={f} />
+                      )}
+                    </Table.Td>
                     {!lectureSeule && (
                       <Table.Td ta="right">
                         <Button size="compact-xs" variant="light" color="grape" leftSection={<Plus size={12} />} onClick={() => setRallongePour(f)}>
@@ -181,6 +188,7 @@ export function FinancementsTab({ projetId, lectureSeule = false }: { projetId: 
                         {r.saisi_par_nom && <Text size="xs" c="dimmed" mt={2}>{voc("Saisie par")} {r.saisi_par_nom}</Text>}
                       </Table.Td>
                       <Table.Td ta="right"><Text size="sm" c="grape.7">+ {fcfa(r.montant)}</Text></Table.Td>
+                      <Table.Td />
                       <Table.Td />
                       {!lectureSeule && (
                         <Table.Td ta="right">
@@ -211,5 +219,22 @@ export function FinancementsTab({ projetId, lectureSeule = false }: { projetId: 
       </Card>
       {rallongePour && <RallongeModal financement={rallongePour} projetId={projetId} onClose={() => setRallongePour(null)} />}
     </Stack>
+  );
+}
+
+/** Montant reçu du bailleur, saisi directement dans le tableau (enregistré en quittant le champ). */
+function MontantRecu({ financement }: { financement: Financement }) {
+  const modifier = useModifierMontantRecu();
+  const [valeur, setValeur] = useState<number | string>(financement.montant_recu ?? "");
+  const enregistrer = () => {
+    const nouveau = valeur === "" ? null : Number(valeur);
+    if (nouveau === (financement.montant_recu === null ? null : Number(financement.montant_recu))) return;
+    modifier.mutate({ id: financement.id, montant_recu: nouveau }, {
+      onError: (e) => notifications.show({ message: messageErreurApi(e, voc("Erreur lors de l'enregistrement")), color: "red" }),
+    });
+  };
+  return (
+    <NumberInput size="xs" w={150} ml="auto" min={0} thousandSeparator=" " placeholder="—" value={valeur} onChange={setValeur}
+      onBlur={enregistrer} aria-label={voc("Reçu (décaissé)")} />
   );
 }

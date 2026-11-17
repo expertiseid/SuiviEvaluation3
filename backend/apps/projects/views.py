@@ -36,7 +36,10 @@ from .models import (
     ParametresCalcul,
     ParametresRapportage,
     PartenaireProjet,
+    Apprentissage,
     Projet,
+    RapportProjet,
+    Recommandation,
     Risque,
     SousActivite,
     TauxManuel,
@@ -59,6 +62,9 @@ from .serializers import (
     PartenaireProjetSerializer,
     EvaluationRisqueSerializer,
     RisqueSerializer,
+    ApprentissageSerializer,
+    RapportProjetSerializer,
+    RecommandationSerializer,
 )
 from .services import (
     dupliquer_activite,
@@ -699,3 +705,54 @@ class EvaluationRisqueViewSet(SuppressionAtomiqueMixin, viewsets.ModelViewSet):
         risque = instance.risque
         super().perform_destroy(instance)
         self._reporter(risque)
+
+
+class _PilotageViewSet(SuppressionAtomiqueMixin, viewsets.ModelViewSet):
+    """Rapports, recommandations, leçons et décisions d'un projet (?projet=) visible par l'utilisateur."""
+
+    permission_classes = (HasGlobalVisibilityOrAssigned,)
+    modele = None
+    liens = ()
+
+    def get_queryset(self):
+        return self.modele.objects.filter(projet__id__in=visible_projets_ids(self.request.user)).select_related(*self.liens)
+
+    def _verifier(self, serializer):
+        projet = serializer.validated_data.get("projet") or getattr(serializer.instance, "projet", None)
+        if projet is None or projet.id not in set(visible_projets_ids(self.request.user)):
+            raise PermissionDenied("Projet non accessible.")
+
+    def perform_create(self, serializer):
+        self._verifier(serializer)
+        serializer.save()
+
+    def perform_update(self, serializer):
+        self._verifier(serializer)
+        serializer.save()
+
+
+class RapportProjetViewSet(_PilotageViewSet):
+    """Rapports attendus d'un projet : échéance, remise, validation."""
+
+    serializer_class = RapportProjetSerializer
+    filterset_fields = ("projet", "statut")
+    modele = RapportProjet
+    liens = ("document",)
+
+
+class RecommandationViewSet(_PilotageViewSet):
+    """Recommandations d'un projet et suivi de leur mise en œuvre."""
+
+    serializer_class = RecommandationSerializer
+    filterset_fields = ("projet", "statut")
+    modele = Recommandation
+    liens = ("responsable", "rapport")
+
+
+class ApprentissageViewSet(_PilotageViewSet):
+    """Leçons apprises, bonnes pratiques et décisions documentées d'un projet."""
+
+    serializer_class = ApprentissageSerializer
+    filterset_fields = ("projet", "type")
+    modele = Apprentissage
+    liens = ("recommandation", "element")

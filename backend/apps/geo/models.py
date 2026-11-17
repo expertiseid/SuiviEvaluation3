@@ -64,6 +64,8 @@ class Zone(TimestampedModel):
     # chargées (geo.limites), ou saisi à la main.
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    # Population de la zone (recensement ou estimation) : couverture des bénéficiaires par territoire.
+    population = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
         verbose_name = "Zone d'intervention"
@@ -191,6 +193,8 @@ class CoucheImportee(TimestampedModel):
     champ_etiquette = models.CharField(max_length=100, blank=True, help_text="Attribut écrit sur la carte (nom…).")
     nombre_objets = models.PositiveIntegerField(default=0)
     emprise = models.JSONField(default=list, blank=True, help_text="[ouest, sud, est, nord] en degrés.")
+    surface_ha = models.FloatField(null=True, blank=True, help_text="Surface totale des polygones (hectares).")
+    longueur_km = models.FloatField(null=True, blank=True, help_text="Longueur totale des lignes (kilomètres).")
     geojson = models.JSONField()
     cree_par = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="couches_importees")
 

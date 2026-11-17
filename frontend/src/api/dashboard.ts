@@ -75,7 +75,7 @@ export function useEnregistrerConfigurationTableauDeBord() {
   const demo = useEstDemo();
   const cle = ["dashboard", "configuration", usePartage()?.jeton];
   return useMutation({
-    mutationFn: async (payload: Partial<Pick<ConfigurationTableauDeBord, "blocs_masques" | "types_graphiques">>) => {
+    mutationFn: async (payload: Partial<Pick<ConfigurationTableauDeBord, "blocs_masques" | "types_graphiques" | "apparences">>) => {
       // Démonstration : le visiteur essaie la personnalisation dans son navigateur, rien n'est enregistré.
       if (demo) return { ...queryClient.getQueryData<ConfigurationTableauDeBord>(cle)!, ...payload };
       return (await apiClient.put<ConfigurationTableauDeBord>("/dashboard/configuration/", payload)).data;

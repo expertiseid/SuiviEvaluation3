@@ -188,7 +188,7 @@ def partage_public(request, jeton, ressource=""):
             configuration = ConfigurationTableauDeBord.courante()
             return Response({
                 "blocs_masques": configuration.blocs_masques, "types_graphiques": configuration.types_graphiques,
-                "peut_modifier": False,
+                "apparences": configuration.apparences, "peut_modifier": False,
             })
 
     if lien.type == LienPartage.Type.SUIVI_PROJET and ressource == "suivi":

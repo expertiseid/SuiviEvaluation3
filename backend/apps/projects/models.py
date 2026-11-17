@@ -245,6 +245,9 @@ class Projet(TimestampedModel):
     cible_femmes = models.PositiveIntegerField(null=True, blank=True)
     cible_jeunes = models.PositiveIntegerField(null=True, blank=True)
     cible_pdi = models.PositiveIntegerField(null=True, blank=True, verbose_name="Cible PDI")
+    beneficiaires_indirects = models.PositiveIntegerField(
+        null=True, blank=True, help_text="Estimation des personnes touchées sans être inscrites (familles, communauté…).",
+    )
     # Ordre des attributs libres de la planification (colonnes du fichier importé, puis ceux ajoutés
     # par la fiche) : les attributs eux-mêmes sont stockés sans ordre (JSON), voir projects.attributs.
     ordre_attributs = models.JSONField(default=list, blank=True)
@@ -363,6 +366,10 @@ class Activite(TimestampedModel):
 
     budget_alloue = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     budget_realise = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    # Budget après révision (vide : le budget alloué initial reste applicable) et montant engagé (contrats,
+    # bons de commande), même pas encore payé. Comptés sans double compte comme les autres budgets.
+    budget_revise = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    budget_engage = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
 
     valeur_reference = models.DecimalField(
         max_digits=12,
@@ -434,6 +441,11 @@ class Activite(TimestampedModel):
     class Meta:
         # Ordre de création : un import ou une saisie remonte dans l'ordre où il a été fait.
         ordering = ("id",)
+
+    @property
+    def budget_applicable(self):
+        """Budget révisé s'il est saisi, sinon budget alloué initial."""
+        return self.budget_revise if self.budget_revise is not None else self.budget_alloue
 
     def __str__(self):
         return self.libelle
@@ -784,3 +796,134 @@ class EvaluationRisque(TimestampedModel):
 
     def __str__(self):
         return f"{self.risque} au {self.date}"
+
+
+class RapportProjet(TimestampedModel):
+    """
+    Rapport attendu d'un projet (trimestriel, annuel, pour un bailleur…) : son échéance, sa remise
+    et sa validation. Le document remis peut être joint (gestion documentaire).
+    """
+
+    class Statut(models.TextChoices):
+        ATTENDU = "ATTENDU", "Attendu"
+        RECU = "RECU", "Reçu"
+        A_REVOIR = "A_REVOIR", "À revoir"
+        VALIDE = "VALIDE", "Validé"
+
+    TYPES = ("Mensuel", "Trimestriel", "Semestriel", "Annuel", "À mi-parcours", "Final", "Pour un bailleur", "Autre")
+
+    projet = models.ForeignKey(Projet, on_delete=models.CASCADE, related_name="rapports")
+    libelle = models.CharField(max_length=200, help_text="Ex : « Rapport du 1er trimestre 2026 ».")
+    type = models.CharField(max_length=30, blank=True)
+    destinataire = models.CharField(max_length=150, blank=True, help_text="Bailleur, comité de pilotage, ministère…")
+    echeance = models.DateField()
+    date_remise = models.DateField(null=True, blank=True)
+    date_validation = models.DateField(null=True, blank=True)
+    statut = models.CharField(max_length=10, choices=Statut.choices, default=Statut.ATTENDU)
+    document = models.ForeignKey(
+        "documents.Document", null=True, blank=True, on_delete=models.SET_NULL, related_name="rapports_projet"
+    )
+    commentaire = models.TextField(blank=True)
+
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ("projet", "echeance", "id")
+        verbose_name = "Rapport attendu"
+        verbose_name_plural = "Rapports attendus"
+
+    def __str__(self):
+        return self.libelle
+
+    def save(self, *args, **kwargs):
+        # Remis ou validé sans date : aujourd'hui.
+        if self.statut != self.Statut.ATTENDU and self.date_remise is None:
+            self.date_remise = datetime.date.today()
+        if self.statut == self.Statut.VALIDE and self.date_validation is None:
+            self.date_validation = datetime.date.today()
+        super().save(*args, **kwargs)
+
+
+class Recommandation(TimestampedModel):
+    """
+    Recommandation issue d'une analyse, d'une revue, d'une supervision ou d'une évaluation, et le suivi
+    de sa mise en œuvre.
+    """
+
+    class Statut(models.TextChoices):
+        A_FAIRE = "A_FAIRE", "À mettre en œuvre"
+        EN_COURS = "EN_COURS", "En cours"
+        REALISEE = "REALISEE", "Mise en œuvre"
+        ABANDONNEE = "ABANDONNEE", "Abandonnée"
+
+    class Priorite(models.TextChoices):
+        HAUTE = "HAUTE", "Haute"
+        MOYENNE = "MOYENNE", "Moyenne"
+        BASSE = "BASSE", "Basse"
+
+    projet = models.ForeignKey(Projet, on_delete=models.CASCADE, related_name="recommandations")
+    code = models.CharField(max_length=20, blank=True)
+    libelle = models.CharField(max_length=500)
+    source = models.CharField(max_length=150, blank=True, help_text="Ex : « Revue à mi-parcours », « Analyse des données du T2 ».")
+    date = models.DateField(default=datetime.date.today)
+    rapport = models.ForeignKey(
+        RapportProjet, null=True, blank=True, on_delete=models.SET_NULL, related_name="recommandations"
+    )
+    priorite = models.CharField(max_length=10, choices=Priorite.choices, default=Priorite.MOYENNE)
+    responsable = models.ForeignKey(
+        "intervenants.Intervenant", null=True, blank=True, on_delete=models.SET_NULL, related_name="recommandations_suivies",
+    )
+    echeance = models.DateField(null=True, blank=True)
+    statut = models.CharField(max_length=12, choices=Statut.choices, default=Statut.A_FAIRE)
+    date_mise_en_oeuvre = models.DateField(null=True, blank=True)
+    suivi = models.TextField(blank=True, help_text="Ce qui a été fait.")
+
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ("projet", "date", "id")
+
+    def __str__(self):
+        return f"{self.code} {self.libelle}".strip()
+
+    def save(self, *args, **kwargs):
+        if not self.code and self.projet_id:
+            numeros = [
+                int(c[3:]) for c in Recommandation.objects.filter(projet_id=self.projet_id).values_list("code", flat=True)
+                if c[:3] == "REC" and c[3:].isdigit()
+            ]
+            self.code = f"REC{max(numeros, default=0) + 1}"
+        if self.statut == self.Statut.REALISEE and self.date_mise_en_oeuvre is None:
+            self.date_mise_en_oeuvre = datetime.date.today()
+        super().save(*args, **kwargs)
+
+
+class Apprentissage(TimestampedModel):
+    """Leçon apprise, bonne pratique ou décision documentée d'un projet."""
+
+    class Type(models.TextChoices):
+        LECON = "LECON", "Leçon apprise"
+        BONNE_PRATIQUE = "BONNE_PRATIQUE", "Bonne pratique"
+        DECISION = "DECISION", "Décision"
+
+    projet = models.ForeignKey(Projet, on_delete=models.CASCADE, related_name="apprentissages")
+    type = models.CharField(max_length=15, choices=Type.choices)
+    titre = models.CharField(max_length=300)
+    description = models.TextField(blank=True, help_text="Ce qui s'est passé et ce qu'on en retient ; pour une décision, sa justification.")
+    date = models.DateField(default=datetime.date.today)
+    decideur = models.CharField(max_length=150, blank=True, help_text="Décision : qui l'a prise (comité de pilotage…).")
+    recommandation = models.ForeignKey(
+        Recommandation, null=True, blank=True, on_delete=models.SET_NULL, related_name="apprentissages"
+    )
+    element = models.ForeignKey(
+        Activite, null=True, blank=True, on_delete=models.SET_NULL, related_name="apprentissages",
+        help_text="Élément de la planification concerné (facultatif).",
+    )
+
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ("projet", "-date", "-id")
+
+    def __str__(self):
+        return self.titre

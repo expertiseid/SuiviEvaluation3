@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from rest_framework import generics, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import ValidationError
-from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.accounts.constants import ROLE_CHARGE_SE
@@ -17,9 +17,11 @@ from apps.projects.models import Activite, Projet
 from apps.projects.queryset_filters import visible_projets_ids
 
 from .import_excel import generer_modele_import_indicateurs, importer_indicateurs
-from .models import Indicateur, PalierAlerte, ParametresAlerte, ValeurIndicateur
-from .serializers import IndicateurSerializer, PalierAlerteSerializer, ParametresAlerteSerializer, ValeurIndicateurSerializer
-from .services import palier_pour_taux, paliers_pour, supprimer_indicateur_cascade, taux_realisation, valeur_realisee_totale
+from .models import Enquete, Indicateur, PalierAlerte, ParametresAlerte, ValeurIndicateur
+from .serializers import (
+    EnqueteSerializer, IndicateurSerializer, PalierAlerteSerializer, ParametresAlerteSerializer, ValeurIndicateurSerializer,
+)
+from .services import palier_pour_taux, paliers_pour, supprimer_indicateur_cascade, taux_indicateur
 
 
 class ParametresAlerteView(generics.RetrieveUpdateAPIView):
@@ -173,6 +175,36 @@ class IndicateurViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         supprimer_indicateur_cascade(instance)
 
+    @action(detail=False, methods=["get"], url_path="formules/catalogue")
+    def formules_catalogue(self, request):
+        """Ce que l'éditeur de formules propose : mesures, filtres, choix, modèles prêts à copier."""
+        from .formules import catalogue
+
+        return Response(catalogue())
+
+    @action(detail=False, methods=["post"], url_path="formules/apercu")
+    def formules_apercu(self, request):
+        """
+        Résultat immédiat d'une formule en cours d'écriture, sur les vraies données : {valeur, termes,
+        non_calculable, explication}. Données du projet indiqué (?projet= ou « projet »), sinon de tous les
+        projets visibles.
+        """
+        from .formules import FormuleInvalide, evaluer, explication
+
+        visibles = visible_projets_ids(self.request.user)
+        projet = request.data.get("projet")
+        if projet:
+            if int(projet) not in set(visibles):
+                raise ValidationError({"projet": v("Projet non accessible.")})
+            ids = [int(projet)]
+        else:
+            ids = list(visibles)
+        try:
+            resultat = evaluer(request.data.get("formule"), ids)
+        except FormuleInvalide as exc:
+            return Response({"erreur": str(exc)}, status=400)
+        return Response({**resultat, "explication": explication(request.data["formule"])})
+
     @action(detail=False, methods=["get"], url_path="pour-projet")
     def pour_projet(self, request):
         """
@@ -229,7 +261,7 @@ class ValeurIndicateurViewSet(AvertissementsSaisieMixin, SuppressionAtomiqueMixi
         super().perform_create(serializer)
         valeur = serializer.instance
         indicateur = valeur.indicateur
-        taux = taux_realisation(valeur_realisee_totale(indicateur), indicateur.valeur_cible)
+        taux = taux_indicateur(indicateur)
         paliers = paliers_pour(indicateur=indicateur, projet=indicateur.projet_rattache)
         palier = palier_pour_taux(taux, paliers)
         # Le palier le plus bas de la palette (première borne, la plus critique) déclenche
@@ -245,3 +277,63 @@ class ValeurIndicateurViewSet(AvertissementsSaisieMixin, SuppressionAtomiqueMixi
             notifier_par_role(
                 [ROLE_CHARGE_SE], Notification.Type.INDICATEUR_ALERTE, titre, message, lien
             )
+
+
+class EnqueteViewSet(viewsets.ModelViewSet):
+    """
+    Données d'enquête : import d'un fichier (champ « fichier », plus « titre » et « projet »), réglage du plan de
+    sondage (poids, strate, grappe), réponses d'une colonne (colonnes/?colonne=) et estimations pondérées avec
+    leur marge d'erreur (calcul/).
+    """
+
+    serializer_class = EnqueteSerializer
+    permission_classes = (HasGlobalVisibilityOrAssigned,)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
+    filterset_fields = ("projet",)
+
+    def get_queryset(self):
+        ids = visible_projets_ids(self.request.user)
+        qs = Enquete.objects.filter(Q(projet__isnull=True) | Q(projet__id__in=ids)).select_related("projet", "cree_par")
+        return qs if self.action in ("modalites", "calcul") else qs.defer("donnees")
+
+    def create(self, request, *args, **kwargs):
+        from .enquetes import EnqueteInvalide, lire
+
+        fichier = request.FILES.get("fichier")
+        if fichier is None:
+            raise ValidationError({"fichier": v("Choisissez un fichier.")})
+        projet = request.data.get("projet") or None
+        if projet and int(projet) not in set(visible_projets_ids(request.user)):
+            raise ValidationError({"projet": v("Projet non accessible.")})
+        try:
+            lu = lire(fichier)
+        except EnqueteInvalide as exc:
+            raise ValidationError({"fichier": str(exc)})
+        titre = (request.data.get("titre") or fichier.name.rsplit(".", 1)[0]).strip()[:200]
+        enquete = Enquete.objects.create(titre=titre, projet_id=projet, fichier_source=fichier.name[:255], cree_par=request.user,
+                                         date_debut=request.data.get("date_debut") or None, date_fin=request.data.get("date_fin") or None, **lu)
+        return Response(self.get_serializer(enquete).data, status=201)
+
+    @action(detail=True, methods=["get"])
+    def modalites(self, request, pk=None):
+        """Réponses d'une colonne (?colonne=) et leur nombre."""
+        from .enquetes import EnqueteInvalide, modalites
+
+        try:
+            return Response(modalites(self.get_object(), request.query_params.get("colonne", "")))
+        except EnqueteInvalide as exc:
+            raise ValidationError({"colonne": str(exc)})
+
+    @action(detail=True, methods=["get"])
+    def calcul(self, request, pk=None):
+        """
+        Estimation pondérée (lecture seule, ouverte à qui consulte) : ?calcul=&colonne=&valeurs=…&valeurs=…&par= →
+        résultats avec intervalle de confiance à 95 %.
+        """
+        from .enquetes import EnqueteInvalide, estimer
+
+        d = request.query_params
+        try:
+            return Response(estimer(self.get_object(), d.get("calcul"), d.get("colonne", ""), d.getlist("valeurs"), d.get("par") or None))
+        except EnqueteInvalide as exc:
+            raise ValidationError({"calcul": str(exc)})

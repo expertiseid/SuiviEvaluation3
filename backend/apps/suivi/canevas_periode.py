@@ -187,7 +187,7 @@ def analyser_canevas_periode(fichier, periode, mode=MODE_AJOUT):
     projet = periode.projet
     elements = {f"E{a.id}": ("activite", a) for a in Activite.objects.filter(projet=projet)}
     elements |= {f"S{s.id}": ("sous_activite", s) for s in SousActivite.objects.filter(activite__projet=projet)}
-    elements |= {f"I{i.id}": ("indicateur", i) for i in indicateurs_pour_projet(projet.id)}
+    elements |= {f"I{i.id}": ("indicateur", i) for i in indicateurs_pour_projet(projet.id).filter(formule__isnull=True)}
     tranches = {
         (t.activite_id, t.sous_activite_id, t.indicateur_id): t for t in TranchePlanifiee.objects.filter(periode=periode)
     }

@@ -26,7 +26,10 @@ from .models import (
     ParametresCalcul,
     ParametresRapportage,
     PartenaireProjet,
+    Apprentissage,
     Projet,
+    RapportProjet,
+    Recommandation,
     Risque,
     SousActivite,
     TauxManuel,
@@ -159,6 +162,8 @@ class ActiviteSerializer(serializers.ModelSerializer):
             "structures_noms",
             "partenaires_charges_noms",
             "budget_alloue",
+            "budget_revise",
+            "budget_engage",
             "budget_realise",
             "valeur_reference",
             "quantite_prevue",
@@ -457,6 +462,7 @@ class ProjetSerializer(serializers.ModelSerializer):
             "cible_femmes",
             "cible_jeunes",
             "cible_pdi",
+            "beneficiaires_indirects",
             "elements_capitalisation",
             "methode_calcul",
             "methode_agregation",
@@ -515,6 +521,7 @@ class ProjetWriteSerializer(serializers.ModelSerializer):
             "cible_femmes",
             "cible_jeunes",
             "cible_pdi",
+            "beneficiaires_indirects",
             "elements_capitalisation",
             "methode_calcul",
             "methode_agregation",
@@ -617,3 +624,78 @@ class RisqueSerializer(serializers.ModelSerializer):
         if element is not None and projet is not None and element.projet_id != projet.id:
             raise serializers.ValidationError({"element": "Cet élément n'appartient pas au projet."})
         return data
+
+
+class _ElementDuProjetMixin:
+    """Contrôle commun : le rapport, la recommandation ou l'élément lié appartient au même projet."""
+
+    liens_du_projet = ()
+
+    def validate(self, data):
+        projet = data.get("projet") or getattr(self.instance, "projet", None)
+        for champ in self.liens_du_projet:
+            lie = data.get(champ)
+            if lie is not None and projet is not None and lie.projet_id != projet.id:
+                raise serializers.ValidationError({champ: "Cet élément n'appartient pas au projet."})
+        return data
+
+
+class RapportProjetSerializer(_ElementDuProjetMixin, serializers.ModelSerializer):
+    document_titre = serializers.SerializerMethodField()
+    en_retard = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RapportProjet
+        fields = (
+            "id", "projet", "libelle", "type", "destinataire", "echeance", "date_remise", "date_validation", "statut",
+            "document", "document_titre", "commentaire", "en_retard",
+        )
+
+    def get_document_titre(self, obj):
+        return str(obj.document) if obj.document_id else ""
+
+    def get_en_retard(self, obj):
+        import datetime
+
+        remis = obj.date_remise
+        return obj.echeance < (remis or datetime.date.today())
+
+
+class RecommandationSerializer(_ElementDuProjetMixin, serializers.ModelSerializer):
+    liens_du_projet = ("rapport",)
+    responsable_nom = serializers.SerializerMethodField()
+    rapport_libelle = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Recommandation
+        fields = (
+            "id", "projet", "code", "libelle", "source", "date", "rapport", "rapport_libelle", "priorite", "responsable",
+            "responsable_nom", "echeance", "statut", "date_mise_en_oeuvre", "suivi",
+        )
+        read_only_fields = ("code",)
+
+    def get_responsable_nom(self, obj):
+        return str(obj.responsable) if obj.responsable_id else ""
+
+    def get_rapport_libelle(self, obj):
+        return obj.rapport.libelle if obj.rapport_id else ""
+
+
+class ApprentissageSerializer(_ElementDuProjetMixin, serializers.ModelSerializer):
+    liens_du_projet = ("recommandation", "element")
+    recommandation_libelle = serializers.SerializerMethodField()
+    element_libelle = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Apprentissage
+        fields = (
+            "id", "projet", "type", "titre", "description", "date", "decideur", "recommandation", "recommandation_libelle",
+            "element", "element_libelle",
+        )
+
+    def get_recommandation_libelle(self, obj):
+        return str(obj.recommandation) if obj.recommandation_id else ""
+
+    def get_element_libelle(self, obj):
+        e = obj.element
+        return f"{e.code_activite} {e.libelle}".strip() if e else ""

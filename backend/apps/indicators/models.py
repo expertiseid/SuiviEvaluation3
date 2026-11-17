@@ -23,6 +23,28 @@ class Indicateur(TimestampedModel):
     valeur_cible = models.DecimalField(max_digits=14, decimal_places=2)
     frequence_collecte = models.CharField(max_length=20, choices=Frequence.choices)
 
+    # Calcul du taux (apps.indicators.services.taux_indicateur). Les valeurs par défaut reproduisent le
+    # calcul historique : somme des valeurs saisies ÷ cible.
+    class Sens(models.TextChoices):
+        HAUSSE = "HAUSSE", "Plus haut = mieux"
+        BAISSE = "BAISSE", "Plus bas = mieux"
+
+    class CalculTaux(models.TextChoices):
+        CIBLE = "CIBLE", "Réalisé ÷ cible"
+        PROGRESSION = "PROGRESSION", "Progression de la référence vers la cible"
+
+    class Agregation(models.TextChoices):
+        SOMME = "SOMME", "Les valeurs saisies s'additionnent"
+        DERNIERE = "DERNIERE", "Seule la dernière valeur saisie compte"
+
+    sens = models.CharField(max_length=10, choices=Sens.choices, default=Sens.HAUSSE,
+                            help_text="Une baisse est-elle un progrès (taux de malnutrition, délai…) ?")
+    calcul_taux = models.CharField(max_length=12, choices=CalculTaux.choices, default=CalculTaux.CIBLE)
+    agregation = models.CharField(max_length=10, choices=Agregation.choices, default=Agregation.SOMME,
+                                  help_text="Cumulable (personnes formées…) ou niveau mesuré à chaque saisie (taux, stock…).")
+    # Indicateur calculé (apps.indicators.formules) : sa valeur vient de la formule, aucune saisie.
+    formule = models.JSONField(null=True, blank=True, default=None)
+
     # Rattachement au projet lui-même OU à un élément de sa planification, à
     # n'importe quel niveau (Activite couvre tous les niveaux librement nommés :
     # objectif, résultat, pilier, activité...) — au plus un des deux
@@ -209,3 +231,35 @@ class PalierAlerte(TimestampedModel):
     def __str__(self):
         portee = self.indicateur or self.activite or self.projet or "Global"
         return f"{portee} — ≥ {self.borne_min}% : {self.libelle}"
+
+
+class Enquete(TimestampedModel):
+    """
+    Données d'une enquête (fichier Excel ou CSV, export KoboToolbox…) : une ligne par répondant. Les colonnes
+    de poids, de strate et de grappe décrivent le plan de sondage, pour des estimations pondérées avec leur
+    marge d'erreur (apps.indicators.enquetes). Les colonnes d'identification personnelle sont écartées à l'import.
+    """
+
+    titre = models.CharField(max_length=200)
+    projet = models.ForeignKey(
+        "projects.Projet", null=True, blank=True, on_delete=models.CASCADE, related_name="enquetes",
+        help_text="Vide : enquête de toute l'organisation.",
+    )
+    date_debut = models.DateField(null=True, blank=True)
+    date_fin = models.DateField(null=True, blank=True)
+    fichier_source = models.CharField(max_length=255, blank=True)
+    colonnes = models.JSONField(default=list, help_text="[{nom, type: NOMBRE | TEXTE}] dans l'ordre du fichier.")
+    colonnes_ecartees = models.JSONField(default=list, blank=True, help_text="Colonnes non conservées (données personnelles, techniques).")
+    donnees = models.JSONField(default=list, help_text="Une liste de valeurs par répondant, dans l'ordre des colonnes.")
+    nombre_reponses = models.PositiveIntegerField(default=0)
+    colonne_poids = models.CharField(max_length=150, blank=True)
+    colonne_strate = models.CharField(max_length=150, blank=True)
+    colonne_grappe = models.CharField(max_length=150, blank=True)
+    cree_par = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="enquetes")
+
+    class Meta:
+        ordering = ("-created_at",)
+        verbose_name = "Enquête"
+
+    def __str__(self):
+        return self.titre

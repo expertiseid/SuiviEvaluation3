@@ -120,6 +120,16 @@ export function useCreateFinancement() {
   });
 }
 
+/** Montant reçu du bailleur (décaissé) sur un financement. */
+export function useModifierMontantRecu() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, montant_recu }: { id: number; montant_recu: number | null }) =>
+      (await apiClient.patch<Financement>(`/financements/${id}/`, { montant_recu })).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["financements"] }),
+  });
+}
+
 /** Une ligne « bailleur + montant » saisie dans la fiche projet. */
 export interface LigneFinancement {
   nom: string;

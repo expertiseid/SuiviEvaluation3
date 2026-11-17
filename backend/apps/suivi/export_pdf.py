@@ -20,6 +20,11 @@ STATUT_GLOBAL_LABEL = {"EN_RETARD": "En retard", "ATTEINT": "Atteint", "EN_COURS
 STATUT_GLOBAL_COULEUR = {"EN_RETARD": "#d03b3b", "ATTEINT": "#0ca30c", "EN_COURS": "#fab219"}
 
 
+
+def _taux_txt(taux) -> str:
+    """Taux d'un indicateur, ou « — » quand il n'est pas calculable (cible nulle, référence égale à la cible…)."""
+    return "—" if taux is None else f"{taux}%"
+
 def _fmt(valeur, decimales=1):
     """Formate un nombre (int/float/Decimal) avec séparateur de milliers,
     en supprimant les zéros décimaux superflus (250.00 -> 250, 83.3 reste 83.3)."""
@@ -88,9 +93,9 @@ def _bloc_indicateur(indicateur, aujourdhui):
     attendu = valeur_attendue_a(aujourdhui, debut_p, fin_p, depart, cible) if debut_p and fin_p else None
     palier = indicateur["palier_actuel"]
     badge = (
-        _badge(f"{palier['libelle']} · {indicateur['taux_actuel']}%", palier["couleur"])
+        _badge(f"{palier['libelle']} · {_taux_txt(indicateur['taux_actuel'])}", palier["couleur"])
         if palier
-        else _badge(f"{indicateur['taux_actuel']}%", "#666")
+        else _badge(_taux_txt(indicateur['taux_actuel']), "#666")
     )
 
     lignes = []
@@ -102,7 +107,7 @@ def _bloc_indicateur(indicateur, aujourdhui):
                 [
                     f"{_fmt_date(h['periode_debut'])} → {_fmt_date(h['periode_fin'])}",
                     f"{_fmt(h['valeur_realisee'])} {escape(indicateur['unite'])}",
-                    f"{_fmt(h['valeur_cumulee'])} {escape(indicateur['unite'])} ({h['taux']}%)",
+                    f"{_fmt(h['valeur_cumulee'])} {escape(indicateur['unite'])} ({_taux_txt(h['taux'])})",
                     (
                         f"{_fmt(attendu_ligne, 0)} {escape(indicateur['unite'])}"
                         + (f" ({taux_de(attendu_ligne, cible)}%)" if attendu_ligne is not None else "")
@@ -130,7 +135,7 @@ def _bloc_indicateur(indicateur, aujourdhui):
       <div style="font-size:12px;color:#666;margin-top:2px;">{planifie}</div>
       <div style="font-size:13px;margin-top:4px;">
         Réalisé : <strong>{_fmt(realise)} / {_fmt(cible)} {escape(indicateur['unite'])}</strong>
-        ({indicateur['taux_actuel']}%) — Référence : {_fmt(depart)} {escape(indicateur['unite'])}
+        ({_taux_txt(indicateur['taux_actuel'])}) — Référence : {_fmt(depart)} {escape(indicateur['unite'])}
         {f"<br/>{attendu_txt}" if attendu_txt else ""}
       </div>
       {_barre_progression(indicateur['taux_actuel'], palier['couleur'] if palier else '#1c7ed6')}

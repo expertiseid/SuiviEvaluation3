@@ -80,7 +80,8 @@ class FinancementSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Financement
-        fields = ("id", "projet", "bailleur", "bailleur_nom", "montant_finance", "montant_rallonges", "montant_total", "rallonges")
+        fields = ("id", "projet", "bailleur", "bailleur_nom", "montant_finance", "montant_rallonges", "montant_total", "montant_recu",
+                  "rallonges")
 
 
 class StructureOrganisationSerializer(serializers.ModelSerializer):

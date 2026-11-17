@@ -67,6 +67,7 @@ const schema = z.object({
   cible_femmes: z.number().nullable().optional(),
   cible_jeunes: z.number().nullable().optional(),
   cible_pdi: z.number().nullable().optional(),
+  beneficiaires_indirects: z.number().nullable().optional(),
   elements_capitalisation: z.string().optional(),
 });
 
@@ -83,6 +84,7 @@ const ONGLET_PAR_CHAMP: Record<string, string> = {
   cible_femmes: "cibles",
   cible_jeunes: "cibles",
   cible_pdi: "cibles",
+  beneficiaires_indirects: "cibles",
 };
 
 export function ProjetForm({ projet, onDone }: { projet?: ProjetResume; onDone: () => void }) {
@@ -218,6 +220,7 @@ export function ProjetForm({ projet, onDone }: { projet?: ProjetResume; onDone: 
           cible_femmes: projet.cible_femmes,
           cible_jeunes: projet.cible_jeunes,
           cible_pdi: projet.cible_pdi,
+          beneficiaires_indirects: projet.beneficiaires_indirects,
           elements_capitalisation: projet.elements_capitalisation ?? "",
         }
       : {
@@ -326,6 +329,7 @@ export function ProjetForm({ projet, onDone }: { projet?: ProjetResume; onDone: 
       cible_femmes: values.cible_femmes ?? null,
       cible_jeunes: values.cible_jeunes ?? null,
       cible_pdi: values.cible_pdi ?? null,
+      beneficiaires_indirects: values.beneficiaires_indirects ?? null,
       elements_capitalisation: values.elements_capitalisation ?? "",
     };
     try {
@@ -709,6 +713,15 @@ export function ProjetForm({ projet, onDone }: { projet?: ProjetResume; onDone: 
                 )}
               />
             </Group>
+            <Controller
+              control={control}
+              name="beneficiaires_indirects"
+              render={({ field }) => (
+                <NumberInput label={voc("Bénéficiaires indirects (estimation)")} value={field.value ?? ""} min={0} maw={340}
+                  description={voc("Personnes touchées sans être inscrites (familles, communauté…). Vide : estimées d'après la taille des ménages.")}
+                  onChange={(v) => field.onChange(v === "" ? null : Number(v))} />
+              )}
+            />
             {projet ? (
               <BeneficiairesProjetSection projet={projet} />
             ) : (

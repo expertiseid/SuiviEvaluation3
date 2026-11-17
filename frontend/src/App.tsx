@@ -19,6 +19,7 @@ const DashboardConsolidePage = aLaDemande(() => import("./pages/DashboardConsoli
 const ProjetsListPage = aLaDemande(() => import("./pages/projets/ProjetsListPage").then((m) => ({ default: m.ProjetsListPage })));
 const ProjetDetailPage = aLaDemande(() => import("./pages/projets/ProjetDetailPage").then((m) => ({ default: m.ProjetDetailPage })));
 const IndicateursListPage = aLaDemande(() => import("./pages/indicateurs/IndicateursListPage").then((m) => ({ default: m.IndicateursListPage })));
+const EnquetesPage = aLaDemande(() => import("./pages/indicateurs/EnquetesPage").then((m) => ({ default: m.EnquetesPage })));
 const IndicateurDetailPage = aLaDemande(() => import("./pages/indicateurs/IndicateurDetailPage").then((m) => ({ default: m.IndicateurDetailPage })));
 const SuiviPage = aLaDemande(() => import("./pages/suivi/SuiviPage").then((m) => ({ default: m.SuiviPage })));
 const SuiviProjetDashboard = aLaDemande(() => import("./pages/suivi/SuiviProjetDashboard").then((m) => ({ default: m.SuiviProjetDashboard })));
@@ -89,6 +90,7 @@ export default function App() {
           <Route path="/projets" element={<ProjetsListPage />} />
           <Route path="/projets/:id" element={<ProjetDetailPage />} />
           <Route path="/indicateurs" element={<IndicateursListPage />} />
+          <Route path="/indicateurs/enquetes" element={<EnquetesPage />} />
           <Route path="/indicateurs/:id" element={<IndicateurDetailPage />} />
           <Route path="/suivi" element={<SuiviPage />} />
           <Route path="/suivi/:id" element={<SuiviProjetDashboard />} />

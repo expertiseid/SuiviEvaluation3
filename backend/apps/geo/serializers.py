@@ -39,6 +39,7 @@ class ZoneSerializer(serializers.ModelSerializer):
             "nom",
             "latitude",
             "longitude",
+            "population",
         )
 
     def validate(self, attrs):
@@ -65,9 +66,11 @@ class CoucheImporteeSerializer(serializers.ModelSerializer):
         model = CoucheImportee
         fields = (
             "id", "nom", "couleur", "geometrie", "fichier_source", "projection_source", "colonnes", "champ_etiquette",
-            "nombre_objets", "emprise", "cree_par_nom", "created_at",
+            "nombre_objets", "emprise", "surface_ha", "longueur_km", "cree_par_nom", "created_at",
         )
-        read_only_fields = ("geometrie", "fichier_source", "projection_source", "colonnes", "nombre_objets", "emprise")
+        read_only_fields = (
+            "geometrie", "fichier_source", "projection_source", "colonnes", "nombre_objets", "emprise", "surface_ha", "longueur_km",
+        )
 
     def get_cree_par_nom(self, obj):
         u = obj.cree_par

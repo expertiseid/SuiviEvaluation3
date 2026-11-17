@@ -2,6 +2,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
 import { cheminApi, usePartage } from "../utils/partage";
 import type {
+  ApercuFormule,
+  CatalogueFormules,
+  FormuleIndicateur,
   ImportIndicateursResultat,
   Indicateur,
   Paginated,
@@ -175,4 +178,18 @@ export function useDeleteValeurIndicateur() {
       queryClient.invalidateQueries({ queryKey: ["tranches-planifiees"] });
     },
   });
+}
+
+/** Mesures, filtres et modèles proposés par l'éditeur de formules. */
+export function useCatalogueFormules() {
+  return useQuery({
+    queryKey: ["formules-catalogue"],
+    queryFn: async () => (await apiClient.get<CatalogueFormules>("/indicateurs/formules/catalogue/")).data,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/** Résultat immédiat d'une formule, sur les vraies données (projet donné, sinon tous les projets visibles). */
+export async function apercuFormule(formule: FormuleIndicateur, projet: number | null) {
+  return (await apiClient.post<ApercuFormule>("/indicateurs/formules/apercu/", { formule, projet })).data;
 }

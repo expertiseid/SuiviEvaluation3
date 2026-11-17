@@ -4,7 +4,7 @@ from django.db import models
 class ConfigurationTableauDeBord(models.Model):
     """
     Configuration du tableau de bord, commune à tous les utilisateurs
-    (ligne unique, id=1) : blocs masqués et type de chaque graphique.
+    (ligne unique, id=1) : blocs masqués, type de chaque graphique et apparence de chaque bloc.
     Modifiable par l'Administrateur ou un rôle ayant le droit
     « peut_personnaliser_tableau_de_bord » ; les filtres restent propres à
     chaque utilisateur (non enregistrés ici).
@@ -12,6 +12,8 @@ class ConfigurationTableauDeBord(models.Model):
 
     blocs_masques = models.JSONField(default=list, blank=True)
     types_graphiques = models.JSONField(default=dict, blank=True)
+    # Apparence de chaque bloc {clé du bloc : réglages} : titre, légende, couleurs, axes… (voir apparence_valide).
+    apparences = models.JSONField(default=dict, blank=True)
     modifie_par = models.ForeignKey("accounts.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     modifie_le = models.DateTimeField(auto_now=True)
 

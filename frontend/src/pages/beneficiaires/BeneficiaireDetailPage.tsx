@@ -184,6 +184,9 @@ export function BeneficiaireDetailPage() {
               <MapPin size={13} style={{ verticalAlign: -2 }} /> <strong>{voc("Position GPS :")}</strong> {beneficiaire.latitude}, {beneficiaire.longitude}
             </Text>
           )}
+          {beneficiaire.taille_menage != null && (
+            <Text size="sm"><strong>{voc("Taille du ménage :")}</strong> {voc`${beneficiaire.taille_menage} personne(s)`}</Text>
+          )}
         </Stack>
         </div>
         <CarteQr id={beneficiaire.id} identifiant={beneficiaire.identifiant} />

@@ -53,6 +53,8 @@ class Financement(TimestampedModel):
     projet = models.ForeignKey("projects.Projet", on_delete=models.CASCADE, related_name="financements")
     bailleur = models.ForeignKey(Bailleur, on_delete=models.PROTECT, related_name="financements")
     montant_finance = models.DecimalField(max_digits=16, decimal_places=2)
+    # Montant réellement versé par le bailleur au projet (décaissé), rallonges comprises.
+    montant_recu = models.DecimalField(max_digits=16, decimal_places=2, null=True, blank=True)
 
     class Meta:
         constraints = [

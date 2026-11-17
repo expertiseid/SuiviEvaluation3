@@ -310,8 +310,10 @@ function ZoneModal({
   );
   const [latitude, setLatitude] = useState<number | string>(zoneExistante?.latitude ?? "");
   const [longitude, setLongitude] = useState<number | string>(zoneExistante?.longitude ?? "");
+  const [population, setPopulation] = useState<number | string>(zoneExistante?.population ?? "");
 
   function reinitialiser() {
+    setPopulation(zoneExistante?.population ?? "");
     setLatitude(zoneExistante?.latitude ?? "");
     setLongitude(zoneExistante?.longitude ?? "");
     setCode(zoneExistante?.code ?? "");
@@ -342,6 +344,7 @@ function ZoneModal({
             parent: parentId ? Number(parentId) : null,
             latitude: latitude === "" ? null : String(latitude),
             longitude: longitude === "" ? null : String(longitude),
+            population: population === "" ? null : Number(population),
           },
         });
         notifications.show({ message: voc("Zone modifiée"), color: "green" });
@@ -351,6 +354,7 @@ function ZoneModal({
           parent: zoneParent?.id ?? null,
           code: code.trim(),
           nom: nom.trim(),
+          population: population === "" ? null : Number(population),
         });
         notifications.show({ message: voc("Zone ajoutée"), color: "green" });
       }
@@ -394,6 +398,8 @@ function ZoneModal({
             <NumberInput label={voc("Longitude du centre")} description={voc("Facultatif")} decimalScale={6} min={-180} max={180} value={longitude} onChange={setLongitude} />
           </Group>
         )}
+        <NumberInput label={voc("Population")} min={0} allowDecimal={false} thousandSeparator=" " value={population} onChange={setPopulation}
+          description={voc("Recensement ou estimation, facultatif : couverture des bénéficiaires par territoire. Vide : somme des zones qu'elle contient.")} />
         <Group justify="flex-end">
           <Button onClick={handleSave} loading={createZone.isPending || updateZone.isPending}>
             {zoneExistante ? voc("Enregistrer") : voc("Ajouter")}

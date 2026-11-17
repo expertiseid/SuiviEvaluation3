@@ -127,7 +127,39 @@ def test_export_du_tableau_de_bord_en_quatre_formats(client):
     from pptx import Presentation
 
     classeur = load_workbook(io.BytesIO(client.get("/api/v1/dashboard/consolide/export/", {"fichier": "xlsx"}).content))
-    assert [f.title for f in classeur][:3] == ["Synthèse", "Projets", "Répartitions"]
+    assert [f.title for f in classeur][:7] == ["Synthèse", "Projets", "Budget", "Avancement", "Territoires", "Qualité et pilotage", "Répartitions"]
     diapos = Presentation(io.BytesIO(client.get("/api/v1/dashboard/consolide/export/", {"fichier": "pptx"}).content)).slides
     assert any(forme.has_chart for diapo in diapos for forme in diapo.shapes)
     assert client.get("/api/v1/dashboard/consolide/export/", {"fichier": "odt"}).status_code == 400
+
+
+@pytest.mark.django_db
+def test_export_d_un_graphique_en_excel_natif(client):
+    import io
+
+    from openpyxl import load_workbook
+
+    for type_graphique in ("colonnes", "barres", "camembert", "courbes", "colonnes-empilees"):
+        r = client.post("/api/v1/dashboard/graphique/excel/", {
+            "titre": "Budget par projet (FCFA)", "type": type_graphique, "entetes": ["Projet", "Budget"],
+            "lignes": [["A", 100], ["B", "200.50"], ["C", None]],
+        }, format="json")
+        assert r.status_code == 200, type_graphique
+        feuille = load_workbook(io.BytesIO(r.content)).active
+        assert feuille["A4"].value == "A" and feuille["B5"].value == 200.5
+        assert len(feuille._charts) == 1  # graphique natif relié aux cellules
+    assert client.post("/api/v1/dashboard/graphique/excel/", {"titre": "x"}, format="json").status_code == 400
+
+
+@pytest.mark.django_db
+def test_apparence_des_blocs(client):
+    apparence = {"budget-projet": {"titre": "Budgets", "legende": "bas", "couleurs": {"PAAQE": "#ff0000"}, "hauteur": 400,
+                                   "mode": "les_deux", "valeurs": False, "rotation": 45, "palette": "douce"}}
+    r = client.put("/api/v1/dashboard/configuration/", {"apparences": apparence}, format="json")
+    assert r.status_code == 200 and r.data["apparences"] == apparence
+    assert client.get("/api/v1/dashboard/configuration/").data["apparences"]["budget-projet"]["titre"] == "Budgets"
+    for invalide in ({"x": {"couleurs": {"a": "rouge"}}}, {"x": {"hauteur": 5000}}, {"x": {"script": "<b>"}}, {"x": "bleu"}):
+        assert client.put("/api/v1/dashboard/configuration/", {"apparences": invalide}, format="json").status_code == 400
+    # Les autres réglages ne sont pas touchés quand on n'envoie que l'apparence.
+    client.put("/api/v1/dashboard/configuration/", {"types_graphiques": {"pays": "barres"}}, format="json")
+    assert client.get("/api/v1/dashboard/configuration/").data["apparences"] == apparence
