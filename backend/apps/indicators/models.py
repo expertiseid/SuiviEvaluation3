@@ -42,6 +42,9 @@ class Indicateur(TimestampedModel):
     calcul_taux = models.CharField(max_length=12, choices=CalculTaux.choices, default=CalculTaux.CIBLE)
     agregation = models.CharField(max_length=10, choices=Agregation.choices, default=Agregation.SOMME,
                                   help_text="Cumulable (personnes formées…) ou niveau mesuré à chaque saisie (taux, stock…).")
+    # Poids dans le score de performance (apps.dashboard.performance) ; vide : poids 1.
+    poids = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True,
+                                help_text="Importance de l'indicateur dans le score de performance (vide : 1).")
     # Indicateur calculé (apps.indicators.formules) : sa valeur vient de la formule, aucune saisie.
     formule = models.JSONField(null=True, blank=True, default=None)
 

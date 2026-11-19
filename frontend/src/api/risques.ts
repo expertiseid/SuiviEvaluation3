@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
-import type { EvaluationRisque, Paginated, Risque } from "../types";
+import type { EvaluationRisque, MesureRisque, Paginated, Risque } from "../types";
 
 export function useRisques(projetId: number) {
   return useQuery({
@@ -41,6 +41,24 @@ export function useSupprimerEvaluationRisque() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => apiClient.delete(`/evaluations-risques/${id}/`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["risques"] }),
+  });
+}
+
+/** Mesure d'atténuation d'un risque : création, changement de statut, suppression. */
+export function useEnregistrerMesureRisque() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...payload }: Partial<MesureRisque>) =>
+      (id ? await apiClient.patch<MesureRisque>(`/mesures-risques/${id}/`, payload) : await apiClient.post<MesureRisque>("/mesures-risques/", payload)).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["risques"] }),
+  });
+}
+
+export function useSupprimerMesureRisque() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => apiClient.delete(`/mesures-risques/${id}/`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["risques"] }),
   });
 }

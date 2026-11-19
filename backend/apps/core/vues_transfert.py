@@ -1,5 +1,7 @@
 """
-Sauvegarde complète et reprise d'un espace (transfert.py), réservées à l'Administrateur.
+Sauvegarde complète et reprise d'un espace (transfert.py) : l'Administrateur, ou l'utilisateur qu'il autorise
+(User.export_global, User.import_global). Remplacer tout l'espace et retirer des données restent réservés à
+l'Administrateur.
 
 Le fichier de reprise peut dépasser la taille maximale d'un envoi (100 Mo derrière le serveur web) :
 l'écran l'envoie par morceaux (POST transfert/morceau/), puis demande la reprise (POST transfert/reprendre/).
@@ -27,11 +29,12 @@ from rest_framework.decorators import api_view, parser_classes, permission_class
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 
+from apps.accounts.constants import ROLE_ADMIN
 from apps.organisations import contexte
 
 from . import transfert
 from .audit import A, auditer
-from .permissions import IsAdmin
+from .permissions import IsAdmin, PeutExporterGlobal, PeutImporterGlobal
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +107,7 @@ def _espace_de_demo() -> bool:
 
 
 @api_view(["GET"])
-@permission_classes([IsAdmin])
+@permission_classes([PeutExporterGlobal])
 def exporter(request):
     """
     Télécharge la sauvegarde de l'espace (un fichier zip) : complète, ou limitée à des projets
@@ -184,7 +187,7 @@ def retirer(request):
 
 
 @api_view(["POST"])
-@permission_classes([IsAdmin])
+@permission_classes([PeutImporterGlobal])
 @parser_classes([MultiPartParser])
 def recevoir_morceau(request):
     """Ajoute un morceau au fichier de reprise en cours d'envoi (le premier, numéro 0, le recommence)."""
@@ -203,7 +206,7 @@ def recevoir_morceau(request):
 
 
 @api_view(["POST"])
-@permission_classes([IsAdmin])
+@permission_classes([PeutImporterGlobal])
 def reprendre(request):
     """
     Analyse le fichier envoyé (sans confirmation : renvoie son manifeste), ou, avec la confirmation du
@@ -212,6 +215,9 @@ def reprendre(request):
     mode = request.data.get("mode") or "remplacer"
     if mode not in CONFIRMATIONS:
         return Response({"detail": "Mode de reprise inconnu."}, status=status.HTTP_400_BAD_REQUEST)
+    if mode == "remplacer" and request.user.role != ROLE_ADMIN:
+        return Response({"detail": "Remplacer tout l'espace est réservé à l'administrateur : choisissez « Ajouter »."},
+                        status=status.HTTP_403_FORBIDDEN)
     try:
         cible = _fichier_envoi(request.data.get("identifiant", ""))
     except ValueError:
@@ -291,7 +297,7 @@ def reprendre(request):
 
 
 @api_view(["GET"])
-@permission_classes([IsAdmin])
+@permission_classes([PeutImporterGlobal])
 def suivre_reprise(request):
     """Avancement de la reprise lancée (?identifiant=) : en cours, terminée (avec son compte rendu) ou en erreur."""
     try:

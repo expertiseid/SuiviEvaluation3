@@ -1,11 +1,22 @@
 import { useEffect, useState, type ReactNode } from "react";
 import {
-  ActionIcon, Button, ColorInput, Divider, Drawer, Grid, Group, NumberInput, Paper, ScrollArea, SegmentedControl, Select,
-  Stack, Switch, Text, TextInput, Title, Tooltip,
+  ActionIcon, Button, Divider, Drawer, Grid, Group, NumberInput, Paper, ScrollArea, SegmentedControl, Select,
+  SimpleGrid, Stack, Switch, Text, TextInput, Title, Tooltip, UnstyledButton,
 } from "@mantine/core";
 import { Redo2, RotateCcw, Undo2 } from "lucide-react";
 import { ApparenceContext, PALETTES, type ApparenceBloc, type NomPalette } from "../../utils/apparence";
 import { voc } from "../../utils/vocabulaire";
+import { SelecteurCouleur } from "../common/SelecteurCouleur";
+
+/** Palettes proposées, présentées avec leurs couleurs pour un choix au clic. */
+const CHOIX_PALETTES = (): { valeur: NomPalette; libelle: string }[] => [
+  { valeur: "defaut", libelle: voc("Couleurs d'origine") },
+  { valeur: "vive", libelle: voc("Vive") },
+  { valeur: "douce", libelle: voc("Douce") },
+  { valeur: "bleus", libelle: voc("Nuances de bleu") },
+  { valeur: "verts", libelle: voc("Nuances de vert") },
+  { valeur: "contraste", libelle: voc("Contrastée (lisible par tous)") },
+];
 
 /** Supprime les réglages vides : seul ce qui diffère de l'affichage par défaut est enregistré. */
 function nettoyer(a: ApparenceBloc): ApparenceBloc {
@@ -23,13 +34,15 @@ function nettoyer(a: ApparenceBloc): ApparenceBloc {
  * valeurs, palette et couleur de chaque série ou catégorie, axes, inclinaison des libellés, hauteur,
  * taille du texte, format des nombres, tri. Annuler, rétablir, revenir à l'affichage par défaut.
  */
-export function ApparenceBlocDrawer({ opened, onClose, titreDefaut, initiale, noms, apercu, onEnregistrer, enregistrement }: {
+export function ApparenceBlocDrawer({ opened, onClose, titreDefaut, initiale, noms, avecGraphique = true, apercu, onEnregistrer, enregistrement }: {
   opened: boolean;
   onClose: () => void;
   titreDefaut: string;
   initiale: ApparenceBloc;
   /** Séries et catégories du bloc, pour choisir leur couleur. */
   noms: string[];
+  /** Bloc fait de chiffres et de tableaux (sans graphique) : seuls le titre et le sous-titre se règlent. */
+  avecGraphique?: boolean;
   apercu: () => ReactNode;
   onEnregistrer: (apparence: ApparenceBloc) => void;
   enregistrement: boolean;
@@ -78,6 +91,11 @@ export function ApparenceBlocDrawer({ opened, onClose, titreDefaut, initiale, no
               <Divider label={voc("Textes")} labelPosition="left" />
               <TextInput label={voc("Titre")} placeholder={titreDefaut} value={a.titre ?? ""} onChange={(e) => changer({ titre: e.currentTarget.value })} />
               <TextInput label={voc("Sous-titre")} value={a.sous_titre ?? ""} onChange={(e) => changer({ sous_titre: e.currentTarget.value })} />
+              {!avecGraphique ? (
+                <Text size="sm" c="dimmed">
+                  {voc("Ce bloc est fait de chiffres et de tableaux, sans graphique : seuls son titre et son sous-titre se personnalisent.")}
+                </Text>
+              ) : (<>
               <Group grow>
                 <TextInput label={voc("Titre de l'axe des catégories")} value={a.axe_x ?? ""} onChange={(e) => changer({ axe_x: e.currentTarget.value })} />
                 <TextInput label={voc("Titre de l'axe des valeurs")} value={a.axe_y ?? ""} onChange={(e) => changer({ axe_y: e.currentTarget.value })} />
@@ -118,23 +136,38 @@ export function ApparenceBlocDrawer({ opened, onClose, titreDefaut, initiale, no
               </Group>
 
               <Divider label={voc("Couleurs")} labelPosition="left" />
-              <Select label={voc("Palette")} value={a.palette ?? "defaut"} allowDeselect={false}
-                onChange={(v) => changer({ palette: v === "defaut" ? undefined : v as NomPalette })}
-                data={[{ value: "defaut", label: voc("Couleurs d'origine") }, { value: "vive", label: voc("Vive") }, { value: "douce", label: voc("Douce") },
-                  { value: "bleus", label: voc("Nuances de bleu") }, { value: "verts", label: voc("Nuances de vert") },
-                  { value: "contraste", label: voc("Contrastée (lisible par tous)") }]} />
-              {a.palette && a.palette !== "defaut" && (
-                <Group gap={4}>{PALETTES[a.palette].map((c) => <div key={c} style={{ width: 18, height: 18, borderRadius: 4, background: c }} />)}</Group>
-              )}
+              <div>
+                <Text size="sm" fw={500} mb={4}>{voc("Palette")}</Text>
+                <SimpleGrid cols={2} spacing={6}>
+                  {CHOIX_PALETTES().map(({ valeur, libelle }) => {
+                    const choisie = (a.palette ?? "defaut") === valeur;
+                    return (
+                      <UnstyledButton key={valeur} onClick={() => changer({ palette: valeur === "defaut" ? undefined : valeur })} aria-pressed={choisie}
+                        style={{ padding: 6, borderRadius: 6, border: choisie ? "2px solid var(--mantine-color-teal-6)" : "1px solid var(--mantine-color-gray-3)" }}>
+                        <Text size="xs" fw={choisie ? 700 : 500} mb={4}>{libelle}</Text>
+                        <Group gap={2} wrap="nowrap">
+                          {valeur === "defaut"
+                            ? <Text size="xs" c="dimmed">{voc("Celles prévues pour ce bloc")}</Text>
+                            : PALETTES[valeur].map((c) => <div key={c} style={{ flex: 1, height: 14, borderRadius: 2, background: c }} />)}
+                        </Group>
+                      </UnstyledButton>
+                    );
+                  })}
+                </SimpleGrid>
+              </div>
               {noms.length > 0 && (
-                <Stack gap={6}>
-                  <Text size="xs" c="dimmed">{voc("Couleur imposée (laisser vide pour garder la palette) :")}</Text>
+                <Stack gap={8}>
+                  <Text size="xs" c="dimmed">{voc("Couleur de chaque élément (pastille barrée : garder la couleur de la palette) :")}</Text>
                   {noms.slice(0, 40).map((nom) => (
-                    <ColorInput key={nom} size="xs" label={nom} value={a.couleurs?.[nom] ?? ""} format="hex" placeholder={voc("Palette")}
-                      onChangeEnd={(v) => couleur(nom, v)} />
+                    <div key={nom}>
+                      <Text size="sm" mb={4}>{nom}</Text>
+                      <SelecteurCouleur taille={20} value={a.couleurs?.[nom] ?? ""} onChange={(v) => couleur(nom, v)}
+                        libelleVide={voc("Couleur de la palette")} />
+                    </div>
                   ))}
                 </Stack>
               )}
+              </>)}
             </Stack>
           </ScrollArea.Autosize>
         </Grid.Col>

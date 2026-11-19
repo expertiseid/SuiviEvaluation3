@@ -73,6 +73,11 @@ class SaisieFermeeError(PermissionDenied):
     pass
 
 
+class LectureSeuleError(PermissionDenied):
+    def __init__(self, projet):
+        super().__init__(f"Vous avez accès au projet « {projet.code} » en lecture seule : vous ne pouvez rien y modifier.")
+
+
 def utilisateur_courant():
     """Utilisateur de la requête en cours (requête gardée par le middleware de simple_history)."""
     from simple_history.models import HistoricalRecords
@@ -101,6 +106,10 @@ def _verifier(instance):
     utilisateur = utilisateur_courant()
     if utilisateur is not None and utilisateur.role == ROLE_ADMIN:
         return  # l'administrateur peut toujours corriger
+    from .droits import droits_projet, ecriture_deja_accordee
+
+    if utilisateur is not None and not ecriture_deja_accordee() and not droits_projet(utilisateur, projet.id).ecriture:
+        raise LectureSeuleError(projet)
     etat = etat_saisie(projet)
     if not etat.ouverte and (etat.perimetre == PerimetreFermeture.TOUT or est_une_realisation(instance)):
         raise SaisieFermeeError(f"Projet « {projet.code} » : {etat.message}")
@@ -119,6 +128,11 @@ def _avant_enregistrement_projet(sender, instance, **kwargs):
     ancien = sender.objects.filter(pk=instance.pk).values_list("statut", flat=True).first()
     if ancien == sender.Statut.CLOTURE and instance.statut == sender.Statut.CLOTURE:
         raise ProjetClotureError(instance)
+    from .droits import droits_projet, ecriture_deja_accordee
+
+    utilisateur = utilisateur_courant()
+    if utilisateur is not None and not ecriture_deja_accordee() and not droits_projet(utilisateur, instance.pk).ecriture:
+        raise LectureSeuleError(instance)
 
 
 def connecter():
@@ -129,13 +143,15 @@ def connecter():
     from apps.suivi.models import PeriodePlanification, PointSuivi, TranchePlanifiee
 
     from .models import (
-        Activite, EvaluationRisque, JalonLivrable, NiveauActivite, PartenaireProjet, Projet, Risque, SousActivite, TauxManuel,
+        Activite, Apprentissage, DocumentObligatoire, EvaluationRisque, JalonLivrable, MesureRisque, NiveauActivite,
+        PartenaireProjet, Projet, RapportProjet, Recommandation, Risque, SousActivite, TauxManuel,
     )
 
     modeles = (
         Activite, NiveauActivite, SousActivite, JalonLivrable, TauxManuel, PointSuivi, PeriodePlanification,
         TranchePlanifiee, Indicateur, ValeurIndicateur, ParticipationProjet, Financement, Document, Dossier,
-        PartenaireProjet, RallongeFinancement, Risque, EvaluationRisque,
+        PartenaireProjet, RallongeFinancement, Risque, EvaluationRisque, MesureRisque, RapportProjet, Recommandation,
+        Apprentissage, DocumentObligatoire,
     )
     for modele in modeles:
         pre_save.connect(_avant_enregistrement, sender=modele, dispatch_uid=f"verrou_save_{modele.__name__}")

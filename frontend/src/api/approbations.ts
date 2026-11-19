@@ -11,10 +11,25 @@ export function useApprobations() {
 
 /** Une décision change les totaux, les taux et la planification : tout ce qui en dépend est rechargé. */
 function apresDecision(queryClient: ReturnType<typeof useQueryClient>) {
-  queryClient.invalidateQueries({ queryKey: ["approbations"] });
-  queryClient.invalidateQueries({ queryKey: ["projets"] });
-  queryClient.invalidateQueries({ queryKey: ["suivi-dashboard"] });
-  queryClient.invalidateQueries({ queryKey: ["activite"] });
+  // Une modification approuvée peut toucher n'importe quel écran (bénéficiaires, indicateurs…) : tout est rechargé.
+  queryClient.invalidateQueries();
+}
+
+/** Onglets dont toute création, modification ou suppression doit être approuvée (sauf par l'Administrateur). */
+export function useReglagesApprobation() {
+  return useQuery({
+    queryKey: ["approbations", "reglages"],
+    queryFn: async () => (await apiClient.get<{ modules_a_approuver: string[] }>("/approbations/reglages/")).data,
+  });
+}
+
+export function useEnregistrerReglagesApprobation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (modules: string[]) =>
+      (await apiClient.put("/approbations/reglages/", { modules_a_approuver: modules })).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["approbations", "reglages"] }),
+  });
 }
 
 export function useTraiterSaisie() {

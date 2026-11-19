@@ -85,7 +85,7 @@ def _objet(modele, valeur, champ):
 
 @transaction.atomic
 def classer(dossier, auteur, donnees):
-    """Type, catégorie, priorité, projet. Une catégorie sensible fait passer le dossier au circuit confidentiel."""
+    """Type, catégorie, priorité, projet, zone. Une catégorie sensible fait passer le dossier au circuit confidentiel."""
     _ouvert(dossier)
     changements = {}
     for champ, modele in (("type_retour", TypeRetour), ("categorie", Categorie), ("priorite", Priorite)):
@@ -112,6 +112,15 @@ def classer(dossier, auteur, donnees):
         if dossier.projet != projet:
             changements["projet"] = [dossier.projet.code if dossier.projet else "", projet.code if projet else ""]
             dossier.projet = projet
+    if "zone" in donnees:
+        from .reception import _zone
+
+        zone = _zone(donnees["zone"])
+        if donnees["zone"] not in (None, "") and zone is None:
+            raise ValidationError({"zone": v("Zone inconnue.")})
+        if dossier.zone != zone:
+            changements["zone"] = [dossier.zone.nom if dossier.zone else "", zone.nom if zone else ""]
+            dossier.zone = zone
     if not changements:
         return dossier
     journaliser(dossier, A.CLASSIFICATION, auteur, details=changements)

@@ -14,10 +14,12 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from apps.core.langues import dans_la_langue_demandee
 from apps.core.vocabulaire import v
 
 from .contenu import CHAPITRES, MODULES, PAR_CODE, SEUIL_REUSSITE
 from .models import Attestation, LeconTerminee, TentativeQuiz
+from .traduction import traduire_contenu
 
 
 def acces_ouvert() -> bool:
@@ -61,14 +63,16 @@ def _etat(utilisateur):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@dans_la_langue_demandee
 def sommaire(request):
     """Les modules et la progression de l'utilisateur ; acces=False dans la démonstration."""
+    modules_traduits = traduire_contenu(MODULES)  # dans la langue de l'utilisateur
     if not acces_ouvert():
         return Response({"acces": False, "modules": [{"code": m["code"], "titre": m["titre"], "description": m["description"],
-                                                      "icone": m["icone"], "lecons": len(m["lecons"])} for m in MODULES]})
+                                                      "icone": m["icone"], "lecons": len(m["lecons"])} for m in modules_traduits]})
     terminees, reussis, meilleurs = _etat(request.user)
     modules = []
-    for m in MODULES:
+    for m in modules_traduits:
         lecons = [{"code": le["code"], "titre": le["titre"], "duree": le["duree"], "terminee": _cle(m, le) in terminees} for le in m["lecons"]]
         modules.append({
             "code": m["code"], "titre": m["titre"], "description": m["description"], "icone": m["icone"], "lecons": lecons,
@@ -86,6 +90,7 @@ def sommaire(request):
 
 @api_view(["GET", "POST", "DELETE"])
 @permission_classes([IsAuthenticated])
+@dans_la_langue_demandee
 def lecon(request, module, code):
     """GET : contenu de la leçon ; POST : la marquer terminée ; DELETE : la remettre à faire."""
     _verifier_acces()
@@ -100,10 +105,11 @@ def lecon(request, module, code):
     elif request.method == "DELETE":
         LeconTerminee.objects.filter(utilisateur=request.user, lecon=cle).delete()
     rang = m["lecons"].index(le)
+    le = traduire_contenu(le)
     blocs = [{**b, "debut": CHAPITRES[b["chapitre"]][0], "fin": CHAPITRES[b["chapitre"]][1]} if b["type"] == "video" else b
              for b in le["blocs"]]
     return Response({
-        "module": {"code": m["code"], "titre": m["titre"]}, "code": le["code"], "titre": le["titre"], "duree": le["duree"],
+        "module": {"code": m["code"], "titre": traduire_contenu(m["titre"])}, "code": le["code"], "titre": le["titre"], "duree": le["duree"],
         "objectif": le["objectif"], "blocs": blocs,
         "terminee": LeconTerminee.objects.filter(utilisateur=request.user, lecon=cle).exists(),
         "precedente": m["lecons"][rang - 1]["code"] if rang > 0 else None,
@@ -113,14 +119,15 @@ def lecon(request, module, code):
 
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
+@dans_la_langue_demandee
 def quiz(request, module):
     """GET : les questions (sans les réponses) ; POST {reponses: [indices]} : correction et résultat."""
     _verifier_acces()
     m = _module(module)
     questions = m["quiz"]
     if request.method == "GET":
-        return Response({"module": {"code": m["code"], "titre": m["titre"]}, "seuil": SEUIL_REUSSITE,
-                         "questions": [{"question": q["question"], "choix": q["choix"]} for q in questions]})
+        return Response({"module": {"code": m["code"], "titre": traduire_contenu(m["titre"])}, "seuil": SEUIL_REUSSITE,
+                         "questions": [{"question": q["question"], "choix": q["choix"]} for q in traduire_contenu(questions)]})
     reponses = request.data.get("reponses")
     if not isinstance(reponses, list) or len(reponses) != len(questions):
         raise ValidationError({"reponses": v("Répondez à toutes les questions.")})
@@ -128,7 +135,7 @@ def quiz(request, module):
     for q, r in zip(questions, reponses):
         juste = r == q["bonne"]
         score += juste
-        corrections.append({"juste": juste, "bonne": q["bonne"], "explication": q["explication"]})
+        corrections.append({"juste": juste, "bonne": q["bonne"], "explication": traduire_contenu(q["explication"])})
     reussi = score >= SEUIL_REUSSITE
     TentativeQuiz.objects.create(utilisateur=request.user, module=m["code"], score=score, total=len(questions), reussi=reussi, reponses=reponses)
     return Response({"score": score, "total": len(questions), "reussi": reussi, "seuil": SEUIL_REUSSITE, "corrections": corrections})
@@ -136,6 +143,7 @@ def quiz(request, module):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@dans_la_langue_demandee
 def attestation(request):
     """Attestation PDF, une fois tous les quiz réussis (délivrée une fois, téléchargeable à nouveau)."""
     from weasyprint import HTML
@@ -152,7 +160,17 @@ def attestation(request):
     nom = escape(request.user.get_full_name() or request.user.username)
     organisation = escape(IdentiteOrganisation.courante().nom or "")
     date = attestation.delivree_le.strftime("%d/%m/%Y")
-    modules = "".join(f"<li>{escape(m['titre'])}</li>" for m in MODULES)
+    modules = "".join(f"<li>{escape(traduire_contenu(m['titre']))}</li>" for m in MODULES)
+    from apps.core.langues import langue_active
+
+    sens = "rtl" if langue_active() == "ar" else "ltr"
+    textes = {
+        "titre": escape(v("Attestation de formation")), "atteste": escape(v("Expertise-ID atteste que")),
+        "organisation": escape(v("de l'organisation {0}, ")).format(f"<b>{organisation}</b>") if organisation else "",
+        "suivi": escape(v("a suivi le cours en ligne de la plateforme Expertise-ID Monitora et réussi le quiz de chacun de ses {0} modules :")
+                        .format(len(MODULES))),
+        "delivree": escape(v("Délivrée le {0}").format(date)),
+    }
     html = f"""<html><head><meta charset="utf-8"><style>
       @page {{ size: A4 landscape; margin: 0; }}
       body {{ font-family: Helvetica, Arial, sans-serif; margin: 0; color: #1f2a4a; }}
@@ -163,15 +181,14 @@ def attestation(request):
       p {{ font-size: 12.5pt; line-height: 1.5; margin: 2mm 0; }}
       ul {{ columns: 2; font-size: 11pt; margin: 4mm 0; }}
       .bas {{ position: absolute; bottom: 14mm; left: 22mm; right: 22mm; font-size: 10pt; color: #5d6b7a; display: flex; justify-content: space-between; }}
-    </style></head><body><div class="cadre">
+    </style></head><body dir="{sens}"><div class="cadre">
       <div class="haut">EXPERTISE-ID MONITORA</div>
-      <h1>Attestation de formation</h1>
-      <p>Expertise-ID atteste que</p>
+      <h1>{textes["titre"]}</h1>
+      <p>{textes["atteste"]}</p>
       <div class="nom">{nom}</div>
-      <p>{('de l\'organisation <b>' + organisation + '</b>, ') if organisation else ''}a suivi le cours en ligne de la plateforme
-      Expertise-ID Monitora et réussi le quiz de chacun de ses {len(MODULES)} modules :</p>
+      <p>{textes["organisation"]}{textes["suivi"]}</p>
       <ul>{modules}</ul>
-      <div class="bas"><span>Délivrée le {date}</span><span>N° {attestation.numero}</span><span>Expertise-ID · www.expertise-id.com</span></div>
+      <div class="bas"><span>{textes["delivree"]}</span><span>N° {attestation.numero}</span><span>Expertise-ID · www.expertise-id.com</span></div>
     </div></body></html>"""
     reponse = HttpResponse(HTML(string=html).write_pdf(), content_type="application/pdf")
     reponse["Content-Disposition"] = f'attachment; filename="attestation_{attestation.numero}.pdf"'

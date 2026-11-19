@@ -27,6 +27,7 @@ import {
   useUpdateCadreStrategique,
 } from "../../api/strategy";
 import { useUtilisateurs } from "../../api/accounts";
+import { useAuth } from "../../auth/useAuth";
 import { useCreatePartenaire } from "../../api/referentiels";
 import { usePartiesPrenantes, useStructures, useTousPartenaires } from "../../api/organisation";
 import { useNiveauxAdministratifs, useZones } from "../../api/geo";
@@ -122,6 +123,8 @@ export function DocumentModal({
   const [partiesIds, setPartiesIds] = useState<string[]>((c?.parties_prenantes ?? []).map(String));
   const [parentId, setParentId] = useState<string | null>(c?.document_parent ? String(c.document_parent) : null);
   const [elementId, setElementId] = useState<string | null>(c?.element_parent ? String(c.element_parent) : null);
+  const { user } = useAuth();
+  const [approbationModifs, setApprobationModifs] = useState(c?.approbation_modifications ?? false);
   const [secondairesIds, setSecondairesIds] = useState<string[]>((c?.elements_parents_secondaires ?? []).map(String));
 
   const { data: structures } = useStructures();
@@ -169,6 +172,8 @@ export function DocumentModal({
       document_parent: parentId ? Number(parentId) : null,
       element_parent: parentId && elementId ? Number(elementId) : null,
       elements_parents_secondaires: parentId ? secondairesIds.filter((id) => id !== elementId).map(Number) : [],
+      // Circuit d'approbation : réglé par l'Administrateur seul (le serveur le vérifie).
+      ...(user?.role === "ADMIN" && { approbation_modifications: approbationModifs }),
       ...(fiche && {
         code: code.trim(),
         fonds_propres: String(fondsPropres),
@@ -277,6 +282,16 @@ export function DocumentModal({
     </>
   );
 
+  // Circuit d'approbation des modifications : réglé par l'Administrateur seul.
+  const caseApprobation = user?.role === "ADMIN" && (
+    <Checkbox
+      label={voc("Les modifications de ce document doivent être approuvées")}
+      description={voc("Modifications du document, ajouts, modifications et suppressions de ses éléments (piliers, axes…) et de leurs appréciations : pour qui ne peut pas les approuver, elles deviennent des demandes, appliquées une fois approuvées (écran Approbations).")}
+      checked={approbationModifs}
+      onChange={(e) => setApprobationModifs(e.currentTarget.checked)}
+    />
+  );
+
   return (
     <Modal
       opened={opened}
@@ -289,6 +304,7 @@ export function DocumentModal({
           <TextInput label={voc("Nom")} description={voc("Ex : « Cadre stratégique 2022-2026 »")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} required />
           <Textarea label={voc("Description")} minRows={2} value={description} onChange={(e) => setDescription(e.currentTarget.value)} />
           {organisation}
+          {caseApprobation}
         </Stack>
       ) : (
         <Tabs value={onglet} onChange={setOnglet}>
@@ -470,6 +486,7 @@ export function DocumentModal({
           <Tabs.Panel value="rattachement" pt="sm">
             <Stack gap="sm">
               {rattachement}
+              {caseApprobation}
               <Textarea
                 label={voc("Éléments de capitalisation")}
                 description={voc("Leçons apprises, bonnes pratiques.")}

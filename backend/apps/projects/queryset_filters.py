@@ -15,6 +15,7 @@ def visible_projets_ids(user):
     if has_global_visibility(user):
         return Projet.objects.values_list("id", flat=True)
 
+    # Plus les projets sur lesquels il a un droit précis (apps.projects.droits).
     return Projet.objects.filter(
-        Q(utilisateurs_affectes=user) | Q(zones__in=user.zones_affectees.all())
+        Q(utilisateurs_affectes=user) | Q(zones__in=user.zones_affectees.all()) | Q(droits_utilisateurs__utilisateur=user)
     ).distinct().values_list("id", flat=True)

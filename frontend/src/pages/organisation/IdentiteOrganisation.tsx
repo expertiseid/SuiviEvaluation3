@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Alert, Box, Button, Card, FileInput, Group, Image, NumberInput, Stack, Text, TextInput } from "@mantine/core";
+import { Alert, Box, Button, Card, FileInput, Group, Image, NumberInput, Stack, Switch, Text, TextInput } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { ImageUp, Trash2 } from "lucide-react";
 import { useEnregistrerIdentite, useIdentiteOrganisation } from "../../api/identite";
@@ -12,6 +12,8 @@ export function IdentiteOrganisation() {
   const enregistrer = useEnregistrerIdentite();
   const [nom, setNom] = useState("");
   const [inactivite, setInactivite] = useState<number | string>(30);
+  const [bloquerCaptures, setBloquerCaptures] = useState(false);
+  useEffect(() => { setBloquerCaptures(!!identite?.bloquer_captures); }, [identite?.bloquer_captures]);
   const [fichier, setFichier] = useState<File | null>(null);
   const [apercu, setApercu] = useState<string | null>(null);
   useEffect(() => { setNom(identite?.nom ?? ""); }, [identite?.nom]);
@@ -26,7 +28,7 @@ export function IdentiteOrganisation() {
   const sauver = async (options: { supprimerLogo?: boolean } = {}) => {
     try {
       await enregistrer.mutateAsync({
-        nom, logo: fichier, ...options,
+        nom, logo: fichier, bloquerCaptures, ...options,
         ...(identite?.session_inactivite_min ? { sessionInactiviteMin: Number(inactivite) } : {}),
       });
       setFichier(null);
@@ -70,6 +72,12 @@ export function IdentiteOrganisation() {
             onChange={setInactivite}
           />
         )}
+        <Switch
+          checked={bloquerCaptures}
+          onChange={(e) => setBloquerCaptures(e.currentTarget.checked)}
+          label={voc("Bloquer les captures d'écran")}
+          description={voc("Pour tous les utilisateurs sauf l'administrateur : filigrane à leur nom sur toutes les pages, écran masqué pendant une capture ou hors de la fenêtre, impression, copie et clic droit bloqués. Dans la fiche d'un utilisateur (Utilisateurs), vous pouvez les bloquer ou les permettre pour lui seul. Aucun site ne peut empêcher totalement une capture ou une photo de l'écran : le filigrane permet de retrouver qui l'a faite.")}
+        />
         {fichier && <Alert color="blue" p="xs">{voc("Aperçu : cliquez sur « Enregistrer » pour l'appliquer.")}</Alert>}
         <Group justify="flex-end">
           <Button onClick={() => sauver()} loading={enregistrer.isPending}>{voc("Enregistrer")}</Button>

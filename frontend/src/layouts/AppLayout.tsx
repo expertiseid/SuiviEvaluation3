@@ -17,6 +17,7 @@ import {
   MessagesSquare,
   ImagePlus,
   Trash2,
+  DatabaseBackup,
   PenLine,
   RotateCcw,
   Languages,
@@ -77,6 +78,8 @@ import { useTypesDocuments } from "../api/strategy";
 import { routeMaillon } from "../utils/chaineDocuments";
 import { ACCUEIL_APP } from "../utils/accueil";
 import { FenetreStockagePlein } from "../components/common/FenetreStockagePlein";
+import { ProtectionCaptures } from "../components/common/ProtectionCaptures";
+import { RechercheGlobale } from "../components/common/RechercheGlobale";
 import { BandeauAbonnement } from "../components/common/BandeauAbonnement";
 
 type NavItem = { to: string; label: string; icon: LucideIcon };
@@ -100,6 +103,8 @@ const ITEMS_PRINCIPAUX: NavItem[] = [
   { to: "/formation", label: voc("Formation"), icon: GraduationCap },
   // Sous les modules : dossiers et documents supprimés (droits du module Documents).
   { to: "/corbeille", label: voc("Corbeille"), icon: Trash2 },
+  // Sauvegarde et reprise de l'espace : visible de tous, utilisable par l'Administrateur ou sur son autorisation.
+  { to: "/export-global", label: voc("Export et import global"), icon: DatabaseBackup },
 ];
 
 const ITEMS_ADMIN: NavItem[] = [
@@ -380,6 +385,9 @@ export function AppLayout() {
   const itemsPrincipaux = ITEMS_PRINCIPAUX.flatMap((item) =>
     item.to === "/strategie" ? [premierMaillon ? { ...item, label: voc(premierMaillon) } : item, ...itemsMaillons] : [item]);
 
+  const itemsVisibles = itemsPrincipaux
+    .filter((item) => !estMasque(item.to.startsWith("/strategie") ? "/strategie" : item.to === "/corbeille" ? "/documents" : item.to));
+
   const surTableauDeBord = pathname === ACCUEIL_APP;
   const afficherBandeau = surTableauDeBord && !!echeances && echeances.length > 0;
 
@@ -469,10 +477,11 @@ export function AppLayout() {
 
       <AppShell.Navbar p="xs" bg="gray.0">
         <ScrollArea>
+          <RechercheGlobale onglets={[avecLibelle(ITEM_ACCUEIL), ...itemsVisibles.map((item) => item.to.startsWith("/strategie/type/") ? item : avecLibelle(item)),
+            ...(user?.role === "ADMIN" ? ITEMS_ADMIN.map(avecLibelle) : [])]} auChoix={() => { if (opened) toggle(); }} />
           {renderNavLink(avecLibelle(ITEM_ACCUEIL), pathname)}
           <Divider my={4} />
-          {itemsPrincipaux
-            .filter((item) => !estMasque(item.to.startsWith("/strategie") ? "/strategie" : item.to === "/corbeille" ? "/documents" : item.to))
+          {itemsVisibles
             .map((item) => renderNavLink(item.to.startsWith("/strategie/type/") ? item : avecLibelle(item), pathname))}
           {user?.role === "ADMIN" && (
             <>
@@ -493,6 +502,7 @@ export function AppLayout() {
 
       <AppShell.Main bg="gray.0" style={{ display: "flex", flexDirection: "column" }}>
         <FenetreStockagePlein />
+        <ProtectionCaptures />
         <BandeauAbonnement />
         {user?.est_demo && (
           <Alert color="orange" variant="light" mb="md" icon={<MonitorPlay size={18} />} title={voc("Mode démonstration")}>

@@ -43,3 +43,23 @@ def test_avancement_et_retards():
     assert a["jalons"] == {"total": 2, "atteints": 1, "part_atteints": 50.0, "en_retard": 1}
     assert [r["libelle"] for r in a["activites_en_retard"]] == ["C"] and a["activites_en_retard"][0]["jours"] == 30
     assert a["par_projet"][0]["code"] == "AV-1" and a["par_projet"][0]["en_retard"] == 1
+
+
+@pytest.mark.django_db
+def test_activites_suspendues_et_annulees():
+    """Annulée : retirée des activités prévues, des retards et des taux ; suspendue : toujours prévue, comptée à part."""
+    from .taux import ArbreTaux
+
+    projet = Projet.objects.create(nom="P", code="AV-2", date_debut="2026-01-01", date_fin="2027-12-31")
+    Activite.objects.create(projet=projet, libelle="Faite", statut="REALISEE", date_fin=J(2026, 3, 31), methode_calcul="BINAIRE")
+    Activite.objects.create(projet=projet, libelle="Suspendue", statut="SUSPENDUE", date_fin=J(2026, 4, 30), methode_calcul="BINAIRE")
+    annulee = Activite.objects.create(projet=projet, libelle="Annulée", statut="ANNULEE", date_fin=J(2026, 4, 30),
+                                      methode_calcul="BINAIRE")
+
+    a = avancement([projet.id], aujourd_hui=AUJOURD_HUI)
+    assert (a["prevues"], a["suspendues"], a["annulees"], a["terminees"]) == (2, 1, 1, 1)
+    assert (a["taux_achevement"], a["en_retard"], a["demarrees"]) == (50.0, 1, 1)
+    assert [r["libelle"] for r in a["activites_en_retard"]] == ["Suspendue"]
+    assert not annulee.alerte_retard
+    # Taux du projet : moyenne de « Faite » (100 %) et « Suspendue » (0 %), sans l'annulée.
+    assert ArbreTaux(projet).taux_projet().taux == 50.0

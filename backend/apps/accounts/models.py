@@ -58,6 +58,39 @@ class User(AbstractUser):
         help_text="Droits de cet utilisateur module par module ({clé: MASQUE, LECTURE ou ECRITURE}, voir "
         "apps.core.modules) ; un module absent suit le niveau d'accès. Sans effet pour un Administrateur.",
     )
+    class HorsDroitsPrecis(models.TextChoices):
+        GLOBAL = "GLOBAL", "Ses droits globaux (niveau d'accès et rôle)"
+        LECTURE = "LECTURE", "Lecture seule, sans approbation"
+
+    hors_droits_precis = models.CharField(
+        max_length=10, choices=HorsDroitsPrecis.choices, default=HorsDroitsPrecis.GLOBAL,
+        help_text="Projets, stratégies et éléments sans droit précis (apps.projects.droits) : droits globaux, ou "
+        "lecture seule sans approbation.",
+    )
+    # Approbation de tout ce que saisit cet utilisateur (apps.projects.approbation), quels que soient les projets
+    # et stratégies : réalisations, changements de planification et modifications des stratégies.
+    saisies_a_approuver = models.BooleanField(
+        default=False, help_text="Tout ce qu'il renseigne doit être approuvé avant de compter ou de s'appliquer.")
+    modules_a_approuver = models.JSONField(
+        default=list, blank=True, help_text="Avec saisies_a_approuver : seulement ces onglets (apps.core.modules) ; vide : tout.")
+    # Exports (apps.core.exports) : tout fichier téléchargé depuis la plateforme (Excel, PDF, Word, images,
+    # zip…). Sauvegarde et reprise de l'espace (Export et import global) : l'Administrateur, ou sur autorisation.
+    peut_exporter = models.BooleanField(
+        default=True, help_text="Peut télécharger des exports (Excel, PDF, Word, images…). Sans effet pour un Administrateur.")
+    class Captures(models.TextChoices):
+        ORGANISATION = "ORGANISATION", "Réglage de l'organisation"
+        BLOQUEES = "BLOQUEES", "Bloquées"
+        PERMISES = "PERMISES", "Permises"
+
+    # Protection de l'écran contre les captures (ProtectionCaptures) : réglage de l'organisation, ou propre à lui.
+    captures = models.CharField(max_length=12, choices=Captures.choices, default=Captures.ORGANISATION)
+    export_global = models.BooleanField(default=False, help_text="Peut faire l'export global (sauvegarde de l'espace).")
+    import_global = models.BooleanField(default=False, help_text="Peut faire l'import global (reprise d'une sauvegarde).")
+    approbateurs = models.ManyToManyField(
+        "self", symmetrical=False, blank=True, related_name="approuve_pour",
+        help_text="Personnes qui approuvent ses saisies (avec l'Administrateur) ; aucune : toute personne ayant le "
+        "droit d'approuver le projet ou la stratégie.",
+    )
     zones_affectees = models.ManyToManyField(
         "geo.Zone",
         blank=True,

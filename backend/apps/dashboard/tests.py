@@ -127,7 +127,7 @@ def test_export_du_tableau_de_bord_en_quatre_formats(client):
     from pptx import Presentation
 
     classeur = load_workbook(io.BytesIO(client.get("/api/v1/dashboard/consolide/export/", {"fichier": "xlsx"}).content))
-    assert [f.title for f in classeur][:7] == ["Synthèse", "Projets", "Budget", "Avancement", "Territoires", "Qualité et pilotage", "Répartitions"]
+    assert [f.title for f in classeur][:8] == ["Synthèse", "Projets", "Budget", "Avancement", "Territoires", "Qualité et pilotage", "Indicateurs et plaintes", "Répartitions"]
     diapos = Presentation(io.BytesIO(client.get("/api/v1/dashboard/consolide/export/", {"fichier": "pptx"}).content)).slides
     assert any(forme.has_chart for diapo in diapos for forme in diapo.shapes)
     assert client.get("/api/v1/dashboard/consolide/export/", {"fichier": "odt"}).status_code == 400

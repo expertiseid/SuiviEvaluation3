@@ -342,6 +342,8 @@ def _plateforme(request):
         "url_demo": getattr(settings, "URL_DEMO", ""),
         "inscriptions": getattr(settings, "INSCRIPTIONS_OUVERTES", True),
         "contact": getattr(settings, "COURRIEL_ABONNEMENTS", ""),
+        # Protection de l'écran contre les captures (ProtectionCaptures), pour tous sauf l'Administrateur.
+        "bloquer_captures": identite.bloquer_captures,
         # Site vitrine : conditions d'utilisation, confidentialité, cookies (liens du pied de page).
         "url_site": getattr(settings, "URL_SITE", "").rstrip("/"),
         # Plateforme multi-organisations : organisation du compte connecté (sinon None).
@@ -436,6 +438,11 @@ def identite(request):
             if duree != objet.session_inactivite_min:
                 objet.session_inactivite_min = duree
                 changements.append("session_inactivite_min")
+        if "bloquer_captures" in request.data:
+            bloquer = request.data.get("bloquer_captures") in ("true", True, "1")
+            if bloquer != objet.bloquer_captures:
+                objet.bloquer_captures = bloquer
+                changements.append("bloquer_captures")
         if request.data.get("supprimer_logo") in ("true", True, "1"):
             if objet.logo:
                 objet.logo.delete(save=False)

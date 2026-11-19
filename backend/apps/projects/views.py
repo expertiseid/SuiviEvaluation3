@@ -16,7 +16,6 @@ from apps.core.permissions import (
     IsAdminOrCreateForAuthenticated,
     IsAdminOrReadOnly,
     SuppressionAtomiqueMixin,
-    peut_approuver,
 )
 from apps.indicators.exports import generer_xlsform
 from apps.notifications.models import Notification
@@ -28,6 +27,8 @@ from .import_excel import generer_modele_import_projet, importer_projet
 from .models import (
     Activite,
     DemandeModification,
+    DocumentObligatoire,
+    MesureRisque,
     Equipe,
     EvaluationRisque,
     FenetreRapportage,
@@ -65,6 +66,8 @@ from .serializers import (
     ApprentissageSerializer,
     RapportProjetSerializer,
     RecommandationSerializer,
+    DocumentObligatoireSerializer,
+    MesureRisqueSerializer,
 )
 from .services import (
     dupliquer_activite,
@@ -236,6 +239,40 @@ class ProjetViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             resultat = importer_planification(feuille, projet)
         return Response(resultat)
+
+    @action(detail=False, methods=["get"], url_path="exporter-liste")
+    @dans_la_langue_demandee
+    def exporter_liste(self, request):
+        """
+        Liste des projets visibles, comme sur la page Projets : ?fichier=xlsx|docx|pdf, et ?projets=1,2,…
+        pour n'exporter que ceux affichés (filtre par statut ou recherche).
+        """
+        from apps.core.langues import traduire_html
+
+        from . import export_liste
+
+        projets = self.get_queryset().order_by("-date_debut", "nom")
+        ids = [i for i in request.query_params.get("projets", "").split(",") if i.strip().isdigit()]
+        if ids:
+            projets = projets.filter(id__in=ids)
+        donnees = export_liste.lignes(projets)
+        fichier = request.query_params.get("fichier", "xlsx")  # « format » est réservé par DRF
+        nom = f"projets_{timezone.localdate():%Y-%m-%d}"
+        if fichier == "docx":
+            from apps.reports.word import reponse_docx
+
+            return reponse_docx(export_liste.html(donnees), nom)
+        if fichier == "pdf":
+            from weasyprint import HTML
+
+            response = HttpResponse(HTML(string=traduire_html(export_liste.html(donnees))).write_pdf(),
+                                    content_type="application/pdf")
+        else:
+            response = HttpResponse(export_liste.excel(donnees),
+                                    content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            fichier = "xlsx"
+        response["Content-Disposition"] = f"attachment; filename={nom}.{fichier}"
+        return response
 
     @action(detail=False, methods=["get"], url_path="modele-import")
     @dans_la_langue_demandee
@@ -530,26 +567,34 @@ class FenetreRapportageViewSet(viewsets.ModelViewSet):
 
 # ------------------------------------------------------------------------------ approbations
 
-def _saisies_a_lister(user, etats):
-    """Points de suivi, valeurs d'indicateurs et taux manuels des projets visibles, selon leur état."""
+def _saisies_a_lister(user, approuvables):
+    """
+    Points de suivi, valeurs d'indicateurs et taux manuels : en attente dans les projets que l'utilisateur
+    peut approuver ; ailleurs (projets visibles), les siens en attente ou rejetés.
+    """
     from django.db.models import Q
 
     from apps.indicators.models import ValeurIndicateur
     from apps.suivi.models import PointSuivi
 
     ids = visible_projets_ids(user)
-    filtre_auteur = {} if peut_approuver(user) else {"saisi_par": user}
-    points = PointSuivi.tous.filter(
-        Q(activite__projet__id__in=ids) | Q(sous_activite__activite__projet__id__in=ids),
-        etat_approbation__in=etats, **filtre_auteur,
-    ).select_related("activite__projet", "sous_activite__activite__projet", "saisi_par")
-    valeurs = ValeurIndicateur.tous.filter(
-        Q(indicateur__projet__id__in=ids) | Q(indicateur__activite__projet__id__in=ids),
-        etat_approbation__in=etats, **filtre_auteur,
-    ).select_related("indicateur__projet", "indicateur__activite__projet", "saisi_par")
-    taux = TauxManuel.tous.filter(
-        activite__projet__id__in=ids, etat_approbation__in=etats, **filtre_auteur
-    ).select_related("activite__projet", "saisi_par")
+    mes_saisies = Q(saisi_par=user, etat_approbation__in=[EtatApprobation.EN_ATTENTE, EtatApprobation.REJETEE])
+
+    from .approbation import peut_approuver_auteur
+
+    def filtre(*chemins):
+        approuver = Q(saisi_par__approbateurs=user)  # saisies des personnes dont il est l'approbateur désigné
+        visibles = Q()
+        for chemin in chemins:
+            approuver |= Q(**{f"{chemin}__in": approuvables})
+            visibles |= Q(**{f"{chemin}__in": ids})
+        return (approuver & Q(etat_approbation=EtatApprobation.EN_ATTENTE)) | (visibles & mes_saisies)
+
+    points = PointSuivi.tous.filter(filtre("activite__projet__id", "sous_activite__activite__projet__id")).distinct().select_related(
+        "activite__projet", "sous_activite__activite__projet", "saisi_par")
+    valeurs = ValeurIndicateur.tous.filter(filtre("indicateur__projet__id", "indicateur__activite__projet__id")).distinct().select_related(
+        "indicateur__projet", "indicateur__activite__projet", "saisi_par")
+    taux = TauxManuel.tous.filter(filtre("activite__projet__id")).distinct().select_related("activite__projet", "saisi_par")
 
     def commun(objet, type_, projet, element):
         return {
@@ -557,6 +602,8 @@ def _saisies_a_lister(user, etats):
             "projet_code": projet.code if projet else "", "element": element,
             "saisi_par_nom": (objet.saisi_par.get_full_name() or objet.saisi_par.username) if objet.saisi_par else "",
             "etat": objet.etat_approbation, "motif_rejet": objet.motif_rejet, "commentaire": objet.commentaire,
+            "approuvable": bool(projet) and objet.etat_approbation == EtatApprobation.EN_ATTENTE
+            and peut_approuver_auteur(user, objet.saisi_par, projet.id in approuvables),
         }
 
     lignes = []
@@ -584,6 +631,39 @@ def _saisies_a_lister(user, etats):
     return sorted(lignes, key=lambda l: l["date"], reverse=True)
 
 
+@api_view(["GET", "PUT"])
+@permission_classes([IsAuthenticated])
+def reglages_approbation(request):
+    """
+    Onglets dont toute création, modification ou suppression doit être approuvée, pour tout le monde sauf
+    l'Administrateur (apps.core.approbation_generale). Lecture : tous ; modification : Administrateur.
+    """
+    from apps.accounts.constants import ROLE_ADMIN
+    from apps.core.models import IdentiteOrganisation
+    from apps.core.modules import API_PAR_MODULE
+
+    objet = IdentiteOrganisation.courante()
+    if request.method == "PUT":
+        if request.user.role != ROLE_ADMIN:
+            raise PermissionDenied("Réservé à l'Administrateur.")
+        modules = request.data.get("modules_a_approuver")
+        if not isinstance(modules, list) or any(m not in API_PAR_MODULE for m in modules):
+            raise ValidationError({"modules_a_approuver": "Onglets inconnus."})
+        objet.modules_a_approuver = sorted(set(modules))
+        objet.save(update_fields=["modules_a_approuver", "modifie_le"])
+    return Response({"modules_a_approuver": objet.modules_a_approuver or [], "modules_possibles": list(API_PAR_MODULE)})
+
+
+def _champs_demande(demande):
+    """Valeurs envoyées : celles de la requête pour une modification générique (avec les fichiers joints)."""
+    if demande.cible != DemandeModification.Cible.GENERIQUE:
+        return demande.donnees
+    champs = dict(demande.donnees.get("champs") or {})
+    if demande.donnees.get("fichiers"):
+        champs["Fichiers"] = ", ".join(demande.donnees["fichiers"])
+    return champs
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def approbations(request):
@@ -591,25 +671,46 @@ def approbations(request):
     Écran « Approbations » : saisies et demandes de modification en attente (approbateur : celles
     de tous les projets visibles ; sinon : les siennes, en attente ou rejetées).
     """
-    approbateur = peut_approuver(request.user)
-    etats = [EtatApprobation.EN_ATTENTE] if approbateur else [EtatApprobation.EN_ATTENTE, EtatApprobation.REJETEE]
+    from django.db.models import Q
+
+    from .droits import droits_projet
+
+    from apps.core.permissions import peut_approuver
+
+    from .approbation import peut_approuver_auteur, peut_traiter_demande
+    from .droits import a_des_droits_precis
+
+    ids = list(visible_projets_ids(request.user))
+    approuvables = {pid for pid in ids if droits_projet(request.user, pid).approuver}
+    mes_demandes = Q(demandeur=request.user, etat__in=[EtatApprobation.EN_ATTENTE, EtatApprobation.REJETEE])
+    # Stratégies : les demandes en attente que l'utilisateur peut traiter (droit sur l'élément ou le document).
+    # Stratégies et autres modifications sans projet : celles que l'utilisateur peut traiter.
+    strategie = [d.id for d in DemandeModification.objects.filter(projet__isnull=True, etat=EtatApprobation.EN_ATTENTE)
+                 .select_related("demandeur") if peut_traiter_demande(request.user, d)]
     demandes = DemandeModification.objects.filter(
-        projet__id__in=visible_projets_ids(request.user), etat__in=etats
-    ).select_related("projet", "demandeur")
-    if not approbateur:
-        demandes = demandes.filter(demandeur=request.user)
+        Q(projet__id__in=approuvables, etat=EtatApprobation.EN_ATTENTE) | Q(id__in=strategie)
+        | Q(demandeur__approbateurs=request.user, etat=EtatApprobation.EN_ATTENTE)
+        | (Q(projet__id__in=ids) & mes_demandes) | (Q(projet__isnull=True) & mes_demandes)
+    ).distinct().select_related("projet", "document", "demandeur")
     return Response({
-        "peut_approuver": approbateur,
-        "saisies": _saisies_a_lister(request.user, etats),
+        "peut_approuver": bool(approuvables) or bool(strategie) or a_des_droits_precis(request.user, approuver=True)
+        or peut_approuver(request.user) or request.user.approuve_pour.exists(),
+        "saisies": _saisies_a_lister(request.user, approuvables),
         "demandes": [
             {
-                "id": d.id, "projet_id": d.projet_id, "projet_code": d.projet.code, "cible": d.get_cible_display(),
+                "id": d.id, "projet_id": d.projet_id, "document_id": d.document_id,
+                # Stratégie : le document à la place du projet.
+                "projet_code": d.projet.code if d.projet_id else (d.document.code or d.document.nom if d.document_id else ""),
+                "cible": d.get_cible_display(),
                 "action": d.action, "action_libelle": d.get_action_display(), "libelle": d.libelle,
                 "changements": d.changements, "etat": d.etat, "motif_rejet": d.motif_rejet,
+                "approuvable": d.etat == EtatApprobation.EN_ATTENTE and (
+                    d.id in strategie if d.projet_id is None
+                    else peut_approuver_auteur(request.user, d.demandeur, d.projet_id in approuvables)),
                 # Valeurs d'un ajout, avec les noms de champs lisibles (identifiants techniques exclus).
                 "valeurs": [
-                    {"champ": LIBELLES_CHAMPS.get(champ, champ), "valeur": valeur}
-                    for champ, valeur in d.donnees.items()
+                    {"champ": LIBELLES_CHAMPS.get(champ, champ), "valeur": valeur if isinstance(valeur, (str, int, float, bool)) else str(valeur)}
+                    for champ, valeur in _champs_demande(d).items()
                     if valeur not in ("", None, []) and champ not in ("projet", "activite", "activite_parent")
                 ],
                 "demandeur_nom": (d.demandeur.get_full_name() or d.demandeur.username) if d.demandeur else "",
@@ -648,7 +749,13 @@ def traiter_saisie_vue(request, type_saisie, pk):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def traiter_demande_vue(request, pk):
-    demande = get_object_or_404(DemandeModification, pk=pk, projet__id__in=visible_projets_ids(request.user))
+    from django.db.models import Q
+
+    # Projet visible, stratégie, ou demande d'une personne dont il est l'approbateur désigné (le droit d'approuver
+    # est vérifié par traiter_demande).
+    demande = get_object_or_404(DemandeModification.objects.filter(
+        Q(projet__id__in=visible_projets_ids(request.user)) | Q(projet__isnull=True) | Q(demandeur__approbateurs=request.user)
+    ).distinct(), pk=pk)
     approuver, motif = _decision(request)
     traiter_demande(demande, request.user, approuver, motif)
     return Response({"etat": demande.etat})
@@ -707,6 +814,30 @@ class EvaluationRisqueViewSet(SuppressionAtomiqueMixin, viewsets.ModelViewSet):
         self._reporter(risque)
 
 
+class MesureRisqueViewSet(SuppressionAtomiqueMixin, viewsets.ModelViewSet):
+    """Mesures d'atténuation d'un risque (?risque=) et leur réalisation."""
+
+    serializer_class = MesureRisqueSerializer
+    permission_classes = (HasGlobalVisibilityOrAssigned,)
+    filterset_fields = ("risque", "statut")
+
+    def get_queryset(self):
+        return MesureRisque.objects.filter(risque__projet__id__in=visible_projets_ids(self.request.user)).select_related("responsable")
+
+    def _verifier(self, serializer):
+        risque = serializer.validated_data.get("risque") or serializer.instance.risque
+        if risque.projet_id not in set(visible_projets_ids(self.request.user)):
+            raise PermissionDenied("Projet non accessible.")
+
+    def perform_create(self, serializer):
+        self._verifier(serializer)
+        serializer.save()
+
+    def perform_update(self, serializer):
+        self._verifier(serializer)
+        serializer.save()
+
+
 class _PilotageViewSet(SuppressionAtomiqueMixin, viewsets.ModelViewSet):
     """Rapports, recommandations, leçons et décisions d'un projet (?projet=) visible par l'utilisateur."""
 
@@ -756,3 +887,12 @@ class ApprentissageViewSet(_PilotageViewSet):
     filterset_fields = ("projet", "type")
     modele = Apprentissage
     liens = ("recommandation", "element")
+
+
+class DocumentObligatoireViewSet(_PilotageViewSet):
+    """Documents qu'un projet doit avoir, et le document de la GED qui les fournit."""
+
+    serializer_class = DocumentObligatoireSerializer
+    filterset_fields = ("projet",)
+    modele = DocumentObligatoire
+    liens = ("document",)

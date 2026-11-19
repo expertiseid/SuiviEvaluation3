@@ -21,13 +21,14 @@ import { StatCard } from "../components/common/StatCard";
 import { CamembertChart } from "../components/charts/CamembertChart";
 import { ChoixTypeGraphique, GraphiqueAdaptable, type SerieGraphique } from "../components/charts/GraphiqueAdaptable";
 import { ExportBloc, HORS_EXPORT, type DonneesExport } from "../components/charts/ExportBloc";
+import { exporterCommeEcran } from "../utils/exportEcran";
 import { ApparenceBlocDrawer } from "../components/dashboard/ApparenceBlocDrawer";
 import { ApparenceContext, useApparence, type ApparenceBloc } from "../utils/apparence";
 import { typesPossibles, type TypeGraphique } from "../utils/typesGraphiques";
 import { PROJET_STATUT_LABEL } from "../utils/statusTones";
 import type {
   AvancementActivites, DashboardConsolide, FinancesTableauDeBord, FiltresDashboard, LigneRepartitionProjets, PilotageTableauDeBord, QualiteTableauDeBord,
-  StatutProjet, TerritoiresTableauDeBord,
+  PerformanceIndicateurs, PlaintesTableauDeBord, StatutProjet, TerritoiresTableauDeBord,
 } from "../types";
 import { TitreRubrique } from "../components/common/TitreRubrique";
 import { voc } from "../utils/vocabulaire";
@@ -45,8 +46,9 @@ const COULEUR_HOMMES = "#1c7ed6";
 
 const CLE_STOCKAGE_FILTRES = "tableau-de-bord.filtres";
 
-function CarteGraphique({ titre, sousTitre, actions, donnees, children }: {
-  titre: string; sousTitre?: string; actions?: ReactNode; donnees?: () => DonneesExport | null; children: ReactNode;
+function CarteGraphique({ titre, sousTitre, actions, donnees, filtres, children }: {
+  titre: string; sousTitre?: string; actions?: ReactNode; donnees?: () => DonneesExport | null; filtres?: FiltresDashboard;
+  children: ReactNode;
 }) {
   // Zone reproduite par les images : titre et contenu, sans les boutons.
   const zone = useRef<HTMLDivElement>(null);
@@ -61,12 +63,54 @@ function CarteGraphique({ titre, sousTitre, actions, donnees, children }: {
         </div>
         <Group gap={6} wrap="nowrap" className={HORS_EXPORT}>
           {actions}
-          <ExportBloc titre={titre} zone={zone} donnees={donnees} />
+          <ExportBloc titre={titre} zone={zone} donnees={donnees} filtres={filtres} />
         </Group>
       </Group>
       {children}
     </Paper>
   );
+}
+
+interface ChiffreCle { libelle: string; valeur: number; texte: string; icone: ReactNode; couleur: string }
+
+/** Chiffres clés : cartes, ou tableau (et « les deux » : cartes puis tableau). */
+function ChiffresCles({ chiffres, type }: { chiffres: ChiffreCle[]; type: TypeGraphique }) {
+  const apparence = useApparence();
+  const cartes = (
+    <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing="md">
+      {chiffres.map((c) => <StatCard key={c.libelle} label={c.libelle} value={c.texte} icon={c.icone} color={c.couleur} />)}
+    </SimpleGrid>
+  );
+  const tableau = (
+    <Table withTableBorder striped verticalSpacing={6} fz="sm">
+      <Table.Tbody>
+        {chiffres.map((c) => (
+          <Table.Tr key={c.libelle}><Table.Td>{c.libelle}</Table.Td><Table.Td ta="right" fw={600} style={{ whiteSpace: "nowrap" }}>{c.texte}</Table.Td></Table.Tr>
+        ))}
+      </Table.Tbody>
+    </Table>
+  );
+  if (type === "tableau" || apparence.mode === "tableau") return tableau;
+  return apparence.mode === "les_deux" ? <Stack gap="sm">{cartes}{tableau}</Stack> : cartes;
+}
+
+/** Nombre de zones couvertes par niveau : cartes de chiffres, graphique ou tableau (et « les deux »). */
+function CouvertureZones({ zones, type }: { zones: DashboardConsolide["zones_couvertes"]; type: TypeGraphique }) {
+  const apparence = useApparence();
+  if (zones.length === 0) return <Vide message={voc("Aucun pays renseigné sur les projets.")} />;
+  const graphique = (t: TypeGraphique) => (
+    <GraphiqueAdaptable type={t} categories={zones.map((z) => traduireDonnee(z.niveau))} libelleCategories={voc("Niveau")}
+      series={[{ cle: "n", nom: voc("Zones"), couleur: "#15aabf", valeurs: zones.map((z) => z.count) }]}
+      couleursCategories={zones.map((_, i) => COULEURS_SERIE[i % COULEURS_SERIE.length])} unite={voc("zones")} hauteur={240} />
+  );
+  if (type !== "cartes") return graphique(type);
+  const cartes = (
+    <SimpleGrid cols={{ base: 2, xs: 4 }} spacing="md">
+      {zones.map((z) => <StatCard key={z.niveau} label={traduireDonnee(z.niveau)} value={z.count} icon={<MapPin size={20} />} color="cyan" />)}
+    </SimpleGrid>
+  );
+  if (apparence.mode === "tableau") return graphique("tableau");
+  return apparence.mode === "les_deux" ? <Stack gap="sm">{cartes}{graphique("tableau")}</Stack> : cartes;
 }
 
 /** « 2026-10 » → « oct. 2026 » */
@@ -142,6 +186,8 @@ function RepartitionProjets({
   const totalMontant = toutes.reduce((s, l) => s + Number(l.montant), 0);
   const nbMasques = toutVoir ? 0 : Math.max(0, toutes.length - LIMITE_LIGNES);
   const lignes = toutVoir ? toutes : toutes.slice(0, LIMITE_LIGNES);
+  // Le tableau ne s'ajoute au graphique qu'à la demande (mode « Tableau » ou « Les deux ») : pas de tableau-légende.
+  const avecTableau = type === "tableau" || apparence.mode === "tableau" || apparence.mode === "les_deux";
   return (
     <Stack gap="sm">
       {type !== "tableau" && apparence.mode !== "tableau" && (
@@ -158,7 +204,7 @@ function RepartitionProjets({
         />
         </ApparenceContext.Provider>
       )}
-      <Table striped withTableBorder verticalSpacing={6} fz="sm">
+      {avecTableau && <Table striped withTableBorder verticalSpacing={6} fz="sm">
         <Table.Thead>
           <Table.Tr>
             <Table.Th>{colonne}</Table.Th>
@@ -187,7 +233,7 @@ function RepartitionProjets({
             <Table.Th ta="right" style={{ whiteSpace: "nowrap" }}>{totalMontant.toLocaleString(locale())}</Table.Th>
           </Table.Tr>
         </Table.Tfoot>
-      </Table>
+      </Table>}
       {toutes.length > LIMITE_LIGNES && (
         <Button variant="subtle" size="xs" onClick={() => setToutVoir((v) => !v)}>
           {toutVoir ? voc`Afficher seulement les ${LIMITE_LIGNES} premiers` : voc`Afficher les ${nbMasques} autres`}
@@ -244,10 +290,36 @@ export function DashboardConsolidePage() {
   const parametres = partage ? (partage.filtres as FiltresDashboard) : versParametres(filtres);
   const { data, isLoading, isFetching } = useDashboardConsolide(parametres);
   const [exportEnCours, setExportEnCours] = useState(false);
+  const grille = useRef<HTMLDivElement>(null);
   async function exporter(fichier: FormatExportTableauDeBord) {
     setExportEnCours(true);
     try {
-      await telechargerTableauDeBord(parametres, fichier);
+      if (fichier === "pptx") {
+        await telechargerTableauDeBord(parametres, fichier);
+        return;
+      }
+      // PDF, Word et Excel : chaque bloc affiché, tel qu'il est à l'écran (et sa place dans la grille).
+      const blocsEcran = Array.from(grille.current?.querySelectorAll<HTMLElement>("[data-export-bloc]") ?? [])
+        .map((colonne) => ({
+          // Le contenu visible du bloc (pas une feuille de style ajoutée avant lui).
+          element: Array.from(colonne.children).find((c): c is HTMLElement => c instanceof HTMLElement
+            && c.tagName !== "STYLE" && c.getBoundingClientRect().height > 0) ?? colonne,
+          titre: colonne.dataset.titre ?? "",
+          largeur: Number(colonne.dataset.largeur) || 12,
+        }));
+      if (blocsEcran.length === 0) {
+        notifications.show({ message: voc("Aucun bloc affiché à exporter."), color: "orange" });
+        return;
+      }
+      const attente = notifications.show({
+        message: voc("Préparation de l'export : chaque bloc est copié tel qu'il s'affiche. Cela peut prendre une demi-minute."),
+        loading: true, autoClose: false,
+      });
+      try {
+        await exporterCommeEcran(fichier, blocsEcran, parametres);
+      } finally {
+        notifications.hide(attente);
+      }
     } catch (error) {
       notifications.show({ message: messageErreurApi(error, voc("L'export a échoué.")), color: "red" });
     } finally {
@@ -298,7 +370,7 @@ export function DashboardConsolidePage() {
       {isLoading || !data ? (
         <Text c="dimmed">{voc("Chargement…")}</Text>
       ) : (
-        <Grid gap="md" style={{ opacity: isFetching ? 0.6 : 1, transition: "opacity 150ms" }}>
+        <Grid gap="md" ref={grille} style={{ opacity: isFetching ? 0.6 : 1, transition: "opacity 150ms" }}>
           {visibles.length === 0 && (
             <Grid.Col span={12}>
               <Vide
@@ -311,7 +383,8 @@ export function DashboardConsolidePage() {
             </Grid.Col>
           )}
           {visibles.map((b) => (
-            <Grid.Col key={b.cle} span={{ base: 12, md: b.largeur === 12 ? 12 : 6, xl: b.largeur }}>
+            <Grid.Col key={b.cle} span={{ base: 12, md: b.largeur === 12 ? 12 : 6, xl: b.largeur }}
+              data-export-bloc={b.cle} data-titre={apparences[b.cle]?.titre || b.titre} data-largeur={b.largeur}>
               <ApparenceContext.Provider value={apparences[b.cle] ?? {}}>
               {b.avecCarte === false ? (
                 b.rendu(typeDe(b))
@@ -320,6 +393,7 @@ export function DashboardConsolidePage() {
                   titre={apparences[b.cle]?.titre || b.titre}
                   sousTitre={apparences[b.cle]?.sous_titre}
                   donnees={b.donnees ? () => b.donnees!(typeDe(b)) : undefined}
+                  filtres={parametres}
                   actions={
                     peutPersonnaliser && !partage && (
                       <Group gap={6} wrap="nowrap">
@@ -355,6 +429,7 @@ export function DashboardConsolidePage() {
           titreDefaut={aPersonnaliser.titre}
           initiale={apparences[aPersonnaliser.cle] ?? {}}
           noms={nomsColorables(aPersonnaliser)}
+          avecGraphique={!!aPersonnaliser.graphique?.types.some((t) => t !== "cartes" && t !== "tableau")}
           apercu={() => aPersonnaliser.rendu(typeDe(aPersonnaliser))}
           enregistrement={enregistrer.isPending}
           onEnregistrer={(a) => {
@@ -419,32 +494,28 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
   const budgetsProjets = codesProjets.map((code) => Number(data.projets.find((p) => p.code === code)?.budget_total ?? 0));
   const avancementProjets = data.avancement.par_projet;
 
+  const chiffresCles: ChiffreCle[] = [
+    { libelle: voc("Projets"), valeur: data.nombre_projets, texte: String(data.nombre_projets), icone: <FolderKanban size={20} />, couleur: "teal" },
+    { libelle: voc("Budget total"), valeur: Number(data.budget_total), texte: fcfa(data.budget_total), icone: <Wallet size={20} />, couleur: "indigo" },
+    { libelle: voc("Bénéficiaires"), valeur: data.nombre_beneficiaires, texte: String(data.nombre_beneficiaires), icone: <Users size={20} />, couleur: "grape" },
+    { libelle: voc("Indicateurs suivis"), valeur: totalIndicateurs, texte: String(totalIndicateurs), icone: <Gauge size={20} />, couleur: "orange" },
+  ];
   return [
     {
-      cle: "chiffres-cles", titre: voc("Chiffres clés"), groupe: "Vue d'ensemble", largeur: 12, avecCarte: false,
-      rendu: () => (
-        <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing="md">
-          <StatCard label={voc("Projets")} value={data.nombre_projets} icon={<FolderKanban size={20} />} color="teal" />
-          <StatCard label={voc("Budget total")} value={fcfa(data.budget_total)} icon={<Wallet size={20} />} color="indigo" />
-          <StatCard label={voc("Bénéficiaires")} value={data.nombre_beneficiaires} icon={<Users size={20} />} color="grape" />
-          <StatCard label={voc("Indicateurs suivis")} value={totalIndicateurs} icon={<Gauge size={20} />} color="orange" />
-        </SimpleGrid>
-      ),
+      cle: "chiffres-cles", titre: voc("Chiffres clés"), groupe: "Vue d'ensemble", largeur: 12,
+      donnees: () => ({ entetes: [voc("Chiffre"), voc("Valeur")], type: "tableau",
+        lignes: chiffresCles.map((c) => [c.libelle, c.valeur]) }),
+      // Unités différentes (projets, FCFA, personnes) : cartes ou tableau, pas de graphique commun.
+      graphique: { types: ["cartes", "tableau"], defaut: "cartes" },
+      rendu: (type) => <ChiffresCles chiffres={chiffresCles} type={type} />,
     },
     {
       cle: "couverture", titre: voc("Couverture géographique (nombre de zones)"), groupe: voc("Géographie"), largeur: 12,
       donnees: () => ({ entetes: [voc("Niveau"), voc("Zones")], type: "colonnes",
         lignes: data.zones_couvertes.map((z) => [traduireDonnee(z.niveau), z.count]) }),
-      rendu: () =>
-        data.zones_couvertes.length === 0 ? (
-          <Vide message={voc("Aucun pays renseigné sur les projets.")} />
-        ) : (
-          <SimpleGrid cols={{ base: 2, xs: 4 }} spacing="md">
-            {data.zones_couvertes.map((z) => (
-              <StatCard key={z.niveau} label={traduireDonnee(z.niveau)} value={z.count} icon={<MapPin size={20} />} color="cyan" />
-            ))}
-          </SimpleGrid>
-        ),
+      // Cartes de chiffres par défaut ; on peut choisir à la place un graphique ou un tableau (ou les deux).
+      graphique: { types: ["cartes", ...typesPossibles(1)], defaut: "cartes" },
+      rendu: (type) => <CouvertureZones zones={data.zones_couvertes} type={type} />,
     },
     // Un bloc par niveau géographique (pays, puis région, province, commune…), chacun masquable et réglable.
     {
@@ -625,6 +696,36 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
       rendu: () => <PilotageBloc p={data.pilotage} />,
     },
     {
+      cle: "performance", titre: voc("Performance des indicateurs"), groupe: voc("Projets"), largeur: 12,
+      donnees: () => ({
+        entetes: [voc("Indicateur"), voc("Projet"), voc("Référence"), voc("Valeur actuelle"), voc("Cible"), voc("Écart à la cible"),
+          voc("Taux d'atteinte (%)"), voc("Tendance")],
+        series: 1, type: "barres",
+        lignes: data.performance.liste.map((x) => [x.libelle, x.projet, nombreOuNul(x.reference), nombreOuNul(x.actuelle), Number(x.cible),
+          nombreOuNul(x.ecart), x.taux, x.tendance ? LIBELLES_TENDANCE()[x.tendance] : ""]),
+      }),
+      rendu: () => <PerformanceBloc p={data.performance} liens={liensProjets} />,
+    },
+    {
+      cle: "plaintes", titre: voc("Plaintes et retours"), groupe: voc("Pilotage"), largeur: 12,
+      donnees: () => ({
+        entetes: [voc("Type de retour"), voc("Dossiers")], series: 1, type: "barres",
+        lignes: data.plaintes.par_type.map((x) => [traduireDonnee(x.libelle), x.nombre]),
+      }),
+      rendu: () => <PlaintesBloc p={data.plaintes} />,
+    },
+    {
+      cle: "performance-territoires", titre: voc("Performance par région"), groupe: voc("Géographie"), largeur: 12,
+      donnees: () => ({
+        entetes: [voc("Pays"), voc("Région"), voc("Projets"), voc("Activités"), voc("Activités réalisées (%)"), voc("Dépenses (FCFA)"),
+          voc("Réalisation des indicateurs (%)")],
+        series: 1, type: "barres",
+        lignes: data.performance_territoires.flatMap((p) => p.zones.map((z) => [p.pays, z.zone, z.projets, z.activites, z.part_realisees,
+          z.depenses, z.taux_indicateurs])),
+      }),
+      rendu: () => <PerformanceTerritoiresBloc t={data.performance_territoires} />,
+    },
+    {
       cle: "projets-statut", titre: voc("Projets par statut"), groupe: voc("Projets"), largeur: 4,
       donnees: (type) => depuisSeries(voc("Statut"), statutsLibelles,
         [{ nom: voc("Projets"), couleur: "#12b886", valeurs: statuts.map((x) => data.projets_par_statut[x] ?? 0) }], type,
@@ -689,8 +790,10 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
         { nom: voc("Non réalisées"), couleur: "#adb5bd", valeurs: data.activites_par_projet.map((p) => p.NON_REALISEE ?? 0) },
         { nom: voc("En cours"), couleur: "#fab219", valeurs: data.activites_par_projet.map((p) => p.EN_COURS ?? 0) },
         { nom: voc("Réalisées"), couleur: "#0ca30c", valeurs: data.activites_par_projet.map((p) => p.REALISEE ?? 0) },
+        { nom: voc("Suspendues"), couleur: "#e8590c", valeurs: data.activites_par_projet.map((p) => p.SUSPENDUE ?? 0) },
+        { nom: voc("Annulées"), couleur: "#495057", valeurs: data.activites_par_projet.map((p) => p.ANNULEE ?? 0) },
       ], type),
-      graphique: graphique(3, "colonnes-empilees"),
+      graphique: graphique(5, "colonnes-empilees"),
       rendu: (type) => (
         <GraphiqueAdaptable
           type={type}
@@ -701,6 +804,10 @@ function definirBlocs(data: DashboardConsolide, liensProjets = true): Bloc[] {
             { cle: "nr", nom: voc("Non réalisées"), couleur: "#adb5bd", valeurs: data.activites_par_projet.map((p) => p.NON_REALISEE ?? 0) },
             { cle: "ec", nom: voc("En cours"), couleur: "#fab219", valeurs: data.activites_par_projet.map((p) => p.EN_COURS ?? 0) },
             { cle: "re", nom: voc("Réalisées"), couleur: "#0ca30c", valeurs: data.activites_par_projet.map((p) => p.REALISEE ?? 0) },
+            // Suspendues et annulées : affichées seulement s'il y en a.
+            ...([["su", voc("Suspendues"), "#e8590c", "SUSPENDUE"], ["an", voc("Annulées"), "#495057", "ANNULEE"]] as const)
+              .filter(([, , , statut]) => data.activites_par_projet.some((p) => p[statut]))
+              .map(([cle, nom, couleur, statut]) => ({ cle, nom, couleur, valeurs: data.activites_par_projet.map((p) => p[statut] ?? 0) })),
           ]}
         />
       ),
@@ -886,13 +993,15 @@ function AvancementActivitesBloc({ a }: { a: AvancementActivites }) {
           color={a.en_retard ? "red" : "teal"} />
         <StatCard label={voc("Retard moyen")} value={jours(a.retard_moyen_jours)} icon={<Gauge size={20} />} color="orange" />
         <StatCard label={voc("Terminées dans les délais")} value={pct(a.terminees_dans_les_delais)} icon={<Gauge size={20} />} color="teal" />
-        <StatCard label={voc("Jalons atteints")} value={a.jalons.total ? `${a.jalons.atteints} / ${a.jalons.total}` : "—"}
+        <StatCard label={voc("Jalons atteints")} value={a.jalons.total ? `${a.jalons.atteints} / ${a.jalons.total} · ${pct(a.jalons.part_atteints)}` : "—"}
           icon={<Gauge size={20} />} color="grape" />
         <StatCard label={voc("Avec justificatifs")} value={pct(a.avec_justificatifs)} icon={<Gauge size={20} />} color="gray" />
       </SimpleGrid>
       <Text size="sm" c="dimmed">
         {voc`${a.prevues} activités de terrain : ${a.demarrees} démarrées, ${a.terminees} terminées ; ${a.attendues_a_date} devaient être terminées aujourd'hui.`}
+        {(a.suspendues > 0 || a.annulees > 0) && " " + voc`${a.suspendues} suspendue(s) ; ${a.annulees} annulée(s), retirée(s) des activités prévues et des taux.`}
         {a.duree_moyenne_realisation_jours !== null && " " + voc`Durée moyenne de réalisation : ${jours(a.duree_moyenne_realisation_jours)}.`}
+        {a.retard_moyen_a_l_achevement_jours !== null && " " + voc`Retard moyen des activités terminées après leur échéance : ${jours(a.retard_moyen_a_l_achevement_jours)}.`}
         {a.jalons.en_retard > 0 && " " + voc`${a.jalons.en_retard} jalon(s) en retard.`}
       </Text>
       {incompletes.length > 0 && (
@@ -984,7 +1093,7 @@ function FinancesBloc({ f, physique }: { f: FinancesTableauDeBord; physique: Rec
         <StatCard label={voc("Financements acquis")} value={court(f.financements_acquis)} icon={<Wallet size={20} />} color="blue" />
         <StatCard label={voc("Reçus des bailleurs")} value={`${court(f.financements_recus)} · ${pct(f.taux_decaissement)}`} icon={<Wallet size={20} />} color="cyan" />
         <StatCard label={voc("Coût par bénéficiaire")} value={court(f.cout_par_beneficiaire)} icon={<Users size={20} />} color="pink" />
-        <StatCard label={voc("Lignes en dépassement")} value={`${f.lignes_en_depassement} / ${f.lignes_budgetees}`} icon={<Gauge size={20} />}
+        <StatCard label={voc("Lignes en dépassement")} value={`${f.lignes_en_depassement} / ${f.lignes_budgetees} · ${pct(f.part_lignes_en_depassement)}`} icon={<Gauge size={20} />}
           color={f.lignes_en_depassement ? "red" : "teal"} />
       </SimpleGrid>
       <Text size="sm" c="dimmed">
@@ -1091,6 +1200,13 @@ function TerritoiresBloc({ t }: { t: TerritoiresTableauDeBord }) {
         <StatCard label={voc("Zones ciblées sans bénéficiaire")} value={`${n(t.zones_sans_beneficiaire)} / ${n(t.zones_ciblees)}`} icon={<MapPin size={20} />}
           color={t.zones_sans_beneficiaire ? "orange" : "teal"} />
         <StatCard label={voc("Plaintes pour 1 000 bénéficiaires")} value={n(t.plaintes_pour_1000)} icon={<FileText size={20} />} color="red" />
+        <StatCard label={voc("Participations aux activités")}
+          value={`${n(t.participations)}${t.participations_par_beneficiaire !== null ? ` · ${voc`${n(t.participations_par_beneficiaire)} par personne`}` : ""}`}
+          icon={<Users size={20} />} color="blue" />
+        <StatCard label={voc("Plusieurs types d'appui")} value={`${n(t.plusieurs_appuis)} · ${pct(t.part_plusieurs_appuis)}`} icon={<Users size={20} />} color="violet" />
+        <StatCard label={voc("Personnes vulnérables")} value={`${n(t.vulnerables)} · ${pct(t.part_vulnerables)}`} icon={<Users size={20} />} color="orange" />
+        <StatCard label={voc("Ménages bénéficiaires")} value={t.menages ? `${n(t.menages)} · ${voc`${n(t.personnes_des_menages)} pers.`}` : "—"}
+          icon={<Users size={20} />} color="lime" />
       </SimpleGrid>
       <Text size="sm" c="dimmed">
         {t.source_indirects === "projets" && voc("Bénéficiaires indirects : estimations saisies dans les projets.")}
@@ -1100,6 +1216,7 @@ function TerritoiresBloc({ t }: { t: TerritoiresTableauDeBord }) {
           ? voc`${n(t.parcours)} parcours (un bénéficiaire dans un projet).`
           : voc("Maintien, abandon et paquet complet : à renseigner dans la liste des bénéficiaires de chaque activité (colonne « Statut »).")}
         {t.satisfaction_reponses > 0 && " " + voc`Satisfaction : ${n(t.satisfaction_reponses)} réponse(s), part de 4 et 5 sur 5.`}
+        {t.coordonnees_renseignees > 0 && " " + voc`Positions GPS valides : ${pct(Math.round((1 - t.coordonnees_invalides / t.coordonnees_renseignees) * 1000) / 10)} (${n(t.coordonnees_renseignees - t.coordonnees_invalides)} sur ${n(t.coordonnees_renseignees)}).`}
         {" "}{voc`Plaintes récurrentes : ${pct(t.taux_plaintes_recurrentes)} des ${n(t.plaintes)} dossiers.`}
       </Text>
       {(t.ecart_couverture || t.ecart_femmes) && (
@@ -1171,6 +1288,7 @@ function TerritoiresBloc({ t }: { t: TerritoiresTableauDeBord }) {
               <Text size="xs" c="dimmed" mt={4}>{voc`… et ${n(t.zones_sans_beneficiaire - t.zones_sans_beneficiaire_exemples.length)} autre(s).`}</Text>
             )}
           </div>
+          <GroupesBeneficiaires t={t} />
           {t.couches.some((c) => c.surface_ha !== null || c.longueur_km !== null) && (
             <div>
               <Text fw={600} mb="xs">{voc("Couches importées : surfaces et longueurs")}</Text>
@@ -1192,6 +1310,41 @@ function TerritoiresBloc({ t }: { t: TerritoiresTableauDeBord }) {
         </Stack>
       </SimpleGrid>
     </Stack>
+  );
+}
+
+/** Âge, groupes vulnérables (statuts particuliers) et couverture des groupes prioritaires ciblés. */
+function GroupesBeneficiaires({ t }: { t: TerritoiresTableauDeBord }) {
+  const n = (x: number) => x.toLocaleString(locale());
+  if (t.directs === 0) return null;
+  return (
+    <div>
+      <Text fw={600} mb="xs">{voc("Âge et groupes vulnérables")}</Text>
+      <Table withTableBorder striped verticalSpacing={4} fz="sm">
+        <Table.Tbody>
+          {t.par_age.map((a) => (
+            <Table.Tr key={`age-${a.tranche}`}>
+              <Table.Td>{a.tranche ? traduireDonnee(a.tranche) : voc("Âge non renseigné")}</Table.Td>
+              <Table.Td ta="right">{n(a.nombre)}</Table.Td>
+              <Table.Td ta="right" c="dimmed">{pct(Math.round(a.nombre / t.directs * 1000) / 10)}</Table.Td>
+            </Table.Tr>
+          ))}
+          {t.par_statut.map((x) => (
+            <Table.Tr key={`statut-${x.statut}`}>
+              <Table.Td>{traduireDonnee(x.statut)}</Table.Td>
+              <Table.Td ta="right">{n(x.nombre)}</Table.Td>
+              <Table.Td ta="right" c="dimmed">{pct(x.part)}</Table.Td>
+            </Table.Tr>
+          ))}
+        </Table.Tbody>
+      </Table>
+      {t.groupes_prioritaires.length > 0 && (
+        <Text size="xs" c="dimmed" mt={4}>
+          {voc("Couverture des groupes prioritaires ciblés :")}{" "}
+          {t.groupes_prioritaires.map((g) => voc`${traduireDonnee(g.groupe)} ${n(g.atteints)} sur ${n(g.cible)} (${pct(g.couverture)})`).join(" ; ")}.
+        </Text>
+      )}
+    </div>
   );
 }
 
@@ -1224,6 +1377,14 @@ function QualiteBloc({ q }: { q: QualiteTableauDeBord }) {
         {" "}{voc`${n(q.saisies_a_temps)} saisie(s) sur ${n(q.saisies)} faite(s) dans les ${q.delai_jours} jours ; ${n(q.atypiques)} valeur(s) atypique(s) sur ${n(q.valeurs_verifiees)} vérifiée(s) ; ${n(q.doublons_non_traites)} doublon(s) à examiner sur ${n(q.doublons_signales)}.`}
         {q.approbations_en_attente > 0 && " " + voc`${n(q.approbations_en_attente)} saisie(s) en attente d'approbation.`}
       </Text>
+      <SimpleGrid cols={{ base: 2, sm: 5 }} spacing="sm">
+        <StatCard label={voc("Saisies validées")} value={pct(q.taux_validation)} icon={<Gauge size={20} />} color={couleur(q.taux_validation)} />
+        <StatCard label={voc("Saisies rejetées")} value={`${n(q.saisies_rejetees)} · ${pct(q.taux_rejet)}`} icon={<Gauge size={20} />}
+          color={q.saisies_rejetees ? "orange" : "teal"} />
+        <StatCard label={voc("Délai fin de période → saisie")} value={jours(q.delai_saisie_jours)} icon={<Gauge size={20} />} color="blue" />
+        <StatCard label={voc("Délai saisie → approbation")} value={jours(q.delai_validation_jours)} icon={<Gauge size={20} />} color="indigo" />
+        <StatCard label={voc("Valeurs avec justificatif")} value={pct(q.valeurs_justifiees)} icon={<FileText size={20} />} color={couleur(q.valeurs_justifiees)} />
+      </SimpleGrid>
       <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
         <div>
           <Text fw={600} mb="xs">{voc("Complétude")}</Text>
@@ -1296,12 +1457,34 @@ function PilotageBloc({ p }: { p: PilotageTableauDeBord }) {
         <StatCard label={voc("Recommandations en retard")} value={n(re.en_retard)} icon={<Gauge size={20} />} color={re.en_retard ? "red" : "teal"} />
         <StatCard label={voc("Leçons et bonnes pratiques")} value={n(ap.lecons + ap.bonnes_pratiques)} icon={<FileText size={20} />} color="grape" />
         <StatCard label={voc("Décisions documentées")} value={n(ap.decisions)} icon={<FileText size={20} />} color="cyan" />
+        <StatCard label={voc("Rapports produits (échus)")} value={pct(ra.taux_remis)} icon={<FileText size={20} />} color="blue" />
+        <StatCard label={voc("Acceptés dès la 1re remise")} value={pct(ra.acceptes_premiere_soumission)} icon={<FileText size={20} />} color="teal" />
+        <StatCard label={voc("Risques graves avec mesures")} value={ri.graves ? `${pct(ri.graves_avec_mesures)} · ${n(ri.graves)}` : "—"}
+          icon={<Gauge size={20} />} color={(ri.graves_avec_mesures ?? 100) >= 100 ? "teal" : "orange"} />
+        <StatCard label={voc("Mesures d'atténuation réalisées")}
+          value={ri.mesures ? `${pct(ri.taux_execution_mesures)} · ${n(ri.mesures_realisees)} / ${n(ri.mesures)}` : "—"}
+          icon={<Gauge size={20} />} color={ri.mesures_en_retard ? "orange" : "teal"} />
+        <StatCard label={voc("Documents obligatoires disponibles")}
+          value={p.documents_obligatoires.total ? `${pct(p.documents_obligatoires.taux_disponibilite)} · ${n(p.documents_obligatoires.disponibles)} / ${n(p.documents_obligatoires.total)}` : "—"}
+          icon={<FileText size={20} />} color={p.documents_obligatoires.manquants_echus ? "red" : "teal"} />
+        <StatCard label={voc("Leçons ayant entraîné un changement")}
+          value={ap.lecons + ap.bonnes_pratiques ? `${n(ap.lecons_adaptees)} · ${pct(ap.part_lecons_adaptees)}` : "—"}
+          icon={<FileText size={20} />} color="grape" />
+        <StatCard label={voc("Analyses partagées")} value={`${n(p.partages.liens)} · ${voc`${n(p.partages.consultations)} consultation(s)`}`}
+          icon={<FileText size={20} />} color="gray" />
       </SimpleGrid>
       <Text size="sm" c="dimmed">
         {ra.total === 0
           ? voc("Aucun rapport attendu n'est encore enregistré : ajoutez-les dans l'onglet « Pilotage » de chaque projet.")
           : voc`Rapports remis à temps : ${pct(ra.taux_a_temps)} ; ${n(ra.en_retard)} en retard ; ${n(ra.a_revoir)} à revoir.`}
-        {" "}{voc`${n(ri.ouverts)} risque(s) ouvert(s) dont ${n(ri.survenus)} survenu(s) ; mesures d'atténuation prévues pour ${pct(ri.avec_mesures)} ; ${n(ri.revue_en_retard)} revue(s) en retard.`}
+        {ra.retard_moyen_jours !== null && " " + voc`Retard moyen de remise : ${jours(ra.retard_moyen_jours)}.`}
+        {ra.delai_validation_jours !== null && " " + voc`Délai moyen de validation : ${jours(ra.delai_validation_jours)}.`}
+        {" "}{voc`${n(ri.total)} risque(s) recensé(s) : ${n(ri.ouverts)} ouvert(s) dont ${n(ri.survenus)} survenu(s), ${n(ri.clos)} maîtrisé(s) ou clos ; mesures d'atténuation prévues pour ${pct(ri.avec_mesures)} ; ${n(ri.revue_en_retard)} revue(s) en retard.`}
+        {ri.delai_resolution_jours !== null && " " + voc`Problèmes survenus puis résolus : ${n(ri.problemes_resolus)}, en ${jours(ri.delai_resolution_jours)} en moyenne.`}
+        {re.total > 0 && " " + voc`${n(re.total)} recommandation(s) formulée(s), ${n(re.en_cours)} en cours.`}
+        {re.par_origine.length > 0 && " " + voc`Mise en œuvre selon l'origine : ${re.par_origine.map((o) => `${o.libelle} ${pct(o.taux_mise_en_oeuvre)} (${n(o.realisees)}/${n(o.retenues)})`).join(", ")}.`}
+        {ri.mesures_en_retard > 0 && " " + voc`${n(ri.mesures_en_retard)} mesure(s) d'atténuation en retard.`}
+        {p.documents_obligatoires.manquants_echus > 0 && " " + voc`Documents obligatoires manquants après leur échéance : ${p.documents_obligatoires.manquants_exemples.slice(0, 5).map((d) => `${d.projet} : ${d.libelle}`).join(", ")}${p.documents_obligatoires.manquants_echus > 5 ? "…" : ""}.`}
       </Text>
       <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
         <div>
@@ -1366,6 +1549,230 @@ function PilotageBloc({ p }: { p: PilotageTableauDeBord }) {
           )}
         </Stack>
       </SimpleGrid>
+    </Stack>
+  );
+}
+
+const nombreOuNul = (x: string | null) => (x === null ? null : Number(x));
+
+const LIBELLES_TENDANCE = () => ({ progres: voc("En progrès"), recul: voc("En recul"), stable: voc("Stable") });
+
+/**
+ * Performance des indicateurs : renseignés, cible atteinte, en progrès ou en recul ; éléments de la
+ * planification (produits, effets…) dont tous les indicateurs ont atteint leur cible ; documents de la chaîne
+ * stratégique ; tableau référence / actuelle / cible / écart / taux / tendance, les moins avancés d'abord.
+ */
+function PerformanceBloc({ p, liens }: { p: PerformanceIndicateurs; liens: boolean }) {
+  const n = (x: number) => x.toLocaleString(locale());
+  const valeur = (x: string | null) => (x === null ? "—" : Number(x).toLocaleString(locale(), { maximumFractionDigits: 2 }));
+  if (p.total === 0) return <Vide message={voc("Aucun indicateur sur ces projets.")} />;
+  const tendances = LIBELLES_TENDANCE();
+  return (
+    <Stack gap="md">
+      <SimpleGrid cols={{ base: 2, sm: 5 }} spacing="sm">
+        <Tooltip label={voc("Moyenne des taux d'atteinte (plafonnés à 100 %), pondérée par le poids de chaque indicateur (vide : 1). Le poids se règle dans la fiche de l'indicateur.")}
+          multiline w={300}>
+          <div>
+            <StatCard label={voc("Score de performance")} value={p.score === null ? "—" : `${n(p.score)} / 100`} icon={<Gauge size={20} />}
+              color={p.score === null ? "gray" : p.score >= 80 ? "teal" : p.score >= 50 ? "yellow" : "red"} />
+          </div>
+        </Tooltip>
+        <StatCard label={voc("Indicateurs renseignés")} value={`${n(p.renseignes)} / ${n(p.total)} · ${pct(p.part_renseignes)}`} icon={<Gauge size={20} />}
+          color="blue" />
+        <StatCard label={voc("Cible atteinte")} value={`${n(p.atteints)} / ${n(p.avec_taux)} · ${pct(p.part_atteints)}`} icon={<Gauge size={20} />} color="teal" />
+        <StatCard label={voc("En progrès")} value={p.part_en_progres === null ? "—" : `${n(p.en_progres)} · ${pct(p.part_en_progres)}`} icon={<Gauge size={20} />}
+          color="green" />
+        <StatCard label={voc("En recul")} value={p.part_en_recul === null ? "—" : `${n(p.en_recul)} · ${pct(p.part_en_recul)}`} icon={<Gauge size={20} />}
+          color={p.en_recul ? "red" : "teal"} />
+      </SimpleGrid>
+      <Text size="sm" c="dimmed">
+        {voc("Écart à la cible : ce qu'il reste à faire pour l'atteindre (négatif : cible dépassée). Tendance : entre les deux dernières valeurs saisies, pour les indicateurs mesurés à chaque saisie (taux, niveaux) ; un indicateur cumulable progresse à chaque saisie.")}
+        {" "}{p.indicateurs_ponderes > 0
+          ? voc`Score : ${n(p.indicateurs_ponderes)} indicateur(s) ont un poids réglé.`
+          : voc("Score : tous les indicateurs ont le même poids (réglable dans la fiche de chaque indicateur).")}
+        {p.documents.length > 0 && " " + voc`Documents stratégiques dont relèvent les projets : ${p.documents.map((d) => `${traduireDonnee(d.type)} ${n(d.nombre)}`).join(", ")}.`}
+      </Text>
+      <SimpleGrid cols={{ base: 1, lg: 3 }} spacing="lg">
+        <div>
+          <Text fw={600} mb="xs">{voc("Résultats atteints par niveau")}</Text>
+          {p.par_niveau.length === 0 ? (
+            <Text size="sm" c="dimmed">{voc("Aucun indicateur n'est rattaché à un élément de la planification.")}</Text>
+          ) : (
+            <Table withTableBorder striped verticalSpacing={4} fz="sm">
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>{voc("Niveau")}</Table.Th>
+                  <Table.Th ta="right">
+                    <Tooltip label={voc("Éléments dont au moins un indicateur a une valeur.")} multiline w={240}><span>{voc("Mesurés")}</span></Tooltip>
+                  </Table.Th>
+                  <Table.Th ta="right">
+                    <Tooltip label={voc("Éléments dont tous les indicateurs ont atteint leur cible.")} multiline w={240}><span>{voc("Atteints")}</span></Tooltip>
+                  </Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {p.par_niveau.map((x) => (
+                  <Table.Tr key={x.niveau}>
+                    <Table.Td fw={600}>{traduireDonnee(x.niveau)} <Text span size="xs" c="dimmed">({n(x.elements)})</Text></Table.Td>
+                    <Table.Td ta="right">{n(x.mesures)}</Table.Td>
+                    <Table.Td ta="right" style={{ whiteSpace: "nowrap" }}>{n(x.atteints)} · {pct(x.part)}</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          )}
+          {p.scores_projets.length > 1 && (
+            <>
+              <Text fw={600} mt="md" mb="xs">{voc("Score de performance par projet")}</Text>
+              <Table.ScrollContainer minWidth={240} mah={260}>
+                <Table withTableBorder striped stickyHeader verticalSpacing={4} fz="sm">
+                  <Table.Tbody>
+                    {p.scores_projets.map((x) => (
+                      <Table.Tr key={x.projet}>
+                        <Table.Td fw={600}>{x.projet} <Text span size="xs" c="dimmed">({n(x.indicateurs)})</Text></Table.Td>
+                        <Table.Td ta="right" fw={600} c={x.score === null ? "dimmed" : x.score >= 80 ? "teal.7" : x.score < 50 ? "red.7" : undefined}>
+                          {x.score === null ? "—" : `${n(x.score)} / 100`}
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Table.ScrollContainer>
+            </>
+          )}
+        </div>
+        <div style={{ gridColumn: "span 2" }}>
+          <Text fw={600} mb="xs">
+            {voc("Indicateurs, les moins avancés d'abord")}
+            {p.total > p.liste.length && <Text span size="xs" c="dimmed" fw={400}> {voc`(${n(p.liste.length)} sur ${n(p.total)})`}</Text>}
+          </Text>
+          <Table.ScrollContainer minWidth={720} mah={420}>
+            <Table striped withTableBorder stickyHeader verticalSpacing={5} fz="sm">
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>{voc("Indicateur")}</Table.Th>
+                  <Table.Th ta="right">{voc("Référence")}</Table.Th>
+                  <Table.Th ta="right">{voc("Actuelle")}</Table.Th>
+                  <Table.Th ta="right">{voc("Cible")}</Table.Th>
+                  <Table.Th ta="right">{voc("Écart")}</Table.Th>
+                  <Table.Th ta="right">{voc("Taux")}</Table.Th>
+                  <Table.Th>{voc("Tendance")}</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {p.liste.map((x) => (
+                  <Table.Tr key={x.id}>
+                    <Table.Td>
+                      {liens ? <Text component={Link} to={`/indicateurs/${x.id}`} size="sm" c="blue.7">{x.libelle}</Text> : <Text size="sm">{x.libelle}</Text>}
+                      <Text size="xs" c="dimmed">{x.projet}{x.unite ? ` · ${x.unite}` : ""}{x.calcule ? ` · ${voc("calculé")}` : ""}</Text>
+                    </Table.Td>
+                    <Table.Td ta="right">{valeur(x.reference)}</Table.Td>
+                    <Table.Td ta="right">{valeur(x.actuelle)}</Table.Td>
+                    <Table.Td ta="right">{valeur(x.cible)}</Table.Td>
+                    <Table.Td ta="right" c={x.ecart !== null && Number(x.ecart) <= 0 ? "teal.7" : undefined}>{valeur(x.ecart)}</Table.Td>
+                    <Table.Td ta="right" fw={600} style={{ whiteSpace: "nowrap" }}
+                      c={x.taux === null ? "dimmed" : x.taux >= 100 ? "teal.7" : x.taux < 50 ? "red.7" : undefined}>{pct(x.taux)}</Table.Td>
+                    <Table.Td>
+                      {x.tendance && (
+                        <Badge variant="light" size="sm" color={x.tendance === "progres" ? "green" : x.tendance === "recul" ? "red" : "gray"}
+                          styles={{ root: { overflow: "visible" }, label: { overflow: "visible" } }}>{tendances[x.tendance]}</Badge>
+                      )}
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+        </div>
+      </SimpleGrid>
+    </Stack>
+  );
+}
+
+/** Plaintes et retours des projets : volumes, traitement, délais, satisfaction et mesures correctives (totaux seulement). */
+function PlaintesBloc({ p }: { p: PlaintesTableauDeBord }) {
+  const n = (x: number) => x.toLocaleString(locale());
+  if (p.total === 0) return <Vide message={voc("Aucune plainte ni aucun retour enregistré sur ces projets.")} />;
+  const repartition = (titre: string, lignes: { libelle: string; nombre: number }[]) => (
+    <div>
+      <Text fw={600} mb="xs">{titre}</Text>
+      <Table withTableBorder striped verticalSpacing={4} fz="sm">
+        <Table.Tbody>
+          {lignes.map((l) => (
+            <Table.Tr key={l.libelle}><Table.Td>{traduireDonnee(l.libelle)}</Table.Td><Table.Td ta="right" fw={600}>{n(l.nombre)}</Table.Td></Table.Tr>
+          ))}
+        </Table.Tbody>
+      </Table>
+    </div>
+  );
+  return (
+    <Stack gap="md">
+      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+        <StatCard label={voc("Retours reçus")} value={`${n(p.total)} · ${voc`${n(p.ouverts)} ouvert(s)`}`} icon={<FileText size={20} />} color="blue" />
+        <StatCard label={voc("En retard")} value={n(p.en_retard)} icon={<Gauge size={20} />} color={p.en_retard ? "red" : "teal"} />
+        <StatCard label={voc("Traités dans les délais")} value={pct(p.dans_delais)} icon={<Gauge size={20} />} color="teal" />
+        <StatCard label={voc("Délai de traitement")} value={p.delai_moyen === null ? "—" : voc`${jours(p.delai_moyen)} (médiane ${jours(p.delai_median)})`}
+          icon={<Gauge size={20} />} color="indigo" />
+        <StatCard label={voc("Accusés de réception")} value={p.taux_accuse === null ? "—"
+          : `${pct(p.taux_accuse)}${p.delai_accuse_moyen !== null ? ` · ${voc`${jours(p.delai_accuse_moyen)} en moyenne`}` : ""}`}
+          icon={<FileText size={20} />} color="cyan" />
+        <StatCard label={voc("Réponse apportée")} value={`${pct(p.taux_resolution)} · ${voc`${n(p.clotures)} clôturé(s)`}`} icon={<Gauge size={20} />} color="teal" />
+        <StatCard label={voc("Réouvertures et recours")} value={pct(p.taux_reouverture)} icon={<Gauge size={20} />} color="orange" />
+        <StatCard label={voc("Satisfaction après traitement")} value={p.satisfaction === null ? "—" : pct(p.satisfaction)} icon={<Users size={20} />} color="pink" />
+      </SimpleGrid>
+      <Text size="sm" c="dimmed">
+        {voc`Mesures correctives : ${pct(p.avec_mesure_corrective)} des dossiers clôturés en ont entraîné une ; ${n(p.actions_correctives)} action(s), dont ${pct(p.mise_en_oeuvre_mesures)} réalisées.`}
+        {" "}{p.satisfaction === null && p.satisfaction_reponses > 0 && voc`Satisfaction : affichée à partir de 10 réponses (${n(p.satisfaction_reponses)} pour l'instant).`}
+        {" "}{voc("Les répartitions ne comptent pas les dossiers confidentiels. Une baisse des plaintes n'est pas forcément une amélioration : elle peut aussi traduire un accès difficile au mécanisme.")}
+      </Text>
+      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="lg">
+        {repartition(voc("Par type de retour"), p.par_type)}
+        {repartition(voc("Par canal"), p.par_canal)}
+        {repartition(voc("Par catégorie"), p.par_categorie)}
+        {repartition(voc("Par région"), p.par_territoire)}
+      </SimpleGrid>
+    </Stack>
+  );
+}
+
+/** Par région : projets présents, activités réalisées, dépenses et réalisation des indicateurs ; écart entre régions. */
+function PerformanceTerritoiresBloc({ t }: { t: DashboardConsolide["performance_territoires"] }) {
+  const n = (x: number) => x.toLocaleString(locale());
+  if (t.length === 0) return <Vide message={voc("Aucune zone d'intervention renseignée sur les fiches projet.")} />;
+  return (
+    <Stack gap="md">
+      <Text size="sm" c="dimmed">
+        {voc("Un projet présent dans plusieurs régions compte dans chacune (comme sur la carte) : les chiffres d'une région sont ceux des projets qui y interviennent.")}
+        {t.filter((p) => p.ecart).map((p) => " " + voc`Écart de réalisation des indicateurs (${p.pays}) : de ${pct(p.ecart!.valeur_basse)} (${p.ecart!.plus_bas}) à ${pct(p.ecart!.valeur_haute)} (${p.ecart!.plus_haut}), soit ${n(p.ecart!.difference)} points.`).join("")}
+      </Text>
+      {t.map((p) => (
+        <Table.ScrollContainer key={p.pays} minWidth={640} mah={420}>
+          <Table striped withTableBorder stickyHeader verticalSpacing={5} fz="sm">
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>{traduireDonnee(p.niveau)}{t.length > 1 ? ` (${p.pays})` : ""}</Table.Th>
+                <Table.Th ta="right">{voc("Projets")}</Table.Th>
+                <Table.Th ta="right">{voc("Activités")}</Table.Th>
+                <Table.Th ta="right">{voc("Réalisées")}</Table.Th>
+                <Table.Th ta="right">{voc("Dépenses (FCFA)")}</Table.Th>
+                <Table.Th ta="right">{voc("Réalisation des indicateurs")}</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {p.zones.map((z) => (
+                <Table.Tr key={z.zone}>
+                  <Table.Td fw={600}>{z.zone}</Table.Td>
+                  <Table.Td ta="right">{n(z.projets)}</Table.Td>
+                  <Table.Td ta="right">{n(z.activites)}</Table.Td>
+                  <Table.Td ta="right">{pct(z.part_realisees)}</Table.Td>
+                  <Table.Td ta="right" style={{ whiteSpace: "nowrap" }}>{n(z.depenses)}</Table.Td>
+                  <Table.Td ta="right" fw={600}>{pct(z.taux_indicateurs)}</Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      ))}
     </Stack>
   );
 }

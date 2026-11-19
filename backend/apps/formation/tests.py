@@ -69,3 +69,27 @@ def test_contenu_coherent():
             for b in le["blocs"]:
                 if b["type"] == "video":
                     assert b["chapitre"] in CHAPITRES
+
+
+def test_traductions_completes():
+    """Chaque texte du cours est traduit dans toutes les langues, avec le même gras (**)."""
+    from apps.core.langues import LANGUES_TRADUITES
+
+    from .traduction import catalogue, manquants
+
+    for langue in LANGUES_TRADUITES:
+        assert manquants(langue) == [], f"{langue} : textes du cours sans traduction (python -m apps.formation.traduction)"
+        assert all(source.count("**") == traduit.count("**") for source, traduit in catalogue(langue).items()), langue
+
+
+def test_cours_dans_la_langue_de_l_utilisateur(db):
+    from .traduction import catalogue
+
+    anglais = APIClient(HTTP_ACCEPT_LANGUAGE="en")
+    anglais.force_authenticate(User.objects.create_user(username="eleve_en", password="x", role="CHARGE_SE"))
+    m = MODULES[0]
+    assert anglais.get("/api/v1/formation/").data["modules"][0]["titre"] == catalogue("en")[m["titre"]]
+    lecon = anglais.get(f"/api/v1/formation/modules/{m['code']}/lecons/{m['lecons'][0]['code']}/").data
+    assert lecon["titre"] == catalogue("en")[m["lecons"][0]["titre"]] and lecon["code"] == m["lecons"][0]["code"]
+    question = anglais.get(f"/api/v1/formation/modules/{m['code']}/quiz/").data["questions"][0]
+    assert question["question"] == catalogue("en")[m["quiz"][0]["question"]]

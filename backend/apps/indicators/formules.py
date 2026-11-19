@@ -41,7 +41,8 @@ CALCULS_ENQUETE = {"proportion": "Proportion (%)", "moyenne": "Moyenne", "total"
 PERIODES = {"tout": "Depuis le début", "annee": "Cette année", "trimestre": "Ce trimestre", "12_mois": "12 derniers mois"}
 VARIANTES = {"actuelle": "Valeur retenue", "derniere": "Dernière valeur saisie", "precedente": "Valeur saisie précédente"}
 STATUTS_PARTICIPATION = {"EN_COURS": "En cours", "TERMINE": "A tout reçu", "ABANDON": "Abandon"}
-STATUTS_ACTIVITE = {"NON_REALISEE": "Non réalisée", "EN_COURS": "En cours", "REALISEE": "Réalisée"}
+STATUTS_ACTIVITE = {"NON_REALISEE": "Non réalisée", "EN_COURS": "En cours", "REALISEE": "Réalisée", "SUSPENDUE": "Suspendue",
+                    "ANNULEE": "Annulée"}
 DELAIS = {"en_retard": "En retard", "a_temps": "Terminées dans les délais"}
 
 # Modèles prêts à copier.

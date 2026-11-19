@@ -8,6 +8,8 @@ const STATUTS_ACTIVITE = [
   { value: "NON_REALISEE", label: voc("Non réalisée") },
   { value: "EN_COURS", label: voc("En cours") },
   { value: "REALISEE", label: voc("Réalisée") },
+  { value: "SUSPENDUE", label: voc("Suspendue") },
+  { value: "ANNULEE", label: voc("Annulée") },
 ];
 
 /**

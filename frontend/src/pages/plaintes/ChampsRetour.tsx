@@ -2,6 +2,7 @@ import { Checkbox, Radio, Select, SimpleGrid, Stack, Text, TextInput, Textarea }
 import { libelleModeReponse, MODES_REPONSE, type ModeReponse, type SaisieRetour } from "../../api/plaintes";
 import { optionsCategories } from "./saisieRetour";
 import { voc } from "../../utils/vocabulaire";
+import { SelecteurZone } from "../../components/common/SelecteurZone";
 
 const ouiNon = (v: boolean | null) => (v === null ? "" : v ? "oui" : "non");
 
@@ -74,6 +75,10 @@ export function ChampsRetour({
         value={valeurs.lieu}
         onChange={(e) => onChange({ lieu: e.currentTarget.value })}
       />
+      {agent && (
+        <SelecteurZone label={voc("Zone administrative")} value={valeurs.zone ?? null} onChange={(zone) => onChange({ zone })}
+          description={voc("Commune, village… : sert aux statistiques par territoire.")} error={erreurs.zone} />
+      )}
       <Textarea
         label={agent ? voc("Description du retour") : voc("Votre message")}
         withAsterisk

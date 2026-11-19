@@ -310,6 +310,8 @@ class ArbreTaux:
 
     def _calculer(self, element) -> ResultatTaux:
         a_des_enfants = bool(self.enfants[element.id])
+        if self._statut(element) == element.Statut.ANNULEE:
+            return ResultatTaux(None, "ANNULEE")  # retirée de ce qui est prévu : ne compte plus dans les moyennes
         if a_des_enfants and element.methode_calcul != MethodeCalcul.MANUELLE:
             return self._agreger(element)
         methode = element.methode_calcul if a_des_enfants else self.methode_calcul(element)

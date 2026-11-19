@@ -315,6 +315,10 @@ class Activite(TimestampedModel):
         NON_REALISEE = "NON_REALISEE", "Non réalisée"
         EN_COURS = "EN_COURS", "En cours"
         REALISEE = "REALISEE", "Réalisée"
+        # Suspendue : arrêtée pour un temps (elle reste prévue) ; annulée : retirée de ce qui est prévu,
+        # elle ne compte plus dans les taux ni dans les activités attendues.
+        SUSPENDUE = "SUSPENDUE", "Suspendue"
+        ANNULEE = "ANNULEE", "Annulée"
 
     projet = models.ForeignKey(Projet, on_delete=models.PROTECT, related_name="activites")
     description = models.TextField(blank=True)
@@ -483,7 +487,7 @@ class Activite(TimestampedModel):
         from django.utils import timezone
 
         return bool(
-            self.date_fin and self.date_fin < timezone.localdate() and self.statut != self.Statut.REALISEE
+            self.date_fin and self.date_fin < timezone.localdate() and self.statut not in (self.Statut.REALISEE, self.Statut.ANNULEE)
         )
 
 
@@ -617,21 +621,32 @@ class TauxManuel(TimestampedModel, SaisieApprouvable):
 
 class DemandeModification(TimestampedModel):
     """
-    Changement de planification en attente d'approbation (projets avec
-    approbation_planification, voir apps.projects.approbation) : ajout, modification ou
-    suppression d'un élément ou d'une sous-activité, appliqué seulement une fois approuvé.
+    Changement en attente d'approbation, appliqué seulement une fois approuvé :
+    - planification d'un projet (approbation_planification, voir apps.projects.approbation) : ajout,
+      modification ou suppression d'un élément ou d'une sous-activité ;
+    - stratégie (CadreStrategique.approbation_modifications, voir apps.strategy.approbation) : modification du
+      document, ajout, modification ou suppression d'un élément (pilier, axe…) ou d'une appréciation.
     """
 
     class Cible(models.TextChoices):
         ACTIVITE = "activite", "Élément de la planification"
         SOUS_ACTIVITE = "sous_activite", "Sous-activité"
+        DOCUMENT = "document", "Document stratégique"
+        ELEMENT = "element", "Élément stratégique"
+        APPRECIATION = "appreciation", "Appréciation d'un élément stratégique"
+        GENERIQUE = "generique", "Autre modification"  # rejouée telle quelle (apps.core.approbation_generale)
 
     class Action(models.TextChoices):
         CREATION = "CREATION", "Ajout"
         MODIFICATION = "MODIFICATION", "Modification"
         SUPPRESSION = "SUPPRESSION", "Suppression"
 
-    projet = models.ForeignKey(Projet, on_delete=models.CASCADE, related_name="demandes_modification")
+    projet = models.ForeignKey(Projet, null=True, blank=True, on_delete=models.CASCADE, related_name="demandes_modification")
+    # Stratégie : le document, et l'élément concerné (ou sous lequel on ajoute) — pour savoir qui peut approuver.
+    document = models.ForeignKey("strategy.CadreStrategique", null=True, blank=True, on_delete=models.CASCADE,
+                                 related_name="demandes_modification")
+    element = models.ForeignKey("strategy.ElementStrategique", null=True, blank=True, on_delete=models.SET_NULL,
+                                related_name="demandes_modification")
     cible = models.CharField(max_length=20, choices=Cible.choices)
     cible_id = models.PositiveIntegerField(null=True, blank=True, help_text="Vide pour un ajout.")
     action = models.CharField(max_length=20, choices=Action.choices)
@@ -798,6 +813,39 @@ class EvaluationRisque(TimestampedModel):
         return f"{self.risque} au {self.date}"
 
 
+class MesureRisque(TimestampedModel):
+    """Mesure d'atténuation d'un risque, suivie jusqu'à sa réalisation (responsable, échéance, statut)."""
+
+    class Statut(models.TextChoices):
+        A_FAIRE = "A_FAIRE", "À faire"
+        EN_COURS = "EN_COURS", "En cours"
+        REALISEE = "REALISEE", "Réalisée"
+        ABANDONNEE = "ABANDONNEE", "Abandonnée"
+
+    risque = models.ForeignKey(Risque, on_delete=models.CASCADE, related_name="mesures")
+    libelle = models.CharField(max_length=300)
+    responsable = models.ForeignKey(
+        "intervenants.Intervenant", null=True, blank=True, on_delete=models.SET_NULL, related_name="mesures_risques",
+    )
+    echeance = models.DateField(null=True, blank=True)
+    statut = models.CharField(max_length=12, choices=Statut.choices, default=Statut.A_FAIRE)
+    date_realisation = models.DateField(null=True, blank=True)
+    commentaire = models.TextField(blank=True)
+
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ("risque", "echeance", "id")
+
+    def __str__(self):
+        return self.libelle
+
+    def save(self, *args, **kwargs):
+        if self.statut == self.Statut.REALISEE and self.date_realisation is None:
+            self.date_realisation = datetime.date.today()
+        super().save(*args, **kwargs)
+
+
 class RapportProjet(TimestampedModel):
     """
     Rapport attendu d'un projet (trimestriel, annuel, pour un bailleur…) : son échéance, sa remise
@@ -861,8 +909,18 @@ class Recommandation(TimestampedModel):
         MOYENNE = "MOYENNE", "Moyenne"
         BASSE = "BASSE", "Basse"
 
+    class Origine(models.TextChoices):
+        EVALUATION = "EVALUATION", "Évaluation"
+        AUDIT = "AUDIT", "Audit"
+        MISSION = "MISSION", "Mission de suivi ou de supervision"
+        REVUE = "REVUE", "Revue de projet, comité de pilotage"
+        ANALYSE = "ANALYSE", "Analyse des données"
+        AUTRE = "AUTRE", "Autre"
+
     projet = models.ForeignKey(Projet, on_delete=models.CASCADE, related_name="recommandations")
     code = models.CharField(max_length=20, blank=True)
+    origine = models.CharField(max_length=12, choices=Origine.choices, blank=True,
+                               help_text="D'où vient la recommandation (évaluation, audit…) ; « source » précise laquelle.")
     libelle = models.CharField(max_length=500)
     source = models.CharField(max_length=150, blank=True, help_text="Ex : « Revue à mi-parcours », « Analyse des données du T2 ».")
     date = models.DateField(default=datetime.date.today)
@@ -898,6 +956,29 @@ class Recommandation(TimestampedModel):
         super().save(*args, **kwargs)
 
 
+class DocumentObligatoire(TimestampedModel):
+    """
+    Document qu'un projet doit avoir (convention, rapport de démarrage, plan de passation…) : disponible
+    dès qu'un document de la GED du projet lui est associé.
+    """
+
+    projet = models.ForeignKey(Projet, on_delete=models.CASCADE, related_name="documents_obligatoires")
+    libelle = models.CharField(max_length=200)
+    echeance = models.DateField(null=True, blank=True, help_text="Date à laquelle il doit être disponible.")
+    document = models.ForeignKey(
+        "documents.Document", null=True, blank=True, on_delete=models.SET_NULL, related_name="obligations",
+    )
+    commentaire = models.TextField(blank=True)
+
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ("projet", "echeance", "id")
+
+    def __str__(self):
+        return self.libelle
+
+
 class Apprentissage(TimestampedModel):
     """Leçon apprise, bonne pratique ou décision documentée d'un projet."""
 
@@ -912,6 +993,8 @@ class Apprentissage(TimestampedModel):
     description = models.TextField(blank=True, help_text="Ce qui s'est passé et ce qu'on en retient ; pour une décision, sa justification.")
     date = models.DateField(default=datetime.date.today)
     decideur = models.CharField(max_length=150, blank=True, help_text="Décision : qui l'a prise (comité de pilotage…).")
+    adaptation = models.BooleanField(default=False, help_text="Leçon ou bonne pratique qui a entraîné un changement dans le projet.")
+    changement = models.TextField(blank=True, help_text="Le changement apporté.")
     recommandation = models.ForeignKey(
         Recommandation, null=True, blank=True, on_delete=models.SET_NULL, related_name="apprentissages"
     )
@@ -927,3 +1010,43 @@ class Apprentissage(TimestampedModel):
 
     def __str__(self):
         return self.titre
+
+
+class DroitObjet(TimestampedModel):
+    """
+    Droit précis d'un utilisateur sur un projet, un document stratégique (stratégie, programme, plan…) ou un
+    élément stratégique (pilier, axe…) : lecture seule ou lecture et écriture, et droit d'approuver. Il remplace,
+    pour cet objet, le niveau d'accès et le rôle de l'utilisateur ; un droit sur un document ou un élément vaut
+    pour tout ce qui est en dessous, sauf droit plus précis (voir apps.projects.droits).
+    """
+
+    class Acces(models.TextChoices):
+        LECTURE = "LECTURE", "Lecture seule"
+        ECRITURE = "ECRITURE", "Lecture et écriture"
+
+    utilisateur = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="droits_objets")
+    projet = models.ForeignKey(Projet, null=True, blank=True, on_delete=models.CASCADE, related_name="droits_utilisateurs")
+    document = models.ForeignKey("strategy.CadreStrategique", null=True, blank=True, on_delete=models.CASCADE,
+                                 related_name="droits_utilisateurs")
+    element = models.ForeignKey("strategy.ElementStrategique", null=True, blank=True, on_delete=models.CASCADE,
+                                related_name="droits_utilisateurs")
+    acces = models.CharField(max_length=10, choices=Acces.choices, default=Acces.LECTURE)
+    approuver = models.BooleanField(default=False, help_text="Peut approuver les saisies et demandes de cet objet.")
+
+    history = HistoricalRecords()
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=(models.Q(projet__isnull=False, document__isnull=True, element__isnull=True)
+                       | models.Q(projet__isnull=True, document__isnull=False, element__isnull=True)
+                       | models.Q(projet__isnull=True, document__isnull=True, element__isnull=False)),
+                name="droit_objet_une_cible",
+            ),
+            models.UniqueConstraint(fields=("utilisateur", "projet"), condition=models.Q(projet__isnull=False), name="droit_projet_unique"),
+            models.UniqueConstraint(fields=("utilisateur", "document"), condition=models.Q(document__isnull=False), name="droit_document_unique"),
+            models.UniqueConstraint(fields=("utilisateur", "element"), condition=models.Q(element__isnull=False), name="droit_element_unique"),
+        ]
+
+    def __str__(self):
+        return f"{self.utilisateur} — {self.projet or self.document or self.element} ({self.get_acces_display()})"

@@ -67,6 +67,7 @@ class IndicateurSerializer(serializers.ModelSerializer):
     valeur_actuelle = serializers.SerializerMethodField()
     actualisation = serializers.SerializerMethodField()
     variation = serializers.SerializerMethodField()
+    ecart_cible = serializers.SerializerMethodField()
     palier_actuel = serializers.SerializerMethodField()
     # Lien par table intermédiaire (IndicateurElement) : DRF le rendrait en lecture seule, le
     # rattachement envoyé par le formulaire était alors ignoré sans message.
@@ -104,9 +105,11 @@ class IndicateurSerializer(serializers.ModelSerializer):
             "sens",
             "calcul_taux",
             "agregation",
+            "poids",
             "valeur_actuelle",
             "actualisation",
             "variation",
+            "ecart_cible",
             "formule",
             "formule_explication",
         )
@@ -119,6 +122,11 @@ class IndicateurSerializer(serializers.ModelSerializer):
         from .formules import explication
 
         return explication(obj.formule) if obj.formule else None
+
+    def validate_poids(self, poids):
+        if poids is not None and poids <= 0:
+            raise serializers.ValidationError("Le poids doit être supérieur à 0 (vide : poids 1).")
+        return poids
 
     def validate_formule(self, formule):
         from .formules import FormuleInvalide, valider
@@ -137,6 +145,12 @@ class IndicateurSerializer(serializers.ModelSerializer):
     def get_variation(self, obj):
         """Écart entre les deux dernières périodes saisies."""
         return variation(obj)
+
+    def get_ecart_cible(self, obj):
+        """Ce qu'il reste à faire pour atteindre la cible (négatif : dépassée), dans le sens de l'indicateur."""
+        from apps.dashboard.performance import ecart_a_la_cible
+
+        return ecart_a_la_cible(obj, valeur_actuelle(obj))
 
     def get_valeur_actuelle(self, obj):
         """Valeur retenue pour le taux : somme des saisies, ou dernière valeur saisie."""

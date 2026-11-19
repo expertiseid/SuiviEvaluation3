@@ -13,14 +13,15 @@ from rest_framework.response import Response
 
 from apps.core.masquage import elements_masques
 from apps.core.langues import dans_la_langue_demandee
-from apps.core.permissions import HasGlobalVisibilityOrAssigned, IsAdminOrReadOnly, has_global_visibility
+from apps.core.permissions import DroitsStrategie, HasGlobalVisibilityOrAssigned, IsAdminOrReadOnly, has_global_visibility
 from apps.indicators.services import indicateurs_pour_projet, valeur_actuelle
 from apps.projects.budgets import activites_comptees, total_budget
-from apps.projects.models import Activite, Projet
+from apps.projects.models import Activite, DemandeModification, Projet
 from apps.projects.queryset_filters import visible_projets_ids
 from apps.projects.taux import ArbreTaux
 from apps.reports.services import taux_execution_financiere_global
 
+from .approbation import DemandeStrategieMixin
 from .models import AppreciationStrategique, CadreStrategique, ElementStrategique, TypeDocument, TypeNiveau
 from .serializers import (
     AppreciationStrategiqueSerializer,
@@ -53,14 +54,16 @@ class TypeDocumentViewSet(viewsets.ModelViewSet):
         instance.delete()
 
 
-class CadreStrategiqueViewSet(viewsets.ModelViewSet):
+class CadreStrategiqueViewSet(DemandeStrategieMixin, viewsets.ModelViewSet):
     """
     Documents stratégiques, de tous les maillons de la chaîne (?type_document= pour un maillon) :
     structuration, récapitulatifs (qui comptent aussi ce qui est rattaché en dessous, voir
     chaine.py) et chaîne en Excel.
     """
+    cible_demande = DemandeModification.Cible.DOCUMENT
+    creation_par_demande = False  # un nouveau document n'est pas une modification de la stratégie
     serializer_class = CadreStrategiqueSerializer
-    permission_classes = (IsAdminOrReadOnly,)
+    permission_classes = (DroitsStrategie,)
 
     def get_queryset(self):
         """
@@ -93,7 +96,13 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
 
         # Plus les documents auxquels il est affecté directement (fiche du document).
         projets = Projet.objects.filter(id__in=visible_projets_ids(self.request.user))
-        return queryset.filter(Q(id__in=documents_des_projets(projets)) | Q(utilisateurs_affectes=self.request.user)).distinct()
+        # Et ceux sur lesquels il a un droit précis (document, ou un de ses éléments).
+        utilisateur = self.request.user
+        return queryset.filter(
+            Q(id__in=documents_des_projets(projets)) | Q(utilisateurs_affectes=utilisateur)
+            | Q(droits_utilisateurs__utilisateur=utilisateur)
+            | Q(types_niveaux__elements__droits_utilisateurs__utilisateur=utilisateur)
+        ).distinct()
 
     def perform_destroy(self, instance):
         supprimer_cadre_strategique_cascade(instance)
@@ -343,13 +352,14 @@ class CadreStrategiqueViewSet(viewsets.ModelViewSet):
 class TypeNiveauViewSet(viewsets.ModelViewSet):
     queryset = TypeNiveau.objects.select_related("niveau_parent", "cadre_strategique")
     serializer_class = TypeNiveauSerializer
-    permission_classes = (IsAdminOrReadOnly,)
+    permission_classes = (DroitsStrategie,)
     filterset_fields = ("cadre_strategique",)
 
 
-class ElementStrategiqueViewSet(viewsets.ModelViewSet):
+class ElementStrategiqueViewSet(DemandeStrategieMixin, viewsets.ModelViewSet):
+    cible_demande = DemandeModification.Cible.ELEMENT
     serializer_class = ElementStrategiqueSerializer
-    permission_classes = (IsAdminOrReadOnly,)
+    permission_classes = (DroitsStrategie,)
     filterset_fields = ("type_niveau", "element_parent")
 
     @action(detail=True, methods=["get"], permission_classes=[HasGlobalVisibilityOrAssigned])
@@ -414,8 +424,9 @@ class ElementStrategiqueViewSet(viewsets.ModelViewSet):
         return Response(resultat)
 
 
-class AppreciationStrategiqueViewSet(viewsets.ModelViewSet):
+class AppreciationStrategiqueViewSet(DemandeStrategieMixin, viewsets.ModelViewSet):
     """Appréciations d'un élément de document stratégique par période (?element=)."""
+    cible_demande = DemandeModification.Cible.APPRECIATION
 
     queryset = AppreciationStrategique.objects.select_related("saisi_par").prefetch_related("pieces_justificatives__uploaded_by")
     serializer_class = AppreciationStrategiqueSerializer

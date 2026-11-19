@@ -1,22 +1,22 @@
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import {
-  ActionIcon, Autocomplete, Badge, Button, Card, Group, Modal, Select, SimpleGrid, Stack, Table, Text, Textarea, TextInput, Tooltip,
+  ActionIcon, Autocomplete, Badge, Button, Card, Checkbox, Group, Modal, Select, SimpleGrid, Stack, Table, Text, Textarea, TextInput, Tooltip,
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import { useDocuments } from "../../api/documents";
 import { useIntervenants } from "../../api/intervenants";
-import { apprentissagesApi, rapportsApi, recommandationsApi } from "../../api/pilotage";
+import { apprentissagesApi, documentsObligatoiresApi, rapportsApi, recommandationsApi } from "../../api/pilotage";
 import { useActivitesPourProjet } from "../../api/projects";
 import { EmptyState } from "../../components/common/EmptyState";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
-import type { Apprentissage, RapportProjet, Recommandation } from "../../types";
+import type { Apprentissage, DocumentObligatoire, RapportProjet, Recommandation } from "../../types";
 import { messageErreurApi } from "../../utils/erreurs";
 import { locale } from "../../utils/i18n";
 import { voc } from "../../utils/vocabulaire";
 
-export type SectionPilotage = "rapports" | "recommandations" | "apprentissage";
+export type SectionPilotage = "rapports" | "documents-obligatoires" | "recommandations" | "apprentissage";
 
 const dateFr = (d: string | null) => (d ? new Date(d).toLocaleDateString(locale()) : "—");
 const aujourdhui = () => new Date().toISOString().slice(0, 10);
@@ -37,6 +37,14 @@ const priorites = (): Record<Recommandation["priorite"], { label: string; couleu
   HAUTE: { label: voc("Haute"), couleur: "red" },
   MOYENNE: { label: voc("Moyenne"), couleur: "yellow" },
   BASSE: { label: voc("Basse"), couleur: "gray" },
+});
+const origines = (): Record<Exclude<Recommandation["origine"], "">, string> => ({
+  EVALUATION: voc("Évaluation"),
+  AUDIT: voc("Audit"),
+  MISSION: voc("Mission de suivi ou de supervision"),
+  REVUE: voc("Revue de projet, comité de pilotage"),
+  ANALYSE: voc("Analyse des données"),
+  AUTRE: voc("Autre"),
 });
 const typesApprentissage = (): Record<Apprentissage["type"], { label: string; couleur: string }> => ({
   LECON: { label: voc("Leçon apprise"), couleur: "grape" },
@@ -191,6 +199,97 @@ function Rapports({ projetId, modifiable }: { projetId: number; modifiable: bool
   );
 }
 
+// --- Documents obligatoires -------------------------------------------------------------------------
+
+const modelesDocuments = () => [
+  voc("Convention de financement"), voc("Accord de partenariat"), voc("Rapport de démarrage"), voc("Plan de travail annuel"),
+  voc("Plan de passation des marchés"), voc("Cadre de résultats"), voc("Plan de suivi-évaluation"), voc("Étude de référence"),
+  voc("Plan de gestion environnementale et sociale"), voc("Rapport d'audit"),
+];
+
+function DocumentObligatoireForm({ projetId, element, onClose }: { projetId: number; element: Partial<DocumentObligatoire>; onClose: () => void }) {
+  const sauver = documentsObligatoiresApi.useEnregistrer();
+  const { data: documents = [] } = useDocuments({ projet: projetId });
+  const [d, setD] = useState<Partial<DocumentObligatoire>>(element);
+  const set = (champs: Partial<DocumentObligatoire>) => setD((x) => ({ ...x, ...champs }));
+  const valider = () => {
+    if (!d.libelle?.trim()) {
+      notifications.show({ message: voc("Indiquez le document attendu."), color: "orange" });
+      return;
+    }
+    enregistrer(() => sauver.mutateAsync({ ...d, projet: projetId, libelle: d.libelle?.trim() }), onClose);
+  };
+  return (
+    <Modal opened onClose={onClose} title={element.id ? voc("Modifier le document obligatoire") : voc("Nouveau document obligatoire")} size="lg">
+      <Stack gap="sm">
+        <Autocomplete label={voc("Document attendu")} required data-autofocus data={modelesDocuments()} value={d.libelle ?? ""}
+          onChange={(v) => set({ libelle: v })} />
+        <DateInput label={voc("Doit être disponible le")} clearable value={d.echeance ?? null} onChange={(v) => set({ echeance: versDate(v) })} />
+        <Select label={voc("Document fourni")} description={voc("Parmi les documents du projet (onglet « Documents ») : vide tant qu'il manque.")}
+          searchable clearable data={documents.map((x) => ({ value: String(x.id), label: x.nom }))} value={d.document ? String(d.document) : null}
+          onChange={(v) => set({ document: v ? Number(v) : null })} />
+        <Textarea label={voc("Commentaire")} autosize minRows={2} value={d.commentaire ?? ""} onChange={(e) => set({ commentaire: e.currentTarget.value })} />
+        <Group justify="flex-end">
+          <Button variant="default" onClick={onClose}>{voc("Annuler")}</Button>
+          <Button onClick={valider} loading={sauver.isPending}>{voc("Enregistrer")}</Button>
+        </Group>
+      </Stack>
+    </Modal>
+  );
+}
+
+function DocumentsObligatoires({ projetId, modifiable }: { projetId: number; modifiable: boolean }) {
+  const { data: elements = [], isLoading } = documentsObligatoiresApi.useListe(projetId);
+  const supprimerElement = documentsObligatoiresApi.useSupprimer();
+  const [edition, setEdition] = useState<Partial<DocumentObligatoire> | null>(null);
+  const disponibles = elements.filter((d) => d.disponible).length;
+  return (
+    <Stack gap="sm">
+      <Group justify="space-between">
+        <Text size="sm" c="dimmed">
+          {voc`${disponibles} document(s) disponible(s) sur ${elements.length} obligatoire(s) ; ${elements.filter((d) => d.en_retard).length} manquant(s) après leur échéance.`}
+        </Text>
+        {modifiable && <Button size="xs" leftSection={<Plus size={14} />} onClick={() => setEdition({})}>{voc("Ajouter un document obligatoire")}</Button>}
+      </Group>
+      {!isLoading && elements.length === 0 ? (
+        <EmptyState message={voc("Aucun document obligatoire. Listez ceux que le projet doit avoir (convention, rapport de démarrage, plan de passation…), puis associez chaque document dès qu'il est déposé.")} />
+      ) : (
+        <Table.ScrollContainer minWidth={680}>
+          <Table striped highlightOnHover verticalSpacing="xs" fz="sm">
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>{voc("Document attendu")}</Table.Th><Table.Th>{voc("Échéance")}</Table.Th><Table.Th>{voc("État")}</Table.Th>
+                <Table.Th>{voc("Document fourni")}</Table.Th><Table.Th />
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {elements.map((d) => (
+                <Table.Tr key={d.id}>
+                  <Table.Td>
+                    <Text size="sm" fw={500}>{d.libelle}</Text>
+                    {d.commentaire && <Text size="xs" c="dimmed">{d.commentaire}</Text>}
+                  </Table.Td>
+                  <Table.Td c={d.en_retard ? "red.7" : undefined}>{dateFr(d.echeance)}</Table.Td>
+                  <Table.Td>
+                    <Badge variant="light" color={d.disponible ? "teal" : d.en_retard ? "red" : "gray"}>
+                      {d.disponible ? voc("Disponible") : d.en_retard ? voc("Manquant, en retard") : voc("Manquant")}
+                    </Badge>
+                  </Table.Td>
+                  <Table.Td>{d.document_titre || "—"}</Table.Td>
+                  <Table.Td>
+                    <Actions modifiable={modifiable} onModifier={() => setEdition(d)} onSupprimer={() => supprimer(d.libelle, () => supprimerElement.mutateAsync(d.id))} />
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      )}
+      {edition && <DocumentObligatoireForm projetId={projetId} element={edition} onClose={() => setEdition(null)} />}
+    </Stack>
+  );
+}
+
 // --- Recommandations ---------------------------------------------------------------------------------
 
 function RecommandationForm({ projetId, recommandation, onClose }: { projetId: number; recommandation: Partial<Recommandation>; onClose: () => void }) {
@@ -211,8 +310,11 @@ function RecommandationForm({ projetId, recommandation, onClose }: { projetId: n
       <Stack gap="sm">
         <Textarea label={voc("Recommandation")} required autosize minRows={2} data-autofocus value={r.libelle ?? ""}
           onChange={(e) => set({ libelle: e.currentTarget.value })} />
-        <SimpleGrid cols={{ base: 1, sm: 2 }}>
-          <Autocomplete label={voc("Source")} description={voc("D'où vient-elle ?")} data={sources()} value={r.source ?? ""}
+        <SimpleGrid cols={{ base: 1, sm: 3 }}>
+          <Select label={voc("Origine")} description={voc("Évaluation, audit, supervision…")} clearable
+            data={Object.entries(origines()).map(([value, label]) => ({ value, label }))}
+            value={r.origine || null} onChange={(v) => set({ origine: (v ?? "") as Recommandation["origine"] })} />
+          <Autocomplete label={voc("Source")} description={voc("Laquelle précisément ?")} data={sources()} value={r.source ?? ""}
             onChange={(v) => set({ source: v })} />
           <Select label={voc("Rapport d'origine")} description={voc("Facultatif")} clearable data={rapports.map((x) => ({ value: String(x.id), label: x.libelle }))}
             value={r.rapport ? String(r.rapport) : null} onChange={(v) => set({ rapport: v ? Number(v) : null })} />
@@ -274,7 +376,7 @@ function Recommandations({ projetId, modifiable }: { projetId: number; modifiabl
                   <Table.Tr key={r.id}>
                     <Table.Td>
                       <Text size="sm"><Text span fw={600}>{r.code}</Text> {r.libelle}</Text>
-                      <Text size="xs" c="dimmed">{[r.source, r.rapport_libelle, dateFr(r.date)].filter((x) => x && x !== "—").join(" · ")}</Text>
+                      <Text size="xs" c="dimmed">{[r.origine ? origines()[r.origine] : "", r.source, r.rapport_libelle, dateFr(r.date)].filter((x) => x && x !== "—").join(" · ")}</Text>
                       {r.suivi && <Text size="xs" mt={2}>{r.suivi}</Text>}
                     </Table.Td>
                     <Table.Td><Badge variant="light" color={prio[r.priorite].couleur}>{prio[r.priorite].label}</Badge></Table.Td>
@@ -330,6 +432,16 @@ function ApprentissageForm({ projetId, element, onClose }: { projetId: number; e
               onChange={(e) => set({ decideur: e.currentTarget.value })} />
           )}
         </SimpleGrid>
+        {a.type !== "DECISION" && (
+          <>
+            <Checkbox label={voc("Cette leçon a entraîné un changement dans le projet")} checked={a.adaptation ?? false}
+              onChange={(e) => set({ adaptation: e.currentTarget.checked })} />
+            {a.adaptation && (
+              <Textarea label={voc("Changement apporté")} autosize minRows={2} value={a.changement ?? ""}
+                onChange={(e) => set({ changement: e.currentTarget.value })} />
+            )}
+          </>
+        )}
         <SimpleGrid cols={{ base: 1, sm: 2 }}>
           <Select label={voc("Recommandation liée")} clearable searchable data={recommandations.map((r) => ({ value: String(r.id), label: `${r.code} ${r.libelle}` }))}
             value={a.recommandation ? String(a.recommandation) : null} onChange={(v) => set({ recommandation: v ? Number(v) : null })} />
@@ -368,10 +480,12 @@ function Apprentissages({ projetId, modifiable }: { projetId: number; modifiable
                 <div style={{ flex: 1 }}>
                   <Group gap="xs" mb={4}>
                     <Badge variant="light" color={types[e.type].couleur}>{types[e.type].label}</Badge>
+                    {e.adaptation && <Badge variant="light" color="green">{voc("A entraîné un changement")}</Badge>}
                     <Text size="xs" c="dimmed">{[dateFr(e.date), e.decideur, e.element_libelle, e.recommandation_libelle].filter(Boolean).join(" · ")}</Text>
                   </Group>
                   <Text fw={600} size="sm">{e.titre}</Text>
                   {e.description && <Text size="sm" style={{ whiteSpace: "pre-line" }}>{e.description}</Text>}
+                  {e.adaptation && e.changement && <Text size="sm" c="green.8" mt={2}>{voc("Changement :")} {e.changement}</Text>}
                 </div>
                 <Actions modifiable={modifiable} onModifier={() => setEdition(e)} onSupprimer={() => supprimer(e.titre, () => supprimerElement.mutateAsync(e.id))} />
               </Group>
@@ -384,9 +498,10 @@ function Apprentissages({ projetId, modifiable }: { projetId: number; modifiable
   );
 }
 
-/** Onglets « Rapports », « Recommandations » et « Leçons et décisions » d'un projet. */
+/** Onglets « Rapports », « Documents obligatoires », « Recommandations » et « Leçons et décisions » d'un projet. */
 export function PilotageTab({ projetId, section, modifiable }: { projetId: number; section: SectionPilotage; modifiable: boolean }) {
   if (section === "rapports") return <Rapports projetId={projetId} modifiable={modifiable} />;
+  if (section === "documents-obligatoires") return <DocumentsObligatoires projetId={projetId} modifiable={modifiable} />;
   if (section === "recommandations") return <Recommandations projetId={projetId} modifiable={modifiable} />;
   return <Apprentissages projetId={projetId} modifiable={modifiable} />;
 }

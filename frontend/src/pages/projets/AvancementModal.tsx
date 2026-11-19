@@ -29,6 +29,8 @@ import {
 import { AIDES_METHODE, libelleMethodeEffective } from "../../utils/methodesCalcul";
 import { messageErreurApi } from "../../utils/erreurs";
 import { voc } from "../../utils/vocabulaire";
+import { ACTIVITE_STATUT_LABEL } from "../../utils/statusTones";
+import type { StatutActivite } from "../../types";
 import type { Activite, JalonLivrable } from "../../types";
 
 import { locale } from "../../utils/i18n";
@@ -342,7 +344,7 @@ export function AvancementModal({ element, modifiable }: { element: Activite; mo
       )}
       {methode === "BINAIRE" && (
         <Text size="sm">
-          {voc("Statut actuel :")} <strong>{element.statut === "REALISEE" ? voc("Réalisée") : element.statut === "EN_COURS" ? voc("En cours") : voc("Non réalisée")}</strong>
+          {voc("Statut actuel :")} <strong>{ACTIVITE_STATUT_LABEL[element.statut as StatutActivite] ?? element.statut}</strong>
         </Text>
       )}
     </Stack>

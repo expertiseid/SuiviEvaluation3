@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "../../auth/useAuth";
 import { Alert, Button, Card, Checkbox, FileInput, Group, List, Loader, Modal, MultiSelect, Progress, Radio, SegmentedControl, Stack, Text, TextInput, Title } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useQueryClient } from "@tanstack/react-query";
@@ -39,6 +40,12 @@ function cadresEtProgrammes(cadres: CadreStrategique[], choisis: string[]): Set<
  * d'une sauvegarde, par exemple pour passer d'une plateforme à une autre (Administrateur).
  */
 export function SauvegardeTransfert() {
+  // Par défaut, l'Administrateur seulement ; un autre utilisateur, s'il y est autorisé (fiche Utilisateurs).
+  // Vider l'espace, retirer un extrait et remplacer tout le contenu restent à l'Administrateur.
+  const { user } = useAuth();
+  const estAdmin = user?.role === "ADMIN";
+  const peutExporter = estAdmin || !!user?.export_global;
+  const peutImporter = estAdmin || !!user?.import_global;
   const [exportEnCours, setExportEnCours] = useState(false);
   const [etendue, setEtendue] = useState<"tout" | "selection">("tout");
   const [projetsChoisis, setProjetsChoisis] = useState<string[]>([]);
@@ -174,6 +181,7 @@ export function SauvegardeTransfert() {
     <Stack gap="md" maw={820}>
       <Card withBorder radius="md" padding="lg">
         <Group gap="xs" mb="xs"><Download size={18} /><Title order={4}>{voc("Exporter les données")}</Title></Group>
+        {!peutExporter && <Alert color="gray" mb="sm">{voc("L'export global est réservé à l'administrateur : demandez-lui l'autorisation.")}</Alert>}
         <SegmentedControl
           mb="sm"
           value={etendue}
@@ -185,13 +193,13 @@ export function SauvegardeTransfert() {
             <Text size="sm">
               {voc("Un seul fichier zip avec toutes les données de votre espace : stratégies, projets, planification, indicateurs, suivis, bénéficiaires, documents, plaintes, comptes, réglages et fichiers.")}
             </Text>
-            <Checkbox
+            {estAdmin && <Checkbox
               color="red"
               label={voc("Vider l'espace après le téléchargement")}
               description={voc("Toutes les données seront supprimées dès que le fichier sera téléchargé : stratégies, projets, bénéficiaires, documents, plaintes, partenaires et fichiers. Les comptes, les réglages, le logo, les zones et les listes de référence restent.")}
               checked={retirer}
               onChange={(e) => setRetirer(e.currentTarget.checked)}
-            />
+            />}
           </Stack>
         ) : (
           <Stack gap="xs" mb="sm">
@@ -219,7 +227,7 @@ export function SauvegardeTransfert() {
               searchable clearable maw={640}
             />
             <Text size="xs" c="dimmed">{voc("Un extrait se reprend toujours en mode « Ajouter » : il ne peut jamais effacer l'espace qui le reçoit. Les comptes cités y arrivent désactivés.")}</Text>
-            <Checkbox
+            {estAdmin && <Checkbox
               color="red"
               label={voc("Retirer de la plateforme ce qui est exporté (après le téléchargement)")}
               description={retraitPossible
@@ -228,7 +236,7 @@ export function SauvegardeTransfert() {
               checked={retirer && retraitPossible}
               disabled={!retraitPossible}
               onChange={(e) => setRetirer(e.currentTarget.checked)}
-            />
+            />}
           </Stack>
         )}
         <Alert color="orange" icon={<TriangleAlert size={16} />} mb="sm">
@@ -238,7 +246,7 @@ export function SauvegardeTransfert() {
           leftSection={retirer && retraitPossible ? <Trash2 size={16} /> : <DatabaseBackup size={16} />}
           color={retirer && retraitPossible ? "red" : undefined}
           onClick={() => (retirer && retraitPossible ? setAvertissement(true) : exporter())}
-          disabled={selectionVide || exportEnCours} w="fit-content"
+          disabled={!peutExporter || selectionVide || exportEnCours} w="fit-content"
           {...(exportEnCours ? { leftSection: <Loader size={14} /> } : {})}
         >
           {exportEnCours ? voc("Veuillez patienter…") : etendue === "tout"
@@ -297,6 +305,7 @@ export function SauvegardeTransfert() {
 
       <Card withBorder radius="md" padding="lg">
         <Group gap="xs" mb="xs"><Upload size={18} /><Title order={4}>{voc("Reprendre une sauvegarde")}</Title></Group>
+        {!peutImporter && <Alert color="gray" mb="sm">{voc("L'import global est réservé à l'administrateur : demandez-lui l'autorisation.")}</Alert>}
         <Text size="sm" mb="xs">
           {voc("Pour retrouver, dans cet espace, tout ce que vous aviez dans un autre (sur cette plateforme ou une autre).")}
         </Text>
@@ -304,7 +313,7 @@ export function SauvegardeTransfert() {
           <Stack gap="xs">
             <Radio value="ajouter" label={voc("Ajouter à ce qui existe (recommandé)")}
               description={voc("Cet espace garde tout ce qu'il a ; les données de la sauvegarde s'y ajoutent. Ce qui existe déjà (zones, comptes, bailleurs, réglages…) n'est pas dupliqué ; un projet dont le code existe déjà est ajouté avec un code suffixé « -R1 ».")} />
-            <Radio value="remplacer" label={voc("Remplacer tout le contenu")} disabled={!!manifeste?.selection}
+            <Radio value="remplacer" label={voc("Remplacer tout le contenu")} disabled={!estAdmin || !!manifeste?.selection}
               description={voc("Tout le contenu actuel de cet espace est remplacé par celui de la sauvegarde. Ensuite, on se connecte avec les comptes de l'espace sauvegardé ; votre compte est gardé s'il n'y figure pas.")} />
           </Stack>
         </Radio.Group>
@@ -315,10 +324,11 @@ export function SauvegardeTransfert() {
             accept=".zip,application/zip"
             value={fichier}
             onChange={(f) => { setFichier(f); setManifeste(null); setEnvoi(null); setIdentifiant(null); setConfirmation(""); }}
+            disabled={!peutImporter}
             clearable
             w={340}
           />
-          <Button variant="light" onClick={analyser} disabled={!fichier || (envoi !== null && !manifeste)}>{voc("Envoyer et vérifier")}</Button>
+          <Button variant="light" onClick={analyser} disabled={!peutImporter || !fichier || (envoi !== null && !manifeste)}>{voc("Envoyer et vérifier")}</Button>
         </Group>
         {envoi !== null && !manifeste && <Progress value={envoi * 100} mb="sm" animated />}
         {manifeste && (

@@ -338,6 +338,9 @@ class Dossier(TimestampedModel):
         "projects.Projet", on_delete=models.SET_NULL, null=True, blank=True, related_name="dossiers_plaintes",
     )
     lieu = TexteChiffre(blank=True)
+    # Zone administrative du retour (commune, village…), pour les statistiques par territoire ; le lieu
+    # reste un texte libre (et chiffré) pour les précisions.
+    zone = models.ForeignKey("geo.Zone", on_delete=models.SET_NULL, null=True, blank=True, related_name="dossiers_plaintes")
     description = TexteChiffre()
     concerne_personnel = models.BooleanField(
         null=True, blank=True,

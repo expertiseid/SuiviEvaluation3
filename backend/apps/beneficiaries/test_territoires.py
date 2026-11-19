@@ -47,6 +47,27 @@ def test_beneficiaires_et_territoires():
     assert t["zones_sans_beneficiaire_exemples"] == [{"projet": "TE-1", "zone": "Séguénéga", "niveau": "Commune"}]
     assert t["hors_zone"] == 1 and t["hors_zone_exemples"] == [{"projet": "TE-1", "zone": "Sud", "beneficiaires": 1}]
     assert (t["plaintes"], t["plaintes_pour_1000"]) == (0, 0.0)
+    assert t["par_age"] == [{"tranche": "", "nombre": 4}] and t["vulnerables"] == 0 and t["groupes_prioritaires"] == []
+
+    # Participations aux activités : « a » suit deux activités (un bénéficiaire, deux participations, plusieurs appuis).
+    from apps.projects.models import Activite
+
+    from .models import StatutParticulier
+
+    a1, a2 = Activite.objects.create(projet=projet, libelle="A1"), Activite.objects.create(projet=projet, libelle="A2")
+    premiere, seconde = ParticipationProjet.objects.filter(beneficiaire=a)
+    ParticipationProjet.objects.filter(pk=premiere.pk).update(activite=a1)
+    ParticipationProjet.objects.filter(pk=seconde.pk).update(activite=a2)
+    ParticipationProjet.objects.filter(beneficiaire__nom="b").update(activite=a1)
+    pdi = StatutParticulier.objects.get_or_create(code="PDI", defaults={"libelle": "PDI"})[0]
+    a.statuts_particuliers.add(pdi)
+    Beneficiaire.objects.filter(pk=a.pk).update(date_naissance="2000-01-01")
+    Projet.objects.filter(pk=projet.pk).update(cible_pdi=4)
+    t = beneficiaires_territoires([projet.id])
+    assert (t["participations"], t["participations_par_beneficiaire"], t["plusieurs_appuis"]) == (3, 0.8, 1)
+    assert (t["vulnerables"], t["part_vulnerables"]) == (1, 25.0)
+    assert t["groupes_prioritaires"] == [{"groupe": pdi.libelle, "atteints": 1, "cible": 4, "couverture": 25.0}]
+    assert {x["tranche"]: x["nombre"] for x in t["par_age"]} == {"18-35 ans": 1, "": 3}
 
     # Bénéficiaires indirects saisis au projet : ils priment sur l'estimation par les ménages.
     Projet.objects.filter(pk=projet.pk).update(beneficiaires_indirects=50)

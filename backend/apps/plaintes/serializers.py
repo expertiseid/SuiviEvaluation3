@@ -215,6 +215,7 @@ class DossierSerializer(serializers.ModelSerializer):
     projet_nom = serializers.CharField(source="projet.nom", read_only=True, default=None)
     projet_code = serializers.CharField(source="projet.code", read_only=True, default=None)
     circuit_nom = serializers.CharField(source="circuit.nom", read_only=True, default=None)
+    zone_nom = serializers.CharField(source="zone.nom", read_only=True, default=None)
     etape_nom = serializers.CharField(source="etape.nom", read_only=True, default=None)
     saisi_par_nom = serializers.SerializerMethodField()
     responsable_nom = serializers.SerializerMethodField()
@@ -226,7 +227,7 @@ class DossierSerializer(serializers.ModelSerializer):
         fields = (
             "id", "numero", "canal", "date_reception", "recueilli_directement", "type_retour", "type_retour_nom",
             "categorie", "categorie_nom", "categorie_parent_nom", "priorite", "priorite_nom", "priorite_urgente",
-            "projet", "projet_nom", "projet_code", "lieu", "description", "concerne_personnel", "sensible", "circuit",
+            "projet", "projet_nom", "projet_code", "lieu", "zone", "zone_nom", "description", "concerne_personnel", "sensible", "circuit",
             "circuit_nom", "etape", "etape_nom", "statut", "anonyme", "nom", "telephone", "courriel", "mode_reponse",
             "consentement", "consentement_texte", "consentement_le", "langue", "saisi_par", "saisi_par_nom", "created_at",
             "responsable", "responsable_nom", "decision", "date_decision", "date_reponse", "issue", "motif_cloture",

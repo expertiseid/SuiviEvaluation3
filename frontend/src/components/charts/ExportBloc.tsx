@@ -6,6 +6,9 @@ import { apiClient } from "../../api/client";
 import { messageErreurApi } from "../../utils/erreurs";
 import { langue } from "../../utils/i18n";
 import { voc } from "../../utils/vocabulaire";
+import { exportAutorise } from "../../utils/exportsAutorises";
+import { exporterCommeEcran, HORS_EXPORT, nomDeFichier, telechargerFichier as telecharger } from "../../utils/exportEcran";
+import type { FiltresDashboard } from "../../types";
 
 /** Données d'un bloc, pour le CSV et l'Excel : première colonne = catégories, suivantes = séries. */
 export interface DonneesExport {
@@ -19,24 +22,7 @@ export interface DonneesExport {
   legende?: { nom: string; couleur: string }[];
 }
 
-/** Classe des éléments à ne pas reproduire dans les images (boutons du bloc). */
-export const HORS_EXPORT = "hors-export";
-
-function nomDeFichier(titre: string) {
-  return (titre.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w-]+/g, "_").replace(/^_+|_+$/g, "") || "graphique")
-    .slice(0, 80);
-}
-
-function telecharger(contenu: Blob, nom: string) {
-  const url = URL.createObjectURL(contenu);
-  const lien = document.createElement("a");
-  lien.href = url;
-  lien.download = nom;
-  document.body.appendChild(lien);
-  lien.click();
-  lien.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
+export { HORS_EXPORT };
 
 /** CSV lisible par le tableur de la langue : « ; » et virgule décimale là où la virgule est décimale. */
 function csv(donnees: DonneesExport) {
@@ -133,12 +119,14 @@ function svgVectoriel(zone: HTMLElement, titre: string, legende: DonneesExport["
 
 /**
  * Télécharger un bloc du tableau de bord seul : image PNG (haute résolution, fond blanc ou transparent),
- * image vectorielle SVG (graphiques), données CSV et Excel avec graphique natif relié aux données.
+ * image vectorielle SVG (graphiques), PDF et Word comme à l'écran, données CSV et Excel avec graphique natif relié aux données.
  */
-export function ExportBloc({ titre, zone, donnees }: {
+export function ExportBloc({ titre, zone, donnees, filtres }: {
   titre: string;
   zone: RefObject<HTMLDivElement | null>;
   donnees?: () => DonneesExport | null;
+  /** Filtres du tableau de bord, rappelés dans le PDF et le Word. */
+  filtres?: FiltresDashboard;
 }) {
   const [encours, setEncours] = useState(false);
   const nom = nomDeFichier(titre);
@@ -177,6 +165,12 @@ export function ExportBloc({ titre, zone, donnees }: {
     telecharger(fichier, `${nom}.svg`);
   });
 
+  // PDF et Word : le bloc tel qu'il s'affiche, avec son titre et les filtres.
+  const document_ = (fichier: "pdf" | "docx") => lancer(async () => {
+    if (!zone.current) return;
+    await exporterCommeEcran(fichier, [{ element: zone.current, titre, largeur: 12 }], filtres, titre);
+  });
+
   const tableau = (format: "csv" | "xlsx") => lancer(async () => {
     const d = donnees?.();
     if (!d) return;
@@ -189,6 +183,8 @@ export function ExportBloc({ titre, zone, donnees }: {
     telecharger(reponse.data, `${nom}.xlsx`);
   });
 
+  // Exports désactivés pour ce compte : pas de bouton de téléchargement.
+  if (!exportAutorise()) return null;
   return (
     <Menu position="bottom-end" withinPortal>
       <Menu.Target>
@@ -203,6 +199,9 @@ export function ExportBloc({ titre, zone, donnees }: {
         <Menu.Item leftSection={<IconeImage size={15} />} onClick={() => png(false)}>{voc("PNG (haute résolution)")}</Menu.Item>
         <Menu.Item leftSection={<FileImage size={15} />} onClick={() => png(true)}>{voc("PNG, fond transparent")}</Menu.Item>
         <Menu.Item leftSection={<PenTool size={15} />} onClick={svg}>{voc("SVG (vectoriel)")}</Menu.Item>
+        <Menu.Label>{voc("Document, comme à l'écran")}</Menu.Label>
+        <Menu.Item leftSection={<FileText size={15} color="var(--mantine-color-red-7)" />} onClick={() => document_("pdf")}>PDF</Menu.Item>
+        <Menu.Item leftSection={<FileText size={15} color="var(--mantine-color-blue-7)" />} onClick={() => document_("docx")}>Word</Menu.Item>
         {donnees && (
           <>
             <Menu.Label>{voc("Données")}</Menu.Label>

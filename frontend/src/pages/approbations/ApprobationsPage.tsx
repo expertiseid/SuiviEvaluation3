@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Check, X } from "lucide-react";
-import { Badge, Button, Card, Group, Modal, Stack, Table, Text, Textarea, Title } from "@mantine/core";
+import { Badge, Button, Card, Group, Modal, MultiSelect, Stack, Table, Text, Textarea, Title } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { useApprobations, useTraiterDemande, useTraiterSaisie } from "../../api/approbations";
+import {
+  useApprobations, useEnregistrerReglagesApprobation, useReglagesApprobation, useTraiterDemande, useTraiterSaisie,
+} from "../../api/approbations";
+import { useAuth } from "../../auth/useAuth";
+import { modulesApprouvables } from "../../utils/modules";
 import { TitreRubrique } from "../../components/common/TitreRubrique";
 import { messageErreurApi } from "../../utils/erreurs";
 import { voc } from "../../utils/vocabulaire";
@@ -53,6 +57,33 @@ function DetailDemande({ demande }: { demande: DemandeModification }) {
   );
 }
 
+/** Administrateur : onglets dont toute création, modification ou suppression doit être approuvée, pour tous. */
+function ReglagesApprobation() {
+  const { data } = useReglagesApprobation();
+  const enregistrer = useEnregistrerReglagesApprobation();
+  const [modules, setModules] = useState<string[] | null>(null);
+  const valeur = modules ?? data?.modules_a_approuver ?? [];
+  return (
+    <Card withBorder padding="md">
+      <Title order={5} mb={4}>{voc("Onglets soumis à approbation")}</Title>
+      <Text size="sm" c="dimmed" mb="xs">
+        {voc("Dans ces onglets, toute création, modification ou suppression faite par quelqu'un d'autre que l'administrateur devient une demande, appliquée une fois approuvée. Pour une personne seulement, réglez-le dans sa fiche (Utilisateurs).")}
+      </Text>
+      <Group align="flex-end" gap="sm">
+        <MultiSelect style={{ flex: 1 }} data={modulesApprouvables()} value={valeur} onChange={setModules} searchable clearable
+          placeholder={valeur.length ? undefined : voc("Aucun : pas d'approbation par onglet")} />
+        <Button disabled={modules === null} loading={enregistrer.isPending}
+          onClick={() => enregistrer.mutate(valeur, {
+            onSuccess: () => { notifications.show({ message: voc("Enregistré"), color: "green" }); setModules(null); },
+            onError: (e) => notifications.show({ message: messageErreurApi(e, voc("Erreur lors de l'enregistrement")), color: "red" }),
+          })}>
+          {voc("Enregistrer")}
+        </Button>
+      </Group>
+    </Card>
+  );
+}
+
 /**
  * Écran « Approbations » : saisies de réalisations et changements de planification des projets
  * qui exigent une approbation. L'approbateur approuve ou rejette (avec un motif, montré à
@@ -60,6 +91,7 @@ function DetailDemande({ demande }: { demande: DemandeModification }) {
  */
 export function ApprobationsPage() {
   const { data, isLoading } = useApprobations();
+  const { user } = useAuth();
   const traiterSaisie = useTraiterSaisie();
   const traiterDemande = useTraiterDemande();
   const [rejet, setRejet] = useState<{ saisie?: SaisieAApprouver; demande?: DemandeModification } | null>(null);
@@ -104,9 +136,10 @@ export function ApprobationsPage() {
     <Stack gap="md">
       <div>
         <TitreRubrique route="/approbations" defaut={voc("Approbations")} />
+        {user?.role === "ADMIN" && <div style={{ marginTop: 8, marginBottom: 8 }}><ReglagesApprobation /></div>}
         <Text size="sm" c="dimmed">
           {approbateur
-            ? voc("Saisies et changements en attente sur les projets qui exigent une approbation : ils ne comptent (ou ne s'appliquent) qu'une fois approuvés. Un rejet demande un motif, montré à l'auteur.")
+            ? voc("Saisies et changements en attente sur les projets et stratégies qui exigent une approbation : ils ne comptent (ou ne s'appliquent) qu'une fois approuvés. Un rejet demande un motif, montré à l'auteur.")
             : voc("Vos saisies et demandes de changement en attente d'approbation, et celles qui ont été rejetées (avec le motif). Une saisie rejetée peut être corrigée depuis la page Suivi : elle repart alors en approbation.")}
         </Text>
       </div>
@@ -149,7 +182,7 @@ export function ApprobationsPage() {
                     <Text size="xs" c="dimmed">{fmtDateHeure(s.date)}</Text>
                   </Table.Td>
                   <Table.Td>
-                    {approbateur ? (
+                    {(s.approuvable ?? approbateur) ? (
                       boutons(
                         () => traiterSaisie.mutate({ type: s.type, id: s.id, approuver: true }, resultat(voc("Saisie approuvée"))),
                         () => setRejet({ saisie: s }),
@@ -169,14 +202,14 @@ export function ApprobationsPage() {
       </Card>
 
       <Card withBorder padding="md">
-        <Title order={4} mb="xs">{voc("Changements de planification")} ({data.demandes.length})</Title>
+        <Title order={4} mb="xs">{voc("Demandes de modification")} ({data.demandes.length})</Title>
         {data.demandes.length === 0 ? (
           <Text size="sm" c="dimmed">{voc("Rien en attente.")}</Text>
         ) : (
           <Table fz="sm" verticalSpacing={6} highlightOnHover>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>{voc("Projet")}</Table.Th>
+                <Table.Th>{voc("Projet ou stratégie")}</Table.Th>
                 <Table.Th>{voc("Demande")}</Table.Th>
                 <Table.Th>{voc("Élément")}</Table.Th>
                 <Table.Th>{voc("Détail")}</Table.Th>
@@ -188,7 +221,7 @@ export function ApprobationsPage() {
               {data.demandes.map((d) => (
                 <Table.Tr key={d.id}>
                   <Table.Td>
-                    <Link to={`/projets/${d.projet_id}`}>{d.projet_code}</Link>
+                    <Link to={d.projet_id ? `/projets/${d.projet_id}` : `/strategie/${d.document_id}`}>{d.projet_code}</Link>
                   </Table.Td>
                   <Table.Td>
                     <Badge variant="light" color={COULEURS_ACTION[d.action]}>{d.action_libelle}</Badge>
@@ -201,7 +234,7 @@ export function ApprobationsPage() {
                     <Text size="xs" c="dimmed">{fmtDateHeure(d.date)}</Text>
                   </Table.Td>
                   <Table.Td>
-                    {approbateur ? (
+                    {(d.approuvable ?? approbateur) ? (
                       boutons(
                         () => traiterDemande.mutate({ id: d.id, approuver: true }, resultat(voc("Changement approuvé et appliqué"))),
                         () => setRejet({ demande: d }),

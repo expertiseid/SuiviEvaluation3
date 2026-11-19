@@ -346,6 +346,7 @@ export function DossierPlaintePage() {
                   </Ligne>
                   <Ligne libelle={voc("Projet")}>{dossier.projet_code ? `${dossier.projet_code} — ${dossier.projet_nom}` : dossier.projet_nom}</Ligne>
                   <Ligne libelle={voc("Lieu")}>{dossier.lieu}</Ligne>
+                  {dossier.zone_nom && <Ligne libelle={voc("Zone administrative")}>{dossier.zone_nom}</Ligne>}
                 </SimpleGrid>
                 <Ligne libelle={voc("Description")}><Text size="sm" style={{ whiteSpace: "pre-line" }}>{dossier.description}</Text></Ligne>
                 <Ligne libelle={voc("Concerne le personnel ou un partenaire")}>

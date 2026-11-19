@@ -14,7 +14,8 @@ from apps.projects.taux import libelle_methode
 
 from .services import construire_dashboard_suivi, ecart_texte, taux_de, valeur_attendue_a
 
-STATUT_ACTIVITE_LABEL = {"NON_REALISEE": "Non réalisée", "EN_COURS": "En cours", "REALISEE": "Réalisée"}
+STATUT_ACTIVITE_LABEL = {"NON_REALISEE": "Non réalisée", "EN_COURS": "En cours", "REALISEE": "Réalisée",
+                         "SUSPENDUE": "Suspendue", "ANNULEE": "Annulée"}
 STATUT_SOUS_ACTIVITE_LABEL = {"PLANIFIEE": "Planifiée", "EN_COURS": "En cours", "TERMINEE": "Terminée"}
 STATUT_GLOBAL_LABEL = {"EN_RETARD": "En retard", "ATTEINT": "Atteint", "EN_COURS": "En cours"}
 STATUT_GLOBAL_COULEUR = {"EN_RETARD": "#d03b3b", "ATTEINT": "#0ca30c", "EN_COURS": "#fab219"}

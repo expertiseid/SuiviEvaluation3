@@ -713,7 +713,10 @@ function NoeudElement({
             <DetailsElement element={element} />
           </div>
         </Group>
-        {editionActive && <ActionsElement element={element} onModifier={onModifier} ajoutDessous={ajoutDessous(element)} />}
+        {/* Droits précis : un élément en lecture seule (pilier…) n'a pas de boutons, même en mode édition. */}
+        {editionActive && element.mes_droits?.ecriture !== false && (
+          <ActionsElement element={element} onModifier={onModifier} ajoutDessous={ajoutDessous(element)} />
+        )}
       </Group>
 
       {niveauEnfant && (
@@ -1239,8 +1242,13 @@ export function CadreStrategiqueDetailPage() {
   const { data: niveaux, isLoading: chargementNiveaux } = useTypesNiveaux(cadreId);
   const { data: elements, isLoading: chargementElements } = useElementsStrategiques({ cadre_strategique: cadreId });
   const [modalImportOuvert, setModalImportOuvert] = useState(false);
-  const { peutEcrire } = useAccesModules();
-  const [editionActive, setEditionActive] = useState(false);
+  const { peutEcrire: peutEcrireModule } = useAccesModules();
+  // Droits sur ce document (administrateur, ou droit précis) : sans eux, consultation seulement.
+  const peutEcrire = (cle: string) => peutEcrireModule(cle, cadre?.mes_droits);
+  const [editionDemandee, setEditionActive] = useState(false);
+  // Mode édition : droit sur le document, ou sur au moins un de ses éléments (pilier, axe…).
+  const peutEditer = peutEcrire("/strategie") || (elements ?? []).some((e) => peutEcrireModule("/strategie", e.mes_droits));
+  const editionActive = editionDemandee && peutEditer;
   const [ficheOuverte, setFicheOuverte] = useState(false);
   // Programme, Pilier… : une fiche comme celle d'un projet, premier onglet.
   const avecFiche = rang > 0;
@@ -1256,7 +1264,7 @@ export function CadreStrategiqueDetailPage() {
           {cadre?.type_document_nom && maillons.length > 1 && <Badge variant="light" color="grape">{cadre.type_document_nom}</Badge>}
         </Group>
         <Group gap="xs">
-          <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />
+          {peutEditer && <BoutonModeEdition actif={editionActive} onToggle={() => setEditionActive((v) => !v)} />}
           {avecFiche && peutEcrire("/strategie") && (
             <Button variant="light" leftSection={<Pencil size={16} />} onClick={() => setFicheOuverte(true)}>
               {voc("Modifier la fiche")}
@@ -1346,7 +1354,7 @@ export function CadreStrategiqueDetailPage() {
           )}
 
           <Tabs.Panel value="configuration" pt="md">
-            <ConfigurationNiveaux cadreStrategiqueId={cadreId} niveaux={niveaux ?? []} editionActive={editionActive} />
+            <ConfigurationNiveaux cadreStrategiqueId={cadreId} niveaux={niveaux ?? []} editionActive={editionActive && peutEcrire("/strategie")} />
           </Tabs.Panel>
 
           <Tabs.Panel value="arborescence" pt="md">

@@ -84,7 +84,8 @@ def qualite(projet_ids) -> dict:
     delai = datetime.timedelta(days=DELAI_SAISIE_JOURS)
     valeurs = list(ValeurIndicateur.objects.filter(indicateur__in=Indicateur.objects.filter(filtre_indicateurs))
                    .values("indicateur_id", "indicateur__libelle", "indicateur__unite", "periode_fin", "date_saisie",
-                           "valeur_realisee", "indicateur__projet_id", "indicateur__activite__projet_id"))
+                           "valeur_realisee", "indicateur__projet_id", "indicateur__activite__projet_id")
+                   .annotate(pieces=Count("pieces_justificatives")))
     points = list(PointSuivi.objects.filter(Q(activite__projet_id__in=projet_ids) | Q(sous_activite__activite__projet_id__in=projet_ids))
                   .values("periode_fin", "date_saisie"))
     saisies = [(v["periode_fin"], v["date_saisie"]) for v in valeurs] + [(p["periode_fin"], p["date_saisie"]) for p in points]
@@ -117,13 +118,21 @@ def qualite(projet_ids) -> dict:
     # Doublons et approbations.
     doublons = SignalementDoublon.objects.aggregate(
         total=Count("id"), non_traites=Count("id", filter=Q(statut=SignalementDoublon.Statut.SIGNALE)))
-    approbations = {"en_attente": 0, "rejetees": 0}
+    approbations = {"en_attente": 0, "rejetees": 0, "approuvees": 0}
+    validations = []  # jours entre la saisie et l'approbation
     for qs in (ValeurIndicateur.tous.filter(indicateur__in=Indicateur.objects.filter(filtre_indicateurs)),
                PointSuivi.tous.filter(Q(activite__projet_id__in=projet_ids) | Q(sous_activite__activite__projet_id__in=projet_ids)),
                TauxManuel.tous.filter(activite__projet_id__in=projet_ids)):
         compte = qs.aggregate(en_attente=Count("id", filter=Q(etat_approbation=EtatApprobation.EN_ATTENTE)),
-                              rejetees=Count("id", filter=Q(etat_approbation=EtatApprobation.REJETEE)))
+                              rejetees=Count("id", filter=Q(etat_approbation=EtatApprobation.REJETEE)),
+                              approuvees=Count("id", filter=Q(etat_approbation=EtatApprobation.APPROUVEE)))
         approbations = {c: approbations[c] + compte[c] for c in approbations}
+        validations += [(le - saisie).total_seconds() / 86400 for saisie, le in qs.filter(approbation_le__isnull=False)
+                        .values_list("date_saisie", "approbation_le")] if hasattr(qs.model, "date_saisie") else []
+
+    # Délais : de la fin de la période à la saisie, de la saisie à l'approbation ; valeurs justifiées par une pièce.
+    delais_saisie = [max((saisie.date() - fin).days, 0) for fin, saisie in saisies]
+    justifiees = sum(1 for v in valeurs if v["pieces"])
 
     # Score : moyenne pondérée des composantes connues (une composante sans donnée est ignorée).
     composantes = {
@@ -143,4 +152,9 @@ def qualite(projet_ids) -> dict:
         "valeurs_verifiees": verifiees, "atypiques": len(signales), "atypiques_exemples": signales[:EXEMPLES_MAX],
         "doublons_signales": doublons["total"], "doublons_non_traites": doublons["non_traites"],
         "approbations_en_attente": approbations["en_attente"], "saisies_rejetees": approbations["rejetees"],
+        "taux_validation": _pourcent(approbations["approuvees"], sum(approbations.values())),
+        "taux_rejet": _pourcent(approbations["rejetees"], approbations["approuvees"] + approbations["rejetees"]),
+        "delai_saisie_jours": round(sum(delais_saisie) / len(delais_saisie), 1) if delais_saisie else None,
+        "delai_validation_jours": round(sum(validations) / len(validations), 1) if validations else None,
+        "valeurs_justifiees": _pourcent(justifiees, len(valeurs)),
     }

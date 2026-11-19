@@ -24,7 +24,8 @@ from .services import construire_dashboard_suivi, ecart_texte, taux_de, valeur_a
 COULEUR_ENTETE = "1F4E78"
 COULEUR_TITRE = "D9E2F3"
 
-STATUT_ACTIVITE_LABEL = {"NON_REALISEE": "Non réalisée", "EN_COURS": "En cours", "REALISEE": "Réalisée"}
+STATUT_ACTIVITE_LABEL = {"NON_REALISEE": "Non réalisée", "EN_COURS": "En cours", "REALISEE": "Réalisée",
+                         "SUSPENDUE": "Suspendue", "ANNULEE": "Annulée"}
 STATUT_SOUS_ACTIVITE_LABEL = {"PLANIFIEE": "Planifiée", "EN_COURS": "En cours", "TERMINEE": "Terminée"}
 
 

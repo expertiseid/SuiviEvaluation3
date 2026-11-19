@@ -3,6 +3,7 @@ import { notifications } from "@mantine/notifications";
 import { langue } from "../utils/i18n";
 import { signalerStockagePlein } from "../utils/erreurs";
 import { voc } from "../utils/vocabulaire";
+import { exportAutorise, MESSAGE_EXPORT_DESACTIVE, signalerExportDesactive, TELECHARGEMENT_PERMIS } from "../utils/exportsAutorises";
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
 
@@ -91,6 +92,13 @@ apiClient.interceptors.request.use((config) => {
   if (acces) config.headers["X-Acces-Partage"] = acces;
   // Langue des fichiers produits par le serveur (rapports, exports, modèles d'import).
   config.headers["Accept-Language"] = langue();
+  // Exports désactivés pour ce compte : le fichier n'est pas demandé.
+  if (config.responseType === "blob" && !exportAutorise() && !TELECHARGEMENT_PERMIS.test(config.url ?? "")) {
+    signalerExportDesactive();
+    return Promise.reject(Object.assign(new Error(MESSAGE_EXPORT_DESACTIVE), {
+      response: { status: 403, data: { detail: voc(MESSAGE_EXPORT_DESACTIVE), code: "export_desactive" } },
+    }));
+  }
   return config;
 });
 
@@ -149,6 +157,18 @@ apiClient.interceptors.response.use(
     if (error.response?.data?.code === "stockage_plein") {
       const { taille, utilise, limite } = error.response.data;
       signalerStockagePlein({ taille: Number(taille) || 0, utilise: Number(utilise) || 0, limite: Number(limite) || 0 });
+      return Promise.reject(error);
+    }
+    // Fichier refusé (export désactivé pour ce compte) : la réponse JSON arrive dans un Blob.
+    if (error.response?.status === 403 && error.response.data instanceof Blob) {
+      try {
+        error.response.data = JSON.parse(await error.response.data.text());
+      } catch {
+        // pas du JSON : réponse laissée telle quelle
+      }
+    }
+    if (error.response?.data?.code === "export_desactive") {
+      signalerExportDesactive();
       return Promise.reject(error);
     }
     // Installation de démonstration : l'enregistrement n'est que simulé.

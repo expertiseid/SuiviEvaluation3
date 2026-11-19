@@ -45,8 +45,9 @@ API_PAR_MODULE = {
     "/zones-administratives": ["/api/v1/zones", "/api/v1/niveaux-administratifs"],
     "/plaintes": ["/api/v1/plaintes/"],
     "projet:equipe": ["/api/v1/equipes"],
-    "projet:risques": ["/api/v1/risques", "/api/v1/evaluations-risques", "/api/v1/rapports/risques"],
-    "projet:pilotage": ["/api/v1/rapports-attendus", "/api/v1/recommandations", "/api/v1/apprentissages"],
+    "projet:risques": ["/api/v1/risques", "/api/v1/evaluations-risques", "/api/v1/mesures-risques", "/api/v1/rapports/risques"],
+    "projet:pilotage": ["/api/v1/rapports-attendus", "/api/v1/recommandations", "/api/v1/apprentissages",
+                        "/api/v1/documents-obligatoires"],
     "projet:financement": ["/api/v1/financements", "/api/v1/rallonges-financement", "/api/v1/rapports/financier"],
 }
 # Modules refusés même en lecture quand ils sont cachés.
@@ -72,6 +73,16 @@ def acces_module(user, cle: str) -> str:
     return ECRITURE if user.niveau_acces == NIVEAU_ACCES_LECTURE_ECRITURE else LECTURE
 
 
+def _droits_precis_ouverts(user, module) -> bool:
+    """
+    Module non réglé pour l'utilisateur (il suit son niveau d'accès) mais droits précis d'écriture sur des
+    projets ou stratégies : l'écriture est décidée objet par objet (apps.projects.droits).
+    """
+    from apps.projects.droits import a_des_droits_precis
+
+    return module not in (user.acces_modules or {}) and a_des_droits_precis(user, ecriture=True)
+
+
 class ModulesMasquesMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
@@ -90,7 +101,8 @@ class ModulesMasquesMiddleware:
             niveau = acces_module(authentification[0], module)
             if niveau == MASQUE and module in LECTURE_BLOQUEE_SI_MASQUE:
                 return JsonResponse({"detail": "Ce module n'est pas accessible avec votre compte."}, status=403)
-            if niveau != ECRITURE and request.method not in ("GET", "HEAD", "OPTIONS"):
+            if niveau != ECRITURE and request.method not in ("GET", "HEAD", "OPTIONS") and not _droits_precis_ouverts(
+                    authentification[0], module):
                 return JsonResponse(
                     {"detail": "Votre compte permet de consulter ce module, pas d'y créer ou modifier."}, status=403
                 )

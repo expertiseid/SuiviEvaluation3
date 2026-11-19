@@ -1,4 +1,7 @@
-import { Button, Group, SegmentedControl, Stack, Table, Text } from "@mantine/core";
+import { useState } from "react";
+import { Button, Group, SegmentedControl, Stack, Table, Text, TextInput } from "@mantine/core";
+import { Search } from "lucide-react";
+import { correspond } from "../../utils/recherche";
 import { DEPENDANCES, modulesReglables, niveauParDefaut } from "../../utils/modules";
 import type { NiveauModule } from "../../types";
 import { voc } from "../../utils/vocabulaire";
@@ -28,6 +31,11 @@ export function DroitsModules({
   niveauAcces: string | null;
 }) {
   const defaut = niveauParDefaut(niveauAcces);
+  const [recherche, setRecherche] = useState("");
+  // Recherche d'un onglet : groupes réduits aux modules dont le nom (ou celui du groupe) correspond.
+  const groupes = modulesReglables()
+    .map((g) => ({ ...g, items: correspond(g.group, recherche) ? g.items : g.items.filter((m) => correspond(m.label, recherche)) }))
+    .filter((g) => g.items.length > 0);
   const libelles = Object.fromEntries(modulesReglables().flatMap((g) => g.items.map((m) => [m.cle, m.label])));
   // Module masqué avec celui dont il dépend (ex. doublons avec bénéficiaires).
   const masquePar = (cle: string) =>
@@ -54,9 +62,12 @@ export function DroitsModules({
           {voc("Tout remettre par défaut")}
         </Button>
       </Group>
+      <TextInput size="xs" mt={4} placeholder={voc("Rechercher un onglet…")} leftSection={<Search size={14} />} value={recherche}
+        onChange={(e) => setRecherche(e.currentTarget.value)} />
+      {groupes.length === 0 && <Text size="xs" c="dimmed" py="xs">{voc("Aucun onglet ne correspond.")}</Text>}
       <Table verticalSpacing={4} fz="sm">
         <Table.Tbody>
-          {modulesReglables().map((groupe) => [
+          {groupes.map((groupe) => [
             <Table.Tr key={groupe.group}>
               <Table.Td colSpan={2} pt="sm">
                 <Text size="xs" fw={700} c="dimmed" tt="uppercase">{groupe.group}</Text>

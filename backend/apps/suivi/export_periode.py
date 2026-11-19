@@ -235,7 +235,7 @@ def exporter_periode_pdf(periode) -> bytes:
 # ---------------------------------------------------------------------------
 
 STATUT_SAISIE_LABEL = {
-    "NON_REALISEE": "Non réalisée", "EN_COURS": "En cours", "REALISEE": "Réalisée",
+    "NON_REALISEE": "Non réalisée", "EN_COURS": "En cours", "REALISEE": "Réalisée", "SUSPENDUE": "Suspendue", "ANNULEE": "Annulée",
     "PLANIFIEE": "Planifiée", "TERMINEE": "Terminée",
 }
 

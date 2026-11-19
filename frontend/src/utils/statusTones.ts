@@ -18,12 +18,16 @@ export const ACTIVITE_STATUT_TONE: Record<StatutActivite, StatusTone> = {
   NON_REALISEE: "neutral",
   EN_COURS: "warning",
   REALISEE: "success",
+  SUSPENDUE: "danger",
+  ANNULEE: "neutral",
 };
 
 export const ACTIVITE_STATUT_LABEL: Record<StatutActivite, string> = {
   NON_REALISEE: voc("Non réalisée"),
   EN_COURS: voc("En cours"),
   REALISEE: voc("Réalisée"),
+  SUSPENDUE: voc("Suspendue"),
+  ANNULEE: voc("Annulée"),
 };
 
 export const SOUS_ACTIVITE_STATUT_LABEL: Record<string, string> = {

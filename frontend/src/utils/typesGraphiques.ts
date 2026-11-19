@@ -1,5 +1,7 @@
 /** Types de graphiques proposés sur le tableau de bord (composant GraphiqueAdaptable). */
-export type TypeGraphique = "camembert" | "colonnes" | "colonnes-empilees" | "barres" | "courbes" | "aires" | "tableau";
+export type TypeGraphique = "camembert" | "colonnes" | "colonnes-empilees" | "barres" | "courbes" | "aires" | "tableau"
+  /** Cartes de chiffres (un chiffre par catégorie) : blocs de chiffres clés, ex. couverture géographique. */
+  | "cartes";
 
 /** Types proposés selon la forme des données (le camembert n'a de sens qu'avec une seule série). */
 export function typesPossibles(nbSeries: number): TypeGraphique[] {

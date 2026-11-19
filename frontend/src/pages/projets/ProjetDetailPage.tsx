@@ -7,6 +7,7 @@ import {
   ChevronsUpDown,
   Copy,
   Download,
+  Eye,
   FileText,
   Gauge,
   ListPlus,
@@ -26,6 +27,7 @@ import {
 import { RetoursProjet } from "../plaintes/RetoursProjet";
 import {
   ActionIcon,
+  Alert,
   Badge,
   Box,
   Button,
@@ -555,12 +557,14 @@ export function ProjetDetailPage() {
   const [avancementForId, setAvancementForId] = useState<number | null>(null);
   const setAvancementFor = (act: Activite) => setAvancementForId(act.id);
   const { user } = useAuth();
-  const { estMasque, peutEcrire } = useAccesModules();
+  const { estMasque, peutEcrire: peutEcrireModule } = useAccesModules();
+  // Droits précis sur ce projet (lecture seule ou écriture), à la place du niveau d'accès global.
+  const peutEcrire = (cle: string) => peutEcrireModule(cle, projet?.mes_droits);
   const peutModifier = peutEcrire("/projets");
   // Projet clôturé : lecture seule (voir BandeauProjetCloture), mode édition indisponible.
   const cloture = projet?.statut === "CLOTURE";
   // Lecture seule : projet clôturé, ou fermé en entier hors période de rapportage (sauf administrateur).
-  const lectureSeule = cloture || saisieBloquee(projet, user?.role).tout;
+  const lectureSeule = cloture || saisieBloquee(projet, user?.role).tout || projet?.mes_droits?.ecriture === false;
   const realisationsFermees = cloture || saisieBloquee(projet, user?.role).realisations;
   const [documentsActiviteId, setDocumentsActiviteId] = useState<number | null>(null);
   const [documentsSousActiviteId, setDocumentsSousActiviteId] = useState<number | null>(null);
@@ -631,6 +635,7 @@ export function ProjetDetailPage() {
       cle: "pilotage", label: voc("Pilotage"), icone: <Lightbulb size={15} />,
       onglets: [
         { valeur: "rapports", label: voc("Rapports attendus"), masque: "projet:pilotage" },
+        { valeur: "documents-obligatoires", label: voc("Documents obligatoires"), masque: "projet:pilotage" },
         { valeur: "recommandations", label: voc("Recommandations"), masque: "projet:pilotage" },
         { valeur: "apprentissage", label: voc("Leçons et décisions"), masque: "projet:pilotage" },
         { valeur: "coherence", label: voc("Contrôle de cohérence"), masque: "projet:coherence" },
@@ -800,6 +805,11 @@ export function ProjetDetailPage() {
       </Group>
 
       {cloture ? <BandeauProjetCloture projetId={projetId} /> : <BandeauSaisieFermee projet={projet} />}
+      {!cloture && projet.mes_droits?.ecriture === false && (
+        <Alert color="gray" icon={<Eye size={16} />} py="xs">
+          {voc("Vous avez accès à ce projet en lecture seule : vous pouvez tout consulter, mais rien modifier.")}
+        </Alert>
+      )}
 
       {/* Onglets regroupés par thème sur une ligne ; un thème à plusieurs écrans a ses sous-onglets. */}
       <Tabs value={groupeActif?.cle ?? null} onChange={(cle) => setOnglet(groupesOnglets.find((g) => g.cle === cle)!.onglets[0].valeur)}>
@@ -1041,7 +1051,7 @@ export function ProjetDetailPage() {
           </Tabs.Panel>
         )}
 
-        {!estMasque("projet:pilotage") && (["rapports", "recommandations", "apprentissage"] as const).map((section) => (
+        {!estMasque("projet:pilotage") && (["rapports", "documents-obligatoires", "recommandations", "apprentissage"] as const).map((section) => (
           <Tabs.Panel key={section} value={section} pt="md">
             <PilotageTab projetId={projetId} section={section} modifiable={!lectureSeule && peutEcrire("projet:pilotage")} />
           </Tabs.Panel>

@@ -27,6 +27,8 @@ import { useActivitesPourProjet } from "../../api/projects";
 import { useIntervenants } from "../../api/intervenants";
 import {
   useEnregistrerEvaluationRisque,
+  useEnregistrerMesureRisque,
+  useSupprimerMesureRisque,
   useEnregistrerRisque,
   useRisques,
   useSupprimerEvaluationRisque,
@@ -35,7 +37,7 @@ import {
 import { telecharger } from "../../api/suivi";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
 import { messageErreurApi } from "../../utils/erreurs";
-import type { NiveauRisque, Risque, StatutRisque } from "../../types";
+import type { MesureRisque, NiveauRisque, Risque, StatutRisque } from "../../types";
 
 import { locale } from "../../utils/i18n";
 import { voc } from "../../utils/vocabulaire";
@@ -97,7 +99,7 @@ function RisqueForm({ projetId, risque, onClose }: { projetId: number; risque: P
       return;
     }
     try {
-      await enregistrer.mutateAsync({ ...r, projet: projetId, libelle: r.libelle.trim(), evaluations: undefined });
+      await enregistrer.mutateAsync({ ...r, projet: projetId, libelle: r.libelle.trim(), evaluations: undefined, mesures: undefined });
       notifications.show({ message: voc("Risque enregistré"), color: "green" });
       onClose();
     } catch (e) {
@@ -251,6 +253,70 @@ function Matrice({ risques, filtre, onFiltre }: { risques: Risque[]; filtre: [nu
 }
 
 /** Une ligne du registre ; l'historique des réévaluations se déplie sous la ligne. */
+const STATUTS_MESURE = (): Record<MesureRisque["statut"], { label: string; couleur: string }> => ({
+  A_FAIRE: { label: voc("À faire"), couleur: "gray" },
+  EN_COURS: { label: voc("En cours"), couleur: "blue" },
+  REALISEE: { label: voc("Réalisée"), couleur: "teal" },
+  ABANDONNEE: { label: voc("Abandonnée"), couleur: "dark" },
+});
+
+/** Mesures d'atténuation suivies d'un risque : ajout, statut, échéance, responsable. */
+function MesuresRisque({ risque, modifiable }: { risque: Risque; modifiable: boolean }) {
+  const enregistrer = useEnregistrerMesureRisque();
+  const supprimer = useSupprimerMesureRisque();
+  const { data: intervenants = [] } = useIntervenants();
+  const [nouvelle, setNouvelle] = useState<Partial<MesureRisque>>({});
+  const statuts = STATUTS_MESURE();
+  const sauver = async (mesure: Partial<MesureRisque>, apres?: () => void) => {
+    try {
+      await enregistrer.mutateAsync({ ...mesure, risque: risque.id });
+      apres?.();
+    } catch (e) {
+      notifications.show({ message: messageErreurApi(e, voc("Erreur lors de l'enregistrement")), color: "red" });
+    }
+  };
+  return (
+    <Stack gap={6}>
+      <Text size="xs" fw={600}>{voc("Mesures d'atténuation suivies")}</Text>
+      {risque.mesures.length === 0 && <Text size="xs" c="dimmed">{voc("Aucune mesure suivie : ajoutez chaque mesure avec son responsable et son échéance.")}</Text>}
+      {risque.mesures.map((m) => (
+        <Group key={m.id} gap="xs" wrap="nowrap" align="center">
+          <Text size="sm" style={{ flex: 1 }}>{m.libelle}</Text>
+          <Text size="xs" c="dimmed" style={{ whiteSpace: "nowrap" }}>{m.responsable_nom || "—"}</Text>
+          <Text size="xs" c={m.en_retard ? "red" : "dimmed"} fw={m.en_retard ? 600 : undefined} style={{ whiteSpace: "nowrap" }}>{dateFr(m.echeance)}</Text>
+          {modifiable ? (
+            <Select size="xs" w={140} allowDeselect={false} value={m.statut} aria-label={voc("Statut de la mesure")}
+              data={Object.entries(statuts).map(([value, { label }]) => ({ value, label }))}
+              onChange={(v) => v && sauver({ id: m.id, statut: v as MesureRisque["statut"] })} />
+          ) : (
+            <Badge variant="light" color={statuts[m.statut].couleur}>{statuts[m.statut].label}</Badge>
+          )}
+          {modifiable && (
+            <ActionIcon size="sm" variant="subtle" color="red" aria-label={voc("Supprimer la mesure")}
+              onClick={() => confirmerSuppression({ message: voc`Supprimer la mesure « ${m.libelle} » ?`, onConfirm: () => supprimer.mutate(m.id) })}>
+              <Trash2 size={12} />
+            </ActionIcon>
+          )}
+        </Group>
+      ))}
+      {modifiable && (
+        <Group gap="xs" align="flex-end" wrap="nowrap">
+          <TextInput size="xs" style={{ flex: 1 }} label={voc("Nouvelle mesure")} value={nouvelle.libelle ?? ""}
+            onChange={(e) => { const libelle = e.currentTarget.value; setNouvelle((x) => ({ ...x, libelle })); }} />
+          <Select size="xs" w={180} label={voc("Responsable")} searchable clearable
+            data={intervenants.map((i) => ({ value: String(i.id), label: `${i.prenom ?? ""} ${i.nom}`.trim() }))}
+            value={nouvelle.responsable ? String(nouvelle.responsable) : null}
+            onChange={(v) => setNouvelle((x) => ({ ...x, responsable: v ? Number(v) : null }))} />
+          <DateInput size="xs" w={140} label={voc("Échéance")} clearable value={nouvelle.echeance ?? null}
+            onChange={(v) => setNouvelle((x) => ({ ...x, echeance: v ? String(v).slice(0, 10) : null }))} />
+          <Button size="xs" leftSection={<Plus size={12} />} loading={enregistrer.isPending} disabled={!nouvelle.libelle?.trim()}
+            onClick={() => sauver({ ...nouvelle, libelle: nouvelle.libelle?.trim() }, () => setNouvelle({}))}>{voc("Ajouter")}</Button>
+        </Group>
+      )}
+    </Stack>
+  );
+}
+
 function LigneRisque({ risque, modifiable, onModifier, onReevaluer }: { risque: Risque; modifiable: boolean; onModifier: () => void; onReevaluer: () => void }) {
   const [historique, setHistorique] = useState(false);
   const supprimer = useSupprimerRisque();
@@ -280,7 +346,15 @@ function LigneRisque({ risque, modifiable, onModifier, onReevaluer }: { risque: 
           <Text size="xs">{risque.nature === "INTERNE" ? voc("Interne") : voc("Externe")}</Text>
           {risque.categorie && <Text size="xs" c="dimmed">{risque.categorie}</Text>}
         </Table.Td>
-        <Table.Td>{texte(risque.mesures_attenuation)}</Table.Td>
+        <Table.Td>
+          {texte(risque.mesures_attenuation)}
+          {risque.mesures.length > 0 && (
+            <Badge mt={4} size="xs" variant="light" color={risque.mesures.some((m) => m.en_retard) ? "red" : "teal"}
+              styles={{ root: { overflow: "visible" }, label: { overflow: "visible" } }}>
+              {voc`${risque.mesures.filter((m) => m.statut === "REALISEE").length} / ${risque.mesures.filter((m) => m.statut !== "ABANDONNEE").length} réalisée(s)`}
+            </Badge>
+          )}
+        </Table.Td>
         <Table.Td>{texte(risque.plan_contingence)}</Table.Td>
         <Table.Td>{texte(risque.element_libelle)}</Table.Td>
         <Table.Td>{texte(risque.responsable_nom)}</Table.Td>
@@ -297,9 +371,9 @@ function LigneRisque({ risque, modifiable, onModifier, onReevaluer }: { risque: 
                 <ActionIcon variant="light" aria-label={voc("Réévaluer")} onClick={onReevaluer}><RefreshCw size={14} /></ActionIcon>
               </Tooltip>
             )}
-            {risque.evaluations.length > 0 && (
-              <Tooltip label={voc("Historique des réévaluations")}>
-                <ActionIcon variant="subtle" aria-label={voc("Historique des réévaluations")} onClick={() => setHistorique((x) => !x)}>
+            {(risque.evaluations.length > 0 || modifiable || risque.mesures.length > 0) && (
+              <Tooltip label={voc("Mesures suivies et historique")}>
+                <ActionIcon variant="subtle" aria-label={voc("Mesures suivies et historique")} onClick={() => setHistorique((x) => !x)}>
                   {historique ? <ChevronUp size={15} /> : <History size={15} />}
                 </ActionIcon>
               </Tooltip>
@@ -327,7 +401,8 @@ function LigneRisque({ risque, modifiable, onModifier, onReevaluer }: { risque: 
       {historique && (
         <Table.Tr>
           <Table.Td colSpan={11} bg="gray.0">
-            <Text size="xs" fw={600} mb={6}>{voc("Historique des réévaluations")}</Text>
+            <MesuresRisque risque={risque} modifiable={modifiable} />
+            {risque.evaluations.length > 0 && <Text size="xs" fw={600} mt="md" mb={6}>{voc("Historique des réévaluations")}</Text>}
             <Timeline bulletSize={14} lineWidth={2}>
               {risque.evaluations.map((e) => (
                 <Timeline.Item key={e.id} color={NIVEAUX_RISQUE[e.niveau].couleur} title={

@@ -6,7 +6,7 @@
  */
 import { useAuth } from "../auth/useAuth";
 import { usePartage } from "./partage";
-import type { NiveauModule, User } from "../types";
+import type { MesDroits, NiveauModule, User } from "../types";
 import { voc } from "./vocabulaire";
 
 export interface ModuleReglable {
@@ -56,6 +56,14 @@ export function modulesReglables(): { group: string; items: ModuleReglable[] }[]
   ];
 }
 
+/** Onglets dont les modifications peuvent être soumises à approbation (ceux où l'on écrit). */
+export function modulesApprouvables(): { value: string; label: string }[] {
+  // Onglets d'un projet : précédés de leur groupe (« Projet › Risques »).
+  return modulesReglables().flatMap((g, rang) => g.items.filter((m) => m.ecriture).map((m) => ({
+    value: m.cle, label: rang === 0 ? m.label : `${g.group} › ${m.label}`,
+  })));
+}
+
 // Cacher un module cache aussi ce qui en dépend (le serveur refuse ses données).
 export const DEPENDANCES: Record<string, string[]> = {
   "/documents": ["projet:documents"],
@@ -78,16 +86,24 @@ export function niveauModule(user: User | null | undefined, cle: string): Niveau
   return sourceMasquee ? "MASQUE" : niveauParDefaut(user.niveau_acces);
 }
 
-/** Droits de l'utilisateur connecté : estMasque(clé) et peutEcrire(clé). */
+/**
+ * Droits de l'utilisateur connecté : estMasque(clé) et peutEcrire(clé, droits). `droits` : ceux de l'objet affiché
+ * (projet, stratégie, élément : mes_droits, renvoyés par le serveur), qui remplacent le niveau d'accès global ;
+ * un module réglé explicitement pour l'utilisateur garde sa restriction.
+ */
 export function useAccesModules() {
   const { user } = useAuth();
   const partage = usePartage();
   if (partage) {
     // Lien de partage : lecture seule, sans les vues qui demandent un compte (suivi par période).
-    return { estMasque: (cle: string) => cle.startsWith("suivi:"), peutEcrire: () => false };
+    return { estMasque: (cle: string) => cle.startsWith("suivi:"), peutEcrire: (_cle: string, _droits?: MesDroits | null) => false };
   }
   return {
     estMasque: (cle: string) => niveauModule(user, cle) === "MASQUE",
-    peutEcrire: (cle: string) => niveauModule(user, cle) === "ECRITURE",
+    peutEcrire: (cle: string, droits?: MesDroits | null) => {
+      if (!droits || user?.role === "ADMIN") return niveauModule(user, cle) === "ECRITURE";
+      const regle = user?.acces_modules?.[cle];
+      return droits.ecriture && (!regle || regle === "ECRITURE");
+    },
   };
 }

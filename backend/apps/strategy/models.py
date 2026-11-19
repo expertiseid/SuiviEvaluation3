@@ -86,6 +86,11 @@ class CadreStrategique(TimestampedModel):
     responsable_nom = models.CharField(
         max_length=200, blank=True, help_text="Responsable du document — texte libre, indépendant d'un compte.",
     )
+    approbation_modifications = models.BooleanField(
+        default=False,
+        help_text="Les modifications (document, éléments, appréciations) faites par quelqu'un qui ne peut pas les "
+        "approuver deviennent des demandes, appliquées une fois approuvées (apps.strategy.approbation).",
+    )
     utilisateurs_affectes = models.ManyToManyField(
         settings.AUTH_USER_MODEL, blank=True, related_name="documents_strategiques_affectes",
         help_text="Utilisateurs à visibilité restreinte qui voient ce document (en plus de ceux de leurs projets).",

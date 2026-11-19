@@ -54,6 +54,7 @@ import { messageErreurApi } from "../../utils/erreurs";
 import { libelleRole } from "../../utils/roles";
 import { voc } from "../../utils/vocabulaire";
 import { erreursParChamp, optionsCategories } from "./saisieRetour";
+import { SelecteurZone } from "../../components/common/SelecteurZone";
 
 type Valeurs = Record<string, unknown>;
 
@@ -133,7 +134,7 @@ export function ClasserDossier({ dossier, onClose }: { dossier: DossierDetail; o
       operation="classer"
       titre={voc("Classer le dossier")}
       onClose={onClose}
-      initiales={{ type_retour: dossier.type_retour, categorie: dossier.categorie, priorite: dossier.priorite, projet: dossier.projet }}
+      initiales={{ type_retour: dossier.type_retour, categorie: dossier.categorie, priorite: dossier.priorite, projet: dossier.projet, zone: dossier.zone }}
     >
       {(v, changer, erreurs) => {
         const categorie = categories.find((c) => c.id === Number(v.categorie));
@@ -149,6 +150,8 @@ export function ClasserDossier({ dossier, onClose }: { dossier: DossierDetail; o
               value={nombre(v.categorie)} onChange={(x) => changer({ categorie: x ? Number(x) : null })} error={erreurs.categorie} searchable clearable />
             <Select label={voc("Projet")} data={projets.map((p) => ({ value: String(p.id), label: p.code ? `${p.code} — ${p.nom}` : p.nom }))}
               value={nombre(v.projet)} onChange={(x) => changer({ projet: x ? Number(x) : null })} error={erreurs.projet} searchable clearable />
+            <SelecteurZone label={voc("Zone administrative")} value={v.zone ? Number(v.zone) : null} onChange={(zone) => changer({ zone })}
+              error={erreurs.zone} />
             {!dossier.sensible && categorie?.sensible_effective && (
               <Alert color="grape" title={voc("Catégorie sensible")}>
                 {voc("Le dossier passera au circuit confidentiel : seules les personnes désignées (et l'Administrateur) y auront accès.")}

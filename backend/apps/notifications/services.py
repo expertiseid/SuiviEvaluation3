@@ -68,7 +68,7 @@ def lister_echeances(projet_ids, seuil_jours=None):
 
     echeances = []
 
-    activites = Activite.objects.exclude(statut=Activite.Statut.REALISEE).filter(
+    activites = Activite.objects.exclude(statut__in=[Activite.Statut.REALISEE, Activite.Statut.ANNULEE]).filter(
         date_fin__isnull=False,
         date_fin__lte=limite,
         projet__id__in=projet_ids,
@@ -127,7 +127,7 @@ def lister_echeances(projet_ids, seuil_jours=None):
 
     # Rappels à date calendaire fixe (indépendants du seuil de jours) : une fois la date
     # atteinte, l'alerte reste active tant que la date de rappel n'est pas retirée/changée.
-    activites_rappel = Activite.objects.exclude(statut=Activite.Statut.REALISEE).filter(
+    activites_rappel = Activite.objects.exclude(statut__in=[Activite.Statut.REALISEE, Activite.Statut.ANNULEE]).filter(
         date_rappel__isnull=False,
         date_rappel__lte=today,
         projet__id__in=projet_ids,

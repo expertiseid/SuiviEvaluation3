@@ -26,6 +26,8 @@ export interface IdentiteOrganisation {
   espace: { sous_domaine: string; nom: string } | null;
   /** Déconnexion après ce nombre de minutes sans activité (réglage de l'Administrateur) ; 0 : jamais. */
   session_inactivite_min: number;
+  /** Écran protégé contre les captures (filigrane, impression bloquée…), pour tous sauf l'Administrateur. */
+  bloquer_captures: boolean;
   /** Couches cartographiques intégrées (limites, villes et villages) : non pour les clients, oui en développement et en démonstration. */
   carte_couches_integrees: boolean;
 }
@@ -42,10 +44,11 @@ export function useIdentiteOrganisation() {
 export function useEnregistrerIdentite() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ nom, logo, supprimerLogo, sessionInactiviteMin }: {
-      nom?: string; logo?: File | null; supprimerLogo?: boolean; sessionInactiviteMin?: number;
+    mutationFn: async ({ nom, logo, supprimerLogo, sessionInactiviteMin, bloquerCaptures }: {
+      nom?: string; logo?: File | null; supprimerLogo?: boolean; sessionInactiviteMin?: number; bloquerCaptures?: boolean;
     }) => {
       const envoi = new FormData();
+      if (bloquerCaptures !== undefined) envoi.append("bloquer_captures", String(bloquerCaptures));
       if (nom !== undefined) envoi.append("nom", nom);
       if (sessionInactiviteMin !== undefined) envoi.append("session_inactivite_min", String(sessionInactiviteMin));
       if (logo) envoi.append("logo", logo);

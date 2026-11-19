@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ActionIcon, Badge, Group, Modal, Paper, Stack, Text, Title, Tooltip } from "@mantine/core";
+import { ActionIcon, Badge, Group, Modal, Paper, SegmentedControl, Stack, Text, Title, Tooltip } from "@mantine/core";
 import { Pencil, Trash2 } from "lucide-react";
 import { notifications } from "@mantine/notifications";
 import { useDeleteIndicateur, useIndicateur } from "../../api/indicators";
@@ -9,6 +9,7 @@ import { HistoriqueModification } from "../../components/audit/HistoriqueModific
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
 import { BoutonModeEdition } from "../../components/common/BoutonModeEdition";
 import { TranchesPlanifieesTab } from "../../components/suivi/TranchesPlanifieesTab";
+import { GraphiqueAdaptable, type SerieGraphique } from "../../components/charts/GraphiqueAdaptable";
 import { IndicateurForm } from "./IndicateurForm";
 import { voc } from "../../utils/vocabulaire";
 import { locale } from "../../utils/i18n";
@@ -81,6 +82,8 @@ export function IndicateurDetailPage() {
         </Group>
       </Group>
 
+      {!indicateur.formule && indicateur.valeurs.length > 0 && <EvolutionIndicateur indicateur={indicateur} />}
+
       {!indicateur.formule && (
         <div>
           <Text size="sm" fw={600} mb="xs">{voc("Suivi détaillé par période")}</Text>
@@ -120,6 +123,13 @@ function EtatIndicateur({ indicateur }: { indicateur: Indicateur }) {
           : `${voc("Taux :")} ${indicateur.taux_realisation_actuel.toLocaleString(locale())} %`}
         {indicateur.calcul_taux === "PROGRESSION" ? voc(" · progression depuis la valeur de base") : ""}
       </Badge>
+      {indicateur.ecart_cible !== null && (
+        <Badge variant="light" color={Number(indicateur.ecart_cible) <= 0 ? "teal" : "gray"}>
+          {Number(indicateur.ecart_cible) <= 0
+            ? voc`Cible atteinte (dépassée de ${nombre(-Number(indicateur.ecart_cible))} ${indicateur.unite})`
+            : voc`Reste à faire : ${nombre(indicateur.ecart_cible)} ${indicateur.unite}`}
+        </Badge>
+      )}
       {indicateur.sens === "BAISSE" && <Badge variant="light" color="grape">{voc("Plus bas = mieux")}</Badge>}
       {variation && (
         <Badge variant="light" color={progres === null ? "gray" : progres ? "teal" : "red"}>
@@ -135,5 +145,48 @@ function EtatIndicateur({ indicateur }: { indicateur: Indicateur }) {
         <Badge variant="light" color="gray">{voc`Prochaine valeur attendue le ${date(actualisation.attendue_le)}`}</Badge>
       )}
     </Group>
+  );
+}
+
+type Pas = "mois" | "trimestre" | "annee";
+
+/**
+ * Évolution des valeurs saisies (approuvées) par mois, trimestre ou année, selon la fin de leur période :
+ * valeur de la période et cumul pour un indicateur cumulable, dernière valeur de la période sinon ; avec la cible.
+ */
+function EvolutionIndicateur({ indicateur }: { indicateur: Indicateur }) {
+  const [pas, setPas] = useState<Pas>("trimestre");
+  const cumulable = indicateur.agregation !== "DERNIERE";
+  const cle = (d: string) => {
+    const [annee, mois] = d.split("-").map(Number);
+    return pas === "annee" ? `${annee}` : pas === "trimestre" ? `${annee}-T${Math.ceil(mois / 3)}` : `${annee}-${String(mois).padStart(2, "0")}`;
+  };
+  const periodes = new Map<string, number>();
+  for (const v of [...indicateur.valeurs].sort((a, b) => a.periode_fin.localeCompare(b.periode_fin))) {
+    const k = cle(v.periode_fin);
+    periodes.set(k, cumulable ? (periodes.get(k) ?? 0) + Number(v.valeur_realisee) : Number(v.valeur_realisee));
+  }
+  const categories = [...periodes.keys()];
+  const valeurs = [...periodes.values()];
+  let total = Number(indicateur.valeur_reference ?? 0) * (indicateur.calcul_taux === "PROGRESSION" ? 1 : 0);
+  const cumuls = valeurs.map((x) => (total += x));
+  const libelle = (k: string) => (pas === "mois" ? new Date(`${k}-01`).toLocaleDateString(locale(), { month: "short", year: "numeric" }) : k);
+  const series: SerieGraphique[] = [
+    { cle: "periode", nom: cumulable ? voc("Valeur de la période") : voc("Valeur"), couleur: "#1c7ed6", valeurs },
+    ...(cumulable ? [{ cle: "cumul", nom: voc("Cumul"), couleur: "#12b886", valeurs: cumuls }] : []),
+    { cle: "cible", nom: voc("Cible"), couleur: "#e8590c", valeurs: categories.map(() => Number(indicateur.valeur_cible)) },
+  ];
+  return (
+    <div>
+      <Group justify="space-between" mb="xs">
+        <Text size="sm" fw={600}>{voc("Évolution")}</Text>
+        <SegmentedControl size="xs" value={pas} onChange={(v) => setPas(v as Pas)}
+          data={[{ value: "mois", label: voc("Par mois") }, { value: "trimestre", label: voc("Par trimestre") }, { value: "annee", label: voc("Par année") }]} />
+      </Group>
+      <Paper withBorder p="sm" radius="md">
+        <GraphiqueAdaptable type={categories.length < 3 ? "colonnes" : "courbes"} categories={categories} formatCategorie={libelle} series={series} unite={indicateur.unite} hauteur={260}
+          etiquettes={categories.length <= 12} />
+      </Paper>
+    </div>
   );
 }

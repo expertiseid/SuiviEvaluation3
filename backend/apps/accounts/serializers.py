@@ -1,3 +1,5 @@
+import re
+
 from django.utils.text import slugify
 from rest_framework import serializers
 
@@ -53,6 +55,7 @@ class RoleSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     activites_masquees = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     elements_masques = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    droits_objets = serializers.SerializerMethodField()
     role_libelle = serializers.SerializerMethodField()
     peut_personnaliser_tableau_de_bord = serializers.SerializerMethodField()
     peut_approuver = serializers.SerializerMethodField()
@@ -87,10 +90,21 @@ class UserSerializer(serializers.ModelSerializer):
         type_libelle = obj.get_type_structure_display()
         return f"{type_libelle} — {detail}" if detail else type_libelle
 
-    def get_peut_approuver(self, obj):
-        from apps.core.permissions import peut_approuver
+    def get_droits_objets(self, obj):
+        """Droits précis (apps.projects.droits) : sur un projet, un document stratégique ou un élément."""
+        return [
+            {"id": d.id, "projet": d.projet_id, "document": d.document_id, "element": d.element_id,
+             "libelle": str(d.projet or d.document or d.element), "acces": d.acces, "approuver": d.approuver}
+            for d in obj.droits_objets.select_related("projet", "document", "element")
+        ]
 
-        return peut_approuver(obj)
+    def get_peut_approuver(self, obj):
+        """Peut approuver quelque part : par son rôle (hors restriction), ou par un droit précis."""
+        from apps.core.permissions import peut_approuver
+        from apps.projects.droits import a_des_droits_precis
+
+        restreint = obj.hors_droits_precis == obj.HorsDroitsPrecis.LECTURE and obj.role != ROLE_ADMIN
+        return (peut_approuver(obj) and not restreint) or a_des_droits_precis(obj, approuver=True)
 
     def get_role_libelle(self, obj):
         return _libelle_role(obj.role)
@@ -127,10 +141,29 @@ class UserSerializer(serializers.ModelSerializer):
             "est_operateur",
             "activites_masquees",
             "elements_masques",
+            "droits_objets",
+            "hors_droits_precis",
+            "saisies_a_approuver",
+            "modules_a_approuver",
+            "approbateurs",
+            "peut_exporter",
+            "captures",
+            "export_global",
+            "import_global",
             "session_inactivite_min",
             "inactivite_effective",
         )
         read_only_fields = ("id",)
+
+
+def identifiant_libre(courriel: str) -> str:
+    """Identifiant interne tiré d'une adresse courriel (awa.kabore@exemple.org → awa.kabore, puis awa.kabore2…)."""
+    base = re.sub(r"[^\w.+-]", "", courriel.split("@")[0].strip().lower())[:140] or "utilisateur"
+    identifiant, numero = base, 1
+    while User.objects.filter(username__iexact=identifiant).exists():
+        numero += 1
+        identifiant = f"{base}{numero}"
+    return identifiant
 
 
 class UserWriteSerializer(serializers.ModelSerializer):
@@ -140,6 +173,8 @@ class UserWriteSerializer(serializers.ModelSerializer):
         many=True, required=False, queryset=Activite.objects.all())
     elements_masques = serializers.PrimaryKeyRelatedField(
         many=True, required=False, queryset=ElementStrategique.objects.all())
+    # Droits précis : la liste envoyée remplace la précédente ([{projet | document | element, acces, approuver}]).
+    droits_objets = serializers.ListField(child=serializers.DictField(), required=False, write_only=True)
 
     class Meta:
         model = User
@@ -162,9 +197,63 @@ class UserWriteSerializer(serializers.ModelSerializer):
             "password",
             "activites_masquees",
             "elements_masques",
+            "droits_objets",
+            "hors_droits_precis",
+            "saisies_a_approuver",
+            "modules_a_approuver",
+            "approbateurs",
+            "peut_exporter",
+            "captures",
+            "export_global",
+            "import_global",
             "session_inactivite_min",
         )
         read_only_fields = ("id",)
+        # Identifiant interne : tiré de l'adresse courriel s'il n'est pas donné (voir validate).
+        extra_kwargs = {"username": {"required": False}}
+
+    def validate_droits_objets(self, valeurs):
+        from apps.projects.models import DroitObjet, Projet
+        from apps.strategy.models import CadreStrategique
+
+        modeles = {"projet": Projet, "document": CadreStrategique, "element": ElementStrategique}
+        propres, vus = [], set()
+        for valeur in valeurs:
+            cibles = [(cle, valeur.get(cle)) for cle in modeles if valeur.get(cle) not in (None, "")]
+            if len(cibles) != 1:
+                raise serializers.ValidationError(v("Chaque droit porte sur un seul projet, document ou élément."))
+            cle, identifiant = cibles[0]
+            if not modeles[cle].objects.filter(pk=identifiant).exists():
+                raise serializers.ValidationError(v("Projet, document ou élément introuvable."))
+            if (cle, str(identifiant)) in vus:
+                raise serializers.ValidationError(v("Le même projet, document ou élément figure deux fois."))
+            vus.add((cle, str(identifiant)))
+            acces = valeur.get("acces") or DroitObjet.Acces.LECTURE
+            if acces not in DroitObjet.Acces.values:
+                raise serializers.ValidationError(v("Accès inconnu : lecture seule, ou lecture et écriture."))
+            propres.append({f"{cle}_id": int(identifiant), "acces": acces, "approuver": bool(valeur.get("approuver"))})
+        return propres
+
+    def validate_modules_a_approuver(self, modules):
+        from apps.core.modules import API_PAR_MODULE
+
+        if not isinstance(modules, list) or any(m not in API_PAR_MODULE for m in modules):
+            raise serializers.ValidationError("Onglets inconnus.")
+        return modules
+
+    def validate_approbateurs(self, approbateurs):
+        if self.instance is not None and any(a.pk == self.instance.pk for a in approbateurs):
+            raise serializers.ValidationError(v("Une personne ne peut pas approuver ses propres saisies."))
+        return approbateurs
+
+    def _droits(self, user, droits):
+        from apps.projects.models import DroitObjet
+
+        if droits is None:
+            return
+        user.droits_objets.all().delete()
+        DroitObjet.objects.bulk_create([DroitObjet(utilisateur=user, **d) for d in droits])
+        user.__dict__.pop("_droits_objets", None)
 
     def validate_session_inactivite_min(self, valeur):
         from apps.core import inactivite
@@ -182,6 +271,10 @@ class UserWriteSerializer(serializers.ModelSerializer):
         courriel = attrs.get("email", getattr(self.instance, "email", ""))
         if contexte.actif() and contexte.courante() is not None and not (courriel or "").strip():
             raise serializers.ValidationError({"email": v("L'adresse courriel est obligatoire : elle sert à se connecter.")})
+        if self.instance is None and not (attrs.get("username") or "").strip():
+            if not (courriel or "").strip():
+                raise serializers.ValidationError({"email": v("Indiquez l'adresse courriel (ou un identifiant).")})
+            attrs["username"] = identifiant_libre(courriel)
         type_structure = attrs.get("type_structure", getattr(self.instance, "type_structure", ""))
         garde = {
             "INTERNE": "structure_interne",
@@ -228,6 +321,8 @@ class UserWriteSerializer(serializers.ModelSerializer):
         password = validated_data.pop("password", None)
         zones_affectees = validated_data.pop("zones_affectees", None)
         masquages = {c: validated_data.pop(c, None) for c in self.MASQUAGES}
+        droits = validated_data.pop("droits_objets", None)
+        approbateurs = validated_data.pop("approbateurs", None)
         user = User(**validated_data)
         if password:
             user.set_password(password)
@@ -235,12 +330,17 @@ class UserWriteSerializer(serializers.ModelSerializer):
         if zones_affectees is not None:
             user.zones_affectees.set(zones_affectees)
         self._masquages(user, masquages)
+        self._droits(user, droits)
+        if approbateurs is not None:
+            user.approbateurs.set(approbateurs)
         return user
 
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
         zones_affectees = validated_data.pop("zones_affectees", None)
         masquages = {c: validated_data.pop(c, None) for c in self.MASQUAGES}
+        droits = validated_data.pop("droits_objets", None)
+        approbateurs = validated_data.pop("approbateurs", None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         if password:
@@ -249,6 +349,9 @@ class UserWriteSerializer(serializers.ModelSerializer):
         if zones_affectees is not None:
             instance.zones_affectees.set(zones_affectees)
         self._masquages(instance, masquages)
+        self._droits(instance, droits)
+        if approbateurs is not None:
+            instance.approbateurs.set(approbateurs)
         return instance
 
 

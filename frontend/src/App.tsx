@@ -36,6 +36,7 @@ const CadreStrategiqueDetailPage = aLaDemande(() => import("./pages/strategie/Ca
 const ZonesAdministrativesPage = aLaDemande(() => import("./pages/geo/ZonesAdministrativesPage").then((m) => ({ default: m.ZonesAdministrativesPage })));
 const PlanificationImportPage = aLaDemande(() => import("./pages/planification/PlanificationImportPage").then((m) => ({ default: m.PlanificationImportPage })));
 const DocumentsGlobauxPage = aLaDemande(() => import("./pages/documents/DocumentsGlobauxPage").then((m) => ({ default: m.DocumentsGlobauxPage })));
+const ExportGlobalPage = aLaDemande(() => import("./pages/exportGlobal/ExportGlobalPage").then((m) => ({ default: m.ExportGlobalPage })));
 const CorbeillePage = aLaDemande(() => import("./pages/documents/CorbeillePage").then((m) => ({ default: m.CorbeillePage })));
 const LanguesPage = aLaDemande(() => import("./pages/langues/LanguesPage").then((m) => ({ default: m.LanguesPage })));
 const StockagePage = aLaDemande(() => import("./pages/stockage/StockagePage").then((m) => ({ default: m.StockagePage })));
@@ -112,6 +113,7 @@ export default function App() {
           <Route path="/formation/:module/quiz" element={<QuizPage />} />
           <Route path="/formation/:module/:lecon" element={<LeconPage />} />
           <Route path="/corbeille" element={<CorbeillePage />} />
+          <Route path="/export-global" element={<ExportGlobalPage />} />
           <Route path="/plaintes" element={<DossiersPlaintesPage />} />
           <Route path="/plaintes/parametrage" element={<ParametragePlaintesPage />} />
           <Route path="/plaintes/dossiers/:id" element={<DossierPlaintePage />} />

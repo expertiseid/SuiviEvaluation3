@@ -18,6 +18,8 @@ def attributs_dans_l_ordre(serializer, attributs, projet_id):
 from .budgets import avertissements_budget
 from .models import (
     Activite,
+    DocumentObligatoire,
+    MesureRisque,
     Equipe,
     EvaluationRisque,
     FenetreRapportage,
@@ -415,9 +417,22 @@ class ProjetSerializer(serializers.ModelSerializer):
         etat = etat_saisie(obj)
         return {"ouverte": etat.ouverte, "perimetre": etat.perimetre, "message": etat.message}
 
+    mes_droits = serializers.SerializerMethodField()
+
+    def get_mes_droits(self, obj):
+        """Droits de l'utilisateur connecté sur cet objet : écrire, approuver (apps.projects.droits)."""
+        from apps.projects.droits import droits_projet
+
+        request = self.context.get("request")
+        if request is None or not request.user.is_authenticated or obj.pk is None:
+            return None
+        droits = droits_projet(request.user, obj.pk)
+        return {"ecriture": droits.ecriture, "approuver": droits.approuver}
+
     class Meta:
         model = Projet
         fields = (
+            "mes_droits",
             "id",
             "nom",
             "code",
@@ -592,19 +607,39 @@ class EvaluationRisqueSerializer(serializers.ModelSerializer):
         return data
 
 
+class MesureRisqueSerializer(serializers.ModelSerializer):
+    responsable_nom = serializers.SerializerMethodField()
+    en_retard = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MesureRisque
+        fields = ("id", "risque", "libelle", "responsable", "responsable_nom", "echeance", "statut", "date_realisation",
+                  "commentaire", "en_retard")
+
+    def get_responsable_nom(self, obj):
+        return str(obj.responsable) if obj.responsable_id else ""
+
+    def get_en_retard(self, obj):
+        import datetime
+
+        return bool(obj.echeance and obj.echeance < datetime.date.today()
+                    and obj.statut in (MesureRisque.Statut.A_FAIRE, MesureRisque.Statut.EN_COURS))
+
+
 class RisqueSerializer(serializers.ModelSerializer):
     criticite = serializers.IntegerField(read_only=True)
     niveau = serializers.CharField(read_only=True)
     responsable_nom = serializers.SerializerMethodField()
     element_libelle = serializers.SerializerMethodField()
     evaluations = EvaluationRisqueSerializer(many=True, read_only=True)
+    mesures = MesureRisqueSerializer(many=True, read_only=True)
 
     class Meta:
         model = Risque
         fields = (
             "id", "projet", "code", "libelle", "description", "nature", "categorie", "element", "element_libelle",
             "probabilite", "impact", "criticite", "niveau", "mesures_attenuation", "plan_contingence", "responsable",
-            "responsable_nom", "statut", "date_identification", "date_prochaine_revue", "evaluations",
+            "responsable_nom", "statut", "date_identification", "date_prochaine_revue", "evaluations", "mesures",
         )
         read_only_fields = ("code",)
 
@@ -669,7 +704,7 @@ class RecommandationSerializer(_ElementDuProjetMixin, serializers.ModelSerialize
     class Meta:
         model = Recommandation
         fields = (
-            "id", "projet", "code", "libelle", "source", "date", "rapport", "rapport_libelle", "priorite", "responsable",
+            "id", "projet", "code", "libelle", "origine", "source", "date", "rapport", "rapport_libelle", "priorite", "responsable",
             "responsable_nom", "echeance", "statut", "date_mise_en_oeuvre", "suivi",
         )
         read_only_fields = ("code",)
@@ -689,8 +724,8 @@ class ApprentissageSerializer(_ElementDuProjetMixin, serializers.ModelSerializer
     class Meta:
         model = Apprentissage
         fields = (
-            "id", "projet", "type", "titre", "description", "date", "decideur", "recommandation", "recommandation_libelle",
-            "element", "element_libelle",
+            "id", "projet", "type", "titre", "description", "date", "decideur", "adaptation", "changement", "recommandation",
+            "recommandation_libelle", "element", "element_libelle",
         )
 
     def get_recommandation_libelle(self, obj):
@@ -699,3 +734,25 @@ class ApprentissageSerializer(_ElementDuProjetMixin, serializers.ModelSerializer
     def get_element_libelle(self, obj):
         e = obj.element
         return f"{e.code_activite} {e.libelle}".strip() if e else ""
+
+
+class DocumentObligatoireSerializer(_ElementDuProjetMixin, serializers.ModelSerializer):
+    liens_du_projet = ("document",)
+    document_titre = serializers.SerializerMethodField()
+    disponible = serializers.SerializerMethodField()
+    en_retard = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DocumentObligatoire
+        fields = ("id", "projet", "libelle", "echeance", "document", "document_titre", "disponible", "en_retard", "commentaire")
+
+    def get_document_titre(self, obj):
+        return str(obj.document) if obj.document_id else ""
+
+    def get_disponible(self, obj):
+        return obj.document_id is not None
+
+    def get_en_retard(self, obj):
+        import datetime
+
+        return obj.document_id is None and bool(obj.echeance and obj.echeance < datetime.date.today())

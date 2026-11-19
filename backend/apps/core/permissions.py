@@ -56,6 +56,26 @@ class IsAdmin(BasePermission):
         return bool(request.user and request.user.is_authenticated and request.user.role == ROLE_ADMIN)
 
 
+class PeutExporterGlobal(BasePermission):
+    """Export global (sauvegarde de l'espace) : l'Administrateur, ou l'utilisateur qu'il y autorise."""
+
+    message = "L'export global est réservé à l'administrateur, sauf autorisation de sa part."
+
+    def has_permission(self, request, view):
+        utilisateur = request.user
+        return bool(utilisateur and utilisateur.is_authenticated and (utilisateur.role == ROLE_ADMIN or utilisateur.export_global))
+
+
+class PeutImporterGlobal(BasePermission):
+    """Import global (reprise d'une sauvegarde) : l'Administrateur, ou l'utilisateur qu'il y autorise."""
+
+    message = "L'import global est réservé à l'administrateur, sauf autorisation de sa part."
+
+    def has_permission(self, request, view):
+        utilisateur = request.user
+        return bool(utilisateur and utilisateur.is_authenticated and (utilisateur.role == ROLE_ADMIN or utilisateur.import_global))
+
+
 class IsAdminOrReadOnly(BasePermission):
     """Lecture pour tout utilisateur authentifié, écriture réservée à l'Administrateur."""
 
@@ -88,19 +108,61 @@ class IsAdminOrCreateForAuthenticated(BasePermission):
 
 class HasGlobalVisibilityOrAssigned(BasePermission):
     """
-    Lecture ouverte à tout utilisateur authentifié ; écriture (create/
-    update/delete) réservée à ceux ayant le droit d'écriture (niveau
-    d'accès, cf. peut_modifier). Le filtrage fin par affectation
-    (zones/projets) se fait séparément dans get_queryset() de chaque
-    viewset via has_global_visibility(request.user).
+    Lecture ouverte à tout utilisateur authentifié ; écriture (create/update/delete) selon le droit
+    d'écriture sur l'objet concerné : droit précis sur son projet, sa stratégie ou son élément s'il en a un
+    (apps.projects.droits), sinon droit global (niveau d'accès, cf. peut_modifier). Le filtrage fin par
+    affectation (zones/projets) se fait séparément dans get_queryset() de chaque viewset.
     """
 
     def has_permission(self, request, view):
+        from apps.projects.droits import a_des_droits_precis, cible_requete, droits_cible
+
         if not (request.user and request.user.is_authenticated):
             return False
         if request.method in SAFE_METHODS:
             return True
+        if view.kwargs.get(getattr(view, "lookup_url_kwarg", None) or getattr(view, "lookup_field", "pk")):
+            # Objet désigné : décidé par has_object_permission, selon l'objet.
+            return peut_modifier(request.user) or a_des_droits_precis(request.user, ecriture=True)
+        cible = cible_requete(request, view)
+        if cible is not None:
+            return droits_cible(request.user, cible, saisie=True).ecriture
         return peut_modifier(request.user)
+
+    def has_object_permission(self, request, view, obj):
+        from apps.projects.droits import cible_objet, droits_cible
+
+        if request.method in SAFE_METHODS:
+            return True
+        cible = cible_objet(obj)
+        return droits_cible(request.user, cible, saisie=True).ecriture if cible is not None else peut_modifier(request.user)
+
+
+class DroitsStrategie(HasGlobalVisibilityOrAssigned):
+    """
+    Documents stratégiques, niveaux et éléments : lecture pour tous ; écriture pour l'Administrateur, ou selon
+    un droit précis sur le document ou l'élément (un document racine ne se crée que par l'Administrateur).
+    """
+
+    def has_permission(self, request, view):
+        from apps.projects.droits import a_des_droits_precis, cible_requete, droits_cible
+
+        if not (request.user and request.user.is_authenticated):
+            return False
+        if request.method in SAFE_METHODS or request.user.role == ROLE_ADMIN:
+            return True
+        if view.kwargs.get(getattr(view, "lookup_url_kwarg", None) or getattr(view, "lookup_field", "pk")):
+            return a_des_droits_precis(request.user, ecriture=True)
+        cible = cible_requete(request, view)
+        return cible is not None and droits_cible(request.user, cible).ecriture
+
+    def has_object_permission(self, request, view, obj):
+        from apps.projects.droits import cible_objet, droits_cible
+
+        if request.method in SAFE_METHODS or request.user.role == ROLE_ADMIN:
+            return True
+        cible = cible_objet(obj)
+        return cible is not None and droits_cible(request.user, cible).ecriture
 
 
 def has_global_visibility(user) -> bool:

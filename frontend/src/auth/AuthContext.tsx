@@ -4,6 +4,7 @@ import type { EtapeDoubleAuth, JetonsConnexion } from "../api/doubleAuth";
 import type { User } from "../types";
 import { appliquerLangueDuCompte } from "../utils/i18n";
 import { ACCUEIL_APP } from "../utils/accueil";
+import { definirExportAutorise } from "../utils/exportsAutorises";
 
 interface AuthContextValue {
   user: User | null;
@@ -26,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data } = await apiClient.get<User>("/utilisateurs/me/");
     // La langue choisie dans son compte l'emporte (la page est rechargée si elle diffère).
     appliquerLangueDuCompte(data.langue, destination);
+    definirExportAutorise(data.role === "ADMIN" || data.peut_exporter !== false);
     setUser(data);
   }
 

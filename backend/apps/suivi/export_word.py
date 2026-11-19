@@ -16,7 +16,8 @@ from apps.core.vocabulaire import v
 # Bandeaux par niveau (comme le tableau de la planification) et en-têtes.
 FONDS_NIVEAUX = ["#A5D8FF", "#D0EBFF", "#E7F5FF", "#F1F8FF"]
 FOND_ENTETE = "#DCE6F1"
-STATUT_ACTIVITE = {"NON_REALISEE": "Non réalisée", "EN_COURS": "En cours", "REALISEE": "Réalisée"}
+STATUT_ACTIVITE = {"NON_REALISEE": "Non réalisée", "EN_COURS": "En cours", "REALISEE": "Réalisée",
+                         "SUSPENDUE": "Suspendue", "ANNULEE": "Annulée"}
 STATUT_SOUS_ACTIVITE = {"PLANIFIEE": "Planifiée", "EN_COURS": "En cours", "TERMINEE": "Terminée"}
 STATUT_GLOBAL = {"EN_RETARD": "En retard", "ATTEINT": "Atteint", "EN_COURS": "En cours"}
 

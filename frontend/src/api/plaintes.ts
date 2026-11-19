@@ -302,6 +302,8 @@ export interface DossierPlainte {
   projet_nom: string | null;
   projet_code: string | null;
   lieu: string;
+  zone: number | null;
+  zone_nom: string | null;
   description: string;
   concerne_personnel: boolean | null;
   sensible: boolean;
@@ -508,6 +510,8 @@ export interface SaisieRetour {
   categorie: number | null;
   projet: number | null;
   lieu: string;
+  /** Zone administrative (saisie par un agent seulement). */
+  zone?: number | null;
   description: string;
   concerne_personnel: boolean | null;
   anonyme: boolean;

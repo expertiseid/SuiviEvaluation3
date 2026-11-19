@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
+import { telechargerFichier } from "../utils/exportEcran";
 import type {
   Activite,
   Equipe,
@@ -496,4 +497,12 @@ export function useCoherenceProjet(projetId: number) {
     queryKey: ["projets", projetId, "coherence"],
     queryFn: async () => (await apiClient.get<Incoherence[]>(`/projets/${projetId}/coherence/`)).data,
   });
+}
+
+/** Liste des projets (page Projets) en Excel, Word ou PDF ; `ids` : seulement ceux affichés (liste filtrée). */
+export async function exporterListeProjets(fichier: "xlsx" | "docx" | "pdf", ids: number[] | null) {
+  const params: Record<string, string> = { fichier };
+  if (ids) params.projets = ids.join(",");
+  const reponse = await apiClient.get("/projets/exporter-liste/", { params, responseType: "blob", timeout: 0 });
+  telechargerFichier(reponse.data, `projets_${new Date().toISOString().slice(0, 10)}.${fichier}`);
 }

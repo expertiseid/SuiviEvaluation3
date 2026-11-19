@@ -142,6 +142,12 @@ class IdentiteOrganisation(models.Model):
     session_inactivite_min = models.PositiveSmallIntegerField(
         default=30, help_text="Déconnexion après ce nombre de minutes sans activité (apps.core.inactivite), de 5 à 480.",
     )
+    # Onglets (modules, voir apps.core.modules) dont toute création, modification ou suppression doit être
+    # approuvée, quelle que soit la personne (sauf l'Administrateur) : apps.core.approbation_generale.
+    modules_a_approuver = models.JSONField(default=list, blank=True)
+    # Protection de l'écran contre les captures (filigrane nominatif, impression bloquée…), pour tous sauf
+    # l'Administrateur : appliquée par l'interface (ProtectionCaptures).
+    bloquer_captures = models.BooleanField(default=False)
     modifie_le = models.DateTimeField(auto_now=True)
 
     class Meta:

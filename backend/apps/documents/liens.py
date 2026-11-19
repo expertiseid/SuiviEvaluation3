@@ -11,9 +11,10 @@ from urllib.parse import quote
 
 from django.core import signing
 from django.db.models import Q
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpResponseForbidden
 from django.views.decorators.http import require_GET
 
+from apps.core.exports import export_autorise
 from apps.organisations.contexte import sel
 
 from .models import Document, DocumentVersion
@@ -62,6 +63,10 @@ def telecharger(request, jeton):
     if not version.fichier.storage.exists(version.fichier.name):
         raise Http404
     type_mime = mimetypes.guess_type(version.fichier.name)[0] or "application/octet-stream"
+    if type_mime not in APERCU and not export_autorise(utilisateur):  # téléchargement : exports désactivés pour lui
+        from apps.core.exports import MESSAGE
+
+        return HttpResponseForbidden(MESSAGE)
     extension = os.path.splitext(version.fichier.name)[1]
     nom = version.document.nom if version.document.nom.lower().endswith(extension.lower()) else f"{version.document.nom}{extension}"
     reponse = FileResponse(version.fichier.open("rb"), content_type=type_mime)

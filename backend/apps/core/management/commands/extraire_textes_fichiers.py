@@ -24,6 +24,7 @@ from apps.core.vocabulaire import libelles_des_modeles
 
 MODULES = [
     "beneficiaries/services/carte.py",
+    "projects/export_liste.py",
     "beneficiaries/services/carte_officielle.py",
     "beneficiaries/services/export_excel.py",
     "beneficiaries/services/import_excel.py",
@@ -45,6 +46,9 @@ MODULES = [
     "reports/financier.py",
     "dashboard/excel.py",
     "dashboard/rapport.py",
+    "dashboard/performance.py",
+    "dashboard/fidele.py",
+    "formation/views.py",
     "reports/risques.py",
     "reports/suivi_strategique.py",
     "strategy/services.py",

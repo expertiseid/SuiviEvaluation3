@@ -180,3 +180,66 @@ def test_actions_correctives_et_encart_projet(actif, admin, suivi_eval):
     Dossier.objects.filter(pk=d.pk).update(projet=projet)
     encart = c.get(f"{URL}projets/{projet.id}/retours/").data
     assert _element(encart, "volume")["valeur"] == 1
+
+
+@pytest.mark.django_db
+def test_plaintes_au_tableau_de_bord(actif, admin):
+    """Totaux et taux seulement ; délai d'accusé de réception ; mesures correctives des dossiers clôturés."""
+    from apps.projects.models import Projet
+
+    projet = Projet.objects.create(nom="P", code="PL-TB", date_debut="2026-01-01", date_fin="2026-12-31")
+    Mecanisme.objects.filter(pk=1).update(accuse_reception_auto=False)
+    a, b, c = _dossier(jours=40), _dossier(jours=30), _dossier(jours=5)
+    Dossier.objects.filter(pk__in=[a.pk, b.pk, c.pk]).update(projet=projet)
+    _clore(a, 10)
+    _clore(b, 20)
+    accuse = ActionDossier.objects.create(dossier=c, type="COMMUNICATION", sens="SORTANT", objet="ACCUSE_RECEPTION", canal="SMS")
+    ActionDossier.objects.filter(pk=accuse.pk).update(date=timezone.now() - datetime.timedelta(days=3))  # 2 jours après réception
+    action = ActionCorrective.objects.create(titre="Revoir les horaires", projet=projet, statut="REALISEE")
+    action.dossiers.add(a)
+
+    r = pilotage.plaintes_tableau_de_bord([projet.id])
+    assert (r["total"], r["ouverts"], r["clotures"]) == (3, 1, 2)
+    assert r["delai_moyen"] == 15 and r["taux_resolution"] == 100.0
+    assert r["delai_accuse_moyen"] == 2 and r["taux_accuse"] == round(100 / 3, 1)
+    assert r["avec_mesure_corrective"] == 50.0 and r["mise_en_oeuvre_mesures"] == 100.0
+    assert r["par_type"] == [{"libelle": "Plainte", "nombre": 3}] and "dossiers" not in r
+    assert pilotage.plaintes_tableau_de_bord([])["total"] == 0
+
+
+@pytest.mark.django_db
+def test_zone_des_plaintes_et_repartition_par_region(actif, admin):
+    """La zone se choisit à la saisie par un agent ou au classement ; le tableau de bord compte par région."""
+    from apps.geo.models import NiveauAdministratif, Zone
+    from apps.projects.models import Projet
+
+    from .traitement import classer
+
+    region = NiveauAdministratif.objects.create(pays="BF", nom_niveau="Région", ordre=1)
+    commune = NiveauAdministratif.objects.create(pays="BF", nom_niveau="Commune", ordre=2, niveau_parent=region)
+    nord = Zone.objects.create(nom="Nord", niveau_administratif=region)
+    ouahigouya = Zone.objects.create(nom="Ouahigouya", niveau_administratif=commune, parent=nord)
+    projet = Projet.objects.create(nom="P", code="PL-Z", date_debut="2026-01-01", date_fin="2026-12-31")
+
+    a = _dossier(zone=ouahigouya.id)
+    b = _dossier()
+    assert a.zone == ouahigouya and b.zone is None
+    fiche = _client(admin).get(f"{URL}dossiers/{a.id}/")
+    assert fiche.status_code == 200 and fiche.data["zone_nom"] == "Ouahigouya"
+    classer(b, admin, {"zone": nord.id})
+    b.refresh_from_db()
+    assert b.zone == nord
+    with pytest.raises(Exception):
+        classer(b, admin, {"zone": 999999})
+    Dossier.objects.filter(pk__in=[a.pk, b.pk]).update(projet=projet)
+    c = _dossier()
+    Dossier.objects.filter(pk=c.pk).update(projet=projet)
+
+    r = pilotage.plaintes_tableau_de_bord([projet.id])
+    assert {x["libelle"]: x["nombre"] for x in r["par_territoire"]} == {"Nord": 2, "Zone non renseignée": 1}
+    # Le formulaire public ne choisit pas de zone.
+    with pytest.MonkeyPatch.context() as m:
+        m.setattr("django.db.transaction.on_commit", lambda f, *a, **k: f())
+        public = recevoir({"type_retour": TypeRetour.objects.get(nom="Plainte").id, "description": "Récit.", "consentement": True,
+                           "zone": nord.id}, "FORMULAIRE", public=True)[0]
+    assert public.zone is None

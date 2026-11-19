@@ -34,12 +34,12 @@ import {
 } from "../../api/accounts";
 import { confirmerSuppression } from "../../components/common/confirmerSuppression";
 import { messageErreurApi } from "../../utils/erreurs";
-import type { NiveauModule, RoleUtilisateur, TypeStructureUtilisateur, User } from "../../types";
+import type { DroitObjet, NiveauModule, RoleUtilisateur, TypeStructureUtilisateur, User } from "../../types";
 import { ModifierRoleModal, RolesTab } from "./RolesTab";
 import { useIdentiteOrganisation } from "../../api/identite";
 import { DemandesInscription } from "./DemandesInscription";
 import { DroitsModules } from "./DroitsModules";
-import { VisibiliteUtilisateur } from "./Visibilite";
+import { ApprobationSaisies, DroitsPrecisUtilisateur, ExportsUtilisateur, VisibiliteUtilisateur, type DroitsExport } from "./Visibilite";
 import { usePartiesPrenantes, useStructures, useTousPartenaires } from "../../api/organisation";
 import { optionsStructures } from "../../utils/organisation";
 import { TitreRubrique } from "../../components/common/TitreRubrique";
@@ -283,6 +283,12 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
   const [structure, setStructure] = useState<StructureUtilisateur>({});
   const [activitesMasquees, setActivitesMasquees] = useState<number[]>([]);
   const [elementsMasques, setElementsMasques] = useState<number[]>([]);
+  const [droitsPrecis, setDroitsPrecis] = useState<DroitObjet[]>([]);
+  const [horsDroits, setHorsDroits] = useState<"GLOBAL" | "LECTURE">("GLOBAL");
+  const [saisiesAApprouver, setSaisiesAApprouver] = useState(false);
+  const [approbateurs, setApprobateurs] = useState<number[]>([]);
+  const [modulesAApprouver, setModulesAApprouver] = useState<string[]>([]);
+  const [exports, setExports] = useState<DroitsExport>({ peut_exporter: true, captures: "ORGANISATION", export_global: false, import_global: false });
   // Durée d'inactivité propre à ce compte ; vide : celle de l'organisation.
   const [inactivite, setInactivite] = useState<number | string>("");
 
@@ -301,6 +307,13 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
     setDroits(utilisateur.acces_modules ?? {});
     setActivitesMasquees(utilisateur.activites_masquees ?? []);
     setElementsMasques(utilisateur.elements_masques ?? []);
+    setDroitsPrecis(utilisateur.droits_objets ?? []);
+    setHorsDroits(utilisateur.hors_droits_precis ?? "GLOBAL");
+    setSaisiesAApprouver(utilisateur.saisies_a_approuver ?? false);
+    setApprobateurs(utilisateur.approbateurs ?? []);
+    setExports({ peut_exporter: utilisateur.peut_exporter ?? true, captures: utilisateur.captures ?? "ORGANISATION", export_global: utilisateur.export_global ?? false,
+      import_global: utilisateur.import_global ?? false });
+    setModulesAApprouver(utilisateur.modules_a_approuver ?? []);
     setInactivite(utilisateur.session_inactivite_min ?? "");
     setStructure({
       type_structure: utilisateur.type_structure ?? "",
@@ -327,6 +340,12 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
           acces_modules: estAdmin ? {} : droits,
           activites_masquees: estAdmin ? [] : activitesMasquees,
           elements_masques: estAdmin ? [] : elementsMasques,
+          droits_objets: estAdmin ? [] : droitsPrecis.map(({ projet, document, element, acces, approuver }) => ({ projet, document, element, acces, approuver })),
+          hors_droits_precis: estAdmin ? "GLOBAL" : horsDroits,
+          saisies_a_approuver: !estAdmin && saisiesAApprouver,
+          approbateurs: !estAdmin && saisiesAApprouver ? approbateurs : [],
+          modules_a_approuver: !estAdmin && saisiesAApprouver ? modulesAApprouver : [],
+          ...(estAdmin ? { peut_exporter: true, captures: "ORGANISATION", export_global: false, import_global: false } : exports),
           ...(dureeOrganisation ? { session_inactivite_min: inactivite === "" ? null : Number(inactivite) } : {}),
           ...structure,
           ...(password ? { password } : {}),
@@ -334,8 +353,8 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
       });
       notifications.show({ message: voc("Utilisateur modifié"), color: "green" });
       onClose();
-    } catch {
-      notifications.show({ message: voc("Erreur lors de la modification"), color: "red" });
+    } catch (error) {
+      notifications.show({ message: messageErreurApi(error, voc("Erreur lors de la modification")), color: "red" });
     }
   }
 
@@ -365,6 +384,12 @@ function ModifierUtilisateurModal({ utilisateur, onClose }: { utilisateur: User 
             <DroitsModules value={droits} onChange={setDroits} niveauAcces={niveauAcces} />
             <VisibiliteUtilisateur activites={activitesMasquees} elements={elementsMasques}
               onActivites={setActivitesMasquees} onElements={setElementsMasques} />
+            <DroitsPrecisUtilisateur droits={droitsPrecis} onDroits={setDroitsPrecis} hors={horsDroits} onHors={setHorsDroits} />
+            {utilisateur && (
+              <ApprobationSaisies utilisateurId={utilisateur.id} actif={saisiesAApprouver} onActif={setSaisiesAApprouver}
+                approbateurs={approbateurs} onApprobateurs={setApprobateurs} modules={modulesAApprouver} onModules={setModulesAApprouver} />
+            )}
+            <ExportsUtilisateur droits={exports} onDroits={setExports} />
           </>
         )}
         {dureeOrganisation > 0 && (
@@ -442,13 +467,17 @@ export function UtilisateursPage() {
   const estAdmin = role === "ADMIN";
 
   async function handleCreate() {
-    if (!username || !password || !role) {
-      notifications.show({ message: voc("Identifiant, mot de passe et rôle requis."), color: "orange" });
+    // Plateforme multi-organisations : on se connecte avec l'adresse courriel ; l'identifiant interne en est tiré.
+    if ((courrielObligatoire ? !email.trim() : !username) || !password || !role) {
+      notifications.show({
+        message: courrielObligatoire ? voc("Adresse courriel, mot de passe et rôle requis.") : voc("Identifiant, mot de passe et rôle requis."),
+        color: "orange",
+      });
       return;
     }
     try {
       await createUtilisateur.mutateAsync({
-        username,
+        ...(courrielObligatoire ? {} : { username }),
         first_name: prenom,
         last_name: nom,
         email,
@@ -463,8 +492,8 @@ export function UtilisateursPage() {
       setPassword("");
       setCreationOuverte(false);
       notifications.show({ message: voc("Utilisateur créé"), color: "green" });
-    } catch {
-      notifications.show({ message: voc("Erreur lors de la création (identifiant déjà utilisé ?)"), color: "red" });
+    } catch (error) {
+      notifications.show({ message: messageErreurApi(error, voc("Erreur lors de la création (identifiant déjà utilisé ?)")), color: "red" });
     }
   }
 
@@ -610,12 +639,14 @@ export function UtilisateursPage() {
 
       <Modal opened={creationOuverte} onClose={() => setCreationOuverte(false)} title={voc("Nouvel utilisateur")} size="lg">
         <Stack gap="sm">
-          <TextInput label={voc("Identifiant")} required value={username} onChange={(e) => setUsername(e.currentTarget.value)} data-autofocus />
+          {!courrielObligatoire && (
+            <TextInput label={voc("Identifiant")} required value={username} onChange={(e) => setUsername(e.currentTarget.value)} data-autofocus />
+          )}
           <Group grow align="flex-start">
             <TextInput label={voc("Prénom")} value={prenom} onChange={(e) => setPrenom(e.currentTarget.value)} />
             <TextInput label={voc("Nom")} value={nom} onChange={(e) => setNom(e.currentTarget.value)} />
           </Group>
-          <TextInput label={voc("Adresse courriel")} type="email" required={courrielObligatoire}
+          <TextInput label={voc("Adresse courriel")} type="email" required={courrielObligatoire} data-autofocus={courrielObligatoire || undefined}
             description={voc("Elle sert à se connecter ; le code de connexion y est envoyé.")} value={email}
             onChange={(e) => setEmail(e.currentTarget.value)} />
           <Group grow align="flex-start">

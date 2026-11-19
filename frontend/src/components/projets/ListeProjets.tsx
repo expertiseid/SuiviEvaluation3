@@ -1,4 +1,4 @@
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CalendarRange, FolderKanban, Search } from "lucide-react";
 import { Avatar, Badge, Card, Group, Progress, SimpleGrid, Stack, Table, Text, TextInput, Tooltip, UnstyledButton } from "@mantine/core";
@@ -29,12 +29,14 @@ function tempsEcoule(debut: string, fin: string) {
  * puis un tableau lisible (nom, code et bailleur, période avec le temps écoulé, budget, chef de projet).
  * Un clic sur une ligne mène à `lien(projet)`.
  */
-export function ListeProjets({ projets, isLoading, lien, actions }: {
+export function ListeProjets({ projets, isLoading, lien, actions, surFiltre }: {
   projets: ProjetResume[] | undefined;
   isLoading: boolean;
   lien: (p: ProjetResume) => string;
   /** Boutons de fin de ligne (mode édition) ; colonne absente si non fourni. */
   actions?: (p: ProjetResume) => ReactNode;
+  /** Projets affichés après filtre (statut, recherche), ou null : tous (pour l'export de la liste). */
+  surFiltre?: (ids: number[] | null) => void;
 }) {
   const navigate = useNavigate();
   const [recherche, setRecherche] = useState("");
@@ -45,6 +47,9 @@ export function ListeProjets({ projets, isLoading, lien, actions }: {
     () => (projets ?? []).filter((p) => (statut === "TOUS" || p.statut === statut) && (correspond(p.nom, recherche) || correspond(p.code, recherche))),
     [projets, recherche, statut],
   );
+  useEffect(() => {
+    surFiltre?.(projetsFiltres.length === (projets ?? []).length ? null : projetsFiltres.map((p) => p.id));
+  }, [projetsFiltres, projets, surFiltre]);
   const budgetFiltre = projetsFiltres.reduce((total, p) => total + (Number(p.budget_total) || 0), 0);
 
   return (

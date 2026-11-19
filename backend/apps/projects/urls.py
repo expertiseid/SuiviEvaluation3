@@ -10,6 +10,8 @@ from .views import (
     EvaluationRisqueViewSet,
     RisqueViewSet,
     ApprentissageViewSet,
+    DocumentObligatoireViewSet,
+    MesureRisqueViewSet,
     RapportProjetViewSet,
     RecommandationViewSet,
     NiveauActiviteViewSet,
@@ -17,6 +19,7 @@ from .views import (
     SousActiviteViewSet,
     TauxManuelViewSet,
     approbations,
+    reglages_approbation,
     parametres_calcul,
     parametres_rapportage,
     traiter_demande_vue,
@@ -36,6 +39,8 @@ router.register("evaluations-risques", EvaluationRisqueViewSet, basename="evalua
 router.register("rapports-attendus", RapportProjetViewSet, basename="rapport-attendu")
 router.register("recommandations", RecommandationViewSet, basename="recommandation")
 router.register("apprentissages", ApprentissageViewSet, basename="apprentissage")
+router.register("mesures-risques", MesureRisqueViewSet, basename="mesure-risque")
+router.register("documents-obligatoires", DocumentObligatoireViewSet, basename="document-obligatoire")
 router.register("taux-manuels", TauxManuelViewSet, basename="taux-manuel")
 router.register("periodes-rapportage", FenetreRapportageViewSet, basename="periode-rapportage")
 
@@ -43,6 +48,7 @@ urlpatterns = [
     path("parametres-calcul/", parametres_calcul, name="parametres-calcul"),
     path("parametres-rapportage/", parametres_rapportage, name="parametres-rapportage"),
     path("approbations/", approbations, name="approbations"),
+    path("approbations/reglages/", reglages_approbation, name="approbations-reglages"),
     path("approbations/saisies/<str:type_saisie>/<int:pk>/", traiter_saisie_vue, name="approbation-saisie"),
     path("approbations/demandes/<int:pk>/", traiter_demande_vue, name="approbation-demande"),
     *router.urls,

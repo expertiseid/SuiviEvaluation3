@@ -50,9 +50,33 @@ class CadreStrategiqueSerializer(serializers.ModelSerializer):
     utilisateurs_affectes_noms = serializers.SerializerMethodField()
     elements_parents_secondaires_noms = serializers.StringRelatedField(source="elements_parents_secondaires", many=True, read_only=True)
 
+    mes_droits = serializers.SerializerMethodField()
+
+    def get_mes_droits(self, obj):
+        """Droits de l'utilisateur connecté sur cet objet : écrire, approuver (apps.projects.droits)."""
+        from apps.projects.droits import droits_document
+
+        request = self.context.get("request")
+        if request is None or not request.user.is_authenticated or obj.pk is None:
+            return None
+        droits = droits_document(request.user, obj.pk)
+        return {"ecriture": droits.ecriture, "approuver": droits.approuver}
+
+    def validate_approbation_modifications(self, valeur):
+        """Réglage du circuit d'approbation : réservé à l'Administrateur."""
+        from apps.accounts.constants import ROLE_ADMIN
+
+        request = self.context.get("request")
+        ancienne = getattr(self.instance, "approbation_modifications", False)
+        if valeur != ancienne and request is not None and request.user.role != ROLE_ADMIN:
+            raise serializers.ValidationError("Seul l'Administrateur règle l'approbation des modifications.")
+        return valeur
+
     class Meta:
         model = CadreStrategique
         fields = (
+            "approbation_modifications",
+            "mes_droits",
             "id", "nom", "description", "created_at",
             "structures", "structures_noms", "parties_prenantes", "parties_prenantes_noms",
             "type_document", "type_document_nom", "document_parent", "document_parent_nom", "document_parent_type",
@@ -209,9 +233,22 @@ class ElementStrategiqueSerializer(serializers.ModelSerializer):
     alertes_chaine = serializers.SerializerMethodField()
     cadre_strategique = serializers.IntegerField(source="type_niveau.cadre_strategique_id", read_only=True)
 
+    mes_droits = serializers.SerializerMethodField()
+
+    def get_mes_droits(self, obj):
+        """Droits de l'utilisateur connecté sur cet objet : écrire, approuver (apps.projects.droits)."""
+        from apps.projects.droits import droits_element
+
+        request = self.context.get("request")
+        if request is None or not request.user.is_authenticated or obj.pk is None:
+            return None
+        droits = droits_element(request.user, obj.pk)
+        return {"ecriture": droits.ecriture, "approuver": droits.approuver}
+
     class Meta:
         model = ElementStrategique
         fields = (
+            "mes_droits",
             "cadre_strategique",
             "contribue_a",
             "contribue_a_nom",

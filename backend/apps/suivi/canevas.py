@@ -66,7 +66,8 @@ LECTURE_JALONS = {"Élément"}
 COLONNES_INDICATEURS = [COL_ID, "Libellé", "Unité", "Valeur cible", "Réalisé cumulé", COL_DEBUT, COL_FIN, COL_VALEUR, COL_COMMENTAIRE]
 LECTURE_INDICATEURS = {"Libellé", "Unité", "Valeur cible", "Réalisé cumulé"}
 
-STATUTS_ACTIVITE = {"non realisee": "NON_REALISEE", "en cours": "EN_COURS", "realisee": "REALISEE"}
+STATUTS_ACTIVITE = {"non realisee": "NON_REALISEE", "en cours": "EN_COURS", "realisee": "REALISEE", "suspendue": "SUSPENDUE",
+                    "annulee": "ANNULEE"}
 STATUTS_SOUS_ACTIVITE = {"planifiee": "PLANIFIEE", "en cours": "EN_COURS", "terminee": "TERMINEE"}
 
 MODE_AJOUT = "ajout"

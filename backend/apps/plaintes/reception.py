@@ -101,6 +101,15 @@ CONSENTEMENT_PAR_DEFAUT = "J'accepte que les informations de ce formulaire soien
 
 
 @transaction.atomic
+def _zone(valeur):
+    """Zone administrative choisie par l'agent (identifiant), ou rien."""
+    from apps.geo.models import Zone
+
+    if valeur in (None, "") or not str(valeur).isdigit():
+        return None
+    return Zone.objects.filter(pk=valeur).first()
+
+
 def recevoir(donnees: dict, canal: str, saisi_par=None, public: bool = False, fichiers=None):
     """
     Crée le dossier et renvoie (dossier, code de suivi en clair — à remettre au plaignant, il
@@ -188,6 +197,7 @@ def recevoir(donnees: dict, canal: str, saisi_par=None, public: bool = False, fi
         priorite=priorite,
         projet=projet,
         lieu=(donnees.get("lieu") or "").strip()[:255],
+        zone=None if public else _zone(donnees.get("zone")),
         description=description,
         concerne_personnel=concerne_personnel,
         sensible=sensible,

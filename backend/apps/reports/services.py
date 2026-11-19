@@ -36,7 +36,7 @@ def statut_global(projet):
 
     en_retard = Activite.objects.filter(
         projet=projet
-    ).exclude(statut=Activite.Statut.REALISEE).filter(date_fin__isnull=False)
+    ).exclude(statut__in=[Activite.Statut.REALISEE, Activite.Statut.ANNULEE]).filter(date_fin__isnull=False)
     if any(a.alerte_retard for a in en_retard):
         return "EN_RETARD"
 

@@ -24,6 +24,22 @@ export type TypeStructureUtilisateur = "INTERNE" | "CONSORTIUM" | "MISE_EN_OEUVR
 /** Droit sur un module : masqué, consultation, ou création et modification. */
 export type NiveauModule = "MASQUE" | "LECTURE" | "ECRITURE";
 
+export interface DroitObjet {
+  id?: number;
+  projet?: number | null;
+  document?: number | null;
+  element?: number | null;
+  libelle?: string;
+  acces: "LECTURE" | "ECRITURE";
+  approuver: boolean;
+}
+
+/** Droits de l'utilisateur connecté sur un objet (projet, document ou élément stratégique). */
+export interface MesDroits {
+  ecriture: boolean;
+  approuver: boolean;
+}
+
 export interface User {
   id: number;
   username: string;
@@ -53,6 +69,22 @@ export interface User {
   /** Activités et éléments stratégiques masqués à cet utilisateur (et ce qui est en dessous). */
   activites_masquees?: number[];
   elements_masques?: number[];
+  /** Droits précis sur un projet, un document stratégique ou un élément (remplacent les droits globaux pour eux). */
+  droits_objets?: DroitObjet[];
+  /** Hors des droits précis : droits globaux, ou lecture seule sans approbation. */
+  hors_droits_precis?: "GLOBAL" | "LECTURE";
+  /** Tout ce qu'il renseigne doit être approuvé, par ses approbateurs désignés (ou toute personne autorisée). */
+  saisies_a_approuver?: boolean;
+  approbateurs?: number[];
+  /** Avec saisies_a_approuver : seulement ces onglets ; vide : tout. */
+  modules_a_approuver?: string[];
+  /** Peut télécharger des exports (Excel, PDF, Word, images…) ; l'Administrateur, toujours. */
+  peut_exporter?: boolean;
+  /** Captures d'écran : réglage de l'organisation, ou bloquées / permises pour lui. */
+  captures?: "ORGANISATION" | "BLOQUEES" | "PERMISES";
+  /** Export global (sauvegarde de l'espace) et import global (reprise), sur autorisation de l'Administrateur. */
+  export_global?: boolean;
+  import_global?: boolean;
   /** Déconnexion après ce nombre de minutes sans activité, pour ce compte ; null : réglage de l'organisation. */
   session_inactivite_min?: number | null;
   /** Durée qui s'applique à ce compte (la sienne, sinon celle de l'organisation) ; 0 : jamais. */
@@ -190,6 +222,10 @@ export interface TypeDocument {
 }
 
 export interface CadreStrategique {
+  /** Modifications soumises à approbation (réglage de l'Administrateur). */
+  approbation_modifications?: boolean;
+  /** Droits de l'utilisateur connecté sur cet objet (null : non calculé). */
+  mes_droits?: MesDroits | null;
   id: number;
   nom: string;
   description: string;
@@ -350,6 +386,8 @@ export interface TypeNiveau {
 }
 
 export interface ElementStrategique {
+  /** Droits de l'utilisateur connecté sur cet objet (null : non calculé). */
+  mes_droits?: MesDroits | null;
   id: number;
   type_niveau: number;
   type_niveau_nom: string;
@@ -387,7 +425,7 @@ export interface Intervenant {
 
 export type StatutProjet = "EN_PREPARATION" | "EN_COURS" | "CLOTURE";
 export type TypeMiseEnOeuvre = "DIRECT" | "CONSORTIUM";
-export type StatutActivite = "NON_REALISEE" | "EN_COURS" | "REALISEE";
+export type StatutActivite = "NON_REALISEE" | "EN_COURS" | "REALISEE" | "SUSPENDUE" | "ANNULEE";
 
 export interface SousActivite {
   id: number;
@@ -544,6 +582,8 @@ export interface NiveauActivite {
 }
 
 export interface Projet {
+  /** Droits de l'utilisateur connecté sur cet objet (null : non calculé). */
+  mes_droits?: MesDroits | null;
   id: number;
   nom: string;
   code: string;
@@ -812,6 +852,10 @@ export interface Indicateur {
   actualisation: { derniere_saisie: string | null; attendue_le: string | null; en_retard: boolean; jours_de_retard: number };
   /** Écart entre les deux dernières périodes saisies (null sans deux saisies). */
   variation: { precedente: string; derniere: string; ecart: string; pourcent: number | null } | null;
+  /** Ce qui reste à faire pour atteindre la cible (négatif : dépassée), dans le sens de l'indicateur. */
+  ecart_cible: string | null;
+  /** Poids dans le score de performance (null : 1). */
+  poids: string | null;
   /** Indicateur calculé : sa formule (aucune saisie), et son explication en français. */
   formule?: FormuleIndicateur | null;
   formule_explication?: string[] | null;
@@ -1090,6 +1134,14 @@ export interface DashboardConsolide {
   territoires: TerritoiresTableauDeBord;
   qualite: QualiteTableauDeBord;
   pilotage: PilotageTableauDeBord;
+  performance: PerformanceIndicateurs;
+  plaintes: PlaintesTableauDeBord;
+  /** Par région de chaque pays : projets présents, activités, dépenses, réalisation des indicateurs. */
+  performance_territoires: {
+    pays: string; niveau: string; ecart: EcartTerritoires | null;
+    zones: { zone: string; projets: number; activites: number; activites_realisees: number; part_realisees: number | null;
+      depenses: number; taux_indicateurs: number | null }[];
+  }[];
   zones_couvertes: { niveau: string; count: number }[];
   projets_par_statut: Partial<Record<StatutProjet, number>>;
   activites_par_statut: Partial<Record<StatutActivite, number>>;
@@ -1314,11 +1366,15 @@ export interface SaisieAApprouver {
   date: string;
   etat: EtatApprobation;
   motif_rejet: string;
+  /** L'utilisateur peut approuver cet élément (droit sur son projet). */
+  approuvable?: boolean;
 }
 
 export interface DemandeModification {
   id: number;
-  projet_id: number;
+  /** Projet (planification), ou document stratégique (stratégie) : l'un ou l'autre. */
+  projet_id: number | null;
+  document_id?: number | null;
   projet_code: string;
   cible: string;
   action: "CREATION" | "MODIFICATION" | "SUPPRESSION";
@@ -1329,6 +1385,8 @@ export interface DemandeModification {
   valeurs: { champ: string; valeur: unknown }[];
   etat: EtatApprobation;
   motif_rejet: string;
+  /** L'utilisateur peut approuver cet élément (droit sur son projet). */
+  approuvable?: boolean;
   demandeur_nom: string;
   date: string;
 }
@@ -1357,6 +1415,19 @@ export interface EvaluationRisque {
   created_at: string;
 }
 
+export interface MesureRisque {
+  id: number;
+  risque: number;
+  libelle: string;
+  responsable: number | null;
+  responsable_nom: string;
+  echeance: string | null;
+  statut: "A_FAIRE" | "EN_COURS" | "REALISEE" | "ABANDONNEE";
+  date_realisation: string | null;
+  commentaire: string;
+  en_retard: boolean;
+}
+
 export interface Risque {
   id: number;
   projet: number;
@@ -1379,11 +1450,15 @@ export interface Risque {
   date_identification: string;
   date_prochaine_revue: string | null;
   evaluations: EvaluationRisque[];
+  mesures: MesureRisque[];
 }
 
 /** Avancement et retards des activités de terrain (éléments sans élément en dessous). Taux en %, null si sans objet. */
 export interface AvancementActivites {
   prevues: number;
+  /** Suspendues : toujours prévues. Annulées : retirées des activités prévues et des taux. */
+  suspendues: number;
+  annulees: number;
   demarrees: number;
   terminees: number;
   taux_demarrage: number | null;
@@ -1462,6 +1537,51 @@ export interface TerritoiresTableauDeBord {
   plaintes: number;
   plaintes_pour_1000: number | null;
   taux_plaintes_recurrentes: number | null;
+  participations: number;
+  participations_par_beneficiaire: number | null;
+  plusieurs_appuis: number;
+  part_plusieurs_appuis: number | null;
+  /** Tranche d'âge vide : date de naissance non renseignée. */
+  par_age: { tranche: string; nombre: number }[];
+  par_statut: { statut: string; nombre: number; part: number | null }[];
+  vulnerables: number;
+  part_vulnerables: number | null;
+  groupes_prioritaires: { groupe: string; atteints: number; cible: number; couverture: number | null }[];
+}
+
+/** Performance des indicateurs du tableau de bord (apps.dashboard.performance). Taux en %. */
+export interface PerformanceIndicateurs {
+  total: number; renseignes: number; part_renseignes: number | null;
+  avec_taux: number; atteints: number; part_atteints: number | null;
+  en_progres: number; en_recul: number; stables: number; part_en_progres: number | null; part_en_recul: number | null;
+  /** Moyenne des taux (plafonnés à 100 %) pondérée par le poids des indicateurs (vide : 1). */
+  score: number | null;
+  indicateurs_ponderes: number;
+  scores_projets: { projet: string; score: number | null; indicateurs: number }[];
+  par_niveau: { niveau: string; elements: number; mesures: number; atteints: number; part: number | null }[];
+  documents: { type: string; nombre: number }[];
+  /** Les moins avancés d'abord (200 au plus). Valeurs : texte décimal. */
+  liste: {
+    id: number; libelle: string; unite: string; projet: string; reference: string | null; actuelle: string | null; cible: string;
+    ecart: string | null; taux: number | null; calcule: boolean; sens: "HAUSSE" | "BAISSE";
+    tendance: "progres" | "recul" | "stable" | null; variation: string | null;
+  }[];
+}
+
+/** Plaintes et retours du tableau de bord : totaux et taux seulement (apps.plaintes.pilotage). */
+export interface PlaintesTableauDeBord {
+  total: number;
+  par_type: { libelle: string; nombre: number }[];
+  par_canal: { libelle: string; nombre: number }[];
+  par_categorie: { libelle: string; nombre: number }[];
+  /** Région de la zone des dossiers ordinaires. */
+  par_territoire: { libelle: string; nombre: number }[];
+  ouverts: number; clotures: number; en_retard: number;
+  taux_resolution: number | null; taux_accuse: number | null;
+  delai_accuse_moyen: number | null; delai_accuse_median: number | null;
+  delai_moyen: number | null; delai_median: number | null; dans_delais: number | null;
+  taux_reouverture: number | null; satisfaction: number | null; satisfaction_reponses: number;
+  avec_mesure_corrective: number | null; actions_correctives: number; mise_en_oeuvre_mesures: number | null;
 }
 
 export interface EcartTerritoires {
@@ -1505,6 +1625,20 @@ export interface Recommandation {
   statut: "A_FAIRE" | "EN_COURS" | "REALISEE" | "ABANDONNEE";
   date_mise_en_oeuvre: string | null;
   suivi: string;
+  origine: "" | "EVALUATION" | "AUDIT" | "MISSION" | "REVUE" | "ANALYSE" | "AUTRE";
+}
+
+/** Document qu'un projet doit avoir ; disponible dès qu'un document de la GED lui est associé. */
+export interface DocumentObligatoire {
+  id: number;
+  projet: number;
+  libelle: string;
+  echeance: string | null;
+  document: number | null;
+  document_titre: string;
+  disponible: boolean;
+  en_retard: boolean;
+  commentaire: string;
 }
 
 export interface Apprentissage {
@@ -1519,6 +1653,9 @@ export interface Apprentissage {
   recommandation_libelle: string;
   element: number | null;
   element_libelle: string;
+  /** Leçon ou bonne pratique qui a entraîné un changement dans le projet. */
+  adaptation: boolean;
+  changement: string;
 }
 
 /** Qualité des données du tableau de bord (apps.dashboard.qualite). */
@@ -1537,6 +1674,12 @@ export interface QualiteTableauDeBord {
   doublons_non_traites: number;
   approbations_en_attente: number;
   saisies_rejetees: number;
+  taux_validation: number | null;
+  taux_rejet: number | null;
+  /** Jours entre la fin de la période et la saisie, puis entre la saisie et l'approbation. */
+  delai_saisie_jours: number | null;
+  delai_validation_jours: number | null;
+  valeurs_justifiees: number | null;
 }
 
 /** Rapports, risques et apprentissage du tableau de bord (apps.projects.pilotage). */
@@ -1544,18 +1687,27 @@ export interface PilotageTableauDeBord {
   rapports: {
     total: number; attendus_a_date: number; recus: number; valides: number; a_revoir: number; en_retard: number;
     taux_remis: number | null; taux_a_temps: number | null; retard_moyen_jours: number | null;
+    delai_validation_jours: number | null; acceptes_premiere_soumission: number | null;
     en_retard_exemples: { projet: string; libelle: string; echeance: string; jours: number }[];
   };
   risques: {
     total: number; ouverts: number; survenus: number; par_niveau: Record<NiveauRisque, number>;
     avec_mesures: number | null; suivis: number | null; revue_en_retard: number;
+    clos: number; graves: number; graves_avec_mesures: number | null; problemes_resolus: number; delai_resolution_jours: number | null;
+    mesures: number; mesures_realisees: number; mesures_en_retard: number; taux_execution_mesures: number | null;
     graves_exemples: { projet: string; code: string; libelle: string; criticite: number; niveau: NiveauRisque; mesures: boolean; derniere_revue: string | null }[];
   };
   recommandations: {
     total: number; retenues: number; realisees: number; en_cours: number; taux_mise_en_oeuvre: number | null; en_retard: number;
+    par_origine: { origine: string; libelle: string; retenues: number; realisees: number; taux_mise_en_oeuvre: number | null }[];
     en_retard_exemples: { projet: string; code: string; libelle: string; echeance: string; priorite: string }[];
   };
-  apprentissage: { lecons: number; bonnes_pratiques: number; decisions: number };
+  apprentissage: { lecons: number; bonnes_pratiques: number; decisions: number; lecons_adaptees: number; part_lecons_adaptees: number | null };
+  documents_obligatoires: {
+    total: number; disponibles: number; taux_disponibilite: number | null; manquants_echus: number;
+    manquants_exemples: { projet: string; libelle: string; echeance: string }[];
+  };
+  partages: { liens: number; consultations: number };
 }
 
 export interface ColonneEnquete {

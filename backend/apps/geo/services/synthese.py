@@ -140,6 +140,59 @@ def _moyenne(valeurs):
     return round(sum(valeurs) / len(valeurs), 1) if valeurs else None
 
 
+class ArbreZones:
+    """Zones d'un pays et leurs liens : zone d'un niveau qui contient une zone, zones d'un niveau qu'elle contient."""
+
+    def __init__(self, pays):
+        from ..models import Zone
+
+        self.pays = pays
+        self.zones = list(Zone.objects.filter(niveau_administratif__pays=pays).select_related("niveau_administratif"))
+        self.parent = {z.id: z.parent_id for z in self.zones}
+        self.ordre_de = {z.id: z.niveau_administratif.ordre for z in self.zones}
+        self.enfants = defaultdict(list)
+        for z in self.zones:
+            self.enfants[z.parent_id].append(z.id)
+
+    def au_niveau(self, ordre) -> dict:
+        return {z.id: z for z in self.zones if z.niveau_administratif.ordre == ordre}
+
+    def ancetre_au_niveau(self, zid, ordre):
+        while zid is not None and self.ordre_de.get(zid, 0) > ordre:
+            zid = self.parent.get(zid)
+        return zid if zid is not None and self.ordre_de.get(zid) == ordre else None
+
+    def descendants_au_niveau(self, zid, ordre):
+        resultat, pile = [], [zid]
+        while pile:
+            courant = pile.pop()
+            if self.ordre_de.get(courant) == ordre:
+                resultat.append(courant)
+            elif self.ordre_de.get(courant, 0) < ordre:
+                pile.extend(self.enfants.get(courant, []))
+        return resultat
+
+    def presence(self, projets, ordre, cibles) -> dict:
+        """Zones du niveau où chaque projet est présent : {zone : {projets}} (zones des projets, ou tout le pays)."""
+        presence = defaultdict(set)
+        for p in projets:
+            if p.tout_le_pays and self.pays in (p.pays or []):
+                for zid in cibles:
+                    presence[zid].add(p.id)
+                continue
+            for z in p.zones.all():
+                if z.id not in self.ordre_de:
+                    continue
+                if self.ordre_de[z.id] >= ordre:
+                    cible = self.ancetre_au_niveau(z.id, ordre)
+                    if cible:
+                        presence[cible].add(p.id)
+                else:
+                    for cible in self.descendants_au_niveau(z.id, ordre):
+                        presence[cible].add(p.id)
+        return presence
+
+
 def synthese_par_zone(pays, ordre, projets_visibles, projets=None, dans_zones=None) -> dict:
     """
     `ordre` : niveau des zones (1 = régions…) ; `projets` : limiter à ces projets (liste d'id) ;
@@ -153,40 +206,20 @@ def synthese_par_zone(pays, ordre, projets_visibles, projets=None, dans_zones=No
     from apps.projects.models import Projet
     from apps.reports.services import taux_execution_financiere_global, taux_execution_physique_global
 
-    from ..models import LimiteAdministrative, NiveauAdministratif, Zone
+    from ..models import LimiteAdministrative, NiveauAdministratif
     from .limites import normaliser_nom
 
     niveau = NiveauAdministratif.objects.filter(pays=pays, ordre=ordre).first()
     if niveau is None:
         return {"niveau": None, "zones": []}
-    zones = list(Zone.objects.filter(niveau_administratif__pays=pays).select_related("niveau_administratif"))
-    parent = {z.id: z.parent_id for z in zones}
-    ordre_de = {z.id: z.niveau_administratif.ordre for z in zones}
-    enfants = defaultdict(list)
-    for z in zones:
-        enfants[z.parent_id].append(z.id)
-
-    def ancetre_au_niveau(zid):
-        while zid is not None and ordre_de.get(zid, 0) > ordre:
-            zid = parent.get(zid)
-        return zid if zid is not None and ordre_de.get(zid) == ordre else None
-
-    def descendants_au_niveau(zid):
-        resultat, pile = [], [zid]
-        while pile:
-            courant = pile.pop()
-            if ordre_de.get(courant) == ordre:
-                resultat.append(courant)
-            elif ordre_de.get(courant, 0) < ordre:
-                pile.extend(enfants.get(courant, []))
-        return resultat
-
-    cibles = {z.id: z for z in zones if z.niveau_administratif.ordre == ordre}
+    arbre = ArbreZones(pays)
+    ancetre_au_niveau = lambda zid: arbre.ancetre_au_niveau(zid, ordre)  # noqa: E731
+    cibles = arbre.au_niveau(ordre)
     if dans_zones:
         garder = set()
         for dans_zone in dans_zones:
             if dans_zone.niveau_administratif.ordre <= ordre:
-                garder.update(descendants_au_niveau(dans_zone.id))
+                garder.update(arbre.descendants_au_niveau(dans_zone.id, ordre))
             else:
                 garder.add(ancetre_au_niveau(dans_zone.id))
         cibles = {i: z for i, z in cibles.items() if i in garder}
@@ -197,22 +230,7 @@ def synthese_par_zone(pays, ordre, projets_visibles, projets=None, dans_zones=No
         projets = projets.filter(id__in=filtre_projets)
     projets = list(projets)
     chiffres = _chiffres_projets(projets)
-    presence = defaultdict(set)  # zone -> projets
-    for p in projets:
-        if p.tout_le_pays and pays in (p.pays or []):
-            for zid in cibles:
-                presence[zid].add(p.id)
-            continue
-        for z in p.zones.all():
-            if z.id not in ordre_de:
-                continue
-            if ordre_de[z.id] >= ordre:
-                cible = ancetre_au_niveau(z.id)
-                if cible:
-                    presence[cible].add(p.id)
-            else:
-                for cible in descendants_au_niveau(z.id):
-                    presence[cible].add(p.id)
+    presence = arbre.presence(projets, ordre, cibles)
 
     # Bénéficiaires par zone et par projet (selon leur localité).
     benef_zone = defaultdict(set)

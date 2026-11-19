@@ -18,7 +18,7 @@ from collections import OrderedDict
 from datetime import date, timedelta
 from statistics import mean, median
 
-from django.db.models import Count, Q
+from django.db.models import Count, Min, Q
 from django.utils import timezone
 
 from apps.accounts.constants import ROLE_ADMIN
@@ -448,3 +448,88 @@ def retours_projet(projet_id, user):
     codes = ["volume", "ouverts", "en_retard", "dans_delais", "boucle", "actions_en_cours", "par_categorie", "par_mois"]
     return {"projet": projet_id, "du": calcul.du, "au": calcul.au, "seuil_masquage": calcul.seuil,
             "elements": [{**calcul.calculer(c), "graphique": GRAPHIQUE_PAR_DEFAUT.get(c, "barres")} for c in codes]}
+
+
+# --- Tableau de bord consolidé -----------------------------------------------------------------------
+
+def plaintes_tableau_de_bord(projet_ids) -> dict:
+    """
+    Plaintes et retours des projets, pour le tableau de bord consolidé (qui peut être partagé par lien) :
+    uniquement des totaux et des taux, jamais de dossier. Les dossiers confidentiels comptent dans les
+    totaux, les ventilations (type, canal, catégorie) ne portent que sur les dossiers ordinaires.
+    """
+    aujourdhui = timezone.localdate()
+    dossiers = Dossier.objects.filter(projet_id__in=projet_ids)
+    ordinaires = dossiers.filter(sensible=False)
+    clos = list(dossiers.filter(statut=CLOS).values("id", "date_reception", "date_cloture", "echeance", "issue"))
+    ouverts = dossiers.exclude(statut=CLOS)
+    en_retard = ouverts.filter(Q(echeance__lt=aujourdhui) | Q(echeance_etape__lt=aujourdhui)).count()
+
+    def ventiler(champ):
+        return [{"libelle": str(libelle or v("Non renseigné")), "nombre": n} for libelle, n in
+                ordinaires.values_list(champ).annotate(n=Count("id")).order_by("-n")]
+
+    # Par territoire : région (premier niveau administratif) de la zone de chaque dossier ordinaire.
+    from apps.geo.models import Zone
+
+    zones_dossiers = list(ordinaires.values_list("zone_id", flat=True))
+    zones = {z["id"]: z for z in Zone.objects.filter(niveau_administratif__pays__in=Zone.objects.filter(
+        id__in=[z for z in zones_dossiers if z]).values("niveau_administratif__pays")).values("id", "nom", "parent_id", "niveau_administratif__ordre")}
+
+    def region(zid):
+        while zid in zones and zones[zid]["niveau_administratif__ordre"] > 1 and zones[zid]["parent_id"]:
+            zid = zones[zid]["parent_id"]
+        return zones[zid]["nom"] if zid in zones else v("Zone non renseignée")
+
+    territoires = {}
+    for zid in zones_dossiers:
+        nom = region(zid)
+        territoires[nom] = territoires.get(nom, 0) + 1
+    par_territoire = sorted(({"libelle": nom, "nombre": n} for nom, n in territoires.items()), key=lambda x: -x["nombre"])
+
+    canaux = dict(Canal.choices)
+    par_canal = [{"libelle": v(canaux.get(x["libelle"], x["libelle"])), "nombre": x["nombre"]} for x in ventiler("canal")]
+
+    # Accusés de réception : part des dossiers joignables, et délai depuis la réception.
+    joignables = dossiers.filter(anonyme=False).filter(~Q(telephone="") | ~Q(courriel=""))
+    premiers_accuses = dict(ActionDossier.objects.filter(dossier__in=dossiers, type=ActionDossier.Type.COMMUNICATION, sens="SORTANT",
+                                                         objet="ACCUSE_RECEPTION").values("dossier_id")
+                            .annotate(premier=Min("date")).values_list("dossier_id", "premier"))
+    receptions = dict(dossiers.filter(id__in=premiers_accuses).values_list("id", "date_reception"))
+    delais_accuse = [max((premiers_accuses[d].date() - receptions[d]).days, 0) for d in receptions]
+    accuses = joignables.filter(id__in=premiers_accuses).count()
+
+    durees = [(d["date_cloture"] - d["date_reception"]).days for d in clos if d["date_cloture"] and d["date_reception"]]
+    avec_echeance = [d for d in clos if d["echeance"] and d["date_cloture"]]
+    contestes = dossiers.filter(statut=CLOS).filter(actions__type__in=[ActionDossier.Type.REOUVERTURE, ActionDossier.Type.RECOURS]) \
+        .values("id").distinct().count() + dossiers.exclude(statut=CLOS).filter(actions__type=ActionDossier.Type.REOUVERTURE) \
+        .values("id").distinct().count()
+    deja_clos = dossiers.filter(actions__type=ActionDossier.Type.CLOTURE).values("id").distinct().count()
+    reponses = ActionDossier.objects.filter(dossier__in=dossiers, type=ActionDossier.Type.COMMUNICATION, objet="SATISFACTION",
+                                            sens="ENTRANT", details__has_key="satisfait")
+    nb_reponses = reponses.count()
+
+    # Mesures correctives : dossiers clôturés ayant donné lieu à une action, et actions réalisées.
+    ids_clos = [d["id"] for d in clos]
+    avec_mesure = Dossier.objects.filter(id__in=ids_clos, actions_correctives__isnull=False).distinct().count()
+    actions = ActionCorrective.objects.filter(dossiers__in=dossiers).exclude(statut=ActionCorrective.Statut.ABANDONNEE).distinct()
+    nb_actions = actions.count()
+
+    return {
+        "total": dossiers.count(),
+        "par_type": ventiler("type_retour__nom"), "par_canal": par_canal, "par_categorie": ventiler("categorie__nom")[:10],
+        "par_territoire": par_territoire,
+        "ouverts": ouverts.count(), "clotures": len(clos), "en_retard": en_retard,
+        "taux_resolution": _pct(sum(1 for d in clos if d["issue"] == IssueDossier.RESOLU), len(clos)),
+        "taux_accuse": _pct(accuses, joignables.count()),
+        "delai_accuse_moyen": round(mean(delais_accuse), 1) if delais_accuse else None,
+        "delai_accuse_median": median(delais_accuse) if delais_accuse else None,
+        "delai_moyen": round(mean(durees), 1) if durees else None, "delai_median": median(durees) if durees else None,
+        "dans_delais": _pct(sum(1 for d in avec_echeance if d["date_cloture"] <= d["echeance"]), len(avec_echeance)),
+        "taux_reouverture": _pct(contestes, deja_clos),
+        "satisfaction": _pct(reponses.filter(details__satisfait=True).count(), nb_reponses) if nb_reponses >= 10 else None,
+        "satisfaction_reponses": nb_reponses,
+        "avec_mesure_corrective": _pct(avec_mesure, len(clos)),
+        "actions_correctives": nb_actions,
+        "mise_en_oeuvre_mesures": _pct(actions.filter(statut=ActionCorrective.Statut.REALISEE).count(), nb_actions),
+    }

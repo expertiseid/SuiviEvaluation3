@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
-import type { Apprentissage, Paginated, RapportProjet, Recommandation } from "../types";
+import type { Apprentissage, DocumentObligatoire, Paginated, RapportProjet, Recommandation } from "../types";
 
 /** Liste, enregistrement et suppression des éléments de pilotage d'un projet (une même forme d'API). */
 function ressource<T extends { id: number }>(adresse: string) {
@@ -31,3 +31,4 @@ function ressource<T extends { id: number }>(adresse: string) {
 export const rapportsApi = ressource<RapportProjet>("rapports-attendus");
 export const recommandationsApi = ressource<Recommandation>("recommandations");
 export const apprentissagesApi = ressource<Apprentissage>("apprentissages");
+export const documentsObligatoiresApi = ressource<DocumentObligatoire>("documents-obligatoires");

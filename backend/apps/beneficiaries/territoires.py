@@ -115,7 +115,7 @@ def beneficiaires_territoires(projet_ids) -> dict:
 
     participations = list(ParticipationProjet.objects.filter(projet_id__in=projet_ids).values(
         "beneficiaire_id", "projet_id", "statut", "satisfaction", "beneficiaire__sexe", "beneficiaire__zone_id",
-        "beneficiaire__taille_menage"))
+        "beneficiaire__taille_menage", "activite_id", "sous_activite_id", "beneficiaire__date_naissance"))
 
     # Bénéficiaires directs, ménages et indirects.
     personnes = {}
@@ -225,6 +225,38 @@ def beneficiaires_territoires(projet_ids) -> dict:
     zones_invalides = [z["nom"] for z in zones.values() if z["latitude"] is not None
                        and not coordonnees_valides(z["latitude"], z["longitude"], emprises.get(z["niveau_administratif__pays"]))]
 
+    # Participations aux activités (une personne présente à cinq activités : un bénéficiaire, cinq participations)
+    # et bénéficiaires ayant reçu plusieurs appuis (au moins deux activités différentes).
+    appuis = defaultdict(set)
+    for p in participations:
+        if p["activite_id"] or p["sous_activite_id"]:
+            appuis[p["beneficiaire_id"]].add((p["activite_id"], p["sous_activite_id"]))
+    nb_participations = sum(len(a) for a in appuis.values())
+    plusieurs_appuis = sum(1 for a in appuis.values() if len(a) >= 2)
+
+    # Âge, groupes vulnérables (statuts particuliers) et couverture des groupes prioritaires ciblés.
+    from django.db.models import Sum
+
+    from .models import StatutParticulier
+    from .serializers import calculer_age, tranche_age_de
+
+    par_age = defaultdict(int)
+    for p in personnes.values():
+        par_age[tranche_age_de(calculer_age(p["beneficiaire__date_naissance"])) or ""] += 1
+    statuts = defaultdict(set)
+    for beneficiaire_id, code, libelle in Beneficiaire.statuts_particuliers.through.objects.filter(
+            beneficiaire_id__in=personnes).values_list("beneficiaire_id", "statutparticulier__code", "statutparticulier__libelle"):
+        statuts[(code, libelle)].add(beneficiaire_id)
+    vulnerables = set().union(*statuts.values()) if statuts else set()
+    cibles_groupes = Projet.objects.filter(id__in=projet_ids).aggregate(jeunes=Sum("cible_jeunes"), pdi=Sum("cible_pdi"))
+    groupes = []
+    for cle, code in (("jeunes", "JEUNE"), ("pdi", "PDI")):
+        if cibles_groupes[cle]:
+            membres = set().union(*(ids for (c, _), ids in statuts.items() if c == code))
+            libelle = next((l for c, l in statuts if c == code), StatutParticulier.objects.filter(code=code).values_list("libelle", flat=True).first() or code)
+            groupes.append({"groupe": libelle, "atteints": len(membres), "cible": cibles_groupes[cle],
+                            "couverture": _pourcent(len(membres), cibles_groupes[cle])})
+
     # Plaintes rapportées aux bénéficiaires, plaintes récurrentes (liées à d'autres dossiers).
     dossiers = Dossier.objects.filter(projet_id__in=projet_ids)
     nb_dossiers = dossiers.count()
@@ -242,6 +274,14 @@ def beneficiaires_territoires(projet_ids) -> dict:
         "taux_paquet_complet": _pourcent(len(complets), len(parcours)) if statuts_saisis else None,
         "satisfaction_moyenne": round(sum(notes) / len(notes), 1) if notes else None,
         "satisfaction_reponses": len(notes), "part_satisfaits": _pourcent(sum(1 for n in notes if n >= 4), len(notes)),
+        "participations": nb_participations,
+        "participations_par_beneficiaire": round(nb_participations / directs, 1) if directs else None,
+        "plusieurs_appuis": plusieurs_appuis, "part_plusieurs_appuis": _pourcent(plusieurs_appuis, directs),
+        "par_age": [{"tranche": t, "nombre": par_age[t]} for t in ("0-17 ans", "18-35 ans", "36-59 ans", "60 ans et plus", "") if par_age.get(t)],
+        "par_statut": sorted(({"statut": libelle, "nombre": len(ids), "part": _pourcent(len(ids), directs)}
+                              for (_, libelle), ids in statuts.items()), key=lambda x: -x["nombre"]),
+        "vulnerables": len(vulnerables), "part_vulnerables": _pourcent(len(vulnerables), directs),
+        "groupes_prioritaires": groupes,
         "territoires": territoires,
         "ecart_couverture": ecart("pour_1000_habitants"), "ecart_femmes": ecart("part_femmes"),
         "zones_ciblees": total_ciblees, "zones_sans_beneficiaire": len(sans_beneficiaire),

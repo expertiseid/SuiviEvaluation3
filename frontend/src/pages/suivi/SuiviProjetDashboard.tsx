@@ -113,6 +113,8 @@ const STATUTS_ACTIVITE = [
   { value: "NON_REALISEE", label: voc("Non réalisée") },
   { value: "EN_COURS", label: voc("En cours") },
   { value: "REALISEE", label: voc("Réalisée") },
+  { value: "SUSPENDUE", label: voc("Suspendue") },
+  { value: "ANNULEE", label: voc("Annulée") },
 ];
 
 const STATUTS_SOUS_ACTIVITE = [
@@ -186,7 +188,7 @@ export function SuiviProjetDashboard() {
     let retard = 0;
     let proche = 0;
     for (const activite of data?.activites ?? []) {
-      const statutA = statutEcheance(activite.date_fin, activite.statut === "REALISEE", seuilEcheanceJours);
+      const statutA = statutEcheance(activite.date_fin, ["REALISEE", "ANNULEE"].includes(activite.statut), seuilEcheanceJours);
       if (statutA === "RETARD") retard += 1;
       else if (statutA === "PROCHE") proche += 1;
       for (const sa of activite.sous_activites) {
@@ -436,7 +438,7 @@ export function SuiviProjetDashboard() {
                         </StatusBadge>
                         <AlerteBadge palier={activite.palier_actuel} taux={activite.taux_realisation ?? undefined} />
                         <EcheanceBadge
-                          statut={statutEcheance(activite.date_fin, activite.statut === "REALISEE", seuilEcheanceJours)}
+                          statut={statutEcheance(activite.date_fin, ["REALISEE", "ANNULEE"].includes(activite.statut), seuilEcheanceJours)}
                           dateFin={activite.date_fin}
                         />
                       </Group>

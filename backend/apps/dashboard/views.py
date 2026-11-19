@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from apps.accounts.constants import ROLE_ADMIN
 from apps.beneficiaries.models import ParticipationProjet
 from apps.core.permissions import HasGlobalVisibilityOrAssigned, peut_personnaliser_tableau_de_bord
+from apps.core.langues import dans_la_langue_demandee
 from apps.core.vocabulaire import oublier_vocabulaire, v
 from apps.geo.models import NiveauAdministratif, Zone
 from apps.indicators.models import Indicateur
@@ -24,7 +25,9 @@ from apps.projects.avancement import avancement
 from apps.beneficiaries.territoires import beneficiaires_territoires
 from apps.projects.finances import finances
 from apps.projects.pilotage import pilotage
+from apps.plaintes.pilotage import plaintes_tableau_de_bord
 
+from .performance import performance
 from .qualite import qualite
 
 from .filtres import filtrer_projets
@@ -245,6 +248,7 @@ def dashboard_consolide(request):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+@dans_la_langue_demandee
 def export_graphique(request):
     """
     Un graphique (ou tableau) du tableau de bord en Excel, avec un graphique natif relié aux données :
@@ -276,6 +280,7 @@ FORMATS_EXPORT = {
 
 @api_view(["GET"])
 @permission_classes([HasGlobalVisibilityOrAssigned])
+@dans_la_langue_demandee
 def dashboard_consolide_export(request):
     """
     Tableau de bord en fichier (?fichier=xlsx, pdf, docx ou pptx) : mêmes chiffres et mêmes filtres que
@@ -286,6 +291,58 @@ def dashboard_consolide_export(request):
         raise ValidationError({"fichier": "Format inconnu : xlsx, pdf, docx ou pptx."})
     return reponse_export(donnees_consolidees(visible_projets_ids(request.user), request.query_params),
                           request.query_params, fichier)
+
+
+@api_view(["POST"])
+@permission_classes([HasGlobalVisibilityOrAssigned])
+@dans_la_langue_demandee
+def export_comme_a_l_ecran(request):
+    """
+    Tableau de bord (ou un seul bloc) en PDF, Word ou Excel, tel qu'il s'affiche : le navigateur envoie l'image
+    de chaque bloc (multipart : fichier, blocs, image_0…, filtres en JSON, titre pour un bloc seul). L'Excel du
+    tableau de bord complet garde ses feuilles de données, les images sont en dernière feuille.
+    """
+    import json
+
+    from django.http import HttpResponse
+
+    from apps.core.models import IdentiteOrganisation
+    from apps.projects.models import Projet
+
+    from . import fidele
+    from .excel import _filtres_en_clair, _libelles
+
+    fichier = request.data.get("fichier", "pdf")
+    if fichier not in ("pdf", "docx", "xlsx"):
+        raise ValidationError({"fichier": "Format inconnu : pdf, docx ou xlsx."})
+    try:
+        blocs = fidele.lire_blocs(request)
+    except fidele.BlocInvalide as erreur:
+        raise ValidationError({"blocs": str(erreur)})
+    try:
+        filtres = json.loads(request.data.get("filtres") or "{}")
+    except ValueError:
+        filtres = {}
+    filtres = {cle: str(valeur) for cle, valeur in (filtres if isinstance(filtres, dict) else {}).items()
+               if valeur not in (None, "", [])}
+    from django.http import QueryDict
+
+    parametres = QueryDict(mutable=True)
+    parametres.update(filtres)
+    organisation = IdentiteOrganisation.courante().nom
+    titre_bloc = str(request.data.get("titre") or "")[:200]
+    texte_filtres = v("Filtres : {0}").format(_filtres_en_clair(parametres, _libelles(Projet._meta.get_field("statut").choices)))
+    e = fidele.entete(titre_bloc or v("Tableau de bord") + (f" — {organisation}" if organisation else ""), texte_filtres)
+    if fichier == "xlsx":
+        from .excel import excel_tableau_de_bord
+
+        contenu = excel_tableau_de_bord(donnees_consolidees(visible_projets_ids(request.user), parametres), parametres,
+                                        organisation, blocs=blocs)
+    else:
+        contenu = (fidele.pdf if fichier == "pdf" else fidele.word)(e, blocs)
+    reponse = HttpResponse(contenu, content_type=FORMATS_EXPORT[fichier])
+    reponse["Content-Disposition"] = f"attachment; filename=tableau_de_bord_{timezone.localdate():%Y-%m-%d}.{fichier}"
+    return reponse
 
 
 def reponse_export(donnees, filtres, fichier="xlsx"):
@@ -318,17 +375,19 @@ def donnees_consolidees(ids_visibles, filtres) -> dict:
         ParticipationProjet.objects.filter(projet__id__in=ids).values("beneficiaire").distinct().count()
     )
 
-    return {
+    donnees = {
         "nombre_projets": projets.count(),
         "budget_total": sum((p.budget_total for p in projets), start=0),
         "nombre_beneficiaires": nombre_beneficiaires,
         "indicateurs_par_statut": _resume_indicateurs(indicateurs),
         "indicateurs_non_actualises": _non_actualises(indicateurs),
+        "performance": performance(indicateurs, ids),
         "avancement": avancement(ids),
         "finances": finances(ids),
         "territoires": beneficiaires_territoires(ids),
         "qualite": qualite(ids),
         "pilotage": pilotage(ids),
+        "plaintes": plaintes_tableau_de_bord(ids),
         "zones_couvertes": _zones_couvertes(ids),
         **_repartitions(projets, ids),
         **repartitions_projets(projets),
@@ -337,6 +396,54 @@ def donnees_consolidees(ids_visibles, filtres) -> dict:
             for p in projets
         ],
     }
+    donnees["performance_territoires"] = _performance_territoires(projets, donnees)
+    return donnees
+
+
+def _performance_territoires(projets, donnees) -> list:
+    """
+    Par région (premier niveau administratif de chaque pays) : projets présents, activités, dépenses et
+    réalisation moyenne de leurs indicateurs, à partir des chiffres par projet déjà calculés. Comme sur la
+    carte, un projet présent dans plusieurs régions compte dans chacune. Écart entre la meilleure et la
+    moins bonne région.
+    """
+    from apps.geo.models import NiveauAdministratif
+    from apps.geo.services.synthese import ArbreZones
+
+    projets = list(projets.prefetch_related("zones"))
+    depenses = {l["code"]: float(l["depense"]) for l in donnees["finances"]["par_projet"]}
+    activites = {l["code"]: l for l in donnees["activites_par_projet"]}
+    taux = donnees["performance"]["taux_par_projet"]
+    resultat = []
+    for pays in sorted({c for p in projets for c in (p.pays or [])}):
+        niveau = NiveauAdministratif.objects.filter(pays=pays, ordre=1).first()
+        if niveau is None:
+            continue
+        arbre = ArbreZones(pays)
+        cibles = arbre.au_niveau(1)
+        presence = arbre.presence(projets, 1, cibles)
+        codes = {p.id: p.code for p in projets}
+        zones = []
+        for zid, zone in sorted(cibles.items(), key=lambda x: x[1].nom):
+            presents = [codes[i] for i in presence.get(zid, ())]
+            if not presents:
+                continue
+            nb = sum(sum(v for k, v in activites.get(c, {}).items() if k != "code") for c in presents)
+            realisees = sum(activites.get(c, {}).get("REALISEE", 0) for c in presents)
+            taux_zone = [taux[c] for c in presents if c in taux]
+            zones.append({"zone": zone.nom, "projets": len(presents), "activites": nb, "activites_realisees": realisees,
+                          "part_realisees": round(realisees / nb * 100, 1) if nb else None,
+                          "depenses": round(sum(depenses.get(c, 0) for c in presents)),
+                          "taux_indicateurs": round(sum(taux_zone) / len(taux_zone), 1) if taux_zone else None})
+        if zones:
+            mesurees = [z for z in zones if z["taux_indicateurs"] is not None]
+            ecart = None
+            if len(mesurees) >= 2:
+                haut, bas = max(mesurees, key=lambda z: z["taux_indicateurs"]), min(mesurees, key=lambda z: z["taux_indicateurs"])
+                ecart = {"plus_haut": haut["zone"], "valeur_haute": haut["taux_indicateurs"], "plus_bas": bas["zone"],
+                         "valeur_basse": bas["taux_indicateurs"], "difference": round(haut["taux_indicateurs"] - bas["taux_indicateurs"], 1)}
+            resultat.append({"pays": pays, "niveau": niveau.nom_niveau, "zones": zones, "ecart": ecart})
+    return resultat
 
 
 @api_view(["GET"])
@@ -394,7 +501,7 @@ def dashboard_projet(request, projet_id):
     )
 
 
-TYPES_GRAPHIQUES = {"camembert", "colonnes", "colonnes-empilees", "barres", "courbes", "aires", "tableau"}
+TYPES_GRAPHIQUES = {"camembert", "colonnes", "colonnes-empilees", "barres", "courbes", "aires", "tableau", "cartes"}
 
 
 @api_view(["GET", "PUT"])

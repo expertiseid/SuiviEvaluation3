@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { BellRing, Calculator, CalendarClock, Check, Plus, RotateCcw, Sliders, Trash2 } from "lucide-react";
+import { BellRing, Calculator, CalendarClock, Plus, RotateCcw, Sliders, Trash2 } from "lucide-react";
 import {
   ActionIcon,
   Badge,
@@ -14,7 +14,6 @@ import {
   Switch,
   Text,
   TextInput,
-  UnstyledButton,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import {
@@ -37,56 +36,7 @@ import type { PorteeAlerte } from "../../types";
 import { TitreRubrique } from "../../components/common/TitreRubrique";
 import { RapportageCard } from "./RapportageCard";
 import { voc } from "../../utils/vocabulaire";
-
-// Palette restreinte à choisir au clic plutôt qu'un sélecteur de couleur
-// libre (code hexa, roue teinte/saturation...) jugé trop compliqué pour ce
-// réglage simple.
-const PALETTE_COULEURS = [
-  "#d03b3b",
-  "#e8590c",
-  "#f08c00",
-  "#fab219",
-  "#82c91e",
-  "#0ca30c",
-  "#12b886",
-  "#15aabf",
-  "#1c7ed6",
-  "#4263eb",
-  "#7048e8",
-  "#9c36b5",
-  "#e64980",
-  "#495057",
-];
-
-function SelecteurCouleur({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return (
-    <Group gap={6}>
-      {PALETTE_COULEURS.map((couleur) => {
-        const selectionnee = couleur.toLowerCase() === value.toLowerCase();
-        return (
-          <UnstyledButton
-            key={couleur}
-            onClick={() => onChange(couleur)}
-            aria-label={couleur}
-            style={{
-              width: 26,
-              height: 26,
-              borderRadius: "50%",
-              background: couleur,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              outline: selectionnee ? "2px solid var(--mantine-color-dark-6)" : "2px solid transparent",
-              outlineOffset: 2,
-            }}
-          >
-            {selectionnee && <Check size={14} color="white" strokeWidth={3} />}
-          </UnstyledButton>
-        );
-      })}
-    </Group>
-  );
-}
+import { SelecteurCouleur } from "../../components/common/SelecteurCouleur";
 
 function ApercuBadge({ libelle, couleur }: { libelle: string; couleur: string }) {
   return (

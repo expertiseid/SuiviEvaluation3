@@ -1,6 +1,6 @@
 """
 Avancement et retards des activités (tableau de bord) : démarrage, achèvement, exécution à date, retards,
-respect des délais, durée de réalisation, jalons, activités incomplètes (sans responsable, calendrier ou
+respect des délais, durée de réalisation, activités suspendues et annulées, jalons, activités incomplètes (sans responsable, calendrier ou
 budget) et justificatifs.
 
 On compte les activités de terrain : les éléments de la planification sans élément en dessous. Les
@@ -41,16 +41,20 @@ def avancement(projet_ids, aujourd_hui=None) -> dict:
     justifiees = {i for paire in avec_documents for i in paire if i is not None}
     codes = dict(Projet.objects.filter(id__in=projet_ids).values_list("id", "code"))
 
-    def stats(liste):
+    def stats(toutes):
+        # Les activités annulées ne sont plus prévues ; les suspendues le restent et sont comptées à part.
+        liste = [a for a in toutes if a["statut"] != Activite.Statut.ANNULEE]
         prevues = len(liste)
         terminees = [a for a in liste if a["statut"] == Activite.Statut.REALISEE]
-        demarrees = [a for a in liste if a["statut"] != Activite.Statut.NON_REALISEE or a["date_debut_reelle"]]
+        demarrees = [a for a in liste if a["statut"] in (Activite.Statut.EN_COURS, Activite.Statut.REALISEE) or a["date_debut_reelle"]]
         attendues = [a for a in liste if a["date_fin"] and a["date_fin"] <= aujourd_hui]
         en_retard = [a for a in attendues if a["statut"] != Activite.Statut.REALISEE]
         datees = [a for a in terminees if a["date_fin"] and a["date_fin_reelle"]]
         a_temps = [a for a in datees if a["date_fin_reelle"] <= a["date_fin"]]
         return {
             "prevues": prevues,
+            "suspendues": sum(1 for a in liste if a["statut"] == Activite.Statut.SUSPENDUE),
+            "annulees": len(toutes) - prevues,
             "demarrees": len(demarrees),
             "terminees": len(terminees),
             "taux_demarrage": _pourcent(len(demarrees), prevues),
@@ -81,7 +85,8 @@ def avancement(projet_ids, aujourd_hui=None) -> dict:
     jalons = list(JalonLivrable.objects.filter(activite_id__in=ids).values("achevement", "valide", "date_prevue"))
     atteint = [bool(j["valide"] or (j["achevement"] or 0) >= 100) for j in jalons]
     retards = sorted(
-        (a for a in activites if a["date_fin"] and a["date_fin"] < aujourd_hui and a["statut"] != Activite.Statut.REALISEE),
+        (a for a in activites if a["date_fin"] and a["date_fin"] < aujourd_hui
+         and a["statut"] not in (Activite.Statut.REALISEE, Activite.Statut.ANNULEE)),
         key=lambda a: a["date_fin"])
     return {
         **stats(activites),
@@ -92,7 +97,8 @@ def avancement(projet_ids, aujourd_hui=None) -> dict:
         "par_projet": sorted(
             ({"code": codes.get(pid, ""), **{c: v for c, v in stats(liste).items()
                                               if c in ("prevues", "terminees", "taux_achevement", "taux_execution_a_date",
-                                                       "en_retard", "retard_moyen_jours", "terminees_dans_les_delais")}}
+                                                       "en_retard", "retard_moyen_jours", "terminees_dans_les_delais",
+                                                       "suspendues", "annulees")}}
              for pid, liste in par_projet.items()),
             key=lambda ligne: (-(ligne["en_retard"] or 0), ligne["code"])),
         "activites_en_retard": [

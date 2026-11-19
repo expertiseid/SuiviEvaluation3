@@ -199,6 +199,9 @@
  "({0} jours restants)": [
   "pages/abonnement/MonAbonnementPage.tsx"
  ],
+ "({0} sur {1})": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "(dont": [
   "pages/planification/PlanificationImportPage.tsx"
  ],
@@ -263,11 +266,20 @@
  "{0} : le responsable de ces étapes n'a pas (ou plus) d'habilitation confidentielle : {1}.": [
   "serveur"
  ],
+ "{0} (médiane {1})": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "{0} (offre actuelle)": [
   "pages/abonnement/MonAbonnementPage.tsx"
  ],
  "{0} {1} réalisé(s) sur {2} prévu(s).": [
   "components/suivi/MethodeCalculLigne.tsx"
+ ],
+ "{0} {1} sur {2} ({3})": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "{0} / {1} réalisée(s)": [
+  "pages/projets/RisquesTab.tsx"
  ],
  "{0} % ({1} cœurs)": [
   "pages/console/Supervision.tsx"
@@ -358,11 +370,17 @@
  "{0} caractères maximum par terme.": [
   "serveur"
  ],
+ "{0} clôturé(s)": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "{0} colonnes": [
   "pages/indicateurs/EnquetesPage.tsx"
  ],
  "{0} compte(s) ajouté(s) désactivé(s) : activez-les dans Utilisateurs si besoin.": [
   "pages/organisation/SauvegardeTransfert.tsx"
+ ],
+ "{0} consultation(s)": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "{0} couches importées": [
   "pages/carte/FenetresCarte.tsx"
@@ -375,6 +393,9 @@
  ],
  "{0} déjà renseigné ({1}) — conservé (mode ajouter)": [
   "serveur"
+ ],
+ "{0} document(s) disponible(s) sur {1} obligatoire(s) ; {2} manquant(s) après leur échéance.": [
+  "pages/projets/PilotageTab.tsx"
  ],
  "{0} document(s) rattaché(s)": [
   "pages/strategie/CadresStrategiquesListPage.tsx"
@@ -421,6 +442,9 @@
  ],
  "{0} éléments traités sur {1}": [
   "pages/organisation/SauvegardeTransfert.tsx"
+ ],
+ "{0} en moyenne": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "{0} envoyé(s) sur {1}": [
   "pages/console/Newsletter.tsx"
@@ -529,6 +553,9 @@
  "{0} maillon(s) créé(s) · {1} document(s) créé(s), {2} mis à jour · {3} élément(s) créé(s), {4} mis à jour": [
   "pages/strategie/ChaineDocumentsModal.tsx"
  ],
+ "{0} mesure(s) d'atténuation en retard.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "{0} min": [
   "pages/formation/FormationPage.tsx"
  ],
@@ -556,7 +583,16 @@
  "{0} objet(s)": [
   "pages/DashboardConsolidePage.tsx"
  ],
+ "{0} ouvert(s)": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "{0} par personne": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "{0} parcours (un bénéficiaire dans un projet).": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "{0} pers.": [
   "pages/DashboardConsolidePage.tsx"
  ],
  "{0} personne(s)": [
@@ -574,6 +610,9 @@
  "{0} projet(s) · budget total {1} FCFA": [
   "components/projets/ListeProjets.tsx"
  ],
+ "{0} projet(s) affiché(s)": [
+  "pages/projets/ProjetsListPage.tsx"
+ ],
  "{0} projets retenus": [
   "components/dashboard/FiltresTableauDeBord.tsx"
  ],
@@ -585,6 +624,9 @@
  ],
  "{0} rapport(s) reçu(s) sur {1} attendu(s) à ce jour ; {2} validé(s).": [
   "pages/projets/PilotageTab.tsx"
+ ],
+ "{0} recommandation(s) formulée(s), {1} en cours.": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "{0} recommandation(s) mise(s) en œuvre sur {1}{2}.": [
   "pages/projets/PilotageTab.tsx"
@@ -598,7 +640,7 @@
  "{0} réponses": [
   "pages/indicateurs/EnquetesPage.tsx"
  ],
- "{0} risque(s) ouvert(s) dont {1} survenu(s) ; mesures d'atténuation prévues pour {2} ; {3} revue(s) en retard.": [
+ "{0} risque(s) recensé(s) : {1} ouvert(s) dont {2} survenu(s), {3} maîtrisé(s) ou clos ; mesures d'atténuation prévues pour {4} ; {5} revue(s) en retard.": [
   "pages/DashboardConsolidePage.tsx"
  ],
  "{0} saisie en attente d'approbation": [
@@ -642,6 +684,9 @@
   "components/common/EspaceStockage.tsx",
   "pages/console/Supervision.tsx",
   "pages/plaintes/ElementsTableau.tsx"
+ ],
+ "{0} suspendue(s) ; {1} annulée(s), retirée(s) des activités prévues et des taux.": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "{0} texte(s) · {1} correction(s) pour cette langue": [
   "pages/langues/LanguesPage.tsx"
@@ -838,6 +883,9 @@
  "À droite": [
   "components/dashboard/ApparenceBlocDrawer.tsx"
  ],
+ "A entraîné un changement": [
+  "pages/projets/PilotageTab.tsx"
+ ],
  "À évaluer": [
   "pages/plaintes/DossierPlaintePage.tsx",
   "pages/plaintes/OperationsDossier.tsx",
@@ -847,7 +895,8 @@
   "pages/plaintes/SaisieDossierModal.tsx"
  ],
  "À faire": [
-  "api/plaintes.ts"
+  "api/plaintes.ts",
+  "pages/projets/RisquesTab.tsx"
  ],
  "à l'instant": [
   "components/notifications/NotificationBell.tsx"
@@ -906,7 +955,8 @@
  ],
  "Abandonnée": [
   "api/plaintes.ts",
-  "pages/projets/PilotageTab.tsx"
+  "pages/projets/PilotageTab.tsx",
+  "pages/projets/RisquesTab.tsx"
  ],
  "Abonnement": [
   "layouts/AppLayout.tsx",
@@ -935,8 +985,12 @@
  "Accepter les retours anonymes": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
+ "Acceptés dès la 1re remise": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Accès": [
-  "pages/utilisateurs/UtilisateursPage.tsx"
+  "pages/utilisateurs/UtilisateursPage.tsx",
+  "pages/utilisateurs/Visibilite.tsx"
  ],
  "Accès à la plateforme": [
   "pages/accueil/InscriptionPage.tsx"
@@ -947,6 +1001,9 @@
  "Accessible sans compte, sur téléphone, dans les langues choisies. Affichez l'adresse ou le QR code dans les lieux d'intervention, sur les affiches et les documents du projet.": [
   "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
+ "Accord de partenariat": [
+  "pages/projets/PilotageTab.tsx"
+ ],
  "Accueil": [
   "auth/LoginPage.tsx"
  ],
@@ -955,6 +1012,9 @@
  ],
  "Accusé de réception automatique au plaignant": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
+ ],
+ "Accusés de réception": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Achat": [
   "pages/console/Supervision.tsx"
@@ -1089,6 +1149,9 @@
  "Activités réalisées": [
   "utils/carteParZone.ts"
  ],
+ "Activités réalisées (%)": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Actualiser": [
   "pages/suivi/SuiviPage.tsx",
   "pages/suivi/SuiviProjetDashboard.tsx"
@@ -1098,6 +1161,9 @@
  ],
  "Actualités du site": [
   "pages/console/ConsolePage.tsx"
+ ],
+ "Actuelle": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Administrateur": [
   "utils/roles.ts"
@@ -1116,6 +1182,9 @@
  "Adresse courriel ou mot de passe incorrect.": [
   "auth/LoginPage.tsx",
   "serveur"
+ ],
+ "Adresse courriel, mot de passe et rôle requis.": [
+  "pages/utilisateurs/UtilisateursPage.tsx"
  ],
  "Affectation": [
   "api/plaintes.ts"
@@ -1155,11 +1224,17 @@
  "Afficher tous les risques": [
   "pages/projets/RisquesTab.tsx"
  ],
+ "Âge et groupes vulnérables": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Âge maximum": [
   "components/indicators/FormuleEditeur.tsx"
  ],
  "Âge minimum": [
   "components/indicators/FormuleEditeur.tsx"
+ ],
+ "Âge non renseigné": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Agence des Nations unies": [
   "pages/accueil/InscriptionPage.tsx"
@@ -1198,6 +1273,9 @@
  "Ajout": [
   "components/suivi/ImportCanevasSuiviModal.tsx"
  ],
+ "Ajout d'une sauvegarde à l'espace. Remplacer tout l'espace reste réservé à l'administrateur.": [
+  "pages/utilisateurs/Visibilite.tsx"
+ ],
  "ajout(s),": [
   "components/suivi/ImportCanevasSuiviModal.tsx"
  ],
@@ -1234,9 +1312,11 @@
   "pages/projets/NiveauxActiviteTab.tsx",
   "pages/projets/PilotageTab.tsx",
   "pages/projets/ProjetDetailPage.tsx",
+  "pages/projets/RisquesTab.tsx",
   "pages/strategie/CadreStrategiqueDetailPage.tsx",
   "pages/strategie/SuiviStrategiqueTab.tsx",
-  "pages/utilisateurs/RolesTab.tsx"
+  "pages/utilisateurs/RolesTab.tsx",
+  "pages/utilisateurs/Visibilite.tsx"
  ],
  "Ajouter — {0}": [
   "pages/geo/ZonesAdministrativesPage.tsx",
@@ -1311,6 +1391,12 @@
  "Ajouter un document": [
   "components/documents/DocumentsTab.tsx",
   "components/documents/ExplorateurDocuments.tsx"
+ ],
+ "Ajouter un document obligatoire": [
+  "pages/projets/PilotageTab.tsx"
+ ],
+ "Ajouter un droit sur": [
+  "pages/utilisateurs/Visibilite.tsx"
  ],
  "Ajouter un élément": [
   "pages/plaintes/TableauPlaintesPage.tsx",
@@ -1417,6 +1503,9 @@
  "Analyser": [
   "components/suivi/ImportCanevasSuiviModal.tsx"
  ],
+ "Analyses partagées": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Animateur de terrain": [
   "utils/roles.ts"
  ],
@@ -1440,6 +1529,14 @@
   "pages/indicateurs/IndicateurForm.tsx",
   "pages/indicateurs/IndicateursListPage.tsx",
   "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Annulée": [
+  "components/suivi/SaisieSuiviMethode.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx",
+  "utils/statusTones.ts"
+ ],
+ "Annulées": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Annuler": [
   "components/common/IntervenantsMultiples.tsx",
@@ -1528,6 +1625,9 @@
  "Appréciée": [
   "pages/strategie/SuiviStrategiqueTab.tsx"
  ],
+ "Approbation de ses saisies": [
+  "pages/utilisateurs/Visibilite.tsx"
+ ],
  "Approbations": [
   "layouts/AppLayout.tsx",
   "pages/approbations/ApprobationsPage.tsx",
@@ -1541,6 +1641,9 @@
  ],
  "Approuve ou rejette les saisies et les changements de planification des projets qui exigent une approbation (écran Approbations).": [
   "pages/utilisateurs/RolesTab.tsx"
+ ],
+ "Approuvé par": [
+  "pages/utilisateurs/Visibilite.tsx"
  ],
  "Approuver": [
   "pages/approbations/ApprobationsPage.tsx"
@@ -1596,6 +1699,9 @@
  ],
  "Atteinte": [
   "components/suivi/TranchesPlanifieesTab.tsx"
+ ],
+ "Atteints": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Attendu": [
   "components/suivi/HistoriqueSuiviTable.tsx",
@@ -1660,6 +1766,9 @@
   "pages/strategie/CadreStrategiqueDetailPage.tsx",
   "pages/strategie/DocumentModal.tsx"
  ],
+ "Aucun : pas d'approbation par onglet": [
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
  "Aucun abonné confirmé pour le moment.": [
   "serveur"
  ],
@@ -1691,6 +1800,9 @@
  "Aucun bloc affiché : l'administrateur a masqué tous les blocs du tableau de bord.": [
   "pages/DashboardConsolidePage.tsx"
  ],
+ "Aucun bloc affiché à exporter.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Aucun cadre stratégique associé": [
   "pages/projets/ProjetForm.tsx"
  ],
@@ -1708,6 +1820,9 @@
  ],
  "Aucun document ne correspond à la recherche.": [
   "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Aucun document obligatoire. Listez ceux que le projet doit avoir (convention, rapport de démarrage, plan de passation…), puis associez chaque document dès qu'il est déposé.": [
+  "pages/projets/PilotageTab.tsx"
  ],
  "Aucun document pour l'instant.": [
   "components/documents/DocumentsTab.tsx"
@@ -1757,6 +1872,9 @@
  "Aucun événement pour ces critères.": [
   "pages/journal-audit/JournalAuditPage.tsx"
  ],
+ "Aucun indicateur n'est rattaché à un élément de la planification.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Aucun indicateur ne correspond à la recherche.": [
   "pages/indicateurs/IndicateursListPage.tsx",
   "pages/suivi/SuiviProjetDashboard.tsx"
@@ -1771,6 +1889,9 @@
  ],
  "Aucun indicateur rattaché à cet élément.": [
   "pages/strategie/SuiviStrategiqueTab.tsx"
+ ],
+ "Aucun indicateur sur ces projets.": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Aucun indicateur.": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
@@ -1822,6 +1943,9 @@
  ],
  "Aucun numéro de téléphone n'est enregistré pour ce plaignant.": [
   "serveur"
+ ],
+ "Aucun onglet ne correspond.": [
+  "pages/utilisateurs/DroitsModules.tsx"
  ],
  "Aucun paiement pour l'instant.": [
   "pages/console/Supervision.tsx"
@@ -1905,6 +2029,7 @@
   "pages/projets/ProjetDetailPage.tsx"
  ],
  "Aucun résultat.": [
+  "components/common/RechercheGlobale.tsx",
   "pages/organisation/Organigramme.tsx",
   "pages/utilisateurs/Visibilite.tsx"
  ],
@@ -1927,6 +2052,7 @@
   "pages/projets/PartenairesProjetTab.tsx"
  ],
  "Aucune": [
+  "components/common/SelecteurCouleur.tsx",
   "pages/projets/ProjetForm.tsx",
   "pages/strategie/CadreStrategiqueDetailPage.tsx",
   "pages/strategie/DocumentModal.tsx"
@@ -2027,6 +2153,9 @@
  "Aucune inscription.": [
   "pages/DashboardConsolidePage.tsx"
  ],
+ "Aucune mesure suivie : ajoutez chaque mesure avec son responsable et son échéance.": [
+  "pages/projets/RisquesTab.tsx"
+ ],
  "Aucune modification enregistrée.": [
   "components/audit/HistoriqueModification.tsx",
   "pages/langues/LanguesPage.tsx"
@@ -2061,6 +2190,9 @@
  ],
  "Aucune pièce jointe.": [
   "pages/plaintes/PiecesJointesDossier.tsx"
+ ],
+ "Aucune plainte ni aucun retour enregistré sur ces projets.": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Aucune quantité prévue : renseigne-la dans la planification pour obtenir un taux.": [
   "components/suivi/MethodeCalculLigne.tsx"
@@ -2099,6 +2231,9 @@
   "pages/geo/ZonesAdministrativesPage.tsx"
  ],
  "Aucune zone d'intervention renseignée sur les fiches projet (champ « Zones »).": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Aucune zone d'intervention renseignée sur les fiches projet.": [
   "pages/DashboardConsolidePage.tsx"
  ],
  "Aucune zone ne correspond à la recherche.": [
@@ -2407,6 +2542,15 @@
  "Binaire (achevé / non achevé)": [
   "utils/methodesCalcul.ts"
  ],
+ "Bloquées : filigrane à son nom, écran masqué pendant une capture, impression et copie bloquées. Le réglage de l'organisation se trouve dans Organisation › Identité et logo.": [
+  "pages/utilisateurs/Visibilite.tsx"
+ ],
+ "Bloquées pour lui": [
+  "pages/utilisateurs/Visibilite.tsx"
+ ],
+ "Bloquer les captures d'écran": [
+  "pages/organisation/IdentiteOrganisation.tsx"
+ ],
  "Boîte à suggestions": [
   "api/plaintes.ts"
  ],
@@ -2532,6 +2676,9 @@
  "Cadre :": [
   "pages/planification/PlanificationImportPage.tsx"
  ],
+ "Cadre de résultats": [
+  "pages/projets/PilotageTab.tsx"
+ ],
  "Cadre logique": [
   "pages/projets/ProjetDetailPage.tsx",
   "utils/modules.ts"
@@ -2586,6 +2733,9 @@
  "Calcul par quantité sans quantité prévue : le taux ne peut pas être calculé.": [
   "serveur"
  ],
+ "calculé": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Calculé": [
   "pages/indicateurs/IndicateursListPage.tsx"
  ],
@@ -2625,6 +2775,12 @@
   "pages/plaintes/ParametragePlaintesPage.tsx",
   "pages/projets/PlanificationPeriodeTab.tsx"
  ],
+ "Captures d'écran": [
+  "pages/utilisateurs/Visibilite.tsx"
+ ],
+ "Captures, impression et copie sont désactivées sur cette plateforme par l'administrateur.": [
+  "components/common/ProtectionCaptures.tsx"
+ ],
  "Carte à l'échelle avec grille de coordonnées, légende, situation, chiffres clés, tableau des localités et cartouche ; mêmes filtres (projet, zone) que la carte à l'écran.": [
   "pages/carte/FenetresCarte.tsx"
  ],
@@ -2638,6 +2794,9 @@
  ],
  "Carte des bénéficiaires": [
   "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Cartes de chiffres": [
+  "components/charts/GraphiqueAdaptable.tsx"
  ],
  "Cartographie": [
   "layouts/AppLayout.tsx",
@@ -2677,6 +2836,9 @@
  ],
  "Causes et conséquences": [
   "pages/projets/RisquesTab.tsx"
+ ],
+ "Ce bloc est fait de chiffres et de tableaux, sans graphique : seuls son titre et son sous-titre se personnalisent.": [
+  "components/dashboard/ApparenceBlocDrawer.tsx"
  ],
  "Ce bloc n'a pas de graphique à exporter en SVG : choisissez PNG ou Excel.": [
   "components/charts/ExportBloc.tsx"
@@ -2881,6 +3043,9 @@
  "Celle du niveau au-dessus, sinon du projet, sinon de l'organisation.": [
   "components/suivi/MethodeCalculLigne.tsx"
  ],
+ "Celles prévues pour ce bloc": [
+  "components/dashboard/ApparenceBlocDrawer.tsx"
+ ],
  "Certains dossiers ne vous sont pas accessibles.": [
   "serveur"
  ],
@@ -2950,6 +3115,9 @@
  "Cette habilitation n'est plus en cours.": [
   "serveur"
  ],
+ "Cette leçon a entraîné un changement dans le projet": [
+  "pages/projets/PilotageTab.tsx"
+ ],
  "Cette newsletter est déjà envoyée : elle ne peut plus être modifiée.": [
   "serveur"
  ],
@@ -2998,14 +3166,17 @@
  "champs : {0}": [
   "pages/journal-audit/JournalAuditPage.tsx"
  ],
+ "Changement :": [
+  "pages/projets/PilotageTab.tsx"
+ ],
+ "Changement apporté": [
+  "pages/projets/PilotageTab.tsx"
+ ],
  "Changement approuvé et appliqué": [
   "pages/approbations/ApprobationsPage.tsx"
  ],
  "Changement d'étape": [
   "api/plaintes.ts"
- ],
- "Changements de planification": [
-  "pages/approbations/ApprobationsPage.tsx"
  ],
  "Changer d'étape": [
   "pages/plaintes/DossierPlaintePage.tsx",
@@ -3115,6 +3286,9 @@
  ],
  "Chef de service": [
   "utils/roles.ts"
+ ],
+ "Chiffre": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Chiffres clés": [
   "pages/DashboardConsolidePage.tsx"
@@ -3354,6 +3528,8 @@
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
  ],
  "Cible": [
+  "pages/DashboardConsolidePage.tsx",
+  "pages/indicateurs/IndicateurDetailPage.tsx",
   "pages/indicateurs/IndicateursListPage.tsx",
   "pages/strategie/CadreStrategiqueDetailPage.tsx",
   "pages/strategie/SuiviStrategiqueTab.tsx",
@@ -3364,6 +3540,12 @@
  ],
  "Cible {0} enregistrée": [
   "pages/projets/PlanificationPeriodeTab.tsx"
+ ],
+ "Cible atteinte": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Cible atteinte (dépassée de {0} {1})": [
+  "pages/indicateurs/IndicateurDetailPage.tsx"
  ],
  "Cible femmes": [
   "utils/carteParZone.ts"
@@ -3470,6 +3652,9 @@
  ],
  "cliquer pour la liste": [
   "pages/carte/CartePage.tsx"
+ ],
+ "Cliquez pour l'afficher de nouveau.": [
+  "components/common/ProtectionCaptures.tsx"
  ],
  "Cliquez sur la valeur d'une zone pour voir ses projets. Un projet compte dans chaque zone où il intervient (son budget n'est pas réparti entre les zones).": [
   "pages/carte/CartePage.tsx"
@@ -3618,6 +3803,9 @@
  ],
  "Commune": [
   "pages/carte/FenetresCarte.tsx"
+ ],
+ "Commune, village… : sert aux statistiques par territoire.": [
+  "pages/plaintes/ChampsRetour.tsx"
  ],
  "Communes": [
   "pages/carte/CartePage.tsx",
@@ -3839,6 +4027,9 @@
  "Contenu": [
   "pages/carte/FenetresCarte.tsx"
  ],
+ "Contenu masqué": [
+  "components/common/ProtectionCaptures.tsx"
+ ],
  "Contenu partagé": [
   "components/partage/BoutonPartage.tsx"
  ],
@@ -3896,6 +4087,9 @@
  ],
  "Contrôler l'ouverture de la saisie par périodes de rapportage": [
   "pages/parametres/RapportageCard.tsx"
+ ],
+ "Convention de financement": [
+  "pages/projets/PilotageTab.tsx"
  ],
  "Cookies": [
   "components/common/Logos.tsx"
@@ -3968,7 +4162,10 @@
   "pages/carte/FenetresCarte.tsx",
   "pages/parametres/ParametresAlertePage.tsx"
  ],
- "Couleur imposée (laisser vide pour garder la palette) :": [
+ "Couleur de chaque élément (pastille barrée : garder la couleur de la palette) :": [
+  "components/dashboard/ApparenceBlocDrawer.tsx"
+ ],
+ "Couleur de la palette": [
   "components/dashboard/ApparenceBlocDrawer.tsx"
  ],
  "Couleurs": [
@@ -4004,6 +4201,9 @@
   "pages/DashboardConsolidePage.tsx"
  ],
  "Couverture de la cible": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Couverture des groupes prioritaires ciblés :": [
   "pages/DashboardConsolidePage.tsx"
  ],
  "Couverture géographique (nombre de zones)": [
@@ -4100,7 +4300,8 @@
   "pages/projets/RisquesTab.tsx"
  ],
  "Cumul": [
-  "components/suivi/HistoriqueSuiviTable.tsx"
+  "components/suivi/HistoriqueSuiviTable.tsx",
+  "pages/indicateurs/IndicateurDetailPage.tsx"
  ],
  "Cumul réalisé": [
   "components/charts/EvolutionChart.tsx"
@@ -4108,11 +4309,11 @@
  "Cumulables (personnes formées, kits…) ou une mesure à chaque saisie (taux, prévalence, stock…).": [
   "pages/indicateurs/IndicateurForm.tsx"
  ],
- "D'où vient-elle ?": [
-  "pages/projets/PilotageTab.tsx"
- ],
  "Dans {0} j": [
   "pages/plaintes/DelaiDossier.tsx"
+ ],
+ "Dans ces onglets, toute création, modification ou suppression faite par quelqu'un d'autre que l'administrateur devient une demande, appliquée une fois approuvée. Pour une personne seulement, réglez-le dans sa fiche (Utilisateurs).": [
+  "pages/approbations/ApprobationsPage.tsx"
  ],
  "Dans l'étape depuis le": [
   "pages/plaintes/DossierPlaintePage.tsx"
@@ -4312,11 +4513,23 @@
   "pages/plaintes/CircuitsPlaintes.tsx",
   "pages/plaintes/ListesPlaintes.tsx"
  ],
+ "Délai de traitement": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Délai de traitement (jours)": [
   "pages/plaintes/ListesPlaintes.tsx"
  ],
  "Délai de traitement par défaut (jours)": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
+ ],
+ "Délai fin de période → saisie": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Délai moyen de validation : {0}.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Délai saisie → approbation": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Délais": [
   "components/indicators/FormuleEditeur.tsx"
@@ -4371,6 +4584,9 @@
   "pages/console/ConsolePage.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
+ "Demandes de modification": [
+  "pages/approbations/ApprobationsPage.tsx"
+ ],
  "Demandez un nouveau lien à la personne qui vous l'a envoyé.": [
   "pages/documents/DocumentPartagePage.tsx"
  ],
@@ -4405,6 +4621,9 @@
  ],
  "Dépenses": [
   "utils/carteParZone.ts"
+ ],
+ "Dépenses (FCFA)": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Dépenses 12 mois": [
   "utils/carteParZone.ts"
@@ -4566,6 +4785,9 @@
  "Directions, services… de l'organisation (paramétrés dans Organisation). Une partie du projet peut être confiée à un autre service depuis sa planification.": [
   "pages/projets/ProjetForm.tsx"
  ],
+ "Disponible": [
+  "pages/projets/PilotageTab.tsx"
+ ],
  "Disque des données": [
   "pages/console/Supervision.tsx"
  ],
@@ -4581,6 +4803,9 @@
  "Document ajouté": [
   "components/documents/DocumentsTab.tsx"
  ],
+ "Document attendu": [
+  "pages/projets/PilotageTab.tsx"
+ ],
  "Document d'un maillon au-dessus. Sauter un maillon est permis.": [
   "pages/strategie/DocumentModal.tsx"
  ],
@@ -4589,6 +4814,9 @@
  ],
  "Document enregistré": [
   "pages/strategie/DocumentModal.tsx"
+ ],
+ "Document fourni": [
+  "pages/projets/PilotageTab.tsx"
  ],
  "Document mis à la corbeille": [
   "components/documents/DocumentsTab.tsx",
@@ -4602,6 +4830,9 @@
  ],
  "Document supprimé": [
   "pages/strategie/CadresStrategiquesListPage.tsx"
+ ],
+ "Document, comme à l'écran": [
+  "components/charts/ExportBloc.tsx"
  ],
  "Documents": [
   "components/documents/ExplorateurDocuments.tsx",
@@ -4635,11 +4866,26 @@
  "Documents liés à la sous-activité": [
   "pages/projets/ProjetDetailPage.tsx"
  ],
+ "Documents obligatoires": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
+ "Documents obligatoires disponibles": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Documents obligatoires manquants après leur échéance : {0}{1}.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Documents rattachés :": [
   "pages/strategie/CadreStrategiqueDetailPage.tsx"
  ],
+ "Documents stratégiques dont relèvent les projets : {0}.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Documents, rapports et exports en six langues": [
   "pages/accueil/AProposPage.tsx"
+ ],
+ "Doit être disponible le": [
+  "pages/projets/PilotageTab.tsx"
  ],
  "Domaine": [
   "pages/projets/CoherenceTab.tsx"
@@ -4754,6 +5000,7 @@
   "serveur"
  ],
  "Dossiers": [
+  "pages/DashboardConsolidePage.tsx",
   "pages/plaintes/ActionsCorrectivesPage.tsx",
   "pages/plaintes/DossiersPlaintesPage.tsx",
   "pages/plaintes/ElementsTableau.tsx",
@@ -4818,6 +5065,9 @@
   "pages/utilisateurs/DroitsModules.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
+ "Droits précis par projet et par stratégie": [
+  "pages/utilisateurs/Visibilite.tsx"
+ ],
  "Du": [
   "components/dashboard/FiltresTableauDeBord.tsx",
   "components/suivi/EnTetePeriode.tsx",
@@ -4861,6 +5111,15 @@
  "Écart": [
   "pages/DashboardConsolidePage.tsx"
  ],
+ "Écart à la cible": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Écart à la cible : ce qu'il reste à faire pour l'atteindre (négatif : cible dépassée). Tendance : entre les deux dernières valeurs saisies, pour les indicateurs mesurés à chaque saisie (taux, niveaux) ; un indicateur cumulable progresse à chaque saisie.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Écart de réalisation des indicateurs ({0}) : de {1} ({2}) à {3} ({4}), soit {5} points.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Écarter (faux positif)": [
   "pages/beneficiaires/DoublonsPage.tsx"
  ],
@@ -4877,7 +5136,8 @@
   "pages/plaintes/DonneesPersonnellesPlaintes.tsx",
   "pages/plaintes/DossierPlaintePage.tsx",
   "pages/plaintes/DossiersPlaintesPage.tsx",
-  "pages/projets/PilotageTab.tsx"
+  "pages/projets/PilotageTab.tsx",
+  "pages/projets/RisquesTab.tsx"
  ],
  "Échéance : {0}": [
   "pages/plaintes/DelaiDossier.tsx"
@@ -5007,7 +5267,8 @@
  ],
  "Élément stratégique": [
   "pages/projets/ActiviteForm.tsx",
-  "pages/projets/SousActiviteForm.tsx"
+  "pages/projets/SousActiviteForm.tsx",
+  "pages/utilisateurs/Visibilite.tsx"
  ],
  "Élément supprimé": [
   "pages/projets/ProjetDetailPage.tsx",
@@ -5041,6 +5302,12 @@
   "pages/projets/ProjetForm.tsx",
   "pages/strategie/DocumentModal.tsx",
   "pages/strategie/FicheDocument.tsx"
+ ],
+ "Éléments dont au moins un indicateur a une valeur.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Éléments dont tous les indicateurs ont atteint leur cible.": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Éléments masqués à cet utilisateur": [
   "pages/utilisateurs/Visibilite.tsx"
@@ -5097,8 +5364,8 @@
   "components/suivi/SaisieSuiviMethode.tsx",
   "components/suivi/TranchesPlanifieesTab.tsx",
   "pages/DashboardConsolidePage.tsx",
-  "pages/projets/AvancementModal.tsx",
   "pages/projets/PilotageTab.tsx",
+  "pages/projets/RisquesTab.tsx",
   "pages/suivi/SuiviProjetDashboard.tsx",
   "utils/carteParZone.ts",
   "utils/statusTones.ts"
@@ -5133,6 +5400,12 @@
  "En préparation": [
   "utils/carteParZone.ts",
   "utils/statusTones.ts"
+ ],
+ "En progrès": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "En recul": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "En retard": [
   "components/notifications/EcheancesBanner.tsx",
@@ -5169,6 +5442,7 @@
   "api/plaintes.ts"
  ],
  "Enregistré": [
+  "pages/approbations/ApprobationsPage.tsx",
   "pages/projets/PilotageTab.tsx"
  ],
  "Enregistre d'abord le projet pour pouvoir y associer des bénéficiaires (import Excel ou recherche dans la base).": [
@@ -5190,6 +5464,7 @@
   "components/suivi/MethodeCalculLigne.tsx",
   "components/suivi/SaisiePointSuiviForm.tsx",
   "layouts/AppLayout.tsx",
+  "pages/approbations/ApprobationsPage.tsx",
   "pages/beneficiaires/BeneficiaireForm.tsx",
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
   "pages/console/ConsolePage.tsx",
@@ -5278,6 +5553,9 @@
  ],
  "Entre 1 et {0} Mo (plafond de la plateforme).": [
   "serveur"
+ ],
+ "Entrée": [
+  "components/common/RechercheGlobale.tsx"
  ],
  "entrée en vigueur": [
   "pages/journal-audit/JournalAuditPage.tsx"
@@ -5417,6 +5695,7 @@
   "components/documents/ExplorateurDocuments.tsx",
   "components/partage/BoutonPartage.tsx",
   "pages/DashboardConsolidePage.tsx",
+  "pages/approbations/ApprobationsPage.tsx",
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
   "pages/console/ConsolePage.tsx",
   "pages/geo/ZonesAdministrativesPage.tsx",
@@ -5739,6 +6018,7 @@
   "pages/parametres/RapportageCard.tsx",
   "pages/plaintes/DonneesPersonnellesPlaintes.tsx",
   "pages/plaintes/HabilitationsPlaintes.tsx",
+  "pages/projets/PilotageTab.tsx",
   "pages/utilisateurs/DemandesInscription.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
@@ -5748,8 +6028,20 @@
  "Étendue : la zone choisie dans le filtre.": [
   "pages/carte/FenetresCarte.tsx"
  ],
+ "Étude de référence": [
+  "pages/projets/PilotageTab.tsx"
+ ],
+ "Évaluation": [
+  "pages/projets/PilotageTab.tsx"
+ ],
  "Évaluation finale": [
   "pages/projets/PilotageTab.tsx"
+ ],
+ "Évaluation, audit, supervision…": [
+  "pages/projets/PilotageTab.tsx"
+ ],
+ "Évolution": [
+  "pages/indicateurs/IndicateurDetailPage.tsx"
  ],
  "Évolution dans le temps": [
   "pages/DashboardConsolidePage.tsx",
@@ -5996,6 +6288,13 @@
  "Export de tous les bénéficiaires, une feuille par projet.": [
   "pages/beneficiaires/ExportBeneficiairesModal.tsx"
  ],
+ "Export désactivé": [
+  "utils/exportsAutorises.ts"
+ ],
+ "Export et import global": [
+  "layouts/AppLayout.tsx",
+  "pages/exportGlobal/ExportGlobalPage.tsx"
+ ],
  "Export impossible": [
   "pages/plaintes/DossiersPlaintesPage.tsx",
   "pages/plaintes/TableauPlaintesPage.tsx"
@@ -6017,6 +6316,7 @@
   "pages/projets/ExportPlanification.tsx",
   "pages/projets/PlanificationPeriodeTab.tsx",
   "pages/projets/ProjetDetailPage.tsx",
+  "pages/projets/ProjetsListPage.tsx",
   "pages/projets/RisquesTab.tsx",
   "pages/strategie/CadreTableau.tsx",
   "pages/suivi/SuiviProjetDashboard.tsx"
@@ -6048,6 +6348,9 @@
  ],
  "Exporter les données": [
   "pages/organisation/SauvegardeTransfert.tsx"
+ ],
+ "Exports et captures d'écran": [
+  "pages/utilisateurs/Visibilite.tsx"
  ],
  "Exports Excel, PDF et Word, en français, anglais, arabe, espagnol, allemand et italien.": [
   "pages/accueil/AccueilPage.tsx"
@@ -6612,6 +6915,9 @@
  "Import terminé : {0} traduction(s) corrigée(s), {1} remise(s) à l'origine.": [
   "pages/langues/LanguesPage.tsx"
  ],
+ "Importance de cet indicateur dans le score global de performance (vide : 1). Ex. : 3 compte trois fois plus qu'un indicateur de poids 1.": [
+  "pages/indicateurs/IndicateurForm.tsx"
+ ],
  "Importer": [
   "pages/beneficiaires/ImportBeneficiairesModal.tsx",
   "pages/carte/FenetresCarte.tsx",
@@ -6713,6 +7019,7 @@
  ],
  "Indicateur": [
   "components/indicators/FormuleEditeur.tsx",
+  "pages/DashboardConsolidePage.tsx",
   "pages/indicateurs/IndicateursListPage.tsx",
   "pages/projets/PlanificationPeriodeTab.tsx",
   "pages/projets/ProjetDetailPage.tsx",
@@ -6782,6 +7089,9 @@
  "Indicateurs par zone": [
   "pages/carte/FenetresCarte.tsx"
  ],
+ "Indicateurs renseignés": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Indicateurs seuls, rattachés à un projet déjà existant (par son code) ou stratégiques.": [
   "pages/planification/PlanificationImportPage.tsx"
  ],
@@ -6789,6 +7099,9 @@
   "pages/indicateurs/IndicateursListPage.tsx"
  ],
  "Indicateurs suivis": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Indicateurs, les moins avancés d'abord": [
   "pages/DashboardConsolidePage.tsx"
  ],
  "Indicateurs, suivi périodique, alertes et tableaux de bord": [
@@ -6829,6 +7142,9 @@
  ],
  "Indiquez la réponse donnée à la personne (et le motif d'un refus).": [
   "serveur"
+ ],
+ "Indiquez le document attendu.": [
+  "pages/projets/PilotageTab.tsx"
  ],
  "Indiquez le motif de l'export de ce dossier confidentiel.": [
   "serveur"
@@ -7084,6 +7400,9 @@
  "L'Administrateur accède déjà aux dossiers confidentiels.": [
   "serveur"
  ],
+ "L'administrateur ou toute personne ayant le droit d'approuver": [
+  "pages/utilisateurs/Visibilite.tsx"
+ ],
  "L'adresse courriel est obligatoire : elle sert à se connecter.": [
   "serveur"
  ],
@@ -7148,6 +7467,9 @@
  "L'export a échoué.": [
   "pages/DashboardConsolidePage.tsx"
  ],
+ "L'export global est réservé à l'administrateur : demandez-lui l'autorisation.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
+ ],
  "L'export n'a pas abouti.": [
   "pages/console/Newsletter.tsx",
   "pages/journal-audit/JournalAuditPage.tsx",
@@ -7155,6 +7477,9 @@
  ],
  "L'import a échoué.": [
   "pages/indicateurs/EnquetesPage.tsx"
+ ],
+ "L'import global est réservé à l'administrateur : demandez-lui l'autorisation.": [
+  "pages/organisation/SauvegardeTransfert.tsx"
  ],
  "L'offre choisie prend la suite de votre essai dès le paiement. Vos données et vos comptes restent tels quels : rien à saisir de nouveau.": [
   "pages/abonnement/MonAbonnementPage.tsx"
@@ -7341,6 +7666,9 @@
  "La vue confidentielle est réservée aux personnes habilitées.": [
   "serveur"
  ],
+ "Laisser vide : tout ce qu'il renseigne, dans tous les onglets.": [
+  "pages/utilisateurs/Visibilite.tsx"
+ ],
  "Laisser vide pour couvrir tous les projets.": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
  ],
@@ -7372,6 +7700,9 @@
  ],
  "Langues de réception": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
+ ],
+ "Laquelle précisément ?": [
+  "pages/projets/PilotageTab.tsx"
  ],
  "Latitude": [
   "pages/beneficiaires/BeneficiaireForm.tsx"
@@ -7633,7 +7964,8 @@
   "serveur"
  ],
  "Le téléchargement a échoué.": [
-  "components/charts/ExportBloc.tsx"
+  "components/charts/ExportBloc.tsx",
+  "pages/projets/ProjetsListPage.tsx"
  ],
  "Le téléchargement n'a pas abouti.": [
   "components/documents/ExplorateurDocuments.tsx"
@@ -7660,14 +7992,24 @@
  "Leçons apprises, bonnes pratiques.": [
   "pages/strategie/DocumentModal.tsx"
  ],
+ "Leçons ayant entraîné un changement": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Leçons et bonnes pratiques": [
   "pages/DashboardConsolidePage.tsx"
  ],
  "Leçons et décisions": [
   "pages/projets/ProjetDetailPage.tsx"
  ],
+ "Lecture et écriture": [
+  "pages/utilisateurs/Visibilite.tsx"
+ ],
  "Lecture seule": [
-  "pages/partage/PagePartagee.tsx"
+  "pages/partage/PagePartagee.tsx",
+  "pages/utilisateurs/Visibilite.tsx"
+ ],
+ "Lecture seule, sans droit d'approuver": [
+  "pages/utilisateurs/Visibilite.tsx"
  ],
  "Légende": [
   "components/dashboard/ApparenceBlocDrawer.tsx"
@@ -7733,6 +8075,9 @@
  "Les mêmes chiffres pour chaque niveau de la planification.": [
   "pages/projets/RapportFinancierModal.tsx"
  ],
+ "Les modifications de ce document doivent être approuvées": [
+  "pages/strategie/DocumentModal.tsx"
+ ],
  "Les niveaux de la planification de ce projet, du plus haut au plus bas. Leur nom et leur nombre sont libres : par exemple « Objectif général » → « Objectif spécifique » → « Activité », ou « Résultat » → « Composante » → « Activité ». Renommer un niveau change seulement son nom affiché, jamais les éléments déjà saisis.": [
   "pages/projets/NiveauxActiviteTab.tsx"
  ],
@@ -7741,6 +8086,9 @@
  ],
  "Les notes sont internes : le plaignant ne les voit jamais.": [
   "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Les personnes choisies approuvent ses saisies, en plus de l'administrateur. Laisser vide : l'administrateur ou toute personne ayant le droit d'approuver le projet ou la stratégie.": [
+  "pages/utilisateurs/Visibilite.tsx"
  ],
  "Les plaignants peuvent joindre des fichiers (formulaire public et complément)": [
   "pages/plaintes/ParametragePlaintesPage.tsx"
@@ -7753,6 +8101,9 @@
  ],
  "Les réalisations seulement": [
   "utils/rapportage.ts"
+ ],
+ "Les répartitions ne comptent pas les dossiers confidentiels. Une baisse des plaintes n'est pas forcément une amélioration : elle peut aussi traduire un accès difficile au mécanisme.": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Les retours anonymes ne sont pas acceptés par ce mécanisme.": [
   "serveur"
@@ -8004,6 +8355,12 @@
  "Maîtrisé": [
   "pages/projets/RisquesTab.tsx"
  ],
+ "Manquant": [
+  "pages/projets/PilotageTab.tsx"
+ ],
+ "Manquant, en retard": [
+  "pages/projets/PilotageTab.tsx"
+ ],
  "Manuel d'utilisateur inclus dans l'offre": [
   "pages/accueil/AbonnementPage.tsx"
  ],
@@ -8113,6 +8470,9 @@
  "Mémoire utilisée": [
   "pages/console/Supervision.tsx"
  ],
+ "Ménages bénéficiaires": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Mensuel": [
   "pages/projets/PilotageTab.tsx"
  ],
@@ -8180,7 +8540,22 @@
  "Mesure": [
   "components/indicators/FormuleEditeur.tsx"
  ],
+ "Mesurés": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Mesures correctives : {0} des dossiers clôturés en ont entraîné une ; {1} action(s), dont {2} réalisées.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Mesures d'atténuation": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Mesures d'atténuation réalisées": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Mesures d'atténuation suivies": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Mesures suivies et historique": [
   "pages/projets/RisquesTab.tsx"
  ],
  "Métadonnées conservées": [
@@ -8242,8 +8617,14 @@
  "Mise en œuvre ({0})": [
   "pages/organisation/OrganisationPage.tsx"
  ],
+ "Mise en œuvre selon l'origine : {0}.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Mise en page": [
   "pages/carte/FenetresCarte.tsx"
+ ],
+ "Mission de suivi ou de supervision": [
+  "pages/projets/PilotageTab.tsx"
  ],
  "Mission de supervision": [
   "pages/projets/PilotageTab.tsx"
@@ -8287,6 +8668,9 @@
  ],
  "modification(s) enregistré(s)": [
   "components/suivi/ImportCanevasSuiviModal.tsx"
+ ],
+ "Modifications du document, ajouts, modifications et suppressions de ses éléments (piliers, axes…) et de leurs appréciations : pour qui ne peut pas les approuver, elles deviennent des demandes, appliquées une fois approuvées (écran Approbations).": [
+  "pages/strategie/DocumentModal.tsx"
  ],
  "Modifié": [
   "components/audit/HistoriqueModification.tsx"
@@ -8381,6 +8765,9 @@
  ],
  "Modifier la zone": [
   "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "Modifier le document obligatoire": [
+  "pages/projets/PilotageTab.tsx"
  ],
  "Modifier le niveau": [
   "pages/geo/ZonesAdministrativesPage.tsx",
@@ -8558,6 +8945,9 @@
  ],
  "Moyenne des éléments directement en dessous, pondérée par leur poids.": [
   "utils/methodesCalcul.ts"
+ ],
+ "Moyenne des taux d'atteinte (plafonnés à 100 %), pondérée par le poids de chaque indicateur (vide : 1). Le poids se règle dans la fiche de l'indicateur.": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Moyenne des taux des éléments du dernier niveau en dessous.": [
   "utils/methodesCalcul.ts"
@@ -8841,7 +9231,6 @@
  ],
  "Non réalisée": [
   "components/suivi/SaisieSuiviMethode.tsx",
-  "pages/projets/AvancementModal.tsx",
   "pages/suivi/SuiviProjetDashboard.tsx",
   "utils/statusTones.ts"
  ],
@@ -8931,6 +9320,9 @@
  "Nouveau document — {0}": [
   "pages/strategie/CadresStrategiquesListPage.tsx",
   "pages/strategie/DocumentModal.tsx"
+ ],
+ "Nouveau document obligatoire": [
+  "pages/projets/PilotageTab.tsx"
  ],
  "Nouveau dossier": [
   "components/documents/DocumentsTab.tsx",
@@ -9036,6 +9428,9 @@
  "Nouvelle leçon, bonne pratique ou décision": [
   "pages/projets/PilotageTab.tsx"
  ],
+ "Nouvelle mesure": [
+  "pages/projets/RisquesTab.tsx"
+ ],
  "Nouvelle newsletter": [
   "pages/console/Newsletter.tsx"
  ],
@@ -9132,7 +9527,8 @@
  "Objet": [
   "pages/console/Newsletter.tsx",
   "pages/journal-audit/JournalAuditPage.tsx",
-  "pages/plaintes/OperationsDossier.tsx"
+  "pages/plaintes/OperationsDossier.tsx",
+  "pages/utilisateurs/Visibilite.tsx"
  ],
  "Objet du courriel": [
   "pages/console/Newsletter.tsx",
@@ -9174,8 +9570,14 @@
  "ONG": [
   "pages/accueil/InscriptionPage.tsx"
  ],
+ "Onglets": [
+  "components/common/RechercheGlobale.tsx"
+ ],
  "Onglets d'un projet": [
   "utils/modules.ts"
+ ],
+ "Onglets soumis à approbation": [
+  "pages/approbations/ApprobationsPage.tsx"
  ],
  "Ont commencé dans la période": [
   "components/dashboard/FiltresTableauDeBord.tsx"
@@ -9253,6 +9655,9 @@
  "Orienter vers une assistance": [
   "pages/plaintes/DossierPlaintePage.tsx",
   "pages/plaintes/OperationsDossier.tsx"
+ ],
+ "Origine": [
+  "pages/projets/PilotageTab.tsx"
  ],
  "Ou cocher un ou plusieurs projets :": [
   "pages/beneficiaires/ExportBeneficiairesModal.tsx"
@@ -9385,6 +9790,15 @@
   "components/documents/PartageDocumentModal.tsx",
   "pages/DashboardConsolidePage.tsx"
  ],
+ "Par année": [
+  "pages/indicateurs/IndicateurDetailPage.tsx"
+ ],
+ "Par canal": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Par catégorie": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Par courriel": [
   "api/plaintes.ts"
  ],
@@ -9406,11 +9820,17 @@
  "par mois": [
   "pages/abonnement/MonAbonnementPage.tsx"
  ],
+ "Par mois": [
+  "pages/indicateurs/IndicateurDetailPage.tsx"
+ ],
  "Par projet": [
   "pages/organisation/OrganisationPage.tsx"
  ],
  "Par quantité": [
   "utils/methodesCalcul.ts"
+ ],
+ "Par région": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Par SMS": [
   "api/plaintes.ts"
@@ -9426,6 +9846,12 @@
  ],
  "Par tranche de 10 Go : {0} ({1} $) HT par mois. Votre espace est agrandi dès que le paiement est confirmé.": [
   "pages/stockage/StockagePage.tsx"
+ ],
+ "Par trimestre": [
+  "pages/indicateurs/IndicateurDetailPage.tsx"
+ ],
+ "Par type de retour": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Par zone :": [
   "pages/carte/CartePage.tsx"
@@ -9460,6 +9886,9 @@
  ],
  "Parcours": [
   "components/indicators/FormuleEditeur.tsx"
+ ],
+ "Parmi les documents du projet (onglet « Documents ») : vide tant qu'il manque.": [
+  "pages/projets/PilotageTab.tsx"
  ],
  "Parmi les documents du projet (onglet « Documents »).": [
   "pages/projets/PilotageTab.tsx"
@@ -9542,6 +9971,9 @@
  "Partenariat": [
   "pages/accueil/AbonnementPage.tsx",
   "pages/console/ConsolePage.tsx"
+ ],
+ "Participations aux activités": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Partie prenante": [
   "pages/utilisateurs/UtilisateursPage.tsx"
@@ -9669,6 +10101,12 @@
  "Pendant l'essai gratuit, le stockage ne s'agrandit pas. Choisissez une offre : elle apporte 25 Go ou plus, et vos données restent en place.": [
   "pages/stockage/StockagePage.tsx"
  ],
+ "Performance des indicateurs": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Performance par région": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Période": [
   "components/dashboard/FiltresTableauDeBord.tsx",
   "components/indicators/FormuleEditeur.tsx",
@@ -9724,6 +10162,9 @@
  ],
  "Périodes de rapportage : voir Paramètres. « Fermée » : seules les périodes propres au projet l'ouvrent.": [
   "pages/projets/ProjetForm.tsx"
+ ],
+ "Permises pour lui": [
+  "pages/utilisateurs/Visibilite.tsx"
  ],
  "Personnaliser": [
   "pages/DashboardConsolidePage.tsx",
@@ -9781,12 +10222,27 @@
  "Personnes vivant dans le ménage, la personne comprise (bénéficiaires indirects).": [
   "pages/beneficiaires/BeneficiaireForm.tsx"
  ],
+ "Personnes vulnérables": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "personnes, ha…": [
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Peut approuver": [
+  "pages/utilisateurs/Visibilite.tsx"
  ],
  "Peut être rattaché à n'importe quelle ligne du cadre stratégique (orientation, axe, activité, sous-activité…), limité au cadre de ce projet.": [
   "pages/projets/ActiviteForm.tsx",
   "pages/projets/SousActiviteForm.tsx"
+ ],
+ "Peut exporter les données": [
+  "pages/utilisateurs/Visibilite.tsx"
+ ],
+ "Peut faire l'export global": [
+  "pages/utilisateurs/Visibilite.tsx"
+ ],
+ "Peut faire l'import global": [
+  "pages/utilisateurs/Visibilite.tsx"
  ],
  "Peut personnaliser": [
   "pages/utilisateurs/RolesTab.tsx"
@@ -9874,6 +10330,7 @@
  ],
  "Plaintes et retours": [
   "layouts/AppLayout.tsx",
+  "pages/DashboardConsolidePage.tsx",
   "pages/accueil/AccueilPage.tsx",
   "pages/plaintes/DossierPlaintePage.tsx",
   "pages/plaintes/EnTetePlaintes.tsx",
@@ -9895,11 +10352,23 @@
  "Plan de contingence": [
   "pages/projets/RisquesTab.tsx"
  ],
+ "Plan de gestion environnementale et sociale": [
+  "pages/projets/PilotageTab.tsx"
+ ],
+ "Plan de passation des marchés": [
+  "pages/projets/PilotageTab.tsx"
+ ],
  "Plan de sondage": [
   "pages/indicateurs/EnquetesPage.tsx"
  ],
  "Plan de sondage : {0}. Intervalle de confiance à 95 %.": [
   "pages/indicateurs/EnquetesPage.tsx"
+ ],
+ "Plan de suivi-évaluation": [
+  "pages/projets/PilotageTab.tsx"
+ ],
+ "Plan de travail annuel": [
+  "pages/projets/PilotageTab.tsx"
  ],
  "Planification": [
   "pages/langues/LanguesPage.tsx",
@@ -9974,6 +10443,9 @@
  "Plus haut = mieux": [
   "pages/indicateurs/IndicateurForm.tsx"
  ],
+ "Plusieurs types d'appui": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "PNG (haute résolution)": [
   "components/charts/ExportBloc.tsx"
  ],
@@ -9990,6 +10462,9 @@
  ],
  "Poids (%)": [
   "pages/projets/AvancementModal.tsx"
+ ],
+ "Poids dans le score de performance": [
+  "pages/indicateurs/IndicateurForm.tsx"
  ],
  "Point de suivi enregistré": [
   "components/suivi/SaisiePointSuiviForm.tsx"
@@ -10041,6 +10516,9 @@
  "positionnés par GPS": [
   "pages/carte/CartePage.tsx"
  ],
+ "Positions GPS valides : {0} ({1} sur {2}).": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Pour 1 000 hab.": [
   "pages/DashboardConsolidePage.tsx"
  ],
@@ -10052,6 +10530,9 @@
  ],
  "pour chaque tranche de 10 Go ajoutée": [
   "pages/accueil/AbonnementPage.tsx"
+ ],
+ "pour choisir": [
+  "components/common/RechercheGlobale.tsx"
  ],
  "Pour confirmer, recopiez le numéro du dossier : {0}": [
   "pages/plaintes/OperationsDossier.tsx"
@@ -10067,8 +10548,14 @@
   "pages/strategie/CadresStrategiquesListPage.tsx",
   "pages/strategie/FicheDocument.tsx"
  ],
+ "Pour les projets, stratégies et éléments listés ici, ces droits remplacent son niveau d'accès et son rôle. Un droit sur une stratégie vaut pour ses éléments (piliers, axes…) et les programmes qui lui sont rattachés, sauf droit plus précis. Un droit sur un projet le rend visible.": [
+  "pages/utilisateurs/Visibilite.tsx"
+ ],
  "Pour les structures qui confient une mission à Expertise-ID": [
   "pages/accueil/AbonnementPage.tsx"
+ ],
+ "pour ouvrir": [
+  "components/common/RechercheGlobale.tsx"
  ],
  "Pour qui": [
   "components/documents/PartageDocumentModal.tsx"
@@ -10093,6 +10580,12 @@
  ],
  "Pour tous les projets": [
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
+ ],
+ "Pour tous les utilisateurs sauf l'administrateur : filigrane à leur nom sur toutes les pages, écran masqué pendant une capture ou hors de la fenêtre, impression, copie et clic droit bloqués. Dans la fiche d'un utilisateur (Utilisateurs), vous pouvez les bloquer ou les permettre pour lui seul. Aucun site ne peut empêcher totalement une capture ou une photo de l'écran : le filigrane permet de retrouver qui l'a faite.": [
+  "pages/organisation/IdentiteOrganisation.tsx"
+ ],
+ "Pour tout le reste": [
+  "pages/utilisateurs/Visibilite.tsx"
  ],
  "Pour un bailleur": [
   "pages/projets/PilotageTab.tsx"
@@ -10141,6 +10634,9 @@
   "pages/beneficiaires/BeneficiaireForm.tsx",
   "pages/projets/EquipeTab.tsx",
   "pages/utilisateurs/UtilisateursPage.tsx"
+ ],
+ "Préparation de l'export : chaque bloc est copié tel qu'il s'affiche. Cela peut prendre une demi-minute.": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Préparation du fichier : cela peut prendre quelques minutes.": [
   "pages/organisation/SauvegardeTransfert.tsx"
@@ -10212,6 +10708,9 @@
  "Problème": [
   "pages/projets/CoherenceTab.tsx"
  ],
+ "Problèmes survenus puis résolus : {0}, en {1} en moyenne.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Prochaine revue": [
   "pages/projets/RisquesTab.tsx"
  ],
@@ -10266,7 +10765,8 @@
   "pages/plaintes/OperationsDossier.tsx",
   "pages/plaintes/TableauPlaintesPage.tsx",
   "pages/plaintes/public/FormulairePublicPage.tsx",
-  "pages/planification/PlanificationImportPage.tsx"
+  "pages/planification/PlanificationImportPage.tsx",
+  "pages/utilisateurs/Visibilite.tsx"
  ],
  "Projet ": [
   "pages/projets/ImportProjetModal.tsx"
@@ -10291,6 +10791,9 @@
  ],
  "Projet modifié": [
   "pages/projets/ProjetForm.tsx"
+ ],
+ "Projet ou stratégie": [
+  "pages/approbations/ApprobationsPage.tsx"
  ],
  "Projet rouvert": [
   "components/common/BandeauProjetCloture.tsx"
@@ -10520,7 +11023,13 @@
  "Rapport": [
   "pages/projets/PilotageTab.tsx"
  ],
+ "Rapport d'audit": [
+  "pages/projets/PilotageTab.tsx"
+ ],
  "Rapport d'origine": [
+  "pages/projets/PilotageTab.tsx"
+ ],
+ "Rapport de démarrage": [
   "pages/projets/PilotageTab.tsx"
  ],
  "Rapport de suivi": [
@@ -10536,6 +11045,9 @@
   "pages/projets/ProjetDetailPage.tsx"
  ],
  "Rapports en retard": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Rapports produits (échus)": [
   "pages/DashboardConsolidePage.tsx"
  ],
  "Rapports reçus / attendus": [
@@ -10604,6 +11116,12 @@
  "Réalisation": [
   "pages/indicateurs/IndicateursListPage.tsx"
  ],
+ "Réalisation des indicateurs": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Réalisation des indicateurs (%)": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Réalisation ind.": [
   "utils/carteParZone.ts"
  ],
@@ -10632,7 +11150,7 @@
  "Réalisée": [
   "api/plaintes.ts",
   "components/suivi/SaisieSuiviMethode.tsx",
-  "pages/projets/AvancementModal.tsx",
+  "pages/projets/RisquesTab.tsx",
   "pages/suivi/SuiviProjetDashboard.tsx",
   "utils/statusTones.ts"
  ],
@@ -10680,6 +11198,12 @@
  "Rechercher un indicateur ou une activité…": [
   "pages/suivi/SuiviProjetDashboard.tsx"
  ],
+ "Rechercher un onglet, un projet, un indicateur, un bénéficiaire, un document…": [
+  "components/common/RechercheGlobale.tsx"
+ ],
+ "Rechercher un onglet…": [
+  "pages/utilisateurs/DroitsModules.tsx"
+ ],
  "Rechercher un ou plusieurs pays…": [
   "pages/geo/ZonesAdministrativesPage.tsx",
   "pages/projets/ProjetForm.tsx",
@@ -10715,7 +11239,10 @@
   "pages/geo/ZonesAdministrativesPage.tsx"
  ],
  "Rechercher…": [
-  "pages/indicateurs/IndicateurForm.tsx"
+  "components/common/RechercheGlobale.tsx",
+  "components/common/SelecteurZone.tsx",
+  "pages/indicateurs/IndicateurForm.tsx",
+  "pages/utilisateurs/Visibilite.tsx"
  ],
  "Recommandation": [
   "pages/projets/PilotageTab.tsx"
@@ -10835,6 +11362,9 @@
  "Référé à un acteur externe": [
   "api/plaintes.ts"
  ],
+ "Référence": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "refus": [
   "pages/journal-audit/JournalAuditPage.tsx"
  ],
@@ -10849,6 +11379,7 @@
   "pages/plaintes/HabilitationsPlaintes.tsx"
  ],
  "Région": [
+  "pages/DashboardConsolidePage.tsx",
   "pages/carte/FenetresCarte.tsx"
  ],
  "Régions": [
@@ -10863,6 +11394,9 @@
  ],
  "Registre des traitements — mécanisme de plaintes et retours": [
   "serveur"
+ ],
+ "Réglage de l'organisation": [
+  "pages/utilisateurs/Visibilite.tsx"
  ],
  "Réglage de l'organisation : {0} min": [
   "pages/utilisateurs/UtilisateursPage.tsx"
@@ -10946,6 +11480,9 @@
  "Réouverture": [
   "api/plaintes.ts"
  ],
+ "Réouvertures et recours": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Replier": [
   "pages/organisation/Organigramme.tsx",
   "pages/projets/ProjetDetailPage.tsx"
@@ -10960,7 +11497,8 @@
   "serveur"
  ],
  "Réponse apportée": [
-  "api/plaintes.ts"
+  "api/plaintes.ts",
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Réponse communiquée le": [
   "pages/plaintes/DossierPlaintePage.tsx"
@@ -11051,6 +11589,9 @@
  "Reste à dépenser": [
   "pages/DashboardConsolidePage.tsx"
  ],
+ "Reste à faire : {0} {1}": [
+  "pages/indicateurs/IndicateurDetailPage.tsx"
+ ],
  "Restent : les comptes des utilisateurs, les réglages, le logo, les zones et les listes de référence.": [
   "pages/organisation/SauvegardeTransfert.tsx"
  ],
@@ -11069,6 +11610,9 @@
  ],
  "Résultat sur les données du projet": [
   "components/indicators/FormuleEditeur.tsx"
+ ],
+ "Résultats atteints par niveau": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Résumé": [
   "pages/console/SiteVitrine.tsx"
@@ -11090,6 +11634,12 @@
   "pages/DashboardConsolidePage.tsx"
  ],
  "Retard moyen (jours)": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Retard moyen de remise : {0}.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Retard moyen des activités terminées après leur échéance : {0}.": [
   "pages/DashboardConsolidePage.tsx"
  ],
  "Retards par projet": [
@@ -11117,6 +11667,9 @@
  ],
  "Retirer ce bailleur": [
   "pages/projets/BailleursMontants.tsx"
+ ],
+ "Retirer ce droit": [
+  "pages/utilisateurs/Visibilite.tsx"
  ],
  "Retirer ce terme": [
   "components/indicators/FormuleEditeur.tsx"
@@ -11177,6 +11730,9 @@
   "pages/plaintes/RetoursProjet.tsx",
   "pages/projets/ProjetDetailPage.tsx"
  ],
+ "Retours reçus": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "retrait": [
   "pages/journal-audit/JournalAuditPage.tsx",
   "pages/plaintes/HabilitationsPlaintes.tsx"
@@ -11189,6 +11745,9 @@
  ],
  "Réussissez d'abord le quiz de chaque module.": [
   "serveur"
+ ],
+ "Revenez sur la fenêtre de la plateforme pour l'afficher.": [
+  "components/common/ProtectionCaptures.tsx"
  ],
  "Revenir à l'adresse courriel": [
   "auth/LoginPage.tsx"
@@ -11219,6 +11778,9 @@
   "pages/beneficiaires/DoublonsPage.tsx"
  ],
  "Revue à mi-parcours": [
+  "pages/projets/PilotageTab.tsx"
+ ],
+ "Revue de projet, comité de pilotage": [
   "pages/projets/PilotageTab.tsx"
  ],
  "Rien (bénéficiaires seulement)": [
@@ -11257,6 +11819,9 @@
   "utils/modules.ts"
  ],
  "Risques critiques et élevés": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Risques graves avec mesures": [
   "pages/DashboardConsolidePage.tsx"
  ],
  "Risques ouverts": [
@@ -11391,7 +11956,7 @@
  "Saisies déjà existantes": [
   "components/suivi/ImportCanevasSuiviModal.tsx"
  ],
- "Saisies et changements en attente sur les projets qui exigent une approbation : ils ne comptent (ou ne s'appliquent) qu'une fois approuvés. Un rejet demande un motif, montré à l'auteur.": [
+ "Saisies et changements en attente sur les projets et stratégies qui exigent une approbation : ils ne comptent (ou ne s'appliquent) qu'une fois approuvés. Un rejet demande un motif, montré à l'auteur.": [
   "pages/approbations/ApprobationsPage.tsx"
  ],
  "Saisies faites au plus tard 30 jours après la fin de leur période.": [
@@ -11399,6 +11964,12 @@
  ],
  "Saisies qui se chevauchent ({0} → {1} et {2} → {3}) : risque de double compte.": [
   "serveur"
+ ],
+ "Saisies rejetées": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Saisies validées": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Saisir": [
   "pages/strategie/SuiviStrategiqueTab.tsx"
@@ -11463,6 +12034,12 @@
  "Satisfaction : {0} réponse(s), part de 4 et 5 sur 5.": [
   "pages/DashboardConsolidePage.tsx"
  ],
+ "Satisfaction : affichée à partir de 10 réponses ({0} pour l'instant).": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Satisfaction après traitement": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Satisfaction exprimée par la personne, de 1 (pas du tout satisfaite) à 5 (très satisfaite).": [
   "components/beneficiaires/BeneficiairesTab.tsx"
  ],
@@ -11478,11 +12055,14 @@
  "Sauvegarde de « {0} » du {1} : {2} éléments.": [
   "pages/organisation/SauvegardeTransfert.tsx"
  ],
+ "Sauvegarde de tout l'espace (ou d'une partie) dans un fichier, et reprise d'une sauvegarde. Réservé à l'administrateur, sauf autorisation de sa part.": [
+  "pages/exportGlobal/ExportGlobalPage.tsx"
+ ],
+ "Sauvegarde de tout l'espace ou d'une partie (onglet Export et import global). Par défaut : l'administrateur seulement.": [
+  "pages/utilisateurs/Visibilite.tsx"
+ ],
  "Sauvegarde de toutes les bases et de tous les fichiers chaque nuit à 2 h, 7 jours gardés.": [
   "pages/console/Supervision.tsx"
- ],
- "Sauvegarde et transfert": [
-  "pages/organisation/OrganisationPage.tsx"
  ],
  "Sauvegarde téléchargée, puis données de l'espace effacées : {0} éléments supprimés. Les comptes et les réglages sont gardés.": [
   "pages/organisation/SauvegardeTransfert.tsx"
@@ -11495,6 +12075,18 @@
  ],
  "Score : {0} / {1}.": [
   "pages/formation/FormationPage.tsx"
+ ],
+ "Score : {0} indicateur(s) ont un poids réglé.": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Score : tous les indicateurs ont le même poids (réglable dans la fiche de chaque indicateur).": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Score de performance": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Score de performance par projet": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Score de qualité": [
   "pages/DashboardConsolidePage.tsx"
@@ -11614,6 +12206,9 @@
  "Services de l'organisation qui travaillent sur le projet": [
   "pages/projets/PartenairesProjetTab.tsx"
  ],
+ "Ses droits habituels (niveau d'accès et rôle)": [
+  "pages/utilisateurs/Visibilite.tsx"
+ ],
  "Session bientôt fermée": [
   "auth/inactivite.ts"
  ],
@@ -11682,6 +12277,9 @@
  ],
  "Seule une personne habilitée du circuit confidentiel peut lever la sensibilité.": [
   "serveur"
+ ],
+ "Seulement dans ces onglets": [
+  "pages/utilisateurs/Visibilite.tsx"
  ],
  "Seulement les éléments prévus à ces dates": [
   "pages/projets/PlanificationPeriodeTab.tsx"
@@ -11839,6 +12437,9 @@
   "components/dashboard/ApparenceBlocDrawer.tsx",
   "pages/carte/FenetresCarte.tsx"
  ],
+ "Stable": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
  "Standard": [
   "pages/accueil/AbonnementPage.tsx",
   "pages/console/ConsolePage.tsx"
@@ -11870,6 +12471,9 @@
  ],
  "Statut actuel :": [
   "pages/projets/AvancementModal.tsx"
+ ],
+ "Statut de la mesure": [
+  "pages/projets/RisquesTab.tsx"
  ],
  "Statut des projets": [
   "components/dashboard/FiltresTableauDeBord.tsx"
@@ -11916,6 +12520,9 @@
  ],
  "Stratégie & capitalisation": [
   "pages/projets/ProjetForm.tsx"
+ ],
+ "Stratégie, programme ou plan": [
+  "pages/utilisateurs/Visibilite.tsx"
  ],
  "Structure": [
   "pages/organisation/OrganisationPage.tsx",
@@ -12140,6 +12747,12 @@
  "Supprimer la couche « {0} » ?": [
   "pages/carte/FenetresCarte.tsx"
  ],
+ "Supprimer la mesure": [
+  "pages/projets/RisquesTab.tsx"
+ ],
+ "Supprimer la mesure « {0} » ?": [
+  "pages/projets/RisquesTab.tsx"
+ ],
  "Supprimer la newsletter « {0} » ?": [
   "pages/console/Newsletter.tsx"
  ],
@@ -12240,7 +12853,13 @@
   "pages/plaintes/OperationsDossier.tsx"
  ],
  "Suspendue": [
-  "pages/console/Supervision.tsx"
+  "components/suivi/SaisieSuiviMethode.tsx",
+  "pages/console/Supervision.tsx",
+  "pages/suivi/SuiviProjetDashboard.tsx",
+  "utils/statusTones.ts"
+ ],
+ "Suspendues": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Suspension légale": [
   "api/plaintes.ts",
@@ -12311,10 +12930,17 @@
  "Taper une réponse puis Entrée": [
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
  ],
+ "Tapez au moins 2 caractères.": [
+  "components/common/RechercheGlobale.tsx"
+ ],
+ "Tapez un mot : nom d'onglet, de projet, d'activité, d'indicateur, de bénéficiaire, de document, numéro de dossier…": [
+  "components/common/RechercheGlobale.tsx"
+ ],
  "Tarif réduit, jusqu'à la gratuité pendant un an": [
   "pages/accueil/AbonnementPage.tsx"
  ],
  "Taux": [
+  "pages/DashboardConsolidePage.tsx",
   "pages/projets/PeriodeTableau.tsx",
   "pages/projets/PlanificationTableau.tsx",
   "pages/strategie/CadreStrategiqueDetailPage.tsx",
@@ -12325,6 +12951,9 @@
  ],
  "Taux (%)": [
   "pages/projets/AvancementModal.tsx"
+ ],
+ "Taux d'atteinte (%)": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Taux d'exécution": [
   "pages/projets/ProjetDetailPage.tsx"
@@ -12447,6 +13076,9 @@
   "pages/projets/BeneficiairesProjetSection.tsx"
  ],
  "téléphone ou pièce": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Tendance": [
   "pages/DashboardConsolidePage.tsx"
  ],
  "Terme par défaut": [
@@ -12584,6 +13216,9 @@
  "Tous les écrans": [
   "pages/langues/LanguesPage.tsx"
  ],
+ "Tous les exports de la plateforme : Excel, PDF, Word, CSV, images, documents téléchargés… Désactivé : il consulte, mais ne télécharge rien.": [
+  "pages/utilisateurs/Visibilite.tsx"
+ ],
  "Tous les gestionnaires": [
   "pages/plaintes/DossiersPlaintesPage.tsx"
  ],
@@ -12596,6 +13231,9 @@
  "Tous les modules de la plateforme": [
   "pages/accueil/AbonnementPage.tsx"
  ],
+ "Tous les onglets": [
+  "pages/utilisateurs/Visibilite.tsx"
+ ],
  "Tous les projets": [
   "components/projets/ListeProjets.tsx",
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx",
@@ -12604,6 +13242,7 @@
   "pages/plaintes/ActionsCorrectivesPage.tsx",
   "pages/plaintes/DossiersPlaintesPage.tsx",
   "pages/plaintes/TableauPlaintesPage.tsx",
+  "pages/projets/ProjetsListPage.tsx",
   "pages/utilisateurs/RolesTab.tsx"
  ],
  "Tous les projets de ces cadres sont choisis : retirez ceux à ne pas emporter.": [
@@ -12623,6 +13262,9 @@
  ],
  "Tout ce qu'il faut pour suivre vos projets": [
   "pages/accueil/AbonnementPage.tsx"
+ ],
+ "Tout ce qu'il renseigne doit être approuvé": [
+  "pages/utilisateurs/Visibilite.tsx"
  ],
  "Tout cocher sur cette page": [
   "pages/projets/BeneficiairesProjetSection.tsx"
@@ -12687,6 +13329,9 @@
  "Tout voir": [
   "pages/console/Supervision.tsx"
  ],
+ "Toute création, modification ou suppression (bénéficiaires, indicateurs, suivis, planification, stratégies, documents…) : rien ne compte ni ne s'applique avant approbation. Il ne peut pas approuver ses propres saisies.": [
+  "pages/utilisateurs/Visibilite.tsx"
+ ],
  "Toute l'offre Standard : projets et utilisateurs illimités, 100 Go de stockage": [
   "pages/accueil/AbonnementPage.tsx"
  ],
@@ -12750,6 +13395,9 @@
  ],
  "Traiter la demande": [
   "pages/plaintes/DonneesPersonnellesPlaintes.tsx"
+ ],
+ "Traités dans les délais": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Tranche ajoutée": [
   "components/suivi/TranchesPlanifieesTab.tsx"
@@ -12826,6 +13474,7 @@
   "pages/beneficiaires/VariablesBeneficiairesModal.tsx"
  ],
  "Type de retour": [
+  "pages/DashboardConsolidePage.tsx",
   "pages/plaintes/ChampsRetour.tsx",
   "pages/plaintes/DossierPlaintePage.tsx",
   "pages/plaintes/OperationsDossier.tsx"
@@ -12940,6 +13589,9 @@
  ],
  "Un projet avec le code « ": [
   "serveur"
+ ],
+ "Un projet présent dans plusieurs régions compte dans chacune (comme sur la carte) : les chiffres d'une région sont ceux des projets qui y interviennent.": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Un recours est réexaminé par une autre personne que le premier gestionnaire.": [
   "serveur"
@@ -13117,7 +13769,9 @@
  ],
  "Valeur": [
   "components/common/AttributsLibres.tsx",
-  "pages/approbations/ApprobationsPage.tsx"
+  "pages/DashboardConsolidePage.tsx",
+  "pages/approbations/ApprobationsPage.tsx",
+  "pages/indicateurs/IndicateurDetailPage.tsx"
  ],
  "Valeur ({0})": [
   "pages/strategie/SuiviStrategiqueTab.tsx"
@@ -13130,6 +13784,9 @@
  ],
  "Valeur ÷ cible × 100 (plus bas = mieux : cible ÷ valeur × 100).": [
   "pages/indicateurs/IndicateurForm.tsx"
+ ],
+ "Valeur actuelle": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Valeur cible": [
   "pages/indicateurs/IndicateurForm.tsx"
@@ -13150,6 +13807,9 @@
  ],
  "Valeur de l'indicateur": [
   "pages/indicateurs/IndicateurForm.tsx"
+ ],
+ "Valeur de la période": [
+  "pages/indicateurs/IndicateurDetailPage.tsx"
  ],
  "valeur de référence": [
   "pages/DashboardConsolidePage.tsx"
@@ -13186,6 +13846,9 @@
   "pages/projets/PlanificationPeriodeTab.tsx"
  ],
  "Valeurs atypiques à vérifier": [
+  "pages/DashboardConsolidePage.tsx"
+ ],
+ "Valeurs avec justificatif": [
   "pages/DashboardConsolidePage.tsx"
  ],
  "Valeurs de référence, cibles, réalisations, taux d'avancement et alertes sur les échéances.": [
@@ -13471,6 +14134,9 @@
  "vous": [
   "pages/utilisateurs/UtilisateursPage.tsx"
  ],
+ "Vous avez accès à ce projet en lecture seule : vous pouvez tout consulter, mais rien modifier.": [
+  "pages/projets/ProjetDetailPage.tsx"
+ ],
  "Vous avez déjà une vue de ce nom.": [
   "serveur"
  ],
@@ -13559,6 +14225,11 @@
   "pages/beneficiaires/BeneficiairesListPage.tsx",
   "pages/projets/BeneficiairesProjetSection.tsx"
  ],
+ "Zone administrative": [
+  "pages/plaintes/ChampsRetour.tsx",
+  "pages/plaintes/DossierPlaintePage.tsx",
+  "pages/plaintes/OperationsDossier.tsx"
+ ],
  "Zone ajoutée": [
   "pages/geo/ZonesAdministrativesPage.tsx"
  ],
@@ -13570,6 +14241,9 @@
  ],
  "Zone supprimée": [
   "pages/geo/ZonesAdministrativesPage.tsx"
+ ],
+ "zones": [
+  "pages/DashboardConsolidePage.tsx"
  ],
  "Zones": [
   "pages/DashboardConsolidePage.tsx"

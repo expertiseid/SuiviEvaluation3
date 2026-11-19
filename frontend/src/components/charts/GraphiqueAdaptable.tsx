@@ -4,6 +4,7 @@ import {
   BarChart3,
   BarChartHorizontal,
   Check,
+  LayoutGrid,
   Columns3,
   LineChart as IconeCourbe,
   PieChart as IconeCamembert,
@@ -48,6 +49,7 @@ const LIBELLES: Record<TypeGraphique, { libelle: string; icone: ReactNode }> = {
   courbes: { libelle: voc("Courbes"), icone: <IconeCourbe size={15} /> },
   aires: { libelle: voc("Aires"), icone: <IconeAires size={15} /> },
   tableau: { libelle: voc("Tableau"), icone: <IconeTableau size={15} /> },
+  cartes: { libelle: voc("Cartes de chiffres"), icone: <LayoutGrid size={15} /> },
 };
 
 
@@ -222,6 +224,9 @@ function GraphiqueBrut({
       {...(positionLegende === "haut" ? { verticalAlign: "top" } : positionLegende === "droite"
         ? { layout: "vertical", align: "right", verticalAlign: "middle" } : {})} />
   );
+  // Légende sous ou sur le graphique : la hauteur grandit d'autant, sinon une légende de nombreuses séries
+  // (ex. 50 projets) prendrait toute la place et écraserait le graphique.
+  const hauteurLegende = avecLegende && positionLegende !== "droite" ? Math.ceil(series.length / 4) * 20 + 8 : 0;
   const etiquette = (cle: string, position: "top" | "right") =>
     etiquettes && (uneSerie || type === "colonnes" || type === "barres") ? (
       <LabelList
@@ -343,7 +348,7 @@ function GraphiqueBrut({
 
   if (type === "courbes") {
     return (
-      <ResponsiveContainer width="100%" height={hauteur}>
+      <ResponsiveContainer width="100%" height={hauteur + hauteurLegende}>
         <LineChart data={lignes} margin={{ top: 20, right: 24, bottom: 4, left: 0 }}>
           {axes}
           {series.map((s) => (
@@ -359,7 +364,7 @@ function GraphiqueBrut({
 
   if (type === "aires") {
     return (
-      <ResponsiveContainer width="100%" height={hauteur}>
+      <ResponsiveContainer width="100%" height={hauteur + hauteurLegende}>
         <AreaChart data={lignes} margin={{ top: 20, right: 24, bottom: 4, left: 0 }}>
           {axes}
           {series.map((s) => (
@@ -374,7 +379,7 @@ function GraphiqueBrut({
   // Colonnes (groupées ou empilées).
   const empile = type === "colonnes-empilees";
   return (
-    <ResponsiveContainer width="100%" height={hauteur}>
+    <ResponsiveContainer width="100%" height={hauteur + hauteurLegende}>
       <BarChart data={lignes} margin={{ top: 20, right: 8, bottom: 4, left: 0 }}>
         {axes}
         {series.map((s, n) => (

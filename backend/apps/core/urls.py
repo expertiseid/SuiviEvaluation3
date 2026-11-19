@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from . import vues_transfert
+from . import recherche, vues_transfert
 from .views import JournalAuditViewSet, TraductionCorrigeeViewSet, activite, identite, logo_organisation, traductions
 
 router = DefaultRouter()
@@ -11,6 +11,7 @@ router.register("journal-audit", JournalAuditViewSet, basename="journal-audit")
 urlpatterns = router.urls + [
     path("traductions/", traductions, name="traductions"),
     path("identite/", identite, name="identite"),
+    path("recherche/", recherche.rechercher, name="recherche"),
     path("identite/logo/", logo_organisation, name="identite-logo"),
     path("session/activite/", activite, name="session-activite"),
     path("transfert/exporter/", vues_transfert.exporter, name="transfert-exporter"),

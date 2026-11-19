@@ -68,8 +68,13 @@ MIDDLEWARE = [
     "apps.core.modules.ModulesMasquesMiddleware",
     # Installation de démonstration : le visiteur ne peut rien enregistrer (apps.accounts.demo).
     "apps.accounts.demo.ModeDemoMiddleware",
+    # Modifications soumises à approbation (par onglet ou par personne) : apps.core.approbation_generale.
+    "apps.core.approbation_generale.ApprobationGeneraleMiddleware",
     # Exports et suppressions de tous les modules inscrits au journal d'audit (apps.core.journal_automatique).
     "apps.core.journal_automatique.JournalAutomatiqueMiddleware",
+    # Exports désactivés pour certains utilisateurs (apps.core.exports) : avant le journal, qui n'inscrit
+    # alors pas un export refusé.
+    "apps.core.exports.ExportsDesactivesMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"

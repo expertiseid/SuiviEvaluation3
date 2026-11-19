@@ -53,6 +53,7 @@ export function IndicateurForm({ indicateur, onDone }: { indicateur?: Indicateur
   const [sens, setSens] = useState<string | null>(indicateur?.sens ?? "HAUSSE");
   const [calculTaux, setCalculTaux] = useState<string | null>(indicateur?.calcul_taux ?? "CIBLE");
   const [agregation, setAgregation] = useState<string | null>(indicateur?.agregation ?? "SOMME");
+  const [poids, setPoids] = useState<number | string>(indicateur?.poids ?? "");
   // Valeurs saisies au fil du suivi, ou calculées par une formule (aucune saisie).
   const [mode, setMode] = useState<"SAISIE" | "FORMULE">(indicateur?.formule ? "FORMULE" : "SAISIE");
   const [formule, setFormule] = useState<FormuleIndicateur>(indicateur?.formule ?? FORMULE_VIDE);
@@ -105,6 +106,7 @@ export function IndicateurForm({ indicateur, onDone }: { indicateur?: Indicateur
       calcul_taux: (calculTaux ?? "CIBLE") as never,
       agregation: (mode === "FORMULE" ? "DERNIERE" : agregation ?? "SOMME") as never,
       formule: mode === "FORMULE" ? formule : null,
+      poids: poids === "" ? null : String(poids),
       projet: rattachementType === "PROJET" ? Number(rattachementId) : null,
       activite: rattachementType === "ACTIVITE" ? Number(rattachementId) : null,
       elements_strategiques: elementsSelectionnes.map(Number),
@@ -151,6 +153,8 @@ export function IndicateurForm({ indicateur, onDone }: { indicateur?: Indicateur
             : voc("Valeur ÷ cible × 100 (plus bas = mieux : cible ÷ valeur × 100).")}
           data={[{ value: "CIBLE", label: voc("Réalisé ÷ cible") }, { value: "PROGRESSION", label: voc("Progression depuis la valeur de base") }]}
           comboboxProps={{ width: 300 }} />
+        <NumberInput label={voc("Poids dans le score de performance")} value={poids} onChange={setPoids} min={0.01} decimalScale={2}
+          placeholder="1" description={voc("Importance de cet indicateur dans le score global de performance (vide : 1). Ex. : 3 compte trois fois plus qu'un indicateur de poids 1.")} />
       </SimpleGrid>
 
       <Select

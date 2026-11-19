@@ -79,7 +79,8 @@ def _filtres_en_clair(filtres, statuts_projet) -> str:
     return " · ".join(morceaux) or v("Aucun (tous les projets visibles)")
 
 
-def excel_tableau_de_bord(d: dict, filtres, organisation: str = "") -> bytes:
+def excel_tableau_de_bord(d: dict, filtres, organisation: str = "", blocs=None) -> bytes:
+    """`blocs` : images des blocs comme à l'écran (apps.dashboard.fidele), en dernière feuille."""
     from apps.projects.models import Activite, Projet
 
     statuts_projet = _libelles(Projet._meta.get_field("statut").choices)
@@ -133,16 +134,16 @@ def excel_tableau_de_bord(d: dict, filtres, organisation: str = "") -> bytes:
         lignes.append([
             p["code"], p["nom"], statuts_projet.get(p["statut"], p["statut"]), p.get("budget_total"),
             e.get("physique"), e.get("financier"),
-            a.get("REALISEE", 0), a.get("EN_COURS", 0), a.get("NON_REALISEE", 0),
+            a.get("REALISEE", 0), a.get("EN_COURS", 0), a.get("NON_REALISEE", 0), a.get("SUSPENDUE", 0), a.get("ANNULEE", 0),
             b.get("F", 0), b.get("M", 0), sum(n for k, n in b.items() if k != "code"),
         ])
     _tableau(projets, 1, [
         v("Code"), v("Projet"), v("Statut"), v("Budget"), v("Exécution physique (%)"), v("Exécution financière (%)"),
-        v("Activités réalisées"), v("Activités en cours"), v("Activités non réalisées"),
+        v("Activités réalisées"), v("Activités en cours"), v("Activités non réalisées"), v("Activités suspendues"), v("Activités annulées"),
         v("Bénéficiaires femmes"), v("Bénéficiaires hommes"), v("Bénéficiaires (total)"),
     ], lignes, {4: MONTANT, 5: POURCENT, 6: POURCENT})
     figer_entete(projets)
-    _largeurs(projets, [18, 50, 15, 18, 14, 14, 12, 12, 12, 13, 13, 13])
+    _largeurs(projets, [18, 50, 15, 18, 14, 14, 12, 12, 12, 12, 12, 13, 13, 13])
 
     # --- Budget et efficience -------------------------------------------------------------------
     fi = d.get("finances") or {}
@@ -179,6 +180,7 @@ def excel_tableau_de_bord(d: dict, filtres, organisation: str = "") -> bytes:
         feuille = wb.create_sheet(v("Avancement"))
         ligne = _tableau(feuille, 1, [v("Activités de terrain"), v("Valeur")], [
             [v("Prévues"), av["prevues"]], [v("Démarrées"), av["demarrees"]], [v("Terminées"), av["terminees"]],
+            [v("Suspendues"), av["suspendues"]], [v("Annulées (hors prévues)"), av["annulees"]],
             [v("Taux de démarrage (%)"), av["taux_demarrage"]], [v("Taux d'achèvement (%)"), av["taux_achevement"]],
             [v("Exécution à date (%)"), av["taux_execution_a_date"]], [v("En retard"), av["en_retard"]],
             [v("Retard moyen (jours)"), av["retard_moyen_jours"]],
@@ -215,6 +217,13 @@ def excel_tableau_de_bord(d: dict, filtres, organisation: str = "") -> bytes:
             [v("Coordonnées non valides"), f"{te['coordonnees_invalides']} / {te['coordonnees_renseignees']}"],
             [v("Plaintes pour 1 000 bénéficiaires"), te["plaintes_pour_1000"]],
             [v("Plaintes récurrentes (%)"), te["taux_plaintes_recurrentes"]],
+            [v("Participations aux activités"), te["participations"]],
+            [v("Participations par bénéficiaire"), te["participations_par_beneficiaire"]],
+            [v("Bénéficiaires ayant reçu plusieurs types d'appui (%)"), te["part_plusieurs_appuis"]],
+            [v("Personnes vulnérables (%)"), te["part_vulnerables"]],
+            *[[x["tranche"] or v("Âge non renseigné"), x["nombre"]] for x in te["par_age"]],
+            *[[x["statut"], x["nombre"]] for x in te["par_statut"]],
+            *[[f'{v("Couverture du groupe prioritaire (%)")} : {g["groupe"]}', g["couverture"]] for g in te["groupes_prioritaires"]],
         ])
         feuille.cell(row=ligne, column=1, value=v("Par territoire")).font = SECTION
         ligne = _tableau(feuille, ligne + 1, [v("Territoire"), v("Pays"), v("Bénéficiaires"), v("Femmes (%)"), v("Population"),
@@ -245,16 +254,33 @@ def excel_tableau_de_bord(d: dict, filtres, organisation: str = "") -> bytes:
             [v("Complétude des bénéficiaires (%)"), c["beneficiaires"]["completude"]],
             [v("Valeurs atypiques"), f"{qu['atypiques']} / {qu['valeurs_verifiees']}"],
             [v("Doublons non traités"), qu["doublons_non_traites"]], [v("Saisies en attente d'approbation"), qu["approbations_en_attente"]],
+            [v("Saisies validées (%)"), qu["taux_validation"]], [v("Saisies rejetées (%)"), qu["taux_rejet"]],
+            [v("Délai fin de période → saisie (jours)"), qu["delai_saisie_jours"]],
+            [v("Délai saisie → approbation (jours)"), qu["delai_validation_jours"]],
+            [v("Valeurs d'indicateurs avec justificatif (%)"), qu["valeurs_justifiees"]],
         ])
         ligne = _tableau(feuille, ligne, [v("Rapports, risques et apprentissage"), v("Valeur")], [
             [v("Rapports attendus à ce jour"), ra["attendus_a_date"]], [v("Rapports reçus"), ra["recus"]], [v("Rapports validés"), ra["valides"]],
             [v("Rapports en retard"), ra["en_retard"]], [v("Rapports remis à temps (%)"), ra["taux_a_temps"]],
+            [v("Rapports produits, parmi les échus (%)"), ra["taux_remis"]], [v("Délai moyen de validation (jours)"), ra["delai_validation_jours"]],
+            [v("Rapports acceptés dès la 1re remise (%)"), ra["acceptes_premiere_soumission"]],
+            [v("Risques recensés"), ri["total"]], [v("Risques maîtrisés ou clos"), ri["clos"]],
+            [v("Risques graves avec mesures (%)"), ri["graves_avec_mesures"]],
+            [v("Problèmes résolus"), ri["problemes_resolus"]], [v("Délai moyen de résolution (jours)"), ri["delai_resolution_jours"]],
             [v("Risques ouverts"), ri["ouverts"]], [v("Risques critiques"), ri["par_niveau"]["CRITIQUE"]], [v("Risques élevés"), ri["par_niveau"]["ELEVE"]],
             [v("Risques survenus"), ri["survenus"]], [v("Risques avec mesures d'atténuation (%)"), ri["avec_mesures"]],
             [v("Risques réévalués depuis moins de 3 mois (%)"), ri["suivis"]], [v("Revues de risque en retard"), ri["revue_en_retard"]],
-            [v("Recommandations retenues"), re["retenues"]], [v("Recommandations mises en œuvre (%)"), re["taux_mise_en_oeuvre"]],
+            [v("Recommandations formulées"), re["total"]], [v("Recommandations retenues"), re["retenues"]], [v("Recommandations mises en œuvre (%)"), re["taux_mise_en_oeuvre"]],
             [v("Recommandations en retard"), re["en_retard"]],
             [v("Leçons apprises"), ap["lecons"]], [v("Bonnes pratiques"), ap["bonnes_pratiques"]], [v("Décisions documentées"), ap["decisions"]],
+            [v("Mesures d'atténuation suivies"), ri["mesures"]], [v("Mesures d'atténuation réalisées (%)"), ri["taux_execution_mesures"]],
+            [v("Mesures d'atténuation en retard"), ri["mesures_en_retard"]],
+            [v("Leçons ayant entraîné un changement (%)"), ap["part_lecons_adaptees"]],
+            [v("Documents obligatoires"), pi["documents_obligatoires"]["total"]],
+            [v("Documents obligatoires disponibles (%)"), pi["documents_obligatoires"]["taux_disponibilite"]],
+            [v("Documents obligatoires manquants après échéance"), pi["documents_obligatoires"]["manquants_echus"]],
+            *[[f'{v("Recommandations mises en œuvre (%)")} : {o["libelle"]}', o["taux_mise_en_oeuvre"]] for o in re["par_origine"]],
+            [v("Analyses partagées par lien"), pi["partages"]["liens"]], [v("Consultations des analyses partagées"), pi["partages"]["consultations"]],
         ])
         if qu["atypiques_exemples"]:
             feuille.cell(row=ligne, column=1, value=v("Valeurs atypiques")).font = SECTION
@@ -265,6 +291,48 @@ def excel_tableau_de_bord(d: dict, filtres, organisation: str = "") -> bytes:
             _tableau(feuille, ligne + 1, [v("Projet"), v("Risque"), v("Criticité"), v("Dernière réévaluation")], [
                 [x["projet"], f"{x['code']} {x['libelle']}", x["criticite"], x["derniere_revue"]] for x in ri["graves_exemples"]])
         _largeurs(feuille, [48, 60, 14, 22])
+
+    # --- Performance des indicateurs, plaintes, performance par région ------------------------
+    pe, pl = d.get("performance") or {}, d.get("plaintes") or {}
+    if pe:
+        feuille = wb.create_sheet(v("Indicateurs et plaintes"))
+        ligne = _tableau(feuille, 1, [v("Performance des indicateurs"), v("Valeur")], [
+            [v("Score de performance (sur 100)"), pe["score"]],
+            [v("Indicateurs"), pe["total"]], [v("Indicateurs renseignés (%)"), pe["part_renseignes"]],
+            [v("Cible atteinte"), pe["atteints"]], [v("Cible atteinte (%)"), pe["part_atteints"]],
+            [v("En progrès (%)"), pe["part_en_progres"]], [v("En recul (%)"), pe["part_en_recul"]],
+            *[[f'{v("Documents stratégiques")} : {x["type"]}', x["nombre"]] for x in pe["documents"]],
+        ])
+        if pe["par_niveau"]:
+            ligne = _tableau(feuille, ligne, [v("Niveau"), v("Éléments"), v("Mesurés"), v("Atteints"), v("Atteints (%)")], [
+                [x["niveau"], x["elements"], x["mesures"], x["atteints"], x["part"]] for x in pe["par_niveau"]])
+        if len(pe["scores_projets"]) > 1:
+            ligne = _tableau(feuille, ligne, [v("Projet"), v("Score de performance (sur 100)"), v("Indicateurs")], [
+                [x["projet"], x["score"], x["indicateurs"]] for x in pe["scores_projets"]])
+        tendances = {"progres": v("En progrès"), "recul": v("En recul"), "stable": v("Stable")}
+        ligne = _tableau(feuille, ligne, [v("Indicateur"), v("Projet"), v("Unité"), v("Référence"), v("Valeur actuelle"), v("Cible"),
+                                          v("Écart à la cible"), v("Taux d'atteinte (%)"), v("Tendance")], [
+            [x["libelle"], x["projet"], x["unite"], x["reference"], x["actuelle"], x["cible"], x["ecart"], x["taux"],
+             tendances.get(x["tendance"], "")] for x in pe["liste"]])
+        if pl and pl["total"]:
+            ligne = _tableau(feuille, ligne, [v("Plaintes et retours"), v("Valeur")], [
+                [v("Retours reçus"), pl["total"]], [v("Ouverts"), pl["ouverts"]], [v("Clôturés"), pl["clotures"]], [v("En retard"), pl["en_retard"]],
+                [v("Réponse apportée (%)"), pl["taux_resolution"]], [v("Accusés de réception (%)"), pl["taux_accuse"]],
+                [v("Délai moyen d'accusé de réception (jours)"), pl["delai_accuse_moyen"]],
+                [v("Délai moyen de traitement (jours)"), pl["delai_moyen"]], [v("Délai médian de traitement (jours)"), pl["delai_median"]],
+                [v("Traités dans les délais (%)"), pl["dans_delais"]], [v("Réouvertures et recours (%)"), pl["taux_reouverture"]],
+                [v("Satisfaction après traitement (%)"), pl["satisfaction"]],
+                [v("Dossiers clôturés avec mesure corrective (%)"), pl["avec_mesure_corrective"]],
+                [v("Mesures correctives réalisées (%)"), pl["mise_en_oeuvre_mesures"]],
+            ])
+            for titre, cle in ((v("Par type de retour"), "par_type"), (v("Par canal"), "par_canal"), (v("Par catégorie"), "par_categorie")):
+                ligne = _tableau(feuille, ligne, [titre, v("Dossiers")], [[x["libelle"], x["nombre"]] for x in pl[cle]])
+        for p in d.get("performance_territoires") or []:
+            ligne = _tableau(feuille, ligne, [f'{p["niveau"]} ({p["pays"]})', v("Projets"), v("Activités"), v("Activités réalisées (%)"),
+                                              v("Dépenses (FCFA)"), v("Réalisation des indicateurs (%)")], [
+                [z["zone"], z["projets"], z["activites"], z["part_realisees"], z["depenses"], z["taux_indicateurs"]] for z in p["zones"]],
+                {5: MONTANT})
+        _largeurs(feuille, [60, 18, 14, 14, 16, 16, 14, 14, 14])
 
     # --- Répartitions ------------------------------------------------------------------------
     repartitions = wb.create_sheet(v("Répartitions"))
@@ -300,6 +368,11 @@ def excel_tableau_de_bord(d: dict, filtres, organisation: str = "") -> bytes:
         figer_entete(feuille)
         _largeurs(feuille, [10] + [16] * len(codes))
 
+    if blocs:
+        from .fidele import feuille_comme_a_l_ecran
+
+        feuille_comme_a_l_ecran(wb, blocs)
+
     tampon = io.BytesIO()
     wb.save(tampon)
     return tampon.getvalue()
@@ -329,7 +402,8 @@ def excel_graphique(titre: str, entetes: list, lignes: list, type_graphique: str
                   if any(isinstance(_nombre(l[c - 1]), (int, float)) for l in lignes if len(l) >= c)]
     if series:
         numeriques = [c for c in numeriques if c <= 1 + series]  # seules les premières colonnes sont tracées
-    if lignes and numeriques:
+    # Tableau ou cartes de chiffres (unités différentes, ex. chiffres clés) : les données, sans graphique.
+    if lignes and numeriques and type_graphique not in ("tableau", "cartes"):
         fin = 3 + len(lignes)
         if type_graphique == "camembert":
             graphique = DoughnutChart()

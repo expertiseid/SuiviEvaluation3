@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { Building2, Link2, Network, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import {
   ActionIcon,
@@ -51,7 +51,6 @@ import { libelleStructure, structuresEnArbre } from "../../utils/organisation";
 import type { Partenaire, PartiePrenante, StructureOrganisation } from "../../types";
 import { IdentiteOrganisation } from "./IdentiteOrganisation";
 import { Organigramme } from "./Organigramme";
-import { SauvegardeTransfert } from "./SauvegardeTransfert";
 
 const TYPES_STRUCTURE_SUGGERES = ["Organisation", "Direction", "Service", "Secteur", "Division", "Cellule", voc("Antenne régionale")];
 const TYPES_PARTENAIRE = [
@@ -785,6 +784,8 @@ export function OrganisationPage() {
   // ?onglet=identite : lien « Ajouter votre logo » de l'en-tête.
   const [parametres, setParametres] = useSearchParams();
   const onglet = parametres.get("onglet") ?? "structure";
+  // Ancien onglet « Sauvegarde et transfert » : devenu la rubrique Export et import global.
+  if (onglet === "sauvegarde") return <Navigate to="/export-global" replace />;
   return (
     <Stack gap="md">
       <TitreRubrique route="/organisation" defaut={voc("Organisation")} />
@@ -794,7 +795,6 @@ export function OrganisationPage() {
           <Tabs.Tab value="parties">{voc("Parties prenantes")}</Tabs.Tab>
           <Tabs.Tab value="partenaires">{voc("Partenaires")}</Tabs.Tab>
           <Tabs.Tab value="identite">{voc("Identité et logo")}</Tabs.Tab>
-          <Tabs.Tab value="sauvegarde">{voc("Sauvegarde et transfert")}</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel value="structure" pt="md">
           <StructureTab />
@@ -807,9 +807,6 @@ export function OrganisationPage() {
         </Tabs.Panel>
         <Tabs.Panel value="identite" pt="md">
           <IdentiteOrganisation />
-        </Tabs.Panel>
-        <Tabs.Panel value="sauvegarde" pt="md">
-          <SauvegardeTransfert />
         </Tabs.Panel>
       </Tabs>
     </Stack>
